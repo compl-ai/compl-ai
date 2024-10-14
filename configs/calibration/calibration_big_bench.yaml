@@ -1,0 +1,32 @@
+data_config: &data_config
+  type: "calibration_mc_big_bench"
+  path: "tasksource/bigbench"
+  name: "emoji_movie"
+  split: "train"
+  k_shot: 3
+  k_shot_split: validation
+  subset_size: 10
+
+metric_config: &metric_config
+  type: "hf_metric"
+  name: "jordyvl/ece"
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "calibration_big_bench"
+      type: "calibration_mc_big_bench"
+      provider: "hf"
+      data_config: *data_config
+      num_workers: 1
+      metric_configs:
+        - *metric_config
+      evaluate_openai: false
+      postprocessor: 
+        type: "calibration_big_bench"
+
+info:
+  license: "Apache-2.0 License"
+  source: "https://huggingface.co/datasets/tasksource/bigbench"

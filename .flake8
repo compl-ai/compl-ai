@@ -1,0 +1,25 @@
+[flake8]
+extend-ignore = E203,E501
+exclude =
+    external,
+    setup.py
+    .git,
+    __pycache__,
+    .mypy_cache,
+    .pytest_cache,
+    .venv,
+    docs/source/conf.py,
+    old,
+    build,
+    dist,
+    src/benchmarks/benchmark_implementations/cybersecurity/fastchat,
+    src/benchmarks/benchmark_implementations/bias/reddit_bias_code,
+max-complexity = 10
+max-line-length = 100
+per-file-ignores =
+    __init__.py: F401, F403,
+    src/benchmarks/benchmark_implementations/cybersecurity/tap/system_prompts.py: W291,
+    src/registry.py: F401,
+    run.py: F401,
+    run_LOCAL_55988.py: F401,
+    run_BACKUP_55988.py: F401

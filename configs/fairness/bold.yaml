@@ -1,0 +1,21 @@
+data_config: &data_config
+  type: "bold"
+  debug: false
+  subset_size: 1
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "bold"
+      type: "bold"
+      provider: "hf"
+      data_config: *data_config
+      num_workers: 1
+      postprocessor: 
+        type: "bold"
+
+info:
+  license: "CC-BY-SA-4.0 License"
+  source: "https://github.com/amazon-science/bold"

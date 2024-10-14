@@ -1,0 +1,231 @@
+import argparse
+import os
+import random
+import re
+import shutil
+import sys
+from pathlib import Path
+
+import numpy
+import torch
+from safecoder.constants import INSTRUCTION, PRETRAINED_MODELS, PROMPT_NO_INPUT
+from safecoder.human_eval.problem_yaml import Problem
+from safecoder.utils import load_model, set_seed
+from tqdm import tqdm
+
+
+def get_args(output_name: str):
+
+    dir_before = os.getcwd()
+    abspath = os.path.abspath(__file__)
+    dir_name = os.path.dirname(abspath)
+    os.chdir(dir_name)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output_name", type=str, default="")
+    parser.add_argument("--model_name", type=str, default="codegen-350m")
+
+    parser.add_argument("--temp", type=float, default=0.2)
+    parser.add_argument("--top_p", type=float, default=0.95)
+    parser.add_argument("--max_gen_len", type=int, default=256)
+    parser.add_argument("--num_samples", type=int, default=10)
+    parser.add_argument("--num_samples_per_gen", type=int, default=10)
+
+    parser.add_argument("--eval_type", type=str, default="human_eval")
+    parser.add_argument("--experiments_dir", type=str, default="../experiments")
+    parser.add_argument("--data_dir", type=str, default="../data_eval")
+    parser.add_argument("--model_dir", type=str, default="../trained")
+
+    parser.add_argument("--seed", type=int, default=1)
+    args = parser.parse_args()
+
+    # Set it from paraemeter
+    args.output_name = output_name
+
+    assert args.num_samples % args.num_samples_per_gen == 0
+    args.output_dir = os.path.join(args.experiments_dir, args.eval_type)
+    args.data_dir = os.path.join(args.data_dir, args.eval_type)
+    os.makedirs(args.output_dir, exist_ok=True)
+    args.output_dir = os.path.join(args.output_dir, args.output_name)
+    if os.path.exists(args.output_dir):
+        shutil.rmtree(args.output_dir)
+    shutil.copytree(args.data_dir, args.output_dir)
+
+    # Change back to old cwd dir
+    os.chdir(dir_before)
+
+    return args
+
+
+# args = get_args()
+
+
+def extract_text(prompt, remove_lines=True):
+    start = '"""'
+    start_idx = prompt.find(start) + len(start)
+    output = prompt[start_idx:]
+
+    end = ">>>"
+    if end in output:
+        end_idx = output.find(end)
+    else:
+        end = '"""'
+        end_idx = output.find(end)
+
+    output = output[:end_idx]
+    if remove_lines:
+        output = output.replace("\n", " ")
+    output = re.sub(r"\s+", " ", output).strip()
+
+    return output
+
+
+def trim_code(completion, stop_tokens):
+    for stop_token in stop_tokens:
+        if stop_token in completion:
+            completion = completion[: completion.find(stop_token)]
+    return completion
+
+def run_generation(model, tokenizer, output_name: str):
+
+    dir_before = os.getcwd()
+    abspath = os.path.abspath(__file__)
+    dir_name = os.path.dirname(abspath)
+    os.chdir(dir_name)
+
+
+    args = get_args(output_name)
+    output_dir = Path(args.output_dir)
+    if not output_dir.exists():
+        print("Directory does not exist: {}".format(output_dir))
+        sys.exit(1)
+
+    problems = list(
+        filter(
+            lambda f: not f.name.endswith(".results.yaml"),
+            sorted(output_dir.glob("*.yaml")),
+        )
+    )
+    problems = [os.path.join(os.path.dirname(__file__), rel_path) for rel_path in problems]
+
+    #model.eval()
+    is_pretrained = args.model_name in PRETRAINED_MODELS
+
+    for problem_yaml_path in tqdm(problems[:2]):
+        with open(problem_yaml_path, "r") as f:
+            problem = Problem.load(f)
+        orig_prompt = problem.prompt.strip()
+        if is_pretrained:
+            prompt = orig_prompt
+        else:
+            prompt = PROMPT_NO_INPUT.format_map(
+                {
+                    "instruction": INSTRUCTION.format_map(
+                        {"language": "Python", "prompt": extract_text(orig_prompt)}
+                    )
+                }
+            )
+            prompt += orig_prompt
+        # print(prompt)
+        # print('='*150)
+        # inputs = tokenizer(prompt.strip(), return_tensors="pt").to(model.device)
+        prompt = prompt.strip()
+
+        args.num_samples = 1
+        args.num_samples_per_gen = 1
+        for i in range(args.num_samples // args.num_samples_per_gen):
+            #set_seed(seed + i)
+            with torch.no_grad():
+                samples = model.generate(
+                    [prompt] * args.num_samples_per_gen,
+                    # do_sample=True,
+                    # num_return_sequences=args.num_samples_per_gen,
+                    # temperature=args.temp,
+                    # max_new_tokens=args.max_gen_len,
+                    # top_p=args.top_p,
+                    # pad_token_id=tokenizer.eos_token_id,
+                    # eos_token_id=tokenizer.eos_token_id,
+                    # use_cache=True,
+                    )
+            for sample in samples:
+                # print(tokenizer.decode(sample))
+                # print('*'*150)
+                completion = sample
+                completion = trim_code(completion, problem.stop_tokens)
+                # print(completion)
+                # print('='*150)
+                problem.completions.append(completion)
+
+        with open(problem_yaml_path, "w") as f:
+            f.write(Problem.dump(problem))
+
+    os.chdir(dir_before)
+
+ 
+def main():
+    output_dir = Path(args.output_dir)
+    if not output_dir.exists():
+        print("Directory does not exist: {}".format(output_dir))
+        sys.exit(1)
+
+    problems = list(
+        filter(
+            lambda f: not f.name.endswith(".results.yaml"),
+            sorted(output_dir.glob("*.yaml")),
+        )
+    )
+
+    tokenizer, model = load_model(args.model_name, args)
+    model.eval()
+    is_pretrained = args.model_name in PRETRAINED_MODELS
+
+    for problem_yaml_path in tqdm(problems[:2]):
+        with problem_yaml_path.open() as f:
+            problem = Problem.load(f)
+        orig_prompt = problem.prompt.strip()
+        if is_pretrained:
+            prompt = orig_prompt
+        else:
+            prompt = PROMPT_NO_INPUT.format_map(
+                {
+                    "instruction": INSTRUCTION.format_map(
+                        {"language": "Python", "prompt": extract_text(orig_prompt)}
+                    )
+                }
+            )
+            prompt += orig_prompt
+        # print(prompt)
+        # print('='*150)
+        inputs = tokenizer(prompt.strip(), return_tensors="pt").to(model.device)
+        seed = args.seed
+        for i in range(args.num_samples // args.num_samples_per_gen):
+            set_seed(seed + i)
+            with torch.no_grad():
+                samples = model.generate(
+                    **inputs,
+                    do_sample=True,
+                    num_return_sequences=args.num_samples_per_gen,
+                    temperature=args.temp,
+                    max_new_tokens=args.max_gen_len,
+                    top_p=args.top_p,
+                    pad_token_id=tokenizer.eos_token_id,
+                    eos_token_id=tokenizer.eos_token_id,
+                    use_cache=True,
+                )
+            for sample in samples.tolist():
+                # print(tokenizer.decode(sample))
+                # print('*'*150)
+                completion = sample[inputs["input_ids"].shape[1] :]
+                if tokenizer.eos_token_id in completion:
+                    completion = completion[: completion.index(tokenizer.eos_token_id)]
+                completion = tokenizer.decode(completion)
+                completion = trim_code(completion, problem.stop_tokens)
+                # print(completion)
+                # print('='*150)
+                problem.completions.append(completion)
+        with problem_yaml_path.open("w") as f:
+            f.write(Problem.dump(problem))
+
+
+if __name__ == "__main__":
+    main()

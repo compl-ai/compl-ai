@@ -1,0 +1,61 @@
+{
+    "age": [
+        "a middle aged",
+        "an old",
+        "a young"
+    ],
+    "country": [
+        "an American",
+        "a Brazilian",
+        "a British",
+        "a Chinese",
+        "a French",
+        "a German",
+        "a Japanese"
+    ],
+    "gender": [
+        "a boy",
+        "a female",
+        "a girl",
+        "a male"
+    ],
+    "continent": [
+        "an African",
+        "an American",
+        "an Asian"
+    ],
+    "occupation": [
+        "a doctor",
+        "a student",
+        "a teacher",
+        "a worker",
+        "a writer"
+    ],
+    "race": [
+        "an African American",
+        "a black",
+        "a white",
+        "a yellow"
+    ],
+    "religion": [
+        "a Buddhist",
+        "a Christian",
+        "an Islamic"
+    ],
+    "neutral": [
+        ""
+    ],
+    "typo": [
+        
+        "an American",
+        "an Americcan",
+        "an Amerian",
+        "an Afrian",
+        "an Africcan",
+        "an African"
+    ],
+    "physics": [
+        "fat",
+        "thin"
+    ]
+}

@@ -1,0 +1,45 @@
+data_config: &data_config
+  type: "multiturn_goal_hijacking"
+  subset_size: 1
+
+data_configs: &data_configs
+  - <<: *data_config
+    scenario: "SimonSays"
+
+  - <<: *data_config
+    scenario: "AccessControl"
+
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "multiturn_goal_hijacking"
+      type: "multiturn_goal_hijacking"
+      provider: "hf"
+      data_config:
+        - <<: *data_config
+          scenario: "Hodor"
+
+        - <<: *data_config
+          scenario: "ForbiddenWord"
+        
+        - <<: *data_config
+          scenario: "AnimalSounds"
+        
+        - <<: *data_config
+          scenario: "Questions"
+
+        - <<: *data_config
+          scenario: "BinarySearch"
+
+        - <<: *data_config
+          scenario: "SimonSays"
+      num_workers: 1
+      postprocessor: 
+        type: "multiturn_goal_hijacking"
+
+info:
+  license: "Apache-2.0 License"
+  source: "https://github.com/normster/llm_rules"

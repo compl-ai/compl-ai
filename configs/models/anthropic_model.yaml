@@ -1,0 +1,5 @@
+name: "claude-3-opus-20240229" 
+provider: "anthropic"
+batch_size: 400
+generation_args:
+    temperature: 1.0

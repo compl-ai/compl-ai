@@ -1,0 +1,7 @@
+name: "gpt-4-1106-preview" # "gpt-3.5-turbo-0125" #pt2  # google/flan-t5-base
+provider: "openai"
+batch_size: 400
+max_gen_toks: 800
+generation_args:
+    top_p: 0.95
+    temperature: 0.2

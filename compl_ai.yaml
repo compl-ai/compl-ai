@@ -1,0 +1,12 @@
+name: compl_ai
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - local
+dependencies:
+  - python=3.10
+  - numpy
+  - pytorch
+  - pytorch-cuda=12.1
+  - poetry=1.7.1

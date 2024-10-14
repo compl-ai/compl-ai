@@ -1,0 +1,4 @@
+name: cwe22
+version: 0.0.0
+extractor: python
+libraryPathDependencies: codeql-python

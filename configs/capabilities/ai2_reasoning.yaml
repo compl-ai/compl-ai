@@ -1,0 +1,34 @@
+multiple_choice_config: &multiple_choice_config
+  strict_mode: False 
+
+data_config_hard: &data_config_hard
+  type: "ai2_reasoning"
+  path: "allenai/ai2_arc"
+  name: "ARC-Challenge"
+  split: "test"
+  k_shot: 25
+  k_shot_split: "train"
+  subset_size: 1
+
+metric_config: &metric_config
+  type: "hf_metric"
+  name: "accuracy"
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "ai2_reasoning"
+      type: "ai2_reasoning"
+      data_config:
+        - *data_config_hard  
+      metric_configs:
+        - *metric_config
+      multiple_choice_config: *multiple_choice_config
+      postprocessor:
+        type: "ai2_reasoning"
+
+info:
+  license: "Creative Commons Attribution Share Alike 4.0"
+  source: "https://huggingface.co/datasets/allenai/ai2_arc"

@@ -1,0 +1,51 @@
+data_config_gender: &data_config_gender
+  type: "reddit_bias_data"
+  reddit_config:
+    category: "gender"
+  subset_size: 10
+
+data_config_orientation: &data_config_orientation
+  type: "reddit_bias_data"
+  reddit_config:  
+    category: "orientation"
+  subset_size: 10
+
+data_config_race: &data_config_race
+  type: "reddit_bias_data"
+  reddit_config:
+    category: "race"
+  subset_size: 10
+
+data_config_religion1: &data_config_religion1
+  type: "reddit_bias_data"
+  reddit_config:
+    category: "religion1"
+  subset_size: 10
+
+data_config_religion2: &data_config_religion2
+  type: "reddit_bias_data"
+  reddit_config:
+    category: "religion2"
+  subset_size: 10
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "reddit_bias"
+      type: "reddit_bias"
+      provider: "hf"
+      data_config: 
+        - *data_config_gender
+        - *data_config_orientation
+        - *data_config_race
+        - *data_config_religion1
+        - *data_config_religion2
+      num_workers: 1
+      postprocessor: 
+        type: "reddit_bias"
+
+info:
+  license: "MIT License"
+  source: "https://github.com/SoumyaBarikeri/RedditBias"

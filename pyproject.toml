@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "compl-ai"
+version = "1.0.0"
+description = "Compliance-centered evaluation framework for Generative AI models"
+authors = ["Compl-AI Team <contact@compl-ai.org>"]
+license = "Apache 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^2.5.2"
+torch = "^2.1.2"
+tokenizers = "^0.20.0"
+huggingface_hub = "^0.25.1"
+transformers = "^4.39.3"
+datasets = "^2.15.0"
+pyyaml-include = "1.3.2"
+langchain = "^0.0.350"
+multipledispatch = "^1.0.0"
+markdown_to_json = "^2.1.2"
+accelerate = "^0.26.0"
+evaluate = "^0.4.1"
+nltk = "^3.8.1"
+spacy = "^3.7.2"
+scikit-learn = "^1.3.2"
+scipy = "1.12"
+sentencepiece = "^0.1.99"
+llm-rules = {path = "external/llm_rules"}
+vaderSentiment = {path = "external/vaderSentiment"}
+flake8-pyproject = "^1.2.3"
+autoflake = "^2.2.1"
+openai = "^1.7.2"
+bitsandbytes = "^0.42.0"
+fairlearn = "^0.10.0"
+auto-gptq = "^0.6.0"
+sacrebleu = "^2.4.0"
+deprecated = "^1.2.14"
+randomname = "^0.2.1"
+gensim = "^4.3.2"
+google-api-python-client = "^2.115.0"
+build = "^1.0.3"
+setuptools = "^69.1.1"
+safecoder = {path = "external/safecoder_master", develop = true}
+pymongo = "^4.6.2"
+optimum = "^1.17.1"
+sentence-transformers = "^2.5.1"
+yamlize = "^0.7.1"
+replicate = "^0.25.1"
+python-levenshtein = "^0.25.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.7.1"
+flake8 = "^6.1.0"
+black = "^23.12.0"
+isort = "^5.13.2"
+types-pyyaml = "^6.0.12.12"
+icecream = "^2.1.3"
+pdbpp = "^0.10.3"
+pre-commit = "^3.6.0"
+types-requests = "^2.31.0.10"
+autoflake = "^2.2.1"
+
+[tool.poetry.group.gpu]
+optional = true
+
+[tool.poetry.group.gpu.dependencies]
+auto-gptq = "^0.6.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"

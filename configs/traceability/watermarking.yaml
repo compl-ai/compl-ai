@@ -1,0 +1,18 @@
+data_config: &data_config
+  type: "ghostbuster_reddit_wp"
+
+config:
+  run_id: 1
+  model: !include models/customapi_llama2_watermarked_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "watermarking"
+      type: "watermarking"
+      data_config: *data_config
+      num_workers: 1
+      postprocessor: 
+        type: "watermarking"
+
+info:
+  license: "CC-BY-3.0 License"
+  source: "https://github.com/vivek3141/ghostbuster-data/"

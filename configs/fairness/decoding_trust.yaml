@@ -1,0 +1,20 @@
+data_config: &data_config
+  type: "decoding_trust"
+  subset_size: 10
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "decoding_trust"
+      type: "decoding_trust"
+      data_config: *data_config
+      provider: "hf"
+      num_workers: 1
+      postprocessor: 
+        type: "decoding_trust"
+
+info:
+  license: "CC-BY-SA-4.0 License"
+  source: "https://github.com/AI-secure/DecodingTrust"

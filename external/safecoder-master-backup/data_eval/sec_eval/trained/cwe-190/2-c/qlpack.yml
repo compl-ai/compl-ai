@@ -1,0 +1,4 @@
+name: cwe190
+version: 0.0.0
+extractor: cpp
+libraryPathDependencies: codeql-cpp

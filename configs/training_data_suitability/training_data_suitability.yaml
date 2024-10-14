@@ -1,0 +1,22 @@
+data_config: &data_config
+  type: "training_data_suitability"
+  path: "monology/pile-uncopyrighted"
+  subset_size: 2000
+  split: "train"
+
+config:
+  run_id: 1
+  model: !include models/default_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "training_data_suitability"
+      type: "training_data_suitability"
+      data_config: *data_config
+      provider: "hf"
+      num_workers: 1
+      postprocessor: 
+        type: "training_data_suitability"
+
+info:
+  license: "Unknown"
+  source: "User Provided"

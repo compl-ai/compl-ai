@@ -1,0 +1,7 @@
+[submodule "external/vaderSentiment"]
+	path = external/vaderSentiment
+	url = https://github.com/cjhutto/vaderSentiment
+
+[submodule "external/ChatProtect"]
+	path = external/ChatProtect
+	url = https://github.com/eth-sri/ChatProtect

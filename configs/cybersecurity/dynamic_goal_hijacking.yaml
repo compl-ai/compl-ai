@@ -1,0 +1,16 @@
+metric_config: &metric_config
+  type: "hf_metric"
+  name: "accuracy"
+
+config:
+  run_id: 1
+  model: !include models/large_gen_toks_model.yaml
+  seed: 36
+  benchmark_configs:
+    - type: "dynamic_goal_hijacking"
+      provider: "hf"
+      num_workers: 1
+      metric_configs:
+        - *metric_config 
+      attacker_model: "gpt2"
+      evaluator_model: "gpt2"

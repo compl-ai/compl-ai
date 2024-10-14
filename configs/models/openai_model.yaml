@@ -1,0 +1,5 @@
+name: "gpt-4-1106-preview"
+provider: "openai"
+batch_size: 400
+generation_args:
+    temperature: 1.0

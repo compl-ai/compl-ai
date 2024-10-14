@@ -1,0 +1,36 @@
+{% macro multiple_choice_question(multiple_choice, final) -%}
+{% if final %}
+The following are multiple choice questions (with answers) about {{ multiple_choice.category }}.
+
+
+{% endif %}
+{% if multiple_choice.prefix %}
+{{ multiple_choice.prefix }}
+
+
+{% endif %}
+{{ multiple_choice.question }}
+
+
+Choices:
+{% for choice_symbol, choice_text in zip(multiple_choice.choice_symbols, multiple_choice.choices) %}
+    - {{ choice_symbol }}. {{ choice_text }}
+{% endfor %}
+
+
+Correct answer:
+{% endmacro -%}
+
+{% macro multiple_choice_answer(choice_symbol, choice_text) -%}
+    {{ choice_symbol }}. {{ choice_text }}
+{% endmacro -%}
+
+
+{% macro k_shots(k_shots) -%}
+{% for multiple_choice in k_shots %}
+{{ multiple_choice_question(multiple_choice) }}
+{{ multiple_choice_answer(multiple_choice.correct_symbol, multiple_choice.correct_answer) }}
+{% endfor %}
+{% endmacro -%}
+
+

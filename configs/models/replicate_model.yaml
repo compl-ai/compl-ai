@@ -1,0 +1,10 @@
+name: "mistralai/Mistral-7B-Instruct-v0.1"
+provider: "replicate"
+type: "causal_lm"
+device: "auto"
+padding_side: "left"
+batch_size: 4
+tokenizer_name: "mistralai/Mistral-7B-Instruct-v0.1"
+generation_args:
+  do_sample: True
+

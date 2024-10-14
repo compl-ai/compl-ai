@@ -1,0 +1,72 @@
+version: '3'
+volumes:
+  benchmark_data_volume:
+  external_volume:
+
+networks:
+  my_network:
+    driver: bridge
+
+services:
+  compact_ie_api:
+    build:
+      context: .
+      dockerfile: ./infrastructure/compact_ie/Dockerfile
+    network_mode: host
+    ports:
+      - "39881:39881"
+    hostname: compact_ie_api
+    deploy: &deploy
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+
+  watermark_api:
+    build:
+      context: .
+      dockerfile: ./infrastructure/watermark_api/Dockerfile
+    ports:
+      - "5000:5000"
+    deploy: *deploy
+
+  watermark_api_cpu:
+    build:
+      context: .
+      dockerfile: ./infrastructure/watermark_api/Dockerfile.cpu
+    ports:
+      - "5000:5000"
+    networks:
+      - my_network
+    hostname: watermark_api
+    command: ["python3", "llm_server.py", "--cpu_debug"]
+
+  interactive_shell:
+    build:
+      context: . 
+      dockerfile: ./infrastructure/Dockerfile
+    stdin_open: true
+    tty: true
+    command: bash
+    deploy: *deploy
+    volumes:
+      - ./:/app/
+      - external_volume:/app/external
+      - benchmark_data_volume:/app/benchmark_data
+
+  interactive_shell_cpu:
+    build:
+      context: . 
+      dockerfile: ./infrastructure/Dockerfile.cpu
+    stdin_open: true
+    tty: true
+    command: bash
+    networks:
+      - my_network
+    volumes:
+      - ./:/app/
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - external_volume:/app/external
+      - benchmark_data_volume:/app/benchmark_data

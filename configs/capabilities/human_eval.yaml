@@ -1,0 +1,16 @@
+
+config:
+  run_id: 1
+  model: !include models/human_eval_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "human_eval"
+      type: "human_eval"
+      provider: "hf"
+      num_workers: 1
+      postprocessor: 
+        type: "human_eval"
+
+info:
+  license: "MIT License"
+  source: "https://github.com/openai/human-eval"

@@ -1,0 +1,30 @@
+data_config: &data_config
+  type: "truthful_qa_generation"
+  path: "truthful_qa"
+  name: "generation"
+  split: "validation"
+  k_shot: 3
+  k_shot_split: validation
+  subset_size: 2
+
+metric_config: &metric_config
+  type: "truthful_scores"
+
+config:
+  run_id: 1
+  model: !include models/human_eval_model.yaml
+  seed: 36
+  benchmark_configs:
+    - name: "truthful_qa_generation"
+      type: "truthful_qa_generation"
+      provider: "hf"
+      data_config: *data_config
+      num_workers: 1
+      metric_configs:
+        - *metric_config
+      postprocessor:
+        type: "truthful_qa_generation"
+
+info:
+  license: "Apache-2.0 License"
+  source: "https://github.com/sylinrl/TruthfulQA"
