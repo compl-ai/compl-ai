@@ -5,6 +5,17 @@ MODEL_PATH="EleutherAI/gpt-neo-125m"
 DEBUG_MODE="" # "--debug_mode"
 CURRENT_DATETIME=$(date "+%Y-%m-%d_%H:%M:%S")
 
+benchmarks_req_open_ai_keys=("self_check_consistency")
+if [ -z "${OPENAI_API_KEY}" ] | [ -z "${OPENAI_ORG}" ]; then
+  echo -e "[COMPL-AI] Warning: 'OPENAI_API_KEY' and 'OPENAI_ORG' variables are not set."
+  echo -e "[COMPL-AI] Please set them to avoid skipping the following benchmarks that use it:"
+
+  # Loop through the list and print each string
+  for item in "${benchmarks_req_open_ai_keys[@]}"; do
+    echo "[COMPL-AI]   - $item"
+  done
+fi
+
 run_job () {
   batch_size=${2:-10}
   model_config=${3:-"configs/models/default_model.yaml"}
