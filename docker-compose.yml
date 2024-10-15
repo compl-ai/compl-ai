@@ -3,9 +3,6 @@ volumes:
   benchmark_data_volume:
   external_volume:
 
-networks:
-  my_network:
-    driver: bridge
 
 services:
   compact_ie_api:
@@ -38,8 +35,7 @@ services:
       dockerfile: ./infrastructure/watermark_api/Dockerfile.cpu
     ports:
       - "5000:5000"
-    networks:
-      - my_network
+    network_mode: host
     hostname: watermark_api
     command: ["python3", "llm_server.py", "--cpu_debug"]
 
@@ -49,6 +45,7 @@ services:
       dockerfile: ./infrastructure/Dockerfile
     stdin_open: true
     tty: true
+    network_mode: host
     command: bash
     deploy: *deploy
     volumes:
@@ -63,8 +60,7 @@ services:
     stdin_open: true
     tty: true
     command: bash
-    networks:
-      - my_network
+    network_mode: host
     volumes:
       - ./:/app/
       - ~/.cache/huggingface:/root/.cache/huggingface

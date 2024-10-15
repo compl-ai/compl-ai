@@ -13,8 +13,6 @@
 #    limitations under the License.
 
 import re
-import subprocess
-import time
 from typing import Dict, List, Optional, Tuple, cast
 
 import nltk
@@ -31,11 +29,13 @@ from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
 from src.prompts.prompt_formatters import HFPromptConfig
-from src.utils.general import (  # noqa: F401
+from src.utils.compact_ie import (
+    COMPACT_IE_SERVICE_HOST,
+    COMPACT_IE_SERVICE_PORT,
     extract_triples_compact_ie,
     extract_triples_compact_ie_mock,
-    get_txt_data,
 )
+from src.utils.general import get_txt_data, service_running_externally  # noqa: F401
 
 # extract_triples_compact_ie needs CompactIE, which can be installed and run as per https://github.com/eth-sri/ChatProtect/tree/main README
 
@@ -90,6 +90,8 @@ class SelfCheckConsistency(BaseBenchmark):
         self.config = self.context.get_benchmark_config()
         self.dataset = cast(SelfCheckConsistencyData, context.get_dataset())
         self.prompt_formatter = context.get_prompt_formatter()
+        self.host = COMPACT_IE_SERVICE_HOST
+        self.port = COMPACT_IE_SERVICE_PORT
 
         if self.config.is_cpu_mode():
             self.chatgpt = DummyGPT(OPENAI_API_KEY)
@@ -103,55 +105,21 @@ class SelfCheckConsistency(BaseBenchmark):
     def setup(self):
         # Initialization of nltk
         nltk.download("punkt")
-
-        if not self.config.debug:
-            # Specify the path to the directory you want to change to
-            directory_path = "external/ChatProtect/CompactIE"
-
-            conda_env_cmd = ["conda", "run", "-n", "CompactIE"]
-            serve_api_cmd = ["python", "api.py", "--config_file", "config.yml"]
-            full_cmd = conda_env_cmd + serve_api_cmd
-
-            # Start the server in a subprocess
-            self._server_process = subprocess.Popen(
-                full_cmd, cwd=directory_path, stderr=subprocess.PIPE
+        is_service_running = service_running_externally(self.host, self.port)
+        if not is_service_running:
+            raise RuntimeError(
+                f"Compact IE Service not found at {self.host}:{self.port}. "
+                "Please follow the README.md to run the service."
             )
-            self._using_server: bool = True
-
-            # Sleep for a short while to ensure the server has started
-            time.sleep(10)
-
-            return_code = self._server_process.poll()
-            stderr = self._server_process.stderr
-
-            if not stderr:
-                error_content_cleaned = ""
-
-            else:
-                error_content = stderr.read()
-                error_content_cleaned = error_content.decode("utf-8") if error_content else ""
-
-            if return_code == 98 or "Errno 98" in error_content_cleaned:
-                # Address is in use, so we don't need to worry
-                self._using_server = False
-            else:
-                raise RuntimeError("Server didn't start correctly!")
-
-        else:
-            self._using_server = False
-
-    def teardown(self):
-        if self._using_server:
-            self._server_process.terminate()
 
     def run(self, model: BaseModel) -> Dict[str, float]:
-        """Calculate the average violation of self consistency in the model's descriptions.
+        """Calculate the average violation of self-consistency in the model's descriptions.
 
         Args:
             model (BaseModel): The model to be evaluated.
 
         Returns:
-            Dict[str, float]: The average self consistency violation [0, 1] or NaN if something fails.
+            Dict[str, float]: The average self-consistency violation [0, 1] or NaN if something fails.
         """
         self.model = model
         results = []
