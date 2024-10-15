@@ -1,7 +1,0 @@
-url: "http://watermark_api:5000/"
-endpoints:
-  generate: "generate"
-  detect_watermark: "detect"
-name: "meta-llama/Llama-2-7b-hf"
-provider: "customapi"
-batch_size: 1

@@ -22,7 +22,6 @@ from helper_tools.results_processor import (
     reformat_reddit_bias_metric,
     reformat_toxicity_metric,
     reformat_toxicity_advbench_metric,
-    reformat_watermarking_metric,
     reformat_training_data_suitability,
 )
 from src.benchmarks.base_benchmark import BaseBenchmark
@@ -448,25 +447,6 @@ dataset_registry.register_logic_config_classes(
     DataConfig,
 )
 
-####
-# Traceability
-####
-
-from src.benchmarks.benchmark_implementations.traceability import watermarking
-
-benchmark_registry.register_logic_config_classes(
-    "watermarking",
-    watermarking.WatermarkingBenchmark,
-    BenchmarkConfig,
-    category="traceability",
-)
-
-dataset_registry.register_logic_config_classes(
-    "ghostbuster_reddit_wp",
-    watermarking.GhostbusterRedditWPData,
-    DataConfig,
-)
-
 
 ####
 # Toxicity
@@ -532,5 +512,4 @@ BENCHMARK_PROCESSORS |= {
     "fairllm": reformat_fairllm_metric,
     "mmlu_robustness": reformat_mmlu_robustness,
     "training_data_suitability": reformat_training_data_suitability,
-    "watermarking": reformat_watermarking_metric,
 }

@@ -58,7 +58,6 @@ def create_csv_row(json_obj, model_name: str) -> dict:
         "fairllm",
         "mmlu_robustness",
         "training_data_suitability",
-        "watermarking",
     }
     csv_row = {benchmark: "n.a." for benchmark in all_benchmarks}
     csv_row["model_name"] = model_name
@@ -148,7 +147,6 @@ def write_to_csv(results, output_file):
         "fairllm",
         "mmlu_robustness",
         "training_data_suitability",
-        "watermarking",
     ]
 
     with open(output_file, "w", newline="") as csvfile:

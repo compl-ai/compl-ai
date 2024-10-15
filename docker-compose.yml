@@ -21,23 +21,6 @@ services:
               device_ids: ["0"]
               capabilities: [gpu]
 
-  watermark_api:
-    build:
-      context: .
-      dockerfile: ./infrastructure/watermark_api/Dockerfile
-    ports:
-      - "5000:5000"
-    deploy: *deploy
-
-  watermark_api_cpu:
-    build:
-      context: .
-      dockerfile: ./infrastructure/watermark_api/Dockerfile.cpu
-    ports:
-      - "5000:5000"
-    network_mode: host
-    hostname: watermark_api
-    command: ["python3", "llm_server.py", "--cpu_debug"]
 
   interactive_shell:
     build:
