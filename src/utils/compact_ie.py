@@ -4,6 +4,7 @@ from nltk import sent_tokenize
 COMPACT_IE_SERVICE_HOST = "0.0.0.0"
 COMPACT_IE_SERVICE_PORT = 39881
 
+
 def extract_triples_compact_ie(text: str):
     """Uses the CompactIE API to extract triples, running locally"""
     request = {"sentences": [s for s in sent_tokenize(text)]}

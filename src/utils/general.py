@@ -345,8 +345,8 @@ def zero_to_one_std(scores: List[float]) -> float:
     return scaled_std_dev
 
 
-def service_running_externally(host: str, port: int) -> bool:
-    """Check if a service is running on the specified host and port."""
+def can_connect(host: str, port: int) -> bool:
+    """Check if it is possible to connect to the specified host and port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(5)  # Set a timeout for the connection attempt
         try:

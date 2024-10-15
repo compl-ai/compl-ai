@@ -35,7 +35,7 @@ from src.utils.compact_ie import (
     extract_triples_compact_ie,
     extract_triples_compact_ie_mock,
 )
-from src.utils.general import get_txt_data, service_running_externally  # noqa: F401
+from src.utils.general import can_connect, get_txt_data  # noqa: F401
 
 # extract_triples_compact_ie needs CompactIE, which can be installed and run as per https://github.com/eth-sri/ChatProtect/tree/main README
 
@@ -105,7 +105,7 @@ class SelfCheckConsistency(BaseBenchmark):
     def setup(self):
         # Initialization of nltk
         nltk.download("punkt")
-        is_service_running = service_running_externally(self.host, self.port)
+        is_service_running = can_connect(self.host, self.port)
         if not is_service_running:
             raise RuntimeError(
                 f"Compact IE Service not found at {self.host}:{self.port}. "
