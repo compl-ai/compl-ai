@@ -16,13 +16,13 @@ import json
 import os
 import shlex
 import shutil
+import socket
 import subprocess
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import requests
 from filelock import FileLock
-from nltk import sent_tokenize
 
 from src.models.base.base_model import BaseModel
 
@@ -43,18 +43,6 @@ def create_loglikelihood_fn(model: BaseModel) -> Callable[[List[Tuple[str, str]]
         return [result[0] for result in model.loglikelihood(context_cont_pairs)]
 
     return loglikelihood_fn
-
-
-def extract_triples_compact_ie_mock(text: str):
-    """Mock function to extract triples from text"""
-    return [("A", "B", "C")]
-
-
-def extract_triples_compact_ie(text: str):
-    """Uses the CompactIE API to extract triples, running locally"""
-    request = {"sentences": [s for s in sent_tokenize(text)]}
-    result = requests.post("http://0.0.0.0:39881/api", json=request).json()
-    return [(a["subject"], a["relation"], a["object"]) for a in result]
 
 
 def download_and_parse_tsv(url: str):
@@ -355,3 +343,14 @@ def zero_to_one_std(scores: List[float]) -> float:
         std_dev / 0.5
     )  # 0.5 is the maximum standard deviation for a list of values from 0 to 1
     return scaled_std_dev
+
+
+def can_connect(host: str, port: int) -> bool:
+    """Check if it is possible to connect to the specified host and port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(5)  # Set a timeout for the connection attempt
+        try:
+            sock.connect((host, port))
+            return True  # Port is open, service is running
+        except (ConnectionRefusedError, socket.timeout):
+            return False  # Port is closed or service is not running

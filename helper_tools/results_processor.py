@@ -15,6 +15,7 @@
 import argparse
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -413,6 +414,7 @@ def process_json_data(run_infos: list[RunInfo]) -> dict:
     }
 
     result_dict["version"] = RESULTS_VERSION
+    result_dict["created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d--%H:%M:%S")
 
     for run_info in run_infos:
         benchmark_name = normalize_benchmark_name(run_info)
