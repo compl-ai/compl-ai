@@ -125,19 +125,6 @@ def reformat_mcq_metric(eval_results: dict, legacy: bool = False) -> dict:
     return result
 
 
-def reformat_watermarking_metric(eval_results: dict, legacy: bool = False) -> dict:
-    data = json.loads(eval_results["benchmark_specific_info"])[0][0]
-    if data["fpr"] > 0.01:  # 1%
-        aggregate = 0
-    else:
-        aggregate = (data["tpr"] + data["tpr_under_paraphrase"]) / 2
-    result = {
-        "raw_metrics": data,
-        "aggregate_score": aggregate,
-    }
-    return result
-
-
 def reformat_calibration_metric(eval_results: dict, legacy: bool = False) -> dict:
     data = json.loads(eval_results["benchmark_specific_info"])
     ece_scores = [el[0]["value"]["ECE"] for el in data]
@@ -371,7 +358,6 @@ BENCHMARK_PROCESSORS = {
     "fairllm": reformat_fairllm_metric,
     "mmlu_robustness": reformat_mmlu_robustness,
     "training_data_suitability": reformat_training_data_suitability,
-    "watermarking": reformat_watermarking_metric,
 }
 
 

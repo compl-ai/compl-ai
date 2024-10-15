@@ -22,9 +22,9 @@ For having the same environment on a cpu-only environment, `interactive_shell_cp
 
 ---
 
-### Watermarking & Self-Check-Consistency Benchmark Setup
+### Self-Check-Consistency Benchmark Setup
 
-With the `watermarking` & `self_consistency_check` benchmarks, additional API keys and services are required. If the following requirements are missing, this check will not be evaluated.
+For the `self_consistency_check` benchmarks, additional API keys and services are required. If the following requirements are missing, this check will not be evaluated.
 
 #### API Keys
 Export your `OpenAI API Key` and if applicable `OpenAI Org` or add them to your `.bashrc`.
@@ -36,7 +36,7 @@ export OPENAI_ORG=""
 
 #### Start Service
 ```
-docker compose up --detach watermark_api compact_ie_api
+docker compose up --detach compact_ie_api
 ```
 
 ---
@@ -250,7 +250,7 @@ Results in this format can later be aggregated using `./run_scripts/run_processo
 <details>
 <summary>CUDA version mismatch</summary>
 
-The dockerfile uses CUDA 12.4.1, to run the docker. For a different CUDA version modify the version in  `infrastructure/Dockerfile`, `infrastructure/compact_ie/Dockerfile` and `infrastructure/watermark_api/Dockerfile`.
+The dockerfile uses CUDA 12.4.1, to run the docker. For a different CUDA version modify the version in  `infrastructure/Dockerfile` and `infrastructure/compact_ie/Dockerfile`.
 
 For example, to use CUDA 12.1.0, update the version as follows:
 ```dockerfile
@@ -318,9 +318,9 @@ rm benchmark_data.zip
 
 ---
 
-### Watermarking & Self-Check-Consistency Benchmark Setup
+### Self-Check-Consistency Benchmark Setup
 
-With the `watermarking` & `self_consistency_check` benchmarks, additional API keys and services are required. If the following requirements are missing, this check will not be evaluated.
+For the `self_consistency_check` benchmarks, additional API keys and services are required. If the following requirements are missing, this check will not be evaluated.
 
 #### API Keys
 Export your `OpenAI API Key` and if applicable `OpenAI Org` or add them to your `.bashrc`.
