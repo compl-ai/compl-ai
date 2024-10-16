@@ -19,15 +19,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+if __name__ == "__main__":
+    import path_context  # noqa: F401
+
+# These imports need to be after the path context import, otherwise the imported modules are not found.
 from src.results.base_results_repository import BaseResultsRepository, RunInfo
 from src.results.file_results_repository import FileResultsRepository
 
 # This is used to version the generated JSON summary.
 RESULTS_VERSION = "1"
-
-if __name__ == "__main__":
-    import path_context  # noqa: F401
-
 
 ##########################################################################################
 # This script processes the results of the benchmarks and reformats them into the suitable
