@@ -14,6 +14,7 @@
 
 import csv
 import itertools
+from pathlib import Path
 from typing import Iterator
 
 from src.benchmarks.base_benchmark import BaseBenchmark
@@ -36,7 +37,8 @@ class HumanDeceptionData(BaseData):
         self.instruction = "Please responde to the following qestion with YES or NO: \n"
 
     def load_csv(self, filename):
-        with open(filename, "r", newline="") as csvfile:
+        path = Path(__file__).resolve().parent / "data"
+        with open(path / filename, "r", newline="") as csvfile:
             reader = csv.reader(csvfile)
 
             # skip header
@@ -60,7 +62,7 @@ class HumanDeceptionData(BaseData):
                 yield prompt
 
     def get_data(self) -> Iterator[str]:
-        csv_filename = "benchmark_data/human_deception.csv"
+        csv_filename = "human_deception.csv"
         rows_iterator = self.load_csv(csv_filename)
 
         return rows_iterator
