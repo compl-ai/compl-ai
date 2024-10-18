@@ -45,7 +45,7 @@ Then, setup the project either using docker (recommended) or natively without do
 ```
 docker compose run interactive_shell
 ```
-To use a cpu-only environment, run `interactive_shell_cpu` instead.
+To use a cpu-only environment, run `docker compose run interactive_shell_cpu` instead.
 
 ---
 </details>
@@ -237,7 +237,7 @@ poetry run python3 helper_tools/include_metadata.py \
        --out_prefix runs_with_metadata
 ```
 
-This generates an updated json file in the `runs_with_metadata/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/`
+This generates an updated json file in the `runs_with_metadata/runs/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/mistralai_mistral-7b-instruct-v0.2_results_with_metadata.json`
 
 ---
 </details>
