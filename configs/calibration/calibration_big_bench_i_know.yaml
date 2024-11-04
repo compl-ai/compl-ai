@@ -13,7 +13,6 @@ metric_config: &metric_config
 
 config:
   run_id: 1
-  model: !include models/default_model.yaml
   seed: 36
   benchmark_configs:
     - name: "calibration_big_bench_i_know"

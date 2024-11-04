@@ -1,7 +1,6 @@
 
 config:
   run_id: 1
-  model: !include models/human_eval_model.yaml
   seed: 36
   benchmark_configs:
     - name: "human_eval"
