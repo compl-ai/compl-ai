@@ -23,7 +23,7 @@ from secret import ANTHROPIC_API_KEY
 from src.configs.base_model_config import ModelConfig
 from src.models.base.base_model import BaseModel, Message
 
-from .utils import RateLimit, chunks
+from .utils import PromptStatistics, RateLimit, chunks
 
 # Requests per minute
 RPM = 4000
@@ -34,6 +34,7 @@ class AnthropicModel(BaseModel):
         super().__init__(config)
 
         self.model = config.name
+        PromptStatistics.set_model(config.name)
         self.batch_size = config.batch_size
         self.has_started = False
         self._init_generation_args(config)
@@ -163,6 +164,7 @@ class AnthropicModel(BaseModel):
                     },
                 ) as response:
                     if response.status == 200:
+                        # TODO: log prompt statistics
                         return await response.json()
                     else:
                         seconds_since_start = (time.time() - self.first_time) % 60

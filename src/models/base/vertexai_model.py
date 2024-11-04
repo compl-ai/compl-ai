@@ -40,9 +40,6 @@ logging.getLogger("asyncio").setLevel(logging.WARNING)
 # Requests per minute
 RPM = 200
 
-# https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#gemini-text-only-samples-drest
-# https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#parameters
-
 
 def _get_response_text(response: ChatCompletion) -> list[str]:
     if response.promptFeedback and response.promptFeedback.blockReason is not None:
