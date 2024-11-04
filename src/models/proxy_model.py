@@ -14,7 +14,7 @@
 
 from typing import List, Tuple, Union
 
-from src.models.base.base_model import BaseModel, Input
+from src.models.base.base_model import BaseModel, Input, Message
 from src.results.base_connector import BaseConnector
 
 
@@ -84,6 +84,13 @@ class ProxyModel(BaseModel):
         results = self.base_model.generate(inputs, **kwargs)
 
         self.data_handler.log_prompt_answer(inputs, additional_info={"answers": results})
+
+        return results
+
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        results = self.base_model.generate_system(messages, **kwargs)
+
+        self.data_handler.log_prompt_answer(messages, additional_info={"answers": results})
 
         return results
 

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import math
+import sys
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, Union
 
 import torch
 import torch.nn.functional as F
@@ -15,6 +19,17 @@ from src.prompts.prompt_chat_formatter import DummyChatFormatter
 # Heavily inspired by LLM Harness from Eleuther AI - https://github.com/EleutherAI/lm-evaluation-harness
 
 TokenSequence = Union[List[int], torch.LongTensor, torch.Tensor, transformers.BatchEncoding]
+
+
+@dataclass
+class ContexContinuations:
+    context: str
+    continuations: list[str]
+
+
+class Message(TypedDict):
+    role: Literal["user", "assistant", "system"]
+    content: str
 
 
 class BaseModel(ABC):
@@ -46,6 +61,19 @@ class BaseModel(ABC):
 
         Args:
             inputs (Union[str, List[str]]): List of inputs
+            **kwargs: Keyword arguments to pass to the model during generation
+
+        Returns:
+            List[str]: List of generated continuations
+        """
+        pass
+
+    @abstractmethod
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        """Generates continuations for a list of messages.
+
+        Args:
+            messages (List[List[Message]]): List of input messages
             **kwargs: Keyword arguments to pass to the model during generation
 
         Returns:
@@ -216,7 +244,7 @@ class EleutherBaseModel(BaseModel):
         disable_tqdm: bool = False,
         override_bs: Optional[int] = None,
     ) -> List[Tuple[float, bool]]:
-        """Computes the log-likelihood of a list of (context, continuation) pairs. The log-likelihhod is returned as sum of the log-probabilities of the continuation tokens.
+        """Computes the log-likelihood of a list of (context, continuation) pairs. The log-likelihood is returned as sum of the log-probabilities of the continuation tokens.
 
         Args:
             inputs (List[Tuple[str, List[int], List[int]]]): List of (context, continuation), contect_Enc, continutaiton_enc pairs
@@ -235,7 +263,9 @@ class EleutherBaseModel(BaseModel):
             n=(
                 self.batch_size
                 if self.batch_size != "auto"
-                else override_bs if override_bs is not None else 0
+                else override_bs
+                if override_bs is not None
+                else 0
             ),
             fn=None,
         ):
@@ -417,7 +447,7 @@ class EleutherBaseModel(BaseModel):
 
         res = []
 
-        for inp in tqdm(inputs):
+        for inp in tqdm(inputs, ncols=120, file=sys.stdout):
             context = inp.input
             until = inp.until
             model_args = inp.model_args
@@ -445,6 +475,9 @@ class EleutherBaseModel(BaseModel):
 
         return res
 
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        raise NotImplementedError()
+
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
         """Generates continuations for a list of inputs.
 
@@ -455,13 +488,12 @@ class EleutherBaseModel(BaseModel):
         Returns:
             List[str]: List of generated continuations
         """
-
         if isinstance(inputs, str):
             inputs = [inputs]
 
         input_list: List[Input] = []
 
-        for inp in tqdm(inputs):
+        for inp in inputs:
             model_args = kwargs.copy()
 
             if "until" in kwargs:

@@ -17,7 +17,7 @@ from typing import List, Tuple, Union
 import replicate
 
 from src.configs.base_model_config import ModelConfig
-from src.models.base.base_model import BaseModel
+from src.models.base.base_model import BaseModel, Message
 
 
 class ReplicateModel(BaseModel):
@@ -61,6 +61,9 @@ class ReplicateModel(BaseModel):
 
         """
         raise NotImplementedError("This API doesn't seem to return logits or scores")
+
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        raise NotImplementedError("System messages are not yet implemented for ReplicateModel.")
 
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
         """Generates continuations for a list of inputs.
