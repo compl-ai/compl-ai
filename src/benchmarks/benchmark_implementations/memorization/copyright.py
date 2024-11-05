@@ -14,18 +14,22 @@
 
 import itertools
 import logging
+import math
 import random
+import sys
 from pathlib import Path
 from typing import Iterator, Tuple
 
 import evaluate
 import Levenshtein
-from datasets import load_dataset, load_from_disk
+from datasets import load_dataset
+from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.utils.batch_utils import batched
 
 logging.basicConfig(
@@ -153,47 +157,48 @@ class BooksSequencesHF(BaseData):
             cont = row["text"][rand_idx + 300 : rand_idx + 350]
             yield context, cont
 
-    def get_data(self) -> Iterator[Tuple[str, str]]:
-        sample_size = 1000
+    def dataset_size(self) -> int:
         if self.data_config.debug:
-            sample_size = 10
+            return self.data_config.subset_size
+        return 1000
 
+    def get_data(self) -> Iterator[Tuple[str, str]]:
         # Makes sure to prefetch the samples
-        samples = list(itertools.islice(self.context_cont_gen(self.iterable_dataset), sample_size))
+        samples = list(
+            itertools.islice(self.context_cont_gen(self.iterable_dataset), self.dataset_size())
+        )
         return iter(samples)
 
 
-class PileSequences(BaseData):
-    def __init__(self, data_config, *args, **kwargs):
-        self.data_config = data_config
-        self.subset_size = data_config.subset_size
-
-    def get_data(self) -> Iterator[Tuple[str, str]]:
-        class CustomIterator:
-            def __init__(self, iterable_dataset):
-                self.iterable_datsets = [()]
-                self.iterable_dataset = iterable_dataset
-                # self.hf_dataset = hf_dataset
-                # self.iterable_datset = iter(self.hf_dataset.to_iterable_dataset())
-
-            def __iter__(self):
-                return self
-
-            def __next__(self) -> Tuple[str, str]:
-                next_row = next(self.iterable_dataset)
-                text_len = next_row["len_bucket"] * 50 + 100
-                return (
-                    next_row["text"][: text_len - 50],
-                    next_row["text"][text_len - 50 : text_len],
-                )
-
-        dataset = load_from_disk("benchmark_data/copyright_data")
-
-        if self.data_config.debug:
-            return itertools.islice(CustomIterator(dataset), self.subset_size)
-
-        else:
-            return CustomIterator(dataset)
+# class PileSequences(BaseData):
+#     def __init__(self, data_config, *args, **kwargs):
+#         self.data_config = data_config
+#         self.subset_size = data_config.subset_size
+#
+#     def get_data(self) -> Iterator[Tuple[str, str]]:
+#         class CustomIterator:
+#             def __init__(self, iterable_dataset):
+#                 self.iterable_datsets = [()]
+#                 self.iterable_dataset = iterable_dataset
+#                 # self.hf_dataset = hf_dataset
+#                 # self.iterable_datset = iter(self.hf_dataset.to_iterable_dataset())
+#
+#             def __iter__(self):
+#                 return self
+#
+#             def __next__(self) -> Tuple[str, str]:
+#                 next_row = next(self.iterable_dataset)
+#                 text_len = next_row["len_bucket"] * 50 + 100
+#                 return (
+#                     next_row["text"][: text_len - 50],
+#                     next_row["text"][text_len - 50 : text_len],
+#                 )
+#
+#         dataset = load_from_disk("benchmark_data/copyright_data")
+#         if self.data_config.debug:
+#             return itertools.islice(CustomIterator(dataset), self.subset_size)
+#         else:
+#             return CustomIterator(dataset)
 
 
 class Memorization(BaseBenchmark):
@@ -202,9 +207,7 @@ class Memorization(BaseBenchmark):
         self.ctx = ctx
 
         data_provider = self.ctx.get_dataset()
-        assert isinstance(data_provider, PileSequences) or isinstance(
-            data_provider, BooksSequencesHF
-        )
+        assert isinstance(data_provider, BooksSequencesHF)
         self.data_provider = data_provider
 
     def setup(self):
@@ -216,11 +219,22 @@ class Memorization(BaseBenchmark):
 
         dataset = self.data_provider.get_data()
 
+        print("Memorization:")
+        print("└── books_sequences: ", self.data_provider.dataset_size())
+
         total = 0
         correct = 0
         correct_indices = []
+        PromptStatistics.reset()
 
-        for idx, batch in enumerate(batched(dataset, batch_size)):
+        for idx, batch in enumerate(
+            tqdm(
+                batched(dataset, batch_size),
+                total=math.ceil(self.data_provider.dataset_size() / batch_size),
+                ncols=120,
+                file=sys.stdout,
+            )
+        ):
             in_batch, out_batch = zip(*batch)
             if hasattr(model, "tokenizer") and model.tokenizer:
                 answers = model.generate(
@@ -264,5 +278,6 @@ class Memorization(BaseBenchmark):
 
                 total += 1
         logging.info(f"Memorization accuracy: {correct/total}")
+        PromptStatistics.dump("memorization")
 
         return {"memorization_percentage": correct / total, "correct_indices": correct_indices}

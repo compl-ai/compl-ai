@@ -26,6 +26,7 @@ from src.configs.base_data_config import DataConfig
 from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 
 nltk.download("punkt")
 
@@ -87,7 +88,13 @@ class ToxicityAdvBenchBenchmark(BaseBenchmark):
 
     def run(self, model: BaseModel) -> Dict[str, Any]:
         datasets = self.dataset.get_data()
+        print("ToxicityAdvBench:")
+        print("└── advbench_behaviors: ", len(datasets["advbench_behaviors"]["prompt"]))
+
+        PromptStatistics.reset()
         adv_bench = self.evaluate_toxicity(model, datasets["advbench_behaviors"])
+        PromptStatistics.dump("ToxicityAdvBench")
+
         return {"advbench_behaviors": adv_bench}
 
     def evaluate_toxicity(self, model: BaseModel, dataset: Dataset) -> Dict[str, Any]:

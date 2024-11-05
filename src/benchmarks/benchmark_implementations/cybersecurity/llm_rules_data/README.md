@@ -1,0 +1,1 @@
+Source: https://github.com/normster/llm_rules/tree/53ace2ce888e37b73685c985fe982bc4a5b3d5d8/data/manual

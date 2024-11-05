@@ -13,17 +13,20 @@
 #    limitations under the License.
 
 import itertools
+import sys
 from typing import Any, Dict
 
 import datasets
 from datasets import Dataset, DatasetDict
 from numpy import argmax
+from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.configs.base_benchmark_config import BenchmarkConfig
 from src.contexts.base_contexts import BaseDataContext
 from src.data.hf_data import HFData, HFDataConfig, WithKShot
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.utils.batch_utils import batched
 from src.utils.general import create_loglikelihood_fn
 
@@ -134,6 +137,8 @@ class MMLUFacade:
         return prompt
 
     def context_continuation_generator(self, dataset):
+        system_prompt = f"You are a helpful assistant. For each snippet of text, complete the answer by selecting from the options {','.join(self.choice_symbols)}. The answer should consist of a single letter option {','.join(self.choice_symbols)} and no additional text.\n\n"
+
         prev_subject = None
         for row in dataset:
             subject = row["category"]
@@ -145,7 +150,7 @@ class MMLUFacade:
                 k_shot_examples = self.get_few_shot_context(subject)
                 prev_subject = subject
             question = self.format_example(row)
-            prompt = description + k_shot_examples + question
+            prompt = system_prompt + description + k_shot_examples + question
             yield [(prompt, " " + symbol) for symbol in self.choice_symbols]
 
 
@@ -231,7 +236,22 @@ class MMLU(BaseBenchmark):
         context_cont_pairs_iter, ctx_cont_pairs_copy = itertools.tee(iter(context_cont_pairs))
 
         batched_pairs = batched(context_cont_pairs_iter, batch_size)
-        answers = (loglikelihood_fn(batched_pair) for batched_pair in batched_pairs)
+
+        count_pairs, batched_pairs = itertools.tee(batched_pairs)
+
+        PromptStatistics.reset()
+        print("MMLU:")
+
+        num_batches = 0
+        for _ in count_pairs:
+            num_batches += 1
+
+        print(f"└── {self.ctx.get_benchmark_config().name}: ", num_batches * batch_size)
+
+        answers = (
+            loglikelihood_fn(batched_pair)
+            for batched_pair in tqdm(batched_pairs, ncols=120, file=sys.stdout, total=num_batches)
+        )
         results = itertools.chain.from_iterable(answers)
 
         problem_results = self.next_n_samples_generator_normalized(
@@ -249,5 +269,7 @@ class MMLU(BaseBenchmark):
         self.data_handler.log_prompt_all_indices(
             idx_correct_answers, additional_info={"TAG": "CORRECT"}
         )
+
+        PromptStatistics.dump("MMLU")
 
         return {"predictions": correct_indices, "references": materialized_references}

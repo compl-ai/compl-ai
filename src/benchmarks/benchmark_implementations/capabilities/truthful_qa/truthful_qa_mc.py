@@ -21,7 +21,8 @@ from pydantic import Field
 from src.benchmarks.base_benchmark import BaseBenchmark
 from src.contexts.base_contexts import BaseBenchmarkContext
 from src.data.hf_data import HFData, HFDataConfig, WithKShot
-from src.models.base.base_model import BaseModel
+from src.models.base.base_model import BaseModel, EleutherBaseModel
+from src.models.proxy_model import ProxyModel
 from src.utils.batch_utils import batched
 from src.utils.general import create_loglikelihood_fn
 
@@ -143,6 +144,16 @@ class TruthfulQAMC2(BaseBenchmark):
         )
         self.dataset = with_k_shot_dataset.normal
 
+        print('TruthfulQA:')
+        print('└── multiple_choice: ', 817)
+
+        if not (
+            isinstance(model, EleutherBaseModel)
+            or (isinstance(model, ProxyModel) and isinstance(model.base_model, EleutherBaseModel))
+        ):
+            raise ValueError("Benchmark requires computing logits for free-text continuation.")
+
+
         # store references before further processing
         copy_data, data = itertools.tee(self.dataset)
         references = self.get_references(copy_data)
@@ -157,10 +168,11 @@ class TruthfulQAMC2(BaseBenchmark):
 
         # batched_data = self.take_next_n_generator(pairs, sizes) # batched(self.context_cont_pairs_generator(data), 4)
         batched_data = batched(pairs, batch_size)
+
         model_results = map(loglikelihood_fn, batched_data)
         all_results = itertools.chain.from_iterable(model_results)
 
-        # batch size of problem size, e.g each problem consist of 4 possible answers / results
+        # batch size of problem size, e.g., each problem consist of 4 possible answers / results
         grouped_results = self.take_next_n_generator(all_results, sizes)
 
         return self.output(grouped_results, references)

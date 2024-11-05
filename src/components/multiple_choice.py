@@ -128,9 +128,12 @@ class MultipleChoiceFacade:
             additional = {}
             if "category" in inst:
                 additional["category"] = inst["category"]
+
+            system_prompt = f"You are a helpful assistant. For each snippet of text, complete the answer by selecting from the options {','.join(self.get_choice_symbols(inst))}. The answer should consist of a single letter option {','.join(self.get_choice_symbols(inst))} and no additional text.\n\n"
+
             labels = inst["labels"] if "labels" in inst else None
             multiple_choice = MultipleChoice(
-                inst["prefix"] if "prefix" in inst else prefix,
+                inst["prefix"] if "prefix" in inst else prefix or system_prompt,
                 inst["input"],
                 inst["choices"],
                 self.get_choice_symbols(inst),

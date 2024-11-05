@@ -12,7 +12,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import logging
 import re
+import sys
 from typing import Dict, List, Optional, Tuple, cast
 
 import nltk
@@ -20,6 +22,7 @@ import numpy as np
 from datasets import Dataset
 from nltk import sent_tokenize
 from openai import OpenAI
+from tqdm import tqdm
 
 from secret import OPENAI_API_KEY, OPENAI_ORG
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
@@ -36,6 +39,12 @@ from src.utils.compact_ie import (
     extract_triples_compact_ie_mock,
 )
 from src.utils.general import can_connect, get_txt_data  # noqa: F401
+
+logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
+logging.getLogger("httpcore.http11").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("openai._base_client").setLevel(logging.WARNING)
+
 
 # extract_triples_compact_ie needs CompactIE, which can be installed and run as per https://github.com/eth-sri/ChatProtect/tree/main README
 
@@ -124,7 +133,8 @@ class SelfCheckConsistency(BaseBenchmark):
         self.model = model
         results = []
         dataset = self.dataset.get_data()
-        for data in dataset:
+
+        for data in tqdm(dataset, ncols=120, file=sys.stdout):
             self.chatgpt.clear()
             description = model.generate(data["input"], max_length=100)[0]  # type: ignore
             topic = data["topic"]  # type: ignore

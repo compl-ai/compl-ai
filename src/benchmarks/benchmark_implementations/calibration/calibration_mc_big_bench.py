@@ -23,9 +23,11 @@ from pydantic import Field
 from src.benchmarks.base_benchmark import BaseBenchmark
 from src.benchmarks.multiple_choice_benchmark import MultipleChoiceConfig
 from src.components.multiple_choice import MultipleChoiceFacade
+from src.configs.base_model_config import ModelProvider
 from src.contexts.base_contexts import BaseBenchmarkContext
 from src.data.hf_data import HFData, WithKShot
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.utils.batch_utils import batched
 from src.utils.general import create_loglikelihood_fn, one_hot_to_indices
 
@@ -132,6 +134,8 @@ class TrueFalseCalibration(BaseBenchmark):
         Raises:
             AssertionError: If the dataset is not compatible with this benchmark.
         """
+        if model.config.provider in [ModelProvider.OPENAI, ModelProvider.VERTEXAI]:
+            self.config.evaluate_openai = True
 
         batch_size = self.ctx.get_model_config().batch_size
 
@@ -143,6 +147,10 @@ class TrueFalseCalibration(BaseBenchmark):
 
         self.k_shot_dataset = with_k_shot_dataset.k_shot
         self.dataset = with_k_shot_dataset.normal
+
+        print("CalibrationBigBench:")
+        print("└── emoji_movie: ", 79)
+        PromptStatistics.reset()
 
         multiple_choice_facade = MultipleChoiceFacade(
             self.k_shot_dataset,
@@ -183,5 +191,7 @@ class TrueFalseCalibration(BaseBenchmark):
                     choice_probs[i] = 1.0 - 1e-6
 
         materialized_references = list(references)
+
+        PromptStatistics.dump("CalibrationBigBench")
 
         return {"predictions": probabilities, "references": materialized_references}

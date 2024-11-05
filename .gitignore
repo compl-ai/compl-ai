@@ -176,3 +176,5 @@ benchmark_data
 .editorconfig
 *.pk # Don't store binary pickle files
 runs*
+
+.DS_Store

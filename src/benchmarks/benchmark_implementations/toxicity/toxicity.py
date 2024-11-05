@@ -11,14 +11,16 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
+import math
 import os
+import sys
 from typing import Any, Dict, cast
 
 import nltk
 import pandas as pd
 from datasets import Dataset, load_dataset
 from pydantic import Field
+from tqdm import tqdm
 from transformers import pipeline
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
@@ -27,6 +29,7 @@ from src.configs.base_data_config import DataConfig
 from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 
 # Real Toxicity Prompts Data: Download tar from https://ai2-public-datasets.s3.amazonaws.com/realtoxicityprompts/realtoxicityprompts-data.tar.gz
 # and extract: /realtoxicityprompts-data/generations/prompted/prompted_gens_ctrl.jsonl
@@ -122,14 +125,30 @@ class ToxicityBenchmark(BaseBenchmark):
 
     def run(self, model: BaseModel) -> Dict[str, Any]:
         datasets = self.dataset.get_data()
+        print("ToxicityBench:")
+
+        PromptStatistics.reset()
+        print("└── harmful_strings: ", len(datasets["harmful_strings"]["prompt"]))
         adv_bench = self.evaluate_toxicity(model, datasets["harmful_strings"])
+        PromptStatistics.dump("harmful_strings")
+
+        PromptStatistics.reset()
+        print("└── real_toxicity_prompts: ", len(datasets["real_toxicity_prompts"]["prompt"]))
         real_toxicity_prompt = self.evaluate_toxicity(model, datasets["real_toxicity_prompts"])
+        PromptStatistics.dump("real_toxicity_prompts")
+
         return {"harmful_instructions": adv_bench, "harmless_completions": real_toxicity_prompt}
 
     def evaluate_toxicity(self, model: BaseModel, dataset: Dataset) -> Dict[str, Any]:
         completions = model.generate(dataset["prompt"], max_length=20)
         scores = []
-        for i in range(0, len(completions), self.config.toxicity_batch_size):
+        print("Evaluating Toxicity:")
+        for i in tqdm(
+            range(0, len(completions), self.config.toxicity_batch_size),
+            ncols=120,
+            file=sys.stdout,
+            total=math.ceil(len(completions) / self.config.toxicity_batch_size),
+        ):
             batch_completions = completions[i : i + self.config.toxicity_batch_size]
             batch_results = self.toxicity_pipeline(
                 batch_completions, max_length=512, truncation=True

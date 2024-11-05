@@ -15,6 +15,7 @@
 import os
 import re
 import shutil
+import sys
 import uuid
 from pathlib import Path
 from typing import Dict, Union
@@ -28,6 +29,7 @@ from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 
 EXPERIMENTS_DIR = Path("./external/safecoder_master/experiments/human_eval", parents=True)
 DATA_DIR = Path("./external/safecoder_master/data_eval/human_eval")
@@ -96,7 +98,7 @@ def run_generation(model: BaseModel, output_dir: Path, with_generated_dir: Path)
         )
     )
 
-    for problem_yaml_path in tqdm(problems):
+    for problem_yaml_path in tqdm(problems, ncols=120, file=sys.stdout):
         file_name = problem_yaml_path.name
 
         with open(problem_yaml_path, "r") as f:
@@ -136,6 +138,7 @@ def run_generation(model: BaseModel, output_dir: Path, with_generated_dir: Path)
                     top_p=TOP_P,
                     use_cache=True,
                 )
+
             for sample in samples:
                 # completion = sanitize(sample)
                 # if completion == -1:
@@ -199,7 +202,7 @@ def run_exec(output_dir: Path, results_dir: Path):
 
     files = [p for p in output_dir.glob("*.yaml") if not p.name.endswith(".results.yaml")]
 
-    for file in tqdm(files):
+    for file in tqdm(files, ncols=120, file=sys.stdout):
         evaluate_problem(file, results_dir, EXEC_MAX_WORKERS)
 
 
@@ -229,6 +232,9 @@ class HumanEval(BaseBenchmark):
         Returns:
             Dict[str, float]: A dictionary containing the evaluation results.
         """
+        print("HumanEval:")
+        print("└── human_eval: ", len(list(DATA_DIR.iterdir())))
+        PromptStatistics.reset()
 
         # SETUP
         output_name = str(uuid.uuid4())
@@ -257,6 +263,8 @@ class HumanEval(BaseBenchmark):
 
         # CLEANUP
         shutil.rmtree(output_dir)
+
+        PromptStatistics.dump("Human Eval")
 
         # print(final_accuracy)
         return data

@@ -13,16 +13,20 @@
 #    limitations under the License.
 
 import itertools
+import math
 import operator
+import sys
 from typing import Any, Dict
 
 from numpy import argmax
+from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.components.multiple_choice import MultipleChoiceFacade
 from src.configs.base_benchmark_config import BenchmarkConfig
 from src.data.hf_data import HFData, WithKShot
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.utils.batch_utils import batched
 from src.utils.general import create_loglikelihood_fn
 
@@ -86,7 +90,15 @@ class MultipleChoice(BaseBenchmark):
 
         multiple_choice_facade = MultipleChoiceFacade(self.k_shot_dataset)
 
+        PromptStatistics.reset()
+
         print("Before storing references")
+
+        total = None
+        try:
+            total = math.ceil(len(self.dataset) / batch_size) * len(self.dataset[0]["choices"])
+        except:  # noqa: E722
+            pass
 
         # store references before further processing
         copy_data, data = itertools.tee(self.dataset)
@@ -107,7 +119,10 @@ class MultipleChoice(BaseBenchmark):
         context_cont_pairs_iter, ctx_cont_pairs_copy = itertools.tee(iter(context_cont_pairs))
 
         batched_pairs = batched(context_cont_pairs_iter, batch_size)
-        answers = (loglikelihood_fn(batched_pair) for batched_pair in batched_pairs)
+        answers = (
+            loglikelihood_fn(batched_pair)
+            for batched_pair in tqdm(batched_pairs, ncols=120, file=sys.stdout, total=total)
+        )
         results = itertools.chain.from_iterable(answers)
 
         problem_results = self.next_n_samples_generator_normalized(
@@ -123,5 +138,7 @@ class MultipleChoice(BaseBenchmark):
         self.data_handler.log_prompt_all_indices(
             idx_correct_answers, additional_info={"TAG": "CORRECT"}
         )
+
+        PromptStatistics.dump(self.ctx.get_benchmark_config().name)
 
         return {"predictions": correct_indices, "references": manifested_references}

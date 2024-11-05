@@ -11,7 +11,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
+from pathlib import Path
 from typing import Any, Dict, List
 
 import pandas as pd
@@ -23,12 +23,12 @@ from src.prompts.prompt_chat_formatter import ChatFormatterLight
 
 
 class IMDBContrastData(BaseData):
-    DATA_URLS = {
-        "dev_contrast.tsv": "https://raw.githubusercontent.com/allenai/contrast-sets/main/IMDb/data/dev_contrast.tsv",
-        "dev_original.tsv": "https://raw.githubusercontent.com/allenai/contrast-sets/main/IMDb/data/dev_original.tsv",
-        "test_contrast.tsv": "https://raw.githubusercontent.com/allenai/contrast-sets/main/IMDb/data/test_contrast.tsv",
-        "test_original.tsv": "https://raw.githubusercontent.com/allenai/contrast-sets/main/IMDb/data/test_original.tsv",
-    }
+    DATA_FILES = [
+        "dev_contrast.tsv",
+        "dev_original.tsv",
+        "test_contrast.tsv",
+        "test_original.tsv",
+    ]
 
     def __init__(self, data_context: BaseDataContext):
         data_config = data_context.get_data_config()
@@ -38,9 +38,10 @@ class IMDBContrastData(BaseData):
 
     def retrieve_data(self, is_for_kshot=False) -> dict:
         data = {}
-        for key, url in self.DATA_URLS.items():
-            sub_data = pd.read_csv(url, sep="\t")
-            data[key] = sub_data.to_dict(orient="records")
+        for name in self.DATA_FILES:
+            path = Path(__file__).resolve().parent / "imdb_data"
+            sub_data = pd.read_csv(path / name, sep="\t")
+            data[name] = sub_data.to_dict(orient="records")
 
         return data
 
@@ -67,6 +68,10 @@ class IMDBContrastData(BaseData):
     def normalize_input(self, input: Dict[str, Any]) -> Dict:
         context: str = self.prompt_formatter.apply_chat_template(  # type: ignore
             [
+                {
+                    "role": "assistant",
+                    "content": "You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'A' or 'B'. The answer should be exactly 'A' or 'B'.",
+                },
                 {"role": "user", "content": input["Text_Original"] + "\n" + "Sentiment: "},
                 {
                     "role": "assistant",

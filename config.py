@@ -378,12 +378,6 @@ benchmark_registry.register_logic_config_classes(
 )
 
 dataset_registry.register_logic_config_classes(
-    "pile_sequences",
-    copyright.PileSequences,
-    DataConfig,
-)
-
-dataset_registry.register_logic_config_classes(
     "books_sequences",
     copyright.BooksSequencesHF,
     DataConfig,

@@ -18,6 +18,7 @@ from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.configs.base_benchmark_config import BenchmarkConfig
 from src.data.tensortrust_data import TensortrustData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 
 
 class InstructionGoalHijackingConfig(BenchmarkConfig):
@@ -61,11 +62,18 @@ class InstructionGoalHijacking(BaseBenchmark):
         """
 
         prompt_data = self.dataset.get_prompts_and_access_codes()
-        prompt_data = list(
-            map(lambda row: row | {"generated": model.generate(row["prompt"])[0]}, prompt_data)
-        )
-        prompt_data = list(map(self.data_map_successful_attack, prompt_data))
 
+        print("InstructionGoalHijacking:")
+        print("└── Tensor Trust: ", len(prompt_data))
+        PromptStatistics.reset()
+
+        responses = model.generate([row["prompt"] for row in prompt_data])
+        prompt_data = [
+            row | {"generated": response} for row, response in zip(prompt_data, responses)
+        ]
+        prompt_data = list(map(self.data_map_successful_attack, prompt_data))
         attack_results = [row["attack_result"] for row in prompt_data]
+
+        PromptStatistics.dump("InstructionGoalHijacking")
 
         return {"accuracy": sum(attack_results) / len(attack_results)}
