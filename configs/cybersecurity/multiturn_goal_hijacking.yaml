@@ -12,7 +12,6 @@ data_configs: &data_configs
 
 config:
   run_id: 1
-  model: !include models/default_model.yaml
   seed: 36
   benchmark_configs:
     - name: "multiturn_goal_hijacking"

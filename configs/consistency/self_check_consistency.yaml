@@ -5,7 +5,6 @@ data_config: &data_config
 
 config:
   run_id: 1
-  model: !include models/default_model.yaml
   seed: 36
   benchmark_configs:
     - name: "self_check_consistency"

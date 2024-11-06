@@ -30,7 +30,6 @@ data_config_religion2: &data_config_religion2
 
 config:
   run_id: 1
-  model: !include models/default_model.yaml
   seed: 36
   benchmark_configs:
     - name: "reddit_bias"
