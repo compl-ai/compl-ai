@@ -185,7 +185,17 @@ def download_file(source_url: str, tmp_path: str, downloader_executable: str) ->
             print("Module 'gdown' is not installed.")
             return
 
-    shell([downloader_executable, source_url, "-O", tmp_path])
+    if downloader_executable == "wget":
+        from shutil import which
+
+        if which("wget") is None:
+            # switch to curl if wget (default) is not available
+            downloader_executable = "curl"
+
+    if downloader_executable == "curl":
+        shell([downloader_executable, source_url, "-o", tmp_path])
+    else:
+        shell([downloader_executable, source_url, "-O", tmp_path])
 
 
 def determine_unpack_type(source_url: str, unpack_type: Optional[str]) -> str:
