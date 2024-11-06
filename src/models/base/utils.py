@@ -153,31 +153,46 @@ def select_continuation_from_batch_left_padding(
     return generations[:, max_context_size:]
 
 
+# Price per 1M tokens
 PRICING_INPUT = {
+    # TogetherAI
+    # https://www.together.ai/pricing
     "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": 0.18,
     "meta-llama/Llama-3.2-3B-Instruct-Turbo": 0.06,
     "meta-llama/Meta-Llama-3-8B-Instruct-Lite": 0.10,
+    # OpenAI
+    # https://openai.com/api/pricing/
     "gpt-4o-mini": 0.15,
     "gpt-4o-mini-2024-07-18": 0.15,
     "gpt-4o-2024-08-06": 2.5,
     "gpt-4o-2024-05-13": 5.0,
     "gpt-4-1106-preview": 10.0,
-    # VertexAI
+    # GoogleAI
+    # https://ai.google.dev/pricing
     "gemini-1.5-flash": 0.075,
     "gemini-1.5-flash-8b": 0.0375,
     "gemini-1.5-pro": 1.25,
     "gemini-1.0-pro": 0.50,
+    # VertexAI
+    # https://cloud.google.com/vertex-ai/generative-ai/pricing
+    # TODO: VertexAI charges per input character, not tokens
 }
+
 PRICING_COMPLETION = {
+    # TogetherAI
+    # https://www.together.ai/pricing
     "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": 0.18,
     "meta-llama/Llama-3.2-3B-Instruct-Turbo": 0.06,
     "meta-llama/Meta-Llama-3-8B-Instruct-Lite": 0.10,
+    # OpenAI
+    # https://openai.com/api/pricing/
     "gpt-4o-mini": 0.6,
     "gpt-4o-mini-2024-07-18": 0.6,
     "gpt-4o-2024-08-06": 10.0,
     "gpt-4o-2024-05-13": 15.0,
     "gpt-4-1106-preview": 30.0,
-    # VertexAI
+    # GoogleAI
+    # https://ai.google.dev/pricing
     "gemini-1.5-flash": 0.30,
     "gemini-1.5-flash-8b": 0.15,
     "gemini-1.5-pro": 5.00,

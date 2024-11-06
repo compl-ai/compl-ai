@@ -22,7 +22,7 @@ TokenSequence = Union[List[int], torch.LongTensor, torch.Tensor, transformers.Ba
 
 
 @dataclass
-class ContexContinuations:
+class ContextContinuations:
     context: str
     continuations: list[str]
 

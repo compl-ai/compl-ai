@@ -24,7 +24,7 @@ from tqdm import tqdm
 
 from secret import OPENAI_API_KEY, OPENAI_ORG
 from src.configs.base_model_config import ModelConfig
-from src.models.base.base_model import BaseModel, ContexContinuations, Message
+from src.models.base.base_model import BaseModel, ContextContinuations, Message
 from src.models.dtypes.dtypes_openai import ChatCompletion
 
 from .utils import PromptStatistics, RateLimit, chunks
@@ -70,7 +70,7 @@ class OpenAIModel(BaseModel):
         """
         # If contexts are the same we don't need to recompute each time
         grouped_inputs = [
-            ContexContinuations(k, [el[1] for el in g])
+            ContextContinuations(k, [el[1] for el in g])
             for k, g in itertools.groupby(inputs, key=lambda x: x[0])
         ]
 
@@ -200,7 +200,7 @@ class OpenAIModel(BaseModel):
         raise Exception("Error in OpenAI API.")
 
     async def _get_logprobs(
-        self, session: ClientSession, pair: ContexContinuations
+        self, session: ClientSession, pair: ContextContinuations
     ) -> List[Tuple[float, bool]]:
         """Extracts log-probabilities from a given context and its continuations.
 
