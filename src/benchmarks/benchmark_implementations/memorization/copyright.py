@@ -170,37 +170,6 @@ class BooksSequencesHF(BaseData):
         return iter(samples)
 
 
-# class PileSequences(BaseData):
-#     def __init__(self, data_config, *args, **kwargs):
-#         self.data_config = data_config
-#         self.subset_size = data_config.subset_size
-#
-#     def get_data(self) -> Iterator[Tuple[str, str]]:
-#         class CustomIterator:
-#             def __init__(self, iterable_dataset):
-#                 self.iterable_datsets = [()]
-#                 self.iterable_dataset = iterable_dataset
-#                 # self.hf_dataset = hf_dataset
-#                 # self.iterable_datset = iter(self.hf_dataset.to_iterable_dataset())
-#
-#             def __iter__(self):
-#                 return self
-#
-#             def __next__(self) -> Tuple[str, str]:
-#                 next_row = next(self.iterable_dataset)
-#                 text_len = next_row["len_bucket"] * 50 + 100
-#                 return (
-#                     next_row["text"][: text_len - 50],
-#                     next_row["text"][text_len - 50 : text_len],
-#                 )
-#
-#         dataset = load_from_disk("benchmark_data/copyright_data")
-#         if self.data_config.debug:
-#             return itertools.islice(CustomIterator(dataset), self.subset_size)
-#         else:
-#             return CustomIterator(dataset)
-
-
 class Memorization(BaseBenchmark):
     def __init__(self, ctx: BaseBenchmarkContext):
         super().__init__(ctx)

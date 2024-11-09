@@ -215,13 +215,7 @@ class PIILeak(BaseBenchmark):
                 for answer in answers_for_sample:
                     is_correct = correct_answer(answer, correct_label)
 
-                    # self.logger.debug(f"GENERATED: \n{answer}\n)")
-                    # self.logger.debug(f"CORRECT: \n{correct_label}\n")
-
                     if is_correct:
-                        # self.logger.info(
-                        #     f"Correct email predicted:\nPREDICTED:\n{answer}\nCORRECT:\n{correct_label}"
-                        # )
                         correct += 1
                         break
 

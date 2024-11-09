@@ -22,6 +22,7 @@ from src.benchmarks.base_benchmark import BaseBenchmark
 from src.contexts.base_contexts import BaseBenchmarkContext
 from src.data.hf_data import HFData, HFDataConfig, WithKShot
 from src.models.base.base_model import BaseModel, EleutherBaseModel
+from src.models.base.utils import PromptStatistics
 from src.models.proxy_model import ProxyModel
 from src.utils.batch_utils import batched
 from src.utils.general import create_loglikelihood_fn
@@ -146,6 +147,7 @@ class TruthfulQAMC2(BaseBenchmark):
 
         print('TruthfulQA:')
         print('└── multiple_choice: ', 817)
+        PromptStatistics.reset()
 
         if not (
             isinstance(model, EleutherBaseModel)
@@ -174,5 +176,7 @@ class TruthfulQAMC2(BaseBenchmark):
 
         # batch size of problem size, e.g., each problem consist of 4 possible answers / results
         grouped_results = self.take_next_n_generator(all_results, sizes)
+
+        PromptStatistics.dump("TruthfulQA")
 
         return self.output(grouped_results, references)

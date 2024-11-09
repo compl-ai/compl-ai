@@ -65,9 +65,9 @@ class IKnowCalibrationData(HFData):
 # Use the following ece metric to accomplish the task
 # https://huggingface.co/spaces/jordyvl/ece/blame/main/README.md
 class IKnowCalibrationConfig(MultipleChoiceConfig):
-    # If evaluating an openai model, we don't need to normalize the loglikelihoods with the length,
+    # If evaluating an api model, we don't need to normalize the loglikelihoods with the length,
     # since there we check only the loglikelihoods of the first letter of the choices.
-    evaluate_openai: bool = Field(
+    evaluate_api: bool = Field(
         default=False, description="Whether we are evaluating an openai model."
     )
 
@@ -141,7 +141,7 @@ class IKnowCalibration(BaseBenchmark):
 
         context_continuation_list = []
         for ctx in context:
-            if self.config.evaluate_openai:
+            if self.config.evaluate_api:
                 new_context = (
                     ctx
                     + f"\n{self.question}\n\nChoices:\n\n - A, No\n - B, Yes\n\nAnswer with a single letter A or B\nAnswer:\n"
@@ -166,8 +166,14 @@ class IKnowCalibration(BaseBenchmark):
                 - "predictions": A list of probabilities representing the model's predictions.
                 - "references": A list of correct answers for the given questions.
         """
-        if model.config.provider in [ModelProvider.OPENAI, ModelProvider.VERTEXAI]:
-            self.config.evaluate_openai = True
+        if model.config.provider in [
+            ModelProvider.OPENAI,
+            ModelProvider.VERTEXAI,
+            ModelProvider.GOOGLEAI,
+            ModelProvider.TOGETHERAI,
+            ModelProvider.ANTHROPIC,
+        ]:
+            self.config.evaluate_api = True
 
         batch_size = self.ctx.get_model_config().batch_size
 
@@ -202,7 +208,7 @@ class IKnowCalibration(BaseBenchmark):
         new_input = (
             q_with_a["input"] + " " + q_with_a["prediction"] for q_with_a in q_with_answers_copy
         )
-        if not self.config.evaluate_openai:
+        if not self.config.evaluate_api:
             weights = [len("No"), len("Yes")]
         else:
             weights = [1, 1]
