@@ -18,7 +18,7 @@ import requests
 from tqdm import tqdm
 
 from src.configs.base_model_config import ModelConfig
-from src.models.base.base_model import BaseModel
+from src.models.base.base_model import BaseModel, Message
 
 from .utils import chunks
 
@@ -64,6 +64,9 @@ class CustomAPIModel(BaseModel):
 
         """
         raise NotImplementedError("Log likelihood not implemented for CustomAPIModel")
+
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        raise NotImplementedError("Generate with system queries not implemented for CustomAPIModel")
 
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
         """Generates continuations for a list of inputs.

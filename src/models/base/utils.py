@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 import gc
+import time
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import torch
@@ -150,3 +151,118 @@ def select_continuation_from_batch_left_padding(
     if isinstance(generations, List):
         return [gen[max_context_size:] for gen in generations]
     return generations[:, max_context_size:]
+
+
+# Price per 1M tokens
+PRICING_INPUT = {
+    # TogetherAI
+    # https://www.together.ai/pricing
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": 0.18,
+    "meta-llama/Llama-3.2-3B-Instruct-Turbo": 0.06,
+    "meta-llama/Meta-Llama-3-8B-Instruct-Lite": 0.10,
+    # OpenAI
+    # https://openai.com/api/pricing/
+    "gpt-4o-mini": 0.15,
+    "gpt-4o-mini-2024-07-18": 0.15,
+    "gpt-4o-2024-08-06": 2.5,
+    "gpt-4o-2024-05-13": 5.0,
+    "gpt-4-1106-preview": 10.0,
+    # GoogleAI
+    # https://ai.google.dev/pricing
+    "gemini-1.5-flash": 0.075,
+    "gemini-1.5-flash-8b": 0.0375,
+    "gemini-1.5-pro": 1.25,
+    "gemini-1.0-pro": 0.50,
+    # VertexAI
+    # https://cloud.google.com/vertex-ai/generative-ai/pricing
+    # TODO: VertexAI charges per input character, not tokens
+}
+
+PRICING_COMPLETION = {
+    # TogetherAI
+    # https://www.together.ai/pricing
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": 0.18,
+    "meta-llama/Llama-3.2-3B-Instruct-Turbo": 0.06,
+    "meta-llama/Meta-Llama-3-8B-Instruct-Lite": 0.10,
+    # OpenAI
+    # https://openai.com/api/pricing/
+    "gpt-4o-mini": 0.6,
+    "gpt-4o-mini-2024-07-18": 0.6,
+    "gpt-4o-2024-08-06": 10.0,
+    "gpt-4o-2024-05-13": 15.0,
+    "gpt-4-1106-preview": 30.0,
+    # GoogleAI
+    # https://ai.google.dev/pricing
+    "gemini-1.5-flash": 0.30,
+    "gemini-1.5-flash-8b": 0.15,
+    "gemini-1.5-pro": 5.00,
+    "gemini-1.0-pro": 1.50,
+}
+
+
+class PromptStatistics:
+    prompts: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    model_name: str = ""
+
+    @staticmethod
+    def set_model(name: str) -> None:
+        PromptStatistics.model_name = name
+
+    @staticmethod
+    def dump(name: str | None) -> None:
+        if PromptStatistics.prompts == 0:
+            return
+
+        print(f"PromptStatistics: {name}")
+        print(f"└── Number of prompts: {PromptStatistics.prompts}")
+        print(
+            f"└── Number of tokens : {PromptStatistics.prompt_tokens + PromptStatistics.completion_tokens}"
+        )
+
+        print(f"    └── input tokens : {PromptStatistics.prompt_tokens}")
+        print(f"    └── output tokens: {PromptStatistics.completion_tokens}")
+        model_name = PromptStatistics.model_name
+        if model_name != "" and model_name in PRICING_INPUT:
+            price = PRICING_INPUT[model_name] * PromptStatistics.prompt_tokens
+            price += PRICING_COMPLETION[model_name] * PromptStatistics.completion_tokens
+            price /= 1_000_000
+            print(f"Cost: ${price:.5f}")
+
+    @staticmethod
+    def reset() -> None:
+        PromptStatistics.prompts = 0
+        PromptStatistics.prompt_tokens = 0
+        PromptStatistics.completion_tokens = 0
+
+    @staticmethod
+    def log_response(response: dict, response_type="open_ai") -> None:
+        PromptStatistics.prompts += 1
+        if response_type == "open_ai":
+            PromptStatistics.prompt_tokens += response["usage"]["prompt_tokens"]
+            PromptStatistics.completion_tokens += response["usage"].get("completion_tokens", 0)
+        elif response_type == "gemini":
+            PromptStatistics.prompt_tokens += response["usageMetadata"]["promptTokenCount"]
+            PromptStatistics.completion_tokens += response["usageMetadata"].get(
+                "candidatesTokenCount", 0
+            )
+
+
+class RateLimit:
+    def __init__(self, rpm: int | float) -> None:
+        """Slows down execution (if needed) to respect the rpm limits.
+
+        Args:
+            rpm (int | float): Allowed requests per minute
+        """
+        self.rate_limit_duration = 60 / rpm
+        self.start = time.time()
+
+    def __enter__(self) -> None:
+        self.start = time.time()
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        duration = time.time() - self.start
+        if duration < self.rate_limit_duration:
+            time.sleep(self.rate_limit_duration - duration + 0.1)

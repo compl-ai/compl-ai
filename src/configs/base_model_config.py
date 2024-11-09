@@ -28,6 +28,9 @@ class ModelProvider(Enum):
     ANTHROPIC = "anthropic"
     CUSTOMAPI = "customapi"
     DUMMY = "dummy"
+    VERTEXAI = "vertexai"
+    GOOGLEAI = "googleai"
+    TOGETHERAI = "togetherai"
 
 
 class DEVICE(Enum):

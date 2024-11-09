@@ -14,6 +14,7 @@
 
 import asyncio
 import itertools
+import math
 import time
 from typing import Any, List, Tuple, Union
 
@@ -23,9 +24,10 @@ from tqdm import tqdm
 
 from secret import OPENAI_API_KEY, OPENAI_ORG
 from src.configs.base_model_config import ModelConfig
-from src.models.base.base_model import BaseModel
+from src.models.base.base_model import BaseModel, ContextContinuations, Message
+from src.models.dtypes.dtypes_openai import ChatCompletion
 
-from .utils import chunks
+from .utils import PromptStatistics, RateLimit, chunks
 
 # Requests per minute
 RPM = 10000
@@ -36,6 +38,7 @@ class OpenAIModel(BaseModel):
         super().__init__(config)
 
         self.model = config.name
+        PromptStatistics.set_model(config.name)
         self.batch_size = config.batch_size
         self.has_started = False
         self._init_generation_args(config)
@@ -65,32 +68,76 @@ class OpenAIModel(BaseModel):
             List[Tuple[float, bool]]: List of (log-likelihood, is-exact-match) pairs
 
         """
-
         # If contexts are the same we don't need to recompute each time
-        grouped_inputs = [(k, list(g)) for k, g in itertools.groupby(inputs, key=lambda x: x[0])]
+        grouped_inputs = [
+            ContextContinuations(k, [el[1] for el in g])
+            for k, g in itertools.groupby(inputs, key=lambda x: x[0])
+        ]
 
         if self.has_started is False:
             self.generation_args["logprobs"] = True
             self.generation_args["top_logprobs"] = 20
             self.generation_args["max_tokens"] = 5
+
         results: list = []
-        for pair_batch in tqdm(chunks(grouped_inputs, self.batch_size)):
 
-            async def generate_async():
-                async with ClientSession() as session:
-                    tasks = [self._get_logprobs(session, message) for message in pair_batch]
-                    responses = await asyncio.gather(*tasks)
-                return responses
+        for pair_batch in tqdm(chunks(grouped_inputs, self.batch_size), ncols=120, leave=False):
+            with RateLimit(rpm=RPM / self.batch_size):
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            results.extend(loop.run_until_complete(generate_async()))
-            loop.close()
-            time.sleep((60 / RPM) * self.batch_size)
+                async def generate_async():
+                    async with ClientSession() as session:
+                        tasks = [self._get_logprobs(session, message) for message in pair_batch]
+                        responses = await asyncio.gather(*tasks)
+                    return responses
+
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                results.extend(loop.run_until_complete(generate_async()))
+                loop.close()
+
         self.has_started = False
 
-        results = list(itertools.chain.from_iterable(results))
-        print(results)
+        return list(itertools.chain.from_iterable(results))
+
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        if "max_length" in kwargs:
+            self.generation_args["max_tokens"] = kwargs["max_length"]
+        if "top_p" in kwargs:
+            self.generation_args["top_p"] = kwargs["top_p"]
+        if "temperature" in kwargs:
+            self.generation_args["temperature"] = kwargs["temperature"]
+        if "num_return_sequences" in kwargs:
+            self.generation_args["n"] = kwargs["num_return_sequences"]
+
+        results = []
+
+        for messages_batch in tqdm(
+            chunks(messages, self.batch_size),
+            total=math.ceil(len(messages) / self.batch_size),
+            ncols=120,
+            leave=False,
+        ):
+            with RateLimit(rpm=RPM / self.batch_size):
+
+                async def generate_async():
+                    async with ClientSession() as session:
+                        tasks = [
+                            self._create_chat_completion(session, message)
+                            for message in messages_batch
+                        ]
+                        responses = await asyncio.gather(*tasks)
+                    return [
+                        element["message"]["content"]
+                        for response in responses
+                        for element in response["choices"]
+                    ]
+
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                results.extend(loop.run_until_complete(generate_async()))
+                loop.close()
+
+        self.has_started = False
         return results
 
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
@@ -104,44 +151,16 @@ class OpenAIModel(BaseModel):
             List[str]: List of generated continuations
         """
         inputs = [inputs] if isinstance(inputs, str) else inputs
-        if "max_length" in kwargs:
-            self.generation_args["max_tokens"] = kwargs["max_length"]
-        if "top_p" in kwargs:
-            self.generation_args["top_p"] = kwargs["top_p"]
-        if "temperature" in kwargs:
-            self.generation_args["temperature"] = kwargs["temperature"]
-        if "num_return_sequences" in kwargs:
-            self.generation_args["n"] = kwargs["num_return_sequences"]
 
-        messages = [{"role": "user", "content": input} for input in inputs]
-        results = []
-        for messages_batch in tqdm(chunks(messages, self.batch_size)):
+        return self.generate_system(
+            [[{"role": "user", "content": content}] for content in inputs], **kwargs
+        )
 
-            async def generate_async():
-                async with ClientSession() as session:
-                    tasks = [
-                        self._create_chat_completion(session, message) for message in messages_batch
-                    ]
-                    responses = await asyncio.gather(*tasks)
-                return [
-                    element["message"]["content"]
-                    for response in responses
-                    for element in response["choices"]
-                ]
-
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            results.extend(loop.run_until_complete(generate_async()))
-            loop.close()
-            time.sleep((60 / RPM) * self.batch_size)
-        self.has_started = False
-        return results
-
-    async def _create_chat_completion(self, session: ClientSession, message: dict) -> Any:
+    async def _create_chat_completion(self, session: ClientSession, messages: List[Message]) -> Any:
         """Creates a chat completion for a message.
 
         Args:
-            messages (dict): messages
+            messages (List[Message]): messages
 
         Returns:
             Any: OpenAI API response
@@ -161,12 +180,14 @@ class OpenAIModel(BaseModel):
                     },
                     json={
                         "model": self.model,
-                        "messages": [message],
+                        "messages": messages,
                         **self.generation_args,
                     },
                 ) as response:
                     if response.status == 200:
-                        return await response.json()
+                        response_json = await response.json()
+                        PromptStatistics.log_response(response_json)
+                        return response_json
                     else:
                         seconds_since_start = (time.time() - self.first_time) % 60
                         print(
@@ -178,21 +199,19 @@ class OpenAIModel(BaseModel):
                 await asyncio.sleep(60)
         raise Exception("Error in OpenAI API.")
 
-    async def _get_logprobs(self, session: ClientSession, pair: tuple) -> List[Tuple[float, bool]]:
-        """Extracts log-probabilities from an OpenAI API response.
-
-        Args:
-            response (Any): OpenAI API response
+    async def _get_logprobs(
+        self, session: ClientSession, pair: ContextContinuations
+    ) -> List[Tuple[float, bool]]:
+        """Extracts log-probabilities from a given context and its continuations.
 
         Returns:
             Tuple[float, bool]: (log-likelihood, is-exact-match) pair
         """
-        context = {"role": "user", "content": pair[0]}
+        context = {"role": "user", "content": pair.context}
 
         # We only check if the main letter is correct i.e. A or B
-        continuations = [el[1].lstrip()[0] for el in pair[1]]
+        continuations = [c.lstrip()[0] for c in pair.continuations]
 
-        print(continuations)
         retry_counter = 4
         for _ in range(retry_counter):
             try:
@@ -214,18 +233,21 @@ class OpenAIModel(BaseModel):
                 ) as response:
                     if response.status == 200:
                         response = await response.json()
+                        completion = ChatCompletion(**response)
                         answers = [(-np.inf, False)] * len(continuations)
-                        for i, element in enumerate(response["choices"][0]["logprobs"]["content"][0]["top_logprobs"]):  # type: ignore
-                            if element["token"] in continuations and i == 0:
-                                answers[continuations.index(element["token"])] = (
-                                    element["logprob"],
+
+                        for i, element in enumerate(completion.choices[0].logprobs.content[0].top_logprobs):  # type: ignore
+                            if element.token in continuations and i == 0:
+                                answers[continuations.index(element.token)] = (
+                                    element.logprob,
                                     True,
                                 )
-                            elif element["token"] in continuations:
-                                answers[continuations.index(element["token"])] = (
-                                    element["logprob"],
+                            elif element.token in continuations:
+                                answers[continuations.index(element.token)] = (
+                                    element.logprob,
                                     False,
                                 )
+
                         return answers
                     else:
                         seconds_since_start = (time.time() - self.first_time) % 60

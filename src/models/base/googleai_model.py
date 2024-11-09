@@ -13,26 +13,50 @@
 #    limitations under the License.
 
 import asyncio
+import logging
+import math
+import sys
 import time
 from typing import Any, List, Tuple, Union
 
 from aiohttp import ClientSession
 from tqdm import tqdm
 
-from secret import ANTHROPIC_API_KEY
+from secret import GEMINI_API_KEY
 from src.configs.base_model_config import ModelConfig
 from src.models.base.base_model import BaseModel, Message
 
 from .utils import PromptStatistics, RateLimit, chunks
 
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+
 # Requests per minute
-RPM = 4000
+RPM = 1000
 
 
-class AnthropicModel(BaseModel):
+def _get_response_text(response: dict) -> str:
+    if "promptFeedback" in response and "blockReason" in response["promptFeedback"]:
+        return "I cannot provide a response."
+    candidate = response["candidates"][0]
+    if candidate["finishReason"] == "OTHER":
+        return "I cannot provide a response."
+
+    try:
+        return candidate["content"]["parts"][0]["text"]
+    except Exception as err:
+        print(response)
+        raise err
+
+
+class GoogleAIModel(BaseModel):
     def __init__(self, config: ModelConfig):
         super().__init__(config)
 
+        # gemini-1.5-flash
+        # gemini-1.5-flash-8b
+        # gemini-1.5-pro
+        # gemini-1.0-pro
         self.model = config.name
         PromptStatistics.set_model(config.name)
         self.batch_size = config.batch_size
@@ -40,15 +64,21 @@ class AnthropicModel(BaseModel):
         self._init_generation_args(config)
 
     def _init_generation_args(self, config: ModelConfig) -> None:
-        self.generation_args = {"max_tokens": config.max_gen_toks}
+        self.generation_args = {"maxOutputTokens": config.max_gen_toks}
         if config.generation_args is not None:
             for key, value in config.generation_args.items():
                 if key == "top_p":
-                    self.generation_args["top_p"] = value
-                elif key == "top_k":
-                    self.generation_args["top_k"] = value
+                    self.generation_args["topP"] = value
                 elif key == "temperature":
                     self.generation_args["temperature"] = value
+                elif key == "frequency_penalty":
+                    raise ValueError("Unsupported argument 'frequency_penalty' for GoogleAI API.")
+                elif key == "presence_penalty":
+                    raise ValueError("Unsupported argument 'presence_penalty' for GoogleAI API.")
+                elif key == "num_return_sequences":
+                    raise ValueError(
+                        "Unsupported argument 'num_return_sequences' for GoogleAI API."
+                    )
 
     def loglikelihood(self, inputs: List[Tuple[str, str]]) -> List[Tuple[float, bool]]:
         """Computes the log-likelihood of a list of (context, continuation) pairs.
@@ -60,8 +90,7 @@ class AnthropicModel(BaseModel):
             List[Tuple[float, bool]]: List of (log-likelihood, is-exact-match) pairs
 
         """
-
-        raise NotImplementedError("Loglikelihood not implemented for AnthropicModel")
+        raise NotImplementedError()
 
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
         """Generates continuations for a list of inputs.
@@ -83,26 +112,30 @@ class AnthropicModel(BaseModel):
         """Generates continuations for a list of inputs.
 
         Args:
-            inputs (Union[str, List[str]]): List of inputs
+            messages (List[List[Message]]): List of inputs
             **kwargs: Keyword arguments to pass to the model during generation
 
         Returns:
             List[str]: List of generated continuations
         """
-        n = 1
         if "max_length" in kwargs:
-            self.generation_args["max_tokens"] = kwargs["max_length"]
+            self.generation_args["maxOutputTokens"] = kwargs["max_length"]
+        if "top_p" in kwargs:
+            self.generation_args["topP"] = kwargs["top_p"]
         if "temperature" in kwargs:
             self.generation_args["temperature"] = kwargs["temperature"]
-        if "top_p" in kwargs:
-            self.generation_args["top_p"] = kwargs["top_p"]
-        if "top_k" in kwargs:
-            self.generation_args["top_k"] = kwargs["top_k"]
         if "num_return_sequences" in kwargs:
-            n = kwargs["num_return_sequences"]
+            raise ValueError("Unsupported argument 'num_return_sequences' for GoogleAI API.")
 
         results = []
-        for messages_batch in tqdm(chunks(messages, self.batch_size)):
+
+        for messages_batch in tqdm(
+            chunks(messages, self.batch_size),
+            total=math.ceil(len(messages) / self.batch_size),
+            file=sys.stdout,
+            ncols=120,
+            leave=False,
+        ):
             with RateLimit(rpm=RPM / self.batch_size):
 
                 async def generate_async():
@@ -110,10 +143,9 @@ class AnthropicModel(BaseModel):
                         tasks = [
                             self._create_chat_completion(session, message)
                             for message in messages_batch
-                            for _ in range(n)
                         ]
                         responses = await asyncio.gather(*tasks)
-                    return [response["content"][0]["text"] for response in responses]
+                    return [_get_response_text(response) for response in responses]
 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
@@ -121,6 +153,7 @@ class AnthropicModel(BaseModel):
                 loop.close()
 
         self.has_started = False
+
         return results
 
     async def _create_chat_completion(self, session: ClientSession, messages: List[Message]) -> Any:
@@ -130,19 +163,26 @@ class AnthropicModel(BaseModel):
             messages (dict): messages
 
         Returns:
-            Any: Anthropic API response
+            Any: Gemini API response
         """
         retry_counter = 4
 
-        content_messages = [message for message in messages if message["role"] != "system"]
+        ROLES = {"system": "system", "user": "user", "assistant": "model"}
+
+        content_messages = [
+            {"role": ROLES[message["role"]], "parts": [{"text": message["content"]}]}
+            for message in messages
+            if message["role"] != "system"
+        ]
+
+        content = {"contents": content_messages}
         system_messages = [
             message["content"] for message in messages if message["role"] == "system"
         ]
-        system_instructions = {}
-        if len(system_messages) > 1:
-            system_instructions["system"] = ". ".join(system_messages)
-        elif len(system_messages) == 1:
-            system_instructions["system"] = system_messages[0]
+        if system_messages:
+            content["system_instruction"] = {  # type: ignore
+                "parts": [{"text": message} for message in system_messages],
+            }
 
         for _ in range(retry_counter):
             try:
@@ -150,29 +190,37 @@ class AnthropicModel(BaseModel):
                     self.first_time = time.time()
                     self.has_started = True
                 async with session.post(
-                    "https://api.anthropic.com/v1/messages",
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={GEMINI_API_KEY}",
                     headers={
-                        "x-api-key": ANTHROPIC_API_KEY,
-                        "anthropic-version": "2023-06-01",
                         "Content-Type": "application/json",
                     },
                     json={
-                        "model": self.model,
-                        "messages": content_messages,
-                        **system_instructions,
-                        **self.generation_args,
+                        **content,
+                        "safetySettings": [
+                            {"category": category, "threshold": "BLOCK_NONE"}
+                            for category in [
+                                "HARM_CATEGORY_HARASSMENT",
+                                "HARM_CATEGORY_HATE_SPEECH",
+                                "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                                "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                "HARM_CATEGORY_CIVIC_INTEGRITY",
+                            ]
+                        ],
+                        "generationConfig": {**self.generation_args},  # type: ignore
                     },
                 ) as response:
                     if response.status == 200:
-                        # TODO: log prompt statistics
-                        return await response.json()
+                        response_json = await response.json()
+                        PromptStatistics.log_response(response_json, response_type="gemini")
+                        return response_json
                     else:
                         seconds_since_start = (time.time() - self.first_time) % 60
                         print(
                             f"Error: {response.status} at {time.strftime('%X')} with {60 - seconds_since_start} wait."
                         )
+                        print(response)
                         await asyncio.sleep(60 - seconds_since_start)
             except Exception as e:
                 print(f"Aiohttp Error: {e}")
                 await asyncio.sleep(60)
-        raise Exception("Error in Anthropic API.")
+        raise Exception("Error in Gemini API.")

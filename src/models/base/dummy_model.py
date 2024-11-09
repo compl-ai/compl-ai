@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 from src.configs.base_model_config import ModelConfig
-from src.models.base.base_model import BaseModel
+from src.models.base.base_model import BaseModel, Message
 
 
 def load_answers(output_dir: Path):
@@ -125,6 +125,9 @@ class DummyModel(BaseModel):
             return [(-0.1, False)] * len_inputs
         else:
             return list(itertools.islice(self.loglikelihoods, len_inputs))
+
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        return self.generate([message[-1]["content"] for message in messages], **kwargs)
 
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
         """Generates continuations for a list of inputs.

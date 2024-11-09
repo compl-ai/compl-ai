@@ -19,9 +19,12 @@ from .base_model import BaseModel
 from .customapi_model import CustomAPIModel
 from .deepinfra_model import DeepinfraModel
 from .dummy_model import DummyModel
+from .googleai_model import GoogleAIModel
 from .hf_model import HFCausalLM, HFSeq2SeqLM
 from .openai_model import OpenAIModel
 from .replicate_model import ReplicateModel
+from .togetherai_model import TogetherAIModel
+from .vertexai_model import VertexAIModel
 
 
 def get_model_from_config(config: ModelConfig) -> BaseModel:  # noqa: C901
@@ -55,6 +58,15 @@ def get_model_from_config(config: ModelConfig) -> BaseModel:  # noqa: C901
 
     elif config.provider == ModelProvider.CUSTOMAPI:
         model = CustomAPIModel(config)
+
+    elif config.provider == ModelProvider.TOGETHERAI:
+        model = TogetherAIModel(config)
+
+    elif config.provider == ModelProvider.VERTEXAI:
+        model = VertexAIModel(config)
+
+    elif config.provider == ModelProvider.GOOGLEAI:
+        model = GoogleAIModel(config)
 
     elif config.provider == ModelProvider.HF:
         if config.type == ModelType.CAUSAL_LM:

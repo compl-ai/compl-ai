@@ -17,7 +17,7 @@ from typing import List, Tuple, Union
 from openai import OpenAI
 
 from src.configs.base_model_config import ModelConfig
-from src.models.base.base_model import BaseModel
+from src.models.base.base_model import BaseModel, Message
 
 
 class DeepinfraModel(BaseModel):
@@ -60,6 +60,9 @@ class DeepinfraModel(BaseModel):
 
         print(answers)
         return answers
+
+    def generate_system(self, messages: List[List[Message]], **kwargs) -> List[str]:
+        raise NotImplementedError("System messages are not yet implemented for DeepinfraModel.")
 
     def generate(self, inputs: Union[str, List[str]], **kwargs) -> List[str]:
         """Generates continuations for a list of inputs.
