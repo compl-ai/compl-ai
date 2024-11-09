@@ -72,12 +72,12 @@ class GoogleAIModel(BaseModel):
                 elif key == "temperature":
                     self.generation_args["temperature"] = value
                 elif key == "frequency_penalty":
-                    raise ValueError("Unsupported argument 'frequency_penalty' for TogetherAI API.")
+                    raise ValueError("Unsupported argument 'frequency_penalty' for GoogleAI API.")
                 elif key == "presence_penalty":
-                    raise ValueError("Unsupported argument 'presence_penalty' for TogetherAI API.")
+                    raise ValueError("Unsupported argument 'presence_penalty' for GoogleAI API.")
                 elif key == "num_return_sequences":
                     raise ValueError(
-                        "Unsupported argument 'num_return_sequences' for TogetherAI API."
+                        "Unsupported argument 'num_return_sequences' for GoogleAI API."
                     )
 
     def loglikelihood(self, inputs: List[Tuple[str, str]]) -> List[Tuple[float, bool]]:
