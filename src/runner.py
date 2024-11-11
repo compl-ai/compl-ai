@@ -295,7 +295,11 @@ class Runner:
 
         start = time.time()
 
-        final_result = self.internal_repr.to_final_result()
+        try:
+            final_result = self.internal_repr.to_final_result()
+        except Exception as e:
+            self.result_handler.log_error(e)
+            raise e
 
         runtime = time.time() - start
 

@@ -197,5 +197,9 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    def store_config(self, config: Config):
+    def store_config(self, config: Config) -> None:
+        pass
+
+    @abstractmethod
+    def log_error(self, exp: Exception) -> None:
         pass

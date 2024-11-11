@@ -14,6 +14,7 @@
 
 import json
 import os.path
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -106,7 +107,7 @@ class FileConnector(BaseConnector):
             self.prompt_stream.close()
             self.prompt_idx_stream.close()
 
-    def store_config(self, config: Config):
+    def store_config(self, config: Config) -> None:
         # Save config
         with open(self.run_folder / "config.json", "w") as config_file:
             config_file.write(config.model_dump_json())
@@ -117,3 +118,8 @@ class FileConnector(BaseConnector):
 
         json_config = from_json(content)
         return Config.model_validate(json_config)
+
+    def log_error(self, exp: Exception) -> None:
+        with open(self.run_folder / "error.txt", "w") as f:
+            f.write(str(exp))
+            f.write(traceback.format_exc())
