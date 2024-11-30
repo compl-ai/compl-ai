@@ -81,6 +81,8 @@ def _get_benchmark_info(benchmark_dir: Path) -> dict:
         return json.load(f)
 
 
+# These are based on running gemma-2-2b-it on NVIDIA RTX 6000 Ada
+# The values are in seconds (rounded up to a minute)
 REFERENCE_RUNTIMES = {
     "ai2_reasoning": 60 * 29,
     "bbq": 60 * 1,
@@ -145,7 +147,7 @@ def print_summary(parent_dir: str) -> None:
         if status == Status.ERROR.value:
             score = _read_error_desc(benchmark_dir)
 
-        if runtime is not None:
+        if runtime is not None and status == Status.OK.value:
             total_runtime += runtime
             runtime_scales.append(runtime / ref_runtime)  # type: ignore
 

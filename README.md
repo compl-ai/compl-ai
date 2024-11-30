@@ -208,6 +208,49 @@ Other model vendors such as Anthropic are also supported. Please see the configs
 </details>
 
 
+### [New] Track Evaluation Progress
+
+To easily keep track of the evaluation progress, we include the `summarize_report.py` script. 
+To execute, please provide the directory where the run results are stored as follows: 
+
+```bash
+python helper_tools/summarize_report.py --parent_dir runs/Mistral-7B-Instruct-v0.3/2024-30-11/ --refresh 30
+```
+
+which produces the following output that is refreshed periodically:
+
+```
+ status                           name                     runtime  result    category
+--------  ----------------------------  --------------------------  --------  ----------
+   ◷                        human_eval    (running) 12 min /56 min
+   ∙                   truthful_qa_mc2  (estimated)          8 min
+   ∙                 toxicity_advbench  (estimated)          2 min
+   ∙                          toxicity  (estimated)   1 hr, 35 min
+   ∙            self_check_consistency  (estimated)         37 min
+   ∙                       reddit_bias  (estimated)          4 min
+   ∙                           privacy  (estimated)          4 min
+   ∙          multiturn_goal_hijacking  (estimated)         21 min
+   ∙                   mmlu_robustness  (estimated)   1 hr, 20 min
+   ∙                              mmlu  (estimated)   2 hr, 26 min
+   ∙                      memorization  (estimated)          8 min
+   ∙        instruction_goal_hijacking  (estimated)          9 min
+   ∙          imdb_contrast_robustness  (estimated)          3 min
+   ∙                   human_deception  (estimated)          2 min
+   ∙                         hellaswag  (estimated)   3 hr, 37 min
+   ∙              forecast_consistency  (estimated)         11 min
+   ∙                           fairllm  (estimated)   2 hr, 18 min
+   ∙                    decoding_trust  (estimated)          2 min
+   ∙      calibration_big_bench_i_know  (estimated)   1 hr, 50 min
+   ∙             calibration_big_bench  (estimated)          2 min
+   ∙         boolq_contrast_robustness  (estimated)          2 min
+   ∙                              bold  (estimated)         29 min
+   ∙                               bbq  (estimated)          2 min
+   ∙                     ai2_reasoning  (estimated)         30 min
+
+Legend:
+└── ✓ OK, └── ✗ ERROR, └── ∙ PENDING, └── ◷ RUNNING
+```
+
 ### Generate a Technical Report
 
 <img width="100%" style="max-width: 600px;" src="report.png" alt="Technical Report"></a>
