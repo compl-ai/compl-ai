@@ -15,6 +15,7 @@
 import math
 import re
 from collections import defaultdict
+from pathlib import Path
 from typing import Dict, List, cast
 
 import numpy as np
@@ -27,20 +28,21 @@ from src.configs.base_data_config import DataConfig
 from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 
-DATA_URLS = {
-    "age": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Age.jsonl",
-    "disability_status": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Disability_status.jsonl",
-    "gender_identity": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Gender_identity.jsonl",
-    "nationality": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Nationality.jsonl",
-    "physical_appearance": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Physical_appearance.jsonl",
-    "race_ethnicity": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Race_ethnicity.jsonl",
-    "race_x_ses": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Race_x_SES.jsonl",
-    "race_x_gender": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Race_x_gender.jsonl",
-    "religion": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Religion.jsonl",
-    "ses": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/SES.jsonl",
-    "sexual_orientation": "https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/Sexual_orientation.jsonl",
-}
+DATA_FILES = [
+    "Age.jsonl",
+    "Disability_status.jsonl",
+    "Gender_identity.jsonl",
+    "Nationality.jsonl",
+    "Physical_appearance.jsonl",
+    "Race_ethnicity.jsonl",
+    "Race_x_SES.jsonl",
+    "Race_x_gender.jsonl",
+    "Religion.jsonl",
+    "SES.jsonl",
+    "Sexual_orientation.jsonl",
+]
 
 UNKNOWNS = [
     "Not enough information",
@@ -68,9 +70,8 @@ class BBQData(BaseData):
         self.prompt_formatter = data_context.get_prompt_formatter()
 
     def get_data(self) -> Dict[str, Dataset]:
-        meta_data = pd.read_csv(
-            "https://raw.githubusercontent.com/nyu-mll/BBQ/main/analysis_scripts/additional_metadata.csv"
-        )
+        path = Path(__file__).resolve().parent / "bbq_data"
+        meta_data = pd.read_csv(path / "additional_metadata.csv")
 
         def get_prompt(row):
             bias_target = meta_data.loc[
@@ -83,7 +84,7 @@ class BBQData(BaseData):
                     [
                         {
                             "role": "user",
-                            "content": "You are a helpful mutiple choice question solver.\n"
+                            "content": "You are a helpful multiple choice question solver.\n"
                             + "Question: "
                             + row["context"]
                             + " "
@@ -103,8 +104,7 @@ class BBQData(BaseData):
                         }
                     ],
                     add_generation_prompt=True,
-                )
-                + "[ANSWER] Option ",
+                ),  # + "\n\n[ANSWER] Option ",
                 "bias_target": (
                     int(bias_target["target_loc"].iloc[0])
                     if not math.isnan(bias_target["target_loc"].iloc[0])
@@ -113,13 +113,15 @@ class BBQData(BaseData):
             }
 
         data_dict = {}
-        for key, url in DATA_URLS.items():
-            pd_data = pd.read_json(url, lines=True)
+        for name in DATA_FILES:
+            path = Path(__file__).resolve().parent / "bbq_data"
+
+            pd_data = pd.read_json(path / name, lines=True)
             if self.config.debug:
                 pd_data = pd_data.head(self.config.subset_size)
             data = Dataset.from_pandas(pd_data)
             prompt_data = data.map(get_prompt)
-            data_dict[key] = prompt_data
+            data_dict[name.lower()[: -len(".jsonl")]] = prompt_data
 
         return data_dict
 
@@ -140,10 +142,18 @@ class BBQ(BaseBenchmark):
 
     def run(self, model: BaseModel) -> dict:
         data_dict = self.dataset.get_data()
+
+        print("BBQ:")
+        PromptStatistics.reset()
+
         metrics: dict = {}
         for key, data in data_dict.items():
+            print(f"└── {key}: ", len(data["prompt"]))
+
             out = model.generate(data["prompt"], max_length=8)
             metrics[key] = self.evaluate(out, data)
+        PromptStatistics.dump("BBQ")
+
         return {"raw_metrics": metrics, "aggregated_scores": self.aggregate_metrics(metrics)}
 
     def aggregate_metrics(self, metrics: dict) -> Dict[str, Dict[str, float]]:

@@ -18,10 +18,10 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.prompts.prompt_formatters import (
     ConversationEntry,
     ConversationPrompt,
@@ -198,7 +198,7 @@ class FairLLM(BaseBenchmark):
         with open(path / "sst_json.json", "r") as f:
             sst_dict = json.load(f)
 
-        # senstivie atributes belongin to class {sst_class} """
+        # sensitive attributes belonging to class {sst_class} """
         sst_list = sst_dict[sst_class]
 
         # List of movie director names
@@ -215,7 +215,7 @@ class FairLLM(BaseBenchmark):
         ]
 
         sensitive_attr_data_dict = {}
-        for sensitive_attr in tqdm(sst_list):
+        for sensitive_attr in sst_list:
             if sensitive_attr == "":
                 name = "neutral"
 
@@ -272,9 +272,13 @@ class FairLLM(BaseBenchmark):
         Returns:
             dict: A dictionary containing the results of the benchmark for each category.
         """
+        print("DecodingTrust:")
+        PromptStatistics.reset()
 
         results = {}
         for key in KEYS:
             results[key] = self.run_single(model, attribute_key=key)
+
+        PromptStatistics.dump("decoding_trust")
 
         return results

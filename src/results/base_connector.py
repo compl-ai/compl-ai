@@ -113,12 +113,13 @@ class BaseConnector(ABC):
         }
         return self._store_eval_results(evaluation_result)
 
-    def add_final_result(self, final_result: FinalResult):
+    def add_final_result(self, final_result: FinalResult, runtime: float):
         """
         Adds the final result to the underlying storage.
 
         Args:
             FinalResult (dict): The final result to be stored.
+            runtime (float): The runtime of the benchmark.
         """
 
         final_result_info = final_result.model_dump()
@@ -126,6 +127,7 @@ class BaseConnector(ABC):
         final_result_info = {
             "run_id": self.run_id,
             "time": time.time(),
+            "runtime": runtime,
             "category": self.category,
             "benchmark": self.benchmark,
             "FinalResult": final_result_info,
@@ -195,5 +197,9 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    def store_config(self, config: Config):
+    def store_config(self, config: Config) -> None:
+        pass
+
+    @abstractmethod
+    def log_error(self, exp: Exception) -> None:
         pass

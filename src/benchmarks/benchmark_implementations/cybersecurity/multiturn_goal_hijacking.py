@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 import importlib.resources
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
@@ -23,6 +24,7 @@ from llm_rules.models.base import build_prompt
 from llm_rules.scenarios import SCENARIOS
 from pydantic import BaseModel as PBM
 from pydantic import Field, ValidationError, field_validator, model_validator
+from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.configs.base_benchmark_config import BenchmarkConfig
@@ -31,6 +33,7 @@ from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
 from src.models.base.hf_model import HFLM
+from src.models.base.utils import PromptStatistics
 from src.models.proxy_model import ProxyModel
 from src.prompts.prompt_formatters import DefaultPromptFormatter
 
@@ -139,9 +142,9 @@ class LanguageGameData(BaseData):
             list: A list of dictionaries representing the data records.
         """
 
-        print(self.category)
+        path = Path(__file__).resolve().parent / "llm_rules_data"
         data = pd.read_json(
-            f"https://raw.githubusercontent.com/normster/llm_rules/53ace2ce888e37b73685c985fe982bc4a5b3d5d8/data/manual/{self.category}.jsonl",
+            path / f"manual/{self.category}.jsonl",
             lines=True,
         )
 
@@ -190,12 +193,17 @@ class LanguageGame(BaseBenchmark):
 
         valid_runs: list[bool] = []
         data = self.data_provider.get_data()
-        reasons = {}
 
-        for row in data:
+        print("Multiturn Goal Hijacking:")
+        print(f"└── {self.data_provider.category}: ", len(data))
+
+        PromptStatistics.reset()
+
+        reasons = {}
+        for row in tqdm(data, ncols=120, file=sys.stdout):
             messages = Message.unserialize(row["messages"])
             results = evaluate_single(
-                self.data_provider.get_scenario_class()(),
+                self.data_provider.get_scenario_class()(param_dict=row["params"]),
                 messages,
                 model,  # type: ignore
                 self.llm_rules_conf.use_system_instructions,
@@ -210,8 +218,9 @@ class LanguageGame(BaseBenchmark):
             else:
                 reasons[reason] += 1
 
-            print(results[0].reason)
             valid_runs.append(results[0].passed)
+
+        PromptStatistics.dump("Multiturn Goal Hijacking")
 
         return {"valid_runs": sum(valid_runs) / len(valid_runs), "reasons": reasons}
 
@@ -249,7 +258,6 @@ def evaluate_single(
     """
 
     full_prompt = scenario.prompt
-
     if prefix_message:
         full_prompt = models.SYSTEM_MESSAGES[prefix_message] + "\n" + full_prompt
 
@@ -268,23 +276,19 @@ def evaluate_single(
             m.content += " " + suffix  # gcg suffixes are applied with a preceding space
         messages.append(m)
 
+        messages_hf = messages_to_hf_format(messages)
         if isinstance(model.base_model, HFLM):
-            messages_hf = messages_to_hf_format(messages)
             chat = prompt_formatter.format_chat_prompt(messages_hf)
             response = model.generate(chat)
-            content = response[0]
-
         else:
-            response = models.call_with_retries(model, messages)
-            content = models.concat_stream(response)
+            response = model.generate_system([messages_hf])  # type: ignore
+        content = response[0].strip()
 
         messages.append(Message(Role.ASSISTANT, content))
 
         result = scenario.evaluate(messages, use_system_instructions)
 
         if not result.passed:
-            print("x", end="", flush=True)
             return result, messages
 
-    print(".", end="", flush=True)
     return result, messages

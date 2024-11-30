@@ -15,12 +15,14 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from argparse import ArgumentParser
 from collections import OrderedDict
 from pathlib import Path
 
 import markdown_to_json as mdj
+import simplejson
 
 
 def extract_number(string: str) -> float | None:
@@ -132,5 +134,16 @@ if __name__ == "__main__":
     if not output_path.parent.exists():
         output_path.parent.mkdir(parents=True)
 
+    # Frontend does not support nan values so we
+    # replace nan with "No eval results"
+    for key, value in model_json.items():
+        if "aggregate_score" in value:
+            score = value["aggregate_score"]
+            if isinstance(score, float) and math.isnan(score):
+                model_json[key] = {
+                    "aggregate_score": "No eval results",
+                    "raw_metrics": "No eval results",
+                }
+
     with output_path.open("w") as f:
-        json.dump(model_json, f, indent=2)
+        simplejson.dump(model_json, f, indent=2, ignore_nan=True)

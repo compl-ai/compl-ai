@@ -93,12 +93,12 @@ To run a single benchmark, use:
 ```bash
 # poetry run python3 run.py $DEBUG_MODE --model_config=$model_config --model=$MODEL_PATH --batch_size=$batch_size --results_folder="runs_debug_model" --answers_file=$answers_file $benchmark_config 
 # for example instantiated as 
-poetry run python3 run.py \ 
-    --model_config configs/models/default_model.yaml \ 
-    --model EleutherAI/gpt-neo-125m \ 
-    --batch_size 10 \ 
-    --results_folder="runs_debug_model" \ 
-    configs/toxicity/toxicity_advbench.yaml \ 
+poetry run python3 run.py \
+    --model_config configs/models/default_model.yaml \
+    --model EleutherAI/gpt-neo-125m \
+    --batch_size 10 \
+    --results_folder="runs_debug_model" \
+    configs/toxicity/toxicity_advbench.yaml \
     --debug_mode --subset_size 10
 ```
 
@@ -232,8 +232,8 @@ To add the metadata, run the following command from the main directory. Here is 
 
 ```bash
 poetry run python3 helper_tools/include_metadata.py \
-       --model_json runs/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/mistralai_mistral-7b-instruct-v0.2_results.json \ 
-       --metadata_path model_descriptions/Mistral-7B-Instruct-v0.2.md \ 
+       --model_json runs/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/mistralai_mistral-7b-instruct-v0.2_results.json \
+       --metadata_path model_descriptions/Mistral-7B-Instruct-v0.2.md \
        --out_prefix runs_with_metadata
 ```
 

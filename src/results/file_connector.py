@@ -13,6 +13,8 @@
 #    limitations under the License.
 
 import json
+import os.path
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -23,23 +25,25 @@ from src.configs.base_config import Config
 from src.results.base_connector import BaseConnector, BenchmarkInfo
 
 
-def get_timed_run_folder(results_folder: Path, run_name: str) -> Path:
+def get_timed_run_folder(results_folder: Path, run_name: str, timestamp: bool = True) -> Path:
     """
     Creates a timed run folder based on the given run name and results folder.
 
     Args:
         results_folder (str): The path to the results folder.
         run_name (str): The name of the run.
+        timestamp (bool): Whether to include the date in the results folder name.
 
     Returns:
         Path: The path to the created timed run folder.
     """
-    # Get current date and time
-    current_datetime = datetime.now()
-    datetime_string = current_datetime.strftime("%Y-%m-%d_%H:%M:%S")
-    run_name = run_name + "__" + datetime_string
+    if timestamp:
+        # Get current date and time
+        current_datetime = datetime.now()
+        datetime_string = current_datetime.strftime("%Y-%m-%d_%H:%M:%S")
+        run_name = run_name + "__" + datetime_string
     folder = results_folder / run_name
-    folder.mkdir(parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
 
     return folder
 
@@ -50,6 +54,7 @@ class FileConnector(BaseConnector):
         benchmark_info: BenchmarkInfo,
         create_run: bool = True,
         run_folder: Optional[Path] = None,
+        timestamp: bool = True,
         **kwargs
     ):
         """Creates folders and files if required by `create_run` flag."""
@@ -64,7 +69,9 @@ class FileConnector(BaseConnector):
         self.create_run = create_run
 
         if create_run:
-            self.run_folder = get_timed_run_folder(self.run_folder, benchmark_info.benchmark_type)
+            self.run_folder = get_timed_run_folder(
+                self.run_folder, benchmark_info.benchmark_type, timestamp=timestamp
+            )
 
             # Set up output streams
             result_stream = open(self.run_folder / "eval_results.json", "w")
@@ -82,19 +89,25 @@ class FileConnector(BaseConnector):
         with open(self.run_folder / "final_result.json", "w") as final_result_file:
             final_result_file.write(json.dumps(final_result))
 
-    def _store_prompt(self, prompt_entry):
+    def results_exist(self) -> bool:
+        return os.path.exists(self.run_folder / "final_result.json")
+
+    def _store_prompt(self, prompt_entry) -> int:
         return self.prompt_stream.write(json.dumps(prompt_entry))
 
-    def _store_prompt_idx(self, log_entry):
+    def _store_prompt_idx(self, log_entry) -> int:
         return self.prompt_stream.write(json.dumps(log_entry))
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __enter__(self) -> "FileConnector":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.create_run:
             self.result_stream.close()
             self.prompt_stream.close()
             self.prompt_idx_stream.close()
 
-    def store_config(self, config: Config):
+    def store_config(self, config: Config) -> None:
         # Save config
         with open(self.run_folder / "config.json", "w") as config_file:
             config_file.write(config.model_dump_json())
@@ -105,3 +118,8 @@ class FileConnector(BaseConnector):
 
         json_config = from_json(content)
         return Config.model_validate(json_config)
+
+    def log_error(self, exp: Exception) -> None:
+        with open(self.run_folder / "error.txt", "w") as f:
+            f.write(str(exp))
+            f.write(traceback.format_exc())

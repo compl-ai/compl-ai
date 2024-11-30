@@ -3,7 +3,7 @@
 RUN_NAME="gpt-neo-125m"
 MODEL_PATH="EleutherAI/gpt-neo-125m" 
 DEBUG_MODE="" # "--debug_mode"
-CURRENT_DATETIME=$(date "+%Y-%m-%d_%H:%M:%S")
+CURRENT_DATETIME=$(date "+%Y-%m-%d")
 
 benchmarks_req_open_ai_keys=("self_check_consistency")
 if [ -z "${OPENAI_API_KEY}" ] | [ -z "${OPENAI_ORG}" ]; then
@@ -17,18 +17,17 @@ if [ -z "${OPENAI_API_KEY}" ] | [ -z "${OPENAI_ORG}" ]; then
 fi
 
 run_job () {
-  batch_size=${2:-10}
-  model_config=${3:-"configs/models/default_model.yaml"}
-  answers_file=${4:-""}
+  timestamp=$(date "+%Y-%m-%d_%H:%M:%S")
+  batch_size=${2:-12}
         poetry run python3 run.py $DEBUG_MODE \
-        --model_config=$model_config \
+        --model_config=configs/models/default_model.yaml \
         --model=$MODEL_PATH \
         --batch_size=$batch_size \
         --results_folder="runs/$RUN_NAME/$CURRENT_DATETIME" \
-        --answers_file=$answers_file \
+        --no-timestamp \
         $1 \
-	> "runs/$RUN_NAME/$CURRENT_DATETIME/$(echo $1 | sed 's#/#_#g').log" \
-	2> "runs/$RUN_NAME/$CURRENT_DATETIME/$(echo $1 | sed 's#/#_#g').errors"
+	2> "runs/$RUN_NAME/$CURRENT_DATETIME/$(echo $1 | sed 's#/#_#g')_$timestamp.errors" \
+	| tee "runs/$RUN_NAME/$CURRENT_DATETIME/$(echo $1 | sed 's#/#_#g')_$timestamp.log"
 }
 
 
@@ -41,7 +40,7 @@ echo "Principle: Transparency"
 # Capabilities
 echo "└── Requirement: Capabilities, Performance, and Limitations"
 echo "    ├── Coding: HumanEval..."
-run_job configs/capabilities/human_eval.yaml 10 configs/models/human_eval_model.yaml
+run_job configs/capabilities/human_eval.yaml
 echo "    ├── Coding: Common Sense Reasoning: HellaSwag..."
 run_job configs/capabilities/hellaswag.yaml
 echo "    ├── Reasoning: AI2 Reasoning Challenge..."
@@ -61,7 +60,7 @@ run_job configs/calibration/calibration_big_bench.yaml
 # Disclosure of AI Presence
 echo "└── Requirement: Disclosure of AI"
 echo "    └── Denying Human Presence..."
-run_job configs/human_deception/human_deception.yaml 1 # Not yet optimized for batches
+run_job configs/human_deception/human_deception.yaml
 
 # Traceability
 echo "└── Requirement: Traceability"
@@ -73,7 +72,7 @@ echo "Principle: Technical Robustness and Safety"
 # Cybersecurity
 echo "└── Requirement: Cyberattack Resilience"
 echo "    ├── Goal Hijacking and Prompt Leakage: TensorTrust..."
-run_job configs/cybersecurity/instruction_goal_hijacking.yaml 1 # Not yet optimized for batches
+run_job configs/cybersecurity/instruction_goal_hijacking.yaml
 echo "    └── Rule Following: LLM RuLES..."
 run_job configs/cybersecurity/multiturn_goal_hijacking.yaml 1 # Not yet optimized for batches
 
@@ -107,19 +106,17 @@ echo "└── Requirement: Fairness — Absence of Discrimination"
 echo "    ├── Recommendation Consistency: FaiRLLM..."
 run_job configs/fairness/fairllm.yaml
 echo "    └── Income Fairness: DecodingTrust..."
-run_job configs/fairness/decoding_trust.yaml 1
+run_job configs/fairness/decoding_trust.yaml
 
 
 
 echo "Principle: Social & Environmental Well-being"
 echo "└── Requirement: Harmful Content and Toxicity"
-DEBUG_MODE="--debug_mode"
 # Toxicity
 echo "    ├── Toxic Completions of Benign Text: RealToxicityPrompts..."
 run_job configs/toxicity/toxicity.yaml
 echo "    └── Following Harmful Instructions: AdvBench..."
 run_job configs/toxicity/toxicity_advbench.yaml
-DEBUG_MODE=""
 
 echo "Principle: Privacy & Data Governance"
 # Privacy

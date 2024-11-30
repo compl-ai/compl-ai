@@ -11,6 +11,7 @@ from src.benchmarks.benchmark_implementations.calibration.calibration_mc_big_ben
     TrueFalseCalibrationConfig,
 )
 from src.benchmarks.multiple_choice_benchmark import MultipleChoiceConfig
+from src.configs.base_model_config import ModelProvider
 from src.contexts.base_contexts import BaseBenchmarkContext
 from src.data.hf_data import HFData, WithKShot
 from src.metrics.metric_scripts.trivia_qa_evaluation import (
@@ -20,6 +21,7 @@ from src.metrics.metric_scripts.trivia_qa_evaluation import (
     normalize_answer,
 )
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.utils.batch_utils import batched
 from src.utils.general import create_loglikelihood_fn
 
@@ -63,9 +65,9 @@ class IKnowCalibrationData(HFData):
 # Use the following ece metric to accomplish the task
 # https://huggingface.co/spaces/jordyvl/ece/blame/main/README.md
 class IKnowCalibrationConfig(MultipleChoiceConfig):
-    # If evaluating an openai model, we don't need to normalize the loglikelihoods with the length,
+    # If evaluating an api model, we don't need to normalize the loglikelihoods with the length,
     # since there we check only the loglikelihoods of the first letter of the choices.
-    evaluate_openai: bool = Field(
+    evaluate_api: bool = Field(
         default=False, description="Whether we are evaluating an openai model."
     )
 
@@ -92,7 +94,7 @@ class IKnowCalibration(BaseBenchmark):
         self.choices = ["yes", "no"]
         self.trivia_qa_eval = TriviaQAEval()
 
-    def prepare_mutiple_choice_data(self, inst: Dict) -> Dict:
+    def prepare_multiple_choice_data(self, inst: Dict) -> Dict:
         return {"input": inst["input"], "choices": self.choices}
 
     def eval_answer(self, prediction, answer):
@@ -139,9 +141,10 @@ class IKnowCalibration(BaseBenchmark):
 
         context_continuation_list = []
         for ctx in context:
-            if self.config.evaluate_openai:
+            if self.config.evaluate_api:
                 new_context = (
-                    ctx + f"\n{self.question}\n\nChoices:\n\n - A, No\n - B, Yes\n\nAnswer:\n"
+                    ctx
+                    + f"\n{self.question}\n\nChoices:\n\n - A, No\n - B, Yes\n\nAnswer with a single letter A or B\nAnswer:\n"
                 )
                 context_continuation_list.append((new_context, "A, No"))
                 context_continuation_list.append((new_context, "B, Yes"))
@@ -163,6 +166,14 @@ class IKnowCalibration(BaseBenchmark):
                 - "predictions": A list of probabilities representing the model's predictions.
                 - "references": A list of correct answers for the given questions.
         """
+        if model.config.provider in [
+            ModelProvider.OPENAI,
+            ModelProvider.VERTEXAI,
+            ModelProvider.GOOGLEAI,
+            ModelProvider.TOGETHERAI,
+            ModelProvider.ANTHROPIC,
+        ]:
+            self.config.evaluate_api = True
 
         batch_size = self.ctx.get_model_config().batch_size
 
@@ -175,11 +186,18 @@ class IKnowCalibration(BaseBenchmark):
         self.k_shot_dataset = with_k_shot_dataset.k_shot
         self.dataset = with_k_shot_dataset.normal
 
-        data = self.dataset
+        full_data = []
+        for row in self.dataset:
+            full_data.append(row)
+
+        print("IKnowCalibration:")
+        print("└── rc.wikipedia: ", len(full_data))
+
+        PromptStatistics.reset()
 
         # generation_facade = GenerationFacade(self.config.multiple_choice_config, model, k_shot_data)
 
-        question_with_answers = self.answers(model, data, batch_size)
+        question_with_answers = self.answers(model, full_data, batch_size)
         q_with_answers, q_with_answers_copy = itertools.tee(question_with_answers)
         correct_answers = (
             self.eval_answer_from_row(q_with_a["prediction"], q_with_a["answer"])
@@ -190,7 +208,7 @@ class IKnowCalibration(BaseBenchmark):
         new_input = (
             q_with_a["input"] + " " + q_with_a["prediction"] for q_with_a in q_with_answers_copy
         )
-        if not self.config.evaluate_openai:
+        if not self.config.evaluate_api:
             weights = [len("No"), len("Yes")]
         else:
             weights = [1, 1]
@@ -205,6 +223,8 @@ class IKnowCalibration(BaseBenchmark):
         probabilities = [
             (0 if np.isnan(p1) else p1, 0 if np.isnan(p2) else p2) for p1, p2 in probabilities
         ]
+
+        PromptStatistics.dump("IKnowCalibration")
 
         return {"predictions": probabilities, "references": list(correct_answers)}
 

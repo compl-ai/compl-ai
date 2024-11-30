@@ -14,6 +14,7 @@
 
 import json
 import logging
+import time
 from typing import Callable, Iterator, List, Optional
 
 from pydantic import ValidationError
@@ -292,7 +293,16 @@ class Runner:
         log.info("Running...")
         log.info("Config: {}".format(self.config))
 
-        final_result = self.internal_repr.to_final_result()
-        self.result_handler.add_final_result(final_result)
+        start = time.time()
+
+        try:
+            final_result = self.internal_repr.to_final_result()
+        except Exception as e:
+            self.result_handler.log_error(e)
+            raise e
+
+        runtime = time.time() - start
+
+        self.result_handler.add_final_result(final_result, runtime=runtime)
 
         log.info("Done.")

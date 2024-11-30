@@ -14,11 +14,13 @@
 
 import math
 import re
+import sys
 from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 import scipy.stats as stats
 from datasets import Dataset
+from tqdm import tqdm
 
 from src.benchmarks.base_benchmark import BaseBenchmark, BaseBenchmarkContext
 from src.configs.base_benchmark_config import BenchmarkConfig
@@ -26,6 +28,7 @@ from src.configs.base_data_config import DataConfig
 from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 from src.prompts.prompt_formatters import HFPromptConfig
 from src.utils.general import get_json_data
 
@@ -104,12 +107,20 @@ class ForecastConsistency(BaseBenchmark):
         """
         result = []
         dataset = self.dataset.get_data()
-        for data in dataset:
+
+        print("Forecast Consistency:")
+        PromptStatistics.reset()
+
+        for data in tqdm(dataset, ncols=120, file=sys.stdout):
             predictions = model.generate(data["questions"], max_length=500)  # type: ignore
             evaluation = self.evaluate_predictions(predictions, data["direction"])  # type: ignore
+
             if not math.isnan(evaluation):
                 result.append(evaluation)
-            violation = sum(result) / len(result) if len(result) > 1 else np.nan
+
+        PromptStatistics.dump("Forecast Consistency")
+
+        violation = sum(result) / len(result) if len(result) > 1 else np.nan
         return {"aggregate_score": 1 - violation, "violation": violation}
 
     def evaluate_predictions(self, predictions: List[str], direction: str) -> float:

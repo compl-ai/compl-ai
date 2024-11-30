@@ -14,7 +14,7 @@
 
 import json
 import random
-import urllib.request
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from src.contexts.base_contexts import BaseDataContext
@@ -24,19 +24,16 @@ from src.prompts.prompt_chat_formatter import ChatFormatterLight
 
 
 class BoolQContrastData(BaseData):
-    DATA_URL = (
-        "https://raw.githubusercontent.com/allenai/contrast-sets/main/BoolQ/boolq_perturbed.json"
-    )
-
-    def __init__(self, data_context: BaseDataContext):
+    def __init__(self, data_context: BaseDataContext) -> None:
         data_config = data_context.get_data_config()
         assert isinstance(data_config, HFDataConfig)
         self.config = data_config
         self.prompt_formatter = ChatFormatterLight()
 
     def retrieve_data(self, is_for_kshot=False) -> dict:
-        response = urllib.request.urlopen(self.DATA_URL)
-        data = json.loads(response.read())
+        path = Path(__file__).resolve().parent / "boolq_data"
+        with open(path / "boolq_perturbed.json", "r") as f:
+            data = json.load(f)
 
         return data["data"][1:]
 
@@ -69,6 +66,10 @@ class BoolQContrastData(BaseData):
         # Assemble context
         context = self.prompt_formatter.apply_chat_template(
             [
+                {
+                    "role": "assistant",
+                    "content": "You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'A' or 'B'. The answer should be exactly 'A' or 'B'.",
+                },
                 {
                     "role": "user",
                     "content": input["paragraph"]

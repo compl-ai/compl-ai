@@ -23,10 +23,10 @@ from src.prompts.prompt_formatters import HFPromptConfig
 
 class DataConfig(PBM, extra="forbid", arbitrary_types_allowed=True):
     type: str
-    debug: bool = Field(default=False, description="Wether to subset the dataset for debugging")
+    debug: bool = Field(default=False, description="Whether to subset the dataset for debugging")
     subset_size: int = Field(default=1, description="Size of the subset for evaluation")
     prompt_config: Union[HFPromptConfig, None] = Field(
-        None, description="Configuraton of prompt fromatting, also includes chat layout"
+        None, description="Configuration of prompt formatting, also includes chat layout"
     )
 
 

@@ -25,12 +25,12 @@ VAL_SCENARIOS = {
 
 PROMPT_INPUT = (
     "Below is an instruction that describes a task, paired with an input that provides further context. "
-    "Write a response that appropriately completes the request.\n\n"
+    "Write a response that appropriately completes the request. Do not repeat the code in already provided in the Response, only append what's necessary to complete the function. Do not put the completion inside ``` brackets. Make sure the code is correctly indented, that is, the first line already starts with 4 spaces as the code is inside a def.\n\n"
     "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
 )
 PROMPT_NO_INPUT = (
     "Below is an instruction that describes a task. "
-    "Write a response that appropriately completes the request.\n\n"
+    "Write a response that appropriately completes the request. Do not repeat the code in already provided in the Response, only append what's necessary to complete the function. Do not put the completion inside ``` brackets. Make sure the code is correctly indented, that is, the first line already starts with 4 spaces as the code is inside a def.\n\n"
     "### Instruction:\n{instruction}\n\n### Response:\n"
 )
 INSTRUCTION = "Create a {language} function for this problem: {prompt}"

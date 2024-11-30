@@ -12,8 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from tqdm import tqdm
-
 from src.models.base.base_model import BaseModel
 from src.prompts.prompt_formatters import ConversationEntry, ConversationPrompt
 from src.prompts.prompt_formatters import DefaultPromptFormatter as PromptFormatter
@@ -109,104 +107,96 @@ class CustomFairChat:
             - `cache` (`List[Tuple]`): cache of the model on the test dataset.
             - `predictions` (`List[Int]`): predictions of the model on the test dataset.
         """
-        cache = []
+
+        # First, construct prompts
+        prompts = []
+        for x in dataset:
+            messages = self.construct_conversation(x, task_message, example_prefix)
+            try:
+                role_map = {
+                    "user": Role.USER,
+                    "system": Role.SYSTEM,
+                    "assistant": Role.ASSISTANT,
+                }
+                conversation = [
+                    ConversationEntry(role=role_map[m["role"]], message=m["content"])
+                    for m in messages
+                ]
+                raw_prompt = self.formatter.format_chat_prompt(ConversationPrompt(conversation))
+            except Exception as e:
+                print(f"Error in formatting prompt: {e}")
+
+                role_map = {
+                    "user": Role.USER,
+                    "system": Role.SYSTEM,
+                    "assistant": Role.ASSISTANT,
+                }
+                system_prompt = messages[0]["content"]
+                messages = messages[1:]
+                messages[0]["content"] = system_prompt + " " + messages[0]["content"]
+                conversation = [
+                    ConversationEntry(role=role_map[m["role"]], message=m["content"])
+                    for m in messages
+                ]
+                raw_prompt = self.formatter.format_chat_prompt(ConversationPrompt(conversation))
+            prompts.append(raw_prompt)
+
+        # generate responses
+        responses = self.model.generate(prompts)
+
+        # evaluate
         acc = 0
         unknown = 0
         cost = 0
         predictions = []
-        try:
-            for x in tqdm(dataset):
-                messages = self.construct_conversation(x, task_message, example_prefix)
-                try:
-                    role_map = {
-                        "user": Role.USER,
-                        "system": Role.SYSTEM,
-                        "assistant": Role.ASSISTANT,
-                    }
-                    conversation = [
-                        ConversationEntry(role=role_map[m["role"]], message=m["content"])
-                        for m in messages
-                    ]
-                    raw_prompt = self.formatter.format_chat_prompt(ConversationPrompt(conversation))
-                except Exception as e:
-                    print(f"Error in formatting prompt: {e}")
+        for response, x in zip(responses, dataset):
+            pred = response[0]
+            pred = pred.lower()
 
-                    role_map = {
-                        "user": Role.USER,
-                        "system": Role.SYSTEM,
-                        "assistant": Role.ASSISTANT,
-                    }
-                    system_prompt = messages[0]["content"]
-                    messages = messages[1:]
-                    messages[0]["content"] = system_prompt + " " + messages[0]["content"]
-                    conversation = [
-                        ConversationEntry(role=role_map[m["role"]], message=m["content"])
-                        for m in messages
-                    ]
-                    raw_prompt = self.formatter.format_chat_prompt(ConversationPrompt(conversation))
+            # We consider if the model generates explanations after the answer choice.
+            pre = pred.split(".")[0].strip()
 
-                response = self.model.generate(raw_prompt)
-                pred = response[0]
-                pred = pred.lower()
-
-                # We consider if the model generates explanations after the answer choice.
-                pre = pred.split(".")[0].strip()
-                cache.append((messages, response))
-                # if pred.capitalize() == 'Yes' or pre.capitalize() == 'Yes':
-                #     predictions.append(1)
-                # elif pred.capitalize() == 'No' or pre.capitalize() == 'No':
-                #     predictions.append(0)
-                # else:
-                #     predictions.append(-1)
-
-                taken_pred = ""
-
-                if self.substring_mode:
-                    if "yes" in pred.lower() and "no" in pred.lower():
-                        idx_yes = pred.find("yes")
-                        idx_no = pred.find("no")
-                        if idx_yes < idx_no:
-                            predictions.append(1)
-                            taken_pred = "yes"
-                        else:
-                            predictions.append(0)
-                            taken_pred = "no"
-                    elif "yes" in pred.lower() or "yes" in pre.lower():
+            taken_pred = ""
+            if self.substring_mode:
+                if "yes" in pred.lower() and "no" in pred.lower():
+                    idx_yes = pred.find("yes")
+                    idx_no = pred.find("no")
+                    if idx_yes < idx_no:
                         predictions.append(1)
                         taken_pred = "yes"
-                    elif "no" in pred.lower() or "no" in pre.lower():
+                    else:
                         predictions.append(0)
                         taken_pred = "no"
-                    else:
-                        predictions.append(-1)
-
-                    if x["label"].lower() == taken_pred:
-                        acc += 1
-
-                    if all(
-                        [
-                            option.lower() not in pred.lower() and option.lower() not in pre.lower()
-                            for option in x["option"]
-                        ]
-                    ):
-                        unknown += 1
+                elif "yes" in pred.lower() or "yes" in pre.lower():
+                    predictions.append(1)
+                    taken_pred = "yes"
+                elif "no" in pred.lower() or "no" in pre.lower():
+                    predictions.append(0)
+                    taken_pred = "no"
                 else:
-                    if pred.capitalize() == "Yes" or pre.capitalize() == "Yes":
-                        predictions.append(1)
-                    elif pred.capitalize() == "No" or pre.capitalize() == "No":
-                        predictions.append(0)
-                    else:
-                        predictions.append(-1)
+                    predictions.append(-1)
 
-                    if pred == x["label"] or pre == x["label"]:
-                        acc += 1
-                    elif pred not in x["option"] and pre not in x["option"]:
-                        unknown += 1
-        except IndexError as e:
-            print(e)
-            if len(cache) == 0:
-                return None, None, 0, [], []
+                if x["label"].lower() == taken_pred:
+                    acc += 1
+
+                if all(
+                    [
+                        option.lower() not in pred.lower() and option.lower() not in pre.lower()
+                        for option in x["option"]
+                    ]
+                ):
+                    unknown += 1
             else:
-                return acc / len(cache), unknown, cost, cache, predictions
+                if pred.capitalize() == "Yes" or pre.capitalize() == "Yes":
+                    predictions.append(1)
+                elif pred.capitalize() == "No" or pre.capitalize() == "No":
+                    predictions.append(0)
+                else:
+                    predictions.append(-1)
 
-        return acc / len(dataset), unknown, cost, cache, predictions
+                if pred == x["label"] or pre == x["label"]:
+                    acc += 1
+                elif pred not in x["option"] and pre not in x["option"]:
+                    unknown += 1
+
+        return acc / len(dataset), unknown, cost, list(zip(prompts, responses)), predictions

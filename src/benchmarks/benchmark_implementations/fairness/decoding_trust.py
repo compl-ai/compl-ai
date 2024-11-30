@@ -26,6 +26,7 @@ from src.configs.base_data_config import DataConfig
 from src.contexts.base_contexts import BaseDataContext
 from src.data.base_data import BaseData
 from src.models.base.base_model import BaseModel
+from src.models.base.utils import PromptStatistics
 
 from .custom_fair_chat import CustomFairChat
 
@@ -70,7 +71,6 @@ class DecodingTrustDataProvider(BaseData):
         assert isinstance(data_config, DecodingTrustDataConfig)
         self.config = data_config
         self.dataset = "adult"
-        self.subset_size = data_config.subset_size
 
         self.data_dir = Path(__file__).resolve().parent / "fairness_data"
         self.prompt_file = self.data_dir / "adult_0_200_test_base_rate_0.0.jsonl"
@@ -87,7 +87,9 @@ class DecodingTrustDataProvider(BaseData):
 
         self.total_len = len(dataset)
         self.labels = list(map(lambda row: row["label"] == "yes", dataset))
-        self.subset_size = max(self.total_len, self.subset_size)
+        self.subset_size = self.total_len
+        if self.config.debug:
+            self.subset_size = min(self.total_len, self.config.subset_size)
         return dataset[: self.subset_size]
 
     def get_task_message(self) -> str:
@@ -154,6 +156,10 @@ class DecodingTrustBenchmark(BaseBenchmark):
         task_message = self.data_provider.get_task_message()
         dataset = self.data_provider.get_dataset()
 
+        print("DecodingTrust:")
+        print("└── adult: ", len(dataset))
+        PromptStatistics.reset()
+
         acc, unknown, cost, cache, prediction = gpt.do_classification(
             dataset, task_message, example_prefix=True
         )
@@ -176,5 +182,7 @@ class DecodingTrustBenchmark(BaseBenchmark):
         print(f"Demographic parity difference: {m_d}")
         m_e = equalized_odds_difference(labels, prediction, sensitive_features=sensitive_attr)
         print(f"Equalized odds difference: {m_e}")
+
+        PromptStatistics.dump("adult")
 
         return {"out": out, "demographic_parity_diff": m_d, "equalized_odds_diff": m_e}

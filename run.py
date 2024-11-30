@@ -16,16 +16,13 @@ from src.utils.log_manager import log_manager
 logging.basicConfig(level=logging.DEBUG)
 
 
-def my_app(cfg: dict, results_folder=Path("runs")) -> None:
+def my_app(cfg: dict, results_folder: Path = Path("runs"), timestamp: bool = True) -> None:
     """
     Run the benchmark specified by the configuration.
 
     Args:
-        config (dict): The configuration for the benchmark run.
-        run_name (str, optional): The name of the run. Defaults to a random name.
+        cfg (dict): The configuration for the benchmark run.
         results_folder (str, optional): The folder to store the results. Defaults to "runs".
-        category (str, optional): The category name of the benchmark. Defaults to None.
-        benchmark (str, optional): The name of the benchmark to run. Defaults to None.
 
     Returns:
         None
@@ -37,8 +34,6 @@ def my_app(cfg: dict, results_folder=Path("runs")) -> None:
 
     # parsing config
     cfg_obj = parse_config(cfg)
-    print("Patched config: ")
-    print(cfg_obj)
 
     # Set seed
     seed_everything(cfg_obj.seed)
@@ -54,36 +49,42 @@ def my_app(cfg: dict, results_folder=Path("runs")) -> None:
     benchmark_info = BenchmarkInfo(benchmark_type=benchmark_name, category=category)
 
     # Setup database handler
-    result_handler = FileConnector(benchmark_info, run_folder=results_folder, create_run=True)
-    result_handler.store_config(cfg_obj)
+    with FileConnector(
+        benchmark_info, run_folder=results_folder, create_run=True, timestamp=timestamp
+    ) as result_handler:
+        if result_handler.results_exist():
+            logger.info("Skipping run, results already computed.")
+            return
 
-    # Initializer runner
-    runner = Runner(model, cfg_obj, result_handler)
+        result_handler.store_config(cfg_obj)
 
-    # Log the start time
-    start_time = datetime.now()
-    date_format = "%Y-%m-%d_%H:%M:%S"
-    datetime_string = start_time.strftime(date_format)
-    logger.info(f"Run started at {datetime_string}")
+        # Initializer runner
+        runner = Runner(model, cfg_obj, result_handler)
 
-    # Run
-    try:
-        runner.run()
+        # Log the start time
+        start_time = datetime.now()
+        date_format = "%Y-%m-%d_%H:%M:%S"
+        datetime_string = start_time.strftime(date_format)
+        logger.info(f"Run started at {datetime_string}")
 
-    except Exception as e:
-        traceback_str = traceback.format_exc()
-        logging.error("An error occurred during the benchmark:\n%s", traceback_str)
-        raise e
+        # Run
+        try:
+            runner.run()
 
-    finally:
-        # Log the end time
-        end_time = datetime.now()
-        datetime_string = end_time.strftime(date_format)
-        logger.info(f"Run ended at {datetime_string}")
+        except Exception as e:
+            traceback_str = traceback.format_exc()
+            logging.error("An error occurred during the benchmark:\n%s", traceback_str)
+            raise e
+
+        finally:
+            # Log the end time
+            end_time = datetime.now()
+            datetime_string = end_time.strftime(date_format)
+            logger.info(f"Run ended at {datetime_string}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="EU AI Checker tool")
+    parser = argparse.ArgumentParser(description="Compl-AI Checker tool")
     parser.add_argument("config_path", type=str, help="Path to the config file")
     parser.add_argument(
         "--profiling", action="store_true", default=False, help="Whether or not to run profiling"
@@ -122,6 +123,15 @@ if __name__ == "__main__":
         default=None,
         help="Which device to use, overwrites the device from model configs",
     )
+    parser.add_argument(
+        "--no-timestamp",
+        required=False,
+        dest="timestamp",
+        action="store_false",
+        help="Do not adds timestamp in the results folder name",
+    )
+    parser.set_defaults(timestamp=True)
+
     parser.add_argument("--answers_file", default=None, type=str, help="Path to the answers file")
 
     args = parser.parse_args()
@@ -157,4 +167,4 @@ if __name__ == "__main__":
     )
     logging.debug("Patched config dict: ", config_dict)
 
-    my_app(config_dict, results_folder=results_folder)
+    my_app(config_dict, results_folder=results_folder, timestamp=args.timestamp)

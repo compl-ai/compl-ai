@@ -22,7 +22,7 @@ config:
       num_workers: 1
       metric_configs:
         - *metric_config
-      evaluate_openai: false
+      evaluate_api: false
       postprocessor: 
         type: "calibration_big_bench_i_know"
 
