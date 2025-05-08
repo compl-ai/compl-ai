@@ -137,7 +137,18 @@ docker compose up --detach compact_ie_api
 
 ## Run the Benchmark Suite
 
-To run **all** benchmarks, run the following script:
+To run **all** benchmarks, run one of the following scripts:
+
+### For an OpenAI model
+```bash
+bash run_scripts/run_all_openai.sh
+```
+### For any API that implements the [OpenAI API schema](https://platform.openai.com/docs/api-reference/chat)
+```bash
+bash run_scripts/run_all_openai_compatible.sh
+```
+
+### For all other models
 ```bash
 bash run_scripts/run_all.sh
 ```
@@ -200,6 +211,11 @@ model_config=${3:-"configs/models/default_model.yaml"}
 For an OpenAI model, use `openai_model.yaml`:
 ```
 model_config=${3:-"configs/models/openai_model.yaml"}
+```
+
+For any API that implements the OpenAI API schema, use `openai_compatible_model.yaml`:
+```
+model_config=${3:-"configs/models/openai_compatible_model.yaml"}
 ```
 
 Other model vendors such as Anthropic are also supported. Please see the configs in `configs/models/`.
