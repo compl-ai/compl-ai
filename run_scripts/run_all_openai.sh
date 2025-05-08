@@ -1,9 +1,9 @@
 #!/bin/bash
-cd .. 
+
 RUN_NAME="gpt-4-1106-preview"
 MODEL_PATH="gpt-4-1106-preview"
 DEBUG_MODE="" # "--debug_mode"
-CURRENT_DATETIME=$(date "+%Y-%m-%d_%H:%M:%S")
+CURRENT_DATETIME=$(date "+%Y-%m-%d")
 
 run_job () {
   batch_size=${2:-10}
@@ -20,7 +20,7 @@ run_job () {
 	2> "runs/$RUN_NAME/$CURRENT_DATETIME/$(echo $1 | sed 's#/#_#g').errors"
 }
 
-
+mkdir -p runs/$RUN_NAME/$CURRENT_DATETIME
 
 # Cybersecurity
 run_job configs/cybersecurity/instruction_goal_hijacking.yaml 1 # Not yet optimized for batches
