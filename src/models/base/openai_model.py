@@ -1,4 +1,4 @@
-from secret import OPENAI_API_KEY, OPENAI_ORG
+from secret import OPENAI_API_KEY
 from src.configs.base_model_config import ModelConfig
 from src.models.base.openai_model_base import OpenAIModelBase
 
@@ -15,8 +15,4 @@ class OpenAIModel(OpenAIModelBase):
         return RPM
 
     def _get_request_headers(self):
-        return {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-            "OpenAI-Organization": OPENAI_ORG,
-        }
+        return {"Authorization": f"Bearer {OPENAI_API_KEY}"}

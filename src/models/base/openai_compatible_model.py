@@ -9,6 +9,4 @@ class OpenAICompatibleModel(OpenAIModelBase):
         return RPM
 
     def _get_request_headers(self):
-        return {
-            "Content-Type": "application/json",
-        }
+        return {}

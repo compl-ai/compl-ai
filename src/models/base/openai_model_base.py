@@ -170,7 +170,10 @@ class OpenAIModelBase(BaseModel):
                     self.has_started = True
                 async with session.post(
                     self.url,
-                    headers=self._get_request_headers(),
+                    headers={
+                        "Content-Type": "application/json",
+                        **self._get_authorization_headers()
+                    },
                     json={
                         "model": self.model,
                         "messages": messages,
@@ -213,7 +216,10 @@ class OpenAIModelBase(BaseModel):
                     self.has_started = True
                 async with session.post(
                     self.url,
-                    headers=self._get_request_headers(),
+                    headers={
+                        "Content-Type": "application/json",
+                        **self._get_authorization_headers()
+                    },
                     json={
                         "model": self.model,
                         "messages": [context],
@@ -249,7 +255,7 @@ class OpenAIModelBase(BaseModel):
                 await asyncio.sleep(60)
         raise Exception("Error in OpenAI API.")
 
-    def _get_request_headers(self):
+    def _get_authorization_headers(self):
         raise NotImplementedError
 
     def _get_rpm(self):
