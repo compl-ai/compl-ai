@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 from src.configs.base_model_config import ModelConfig, ModelProvider, ModelType
+from src.models.base.openai_compatible_model import OpenAICompatibleModel
 
 from .anthropic_model import AnthropicModel
 from .base_model import BaseModel
@@ -52,6 +53,9 @@ def get_model_from_config(config: ModelConfig) -> BaseModel:  # noqa: C901
 
     elif config.provider == ModelProvider.OPENAI:
         model = OpenAIModel(config)
+
+    elif config.provider == ModelProvider.OPENAI_COMPATIBLE:
+        model = OpenAICompatibleModel(config)
 
     elif config.provider == ModelProvider.ANTHROPIC:
         model = AnthropicModel(config)

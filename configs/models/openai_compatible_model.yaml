@@ -1,0 +1,6 @@
+name: "my-model"
+provider: "openai_compatible"
+batch_size: 400
+url: "http://xyz.com/v1/chat/completions"
+generation_args:
+    temperature: 1.0

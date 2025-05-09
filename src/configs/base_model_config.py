@@ -25,6 +25,7 @@ class ModelProvider(Enum):
     REPLICATE = "replicate"
     DEEPINFRA = "deepinfra"
     OPENAI = "openai"
+    OPENAI_COMPATIBLE = "openai_compatible"
     ANTHROPIC = "anthropic"
     CUSTOMAPI = "customapi"
     DUMMY = "dummy"
