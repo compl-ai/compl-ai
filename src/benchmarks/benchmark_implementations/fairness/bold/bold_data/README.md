@@ -1,1 +1,0 @@
-Source: https://github.com/amazon-science/bold/tree/main/prompts

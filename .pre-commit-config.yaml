@@ -1,36 +1,41 @@
-exclude: '^external.*|.*fastchat/conversation\.py$|.*reddit_bias_code/.*$|.*truthful_qa/.*$|.*cybersecurity/tap/.*$'
 repos:
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.19.0
+    hooks:
+      - id: typos
+        args: [--force-exclude, --config, pyproject.toml]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.11.6
+    hooks:
+      # Run the linter.
+      - id: ruff
+        types_or: [python, pyi, jupyter]
+        args: [--fix]
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [python, pyi, jupyter]
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        args: [--severity=error]
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-d, 'level: error']
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.16.0
+    hooks:
+      - id: yamlfmt
+        args: [-conf, yamlfmt.yaml]
   - repo: local
     hooks:
-      - id: isort
-        name: isort
-        stages: [commit]
-        language: system
-        entry: isort
-        types: [python]
-        args: ["--profile", "black"]
-
-      - id: black
-        name: black
-        stages: [commit]
-        language: system
-        entry: black
-        types: [python]
-
-      - id: flake8
-        name: flake8
-        stages: [commit]
-        language: system
-        entry: flake8
-        types: [python]
-        args: ["--config", ".flake8"]
-
       - id: mypy
         name: mypy
-        stages: [commit]
-        language: python
-        entry: python3 -m mypy
-        types: [python]
-        additional_dependencies: ["mypy", "pydantic", "types-requests", "types-PyYAML"]
+        stages: [pre-commit]
+        entry: python -m mypy --show-error-codes src/complai src/tests
+        language: system
         pass_filenames: false
-        args: ["--config-file", "mypy.ini", "."]

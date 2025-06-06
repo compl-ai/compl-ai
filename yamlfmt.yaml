@@ -1,0 +1,7 @@
+formatter:
+  type: basic
+  include_document_start: false
+  retain_line_breaks: false
+  max_line_length: 0
+  scan_folded_as_literal: true
+exclude: []

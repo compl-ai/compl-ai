@@ -1,9 +1,0 @@
-name: EleutherAI/gpt-neo-125m  # google/flan-t5-base
-provider: "hf"
-type: "causal_lm"
-device: "cpu"
-batch_size: 4
-tokenizer_name: EleutherAI/gpt-neo-125m # google/flan-t5-base
-dtype: "float32"
-padding_side: "left"
-

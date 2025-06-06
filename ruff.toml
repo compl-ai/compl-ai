@@ -1,0 +1,108 @@
+line-length = 88
+
+exclude = [
+    ".git/",
+]
+
+[lint]
+
+extend-select = [
+    # Enable the isort rules.
+    "I",
+    # Enable all `pydocstyle` rules, limiting to those that adhere to the
+    # Google convention via `convention = "google"`, below.
+    "D",
+    # Doc line length.
+    "W505",
+    # Check for breakpoint() statements
+    "T10",
+    # Enable warnings for f-strings in log messages.
+    "G004",
+    # Too many log message arguments.
+    "PLE1205",
+    # Too few log message arguments.
+    "PLE1206",
+    # Enable panda lints.
+    "PD",
+    # Do not create a sequence just to get the first item.
+    "RUF015",
+    # Prefer itertools.pairwise() over zip() when iterating over successive pairs.
+    "RUF007",
+    # Avoid quadratic list summation (sum() is quadratic in the number of given lists).
+    "RUF017",
+    # Sort __all__ entries.
+    "RUF022",
+    # Checks for member imports that should instead be accessed by importing the module.
+    "ICN003",
+    # Checks for uses of PEP 585- and PEP 604-style type annotations in Python modules
+    # that lack the required `from __future__ import annotations` import for
+    # compatibility with older Python versions.
+    "FA102",
+    # Checks for banned imports (see [lint.flake8-tidy-imports.banned-api] below)
+    "TID251",
+    # Checks for uses of the try-except-pass pattern.
+    "S110"
+]
+
+ignore = [
+    "E203",
+    "E501",
+    # On top of the Google convention, disable `D417`, which requires
+    # documentation for every function parameter.
+    "D417",
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in public class
+    "D101",
+    # Missing docstring in public method
+    "D102",
+    # Missing docstring in public function
+    "D103",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in magic method
+    "D105",
+    # Missing docstring in `__init__`
+    "D107",
+    # 1 blank line required between summary line and description.
+    # This is needed because sometimes our summaries span multiple lines.
+    "D205",
+    # Multi-line docstring closing quotes should be on a separate line
+    # This is a result of summary lines spanning more than one line.
+    "D209",
+    # Multi-line docstring summary should start at the first line.
+    "D212",
+    # Use `r"""` if any backslashes in a docstring.
+    "D301",
+    # First line should end with a period, question mark, or exclamation point
+    "D415",
+    # inplace=True should be avoided; it has inconsistent behavior
+    "PD002",
+    # Checks for uses of .pivot or .unstack on Pandas objects.
+    "PD010",
+    # Use .to_numpy() instead of .values.
+    "PD011",
+    # Use .merge method instead of pd.merge function. They have equivalent functionality.
+    "PD015",
+    # Avoid using the generic variable name df for DataFrames.
+    "PD901",
+    # Doc line too long. This is needed because we have ~400 errors otherwise.
+    "W505",
+]
+
+[lint.isort]
+order-by-type = false
+case-sensitive = false
+split-on-trailing-comma = true
+force-single-line = true
+lines-after-imports = 2
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.pycodestyle]
+max-doc-length = 88
+
+[format]
+docstring-code-format = true
+skip-magic-trailing-comma = true

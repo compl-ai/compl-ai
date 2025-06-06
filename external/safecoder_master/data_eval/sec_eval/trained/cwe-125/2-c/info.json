@@ -1,8 +1,0 @@
-{
-    "language": "c",
-    "cwe": "CWE-125",
-    "scenario": "2-c",
-    "check_ql": "../data_eval/sec_eval/trained/cwe-125/2-c/cwe_125_mitre-eg-1.ql",
-    "source": "copilot-cwe-scenarios-dataset/experiments_dow/cwe-125/mitre-eg-1",
-    "description": "array indexing with bound check"
-}

@@ -1,8 +1,0 @@
-{
-    "language": "c",
-    "cwe": "CWE-787",
-    "scenario": "1-c",
-    "check_ql": "../data_eval/sec_eval/trained/cwe-787/1-c/cwe_787_mitre-eg-2.ql",
-    "source": "copilot-cwe-scenarios-dataset/experiments_dow/cwe-787/mitre-eg-2",
-    "description": "copy data between buffers"
-}
