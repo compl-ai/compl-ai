@@ -23,7 +23,7 @@ repos:
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
     hooks:
-      - id: shellcheck # TODO: had to install this manually
+      - id: shellcheck
         name: shellcheck
         args: [--severity=error]
   - repo: https://github.com/adrienverge/yamllint

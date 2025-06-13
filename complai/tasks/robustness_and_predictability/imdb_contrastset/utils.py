@@ -2,8 +2,11 @@ import datasets
 
 
 def _process_row(item: dict) -> dict:
-    input_str = f"{item['Text_Original']}\\nSentiment: {item['Sentiment_Original']}\\n{item['Text_Contrast']}\\nSentiment: "
-
+    input_str = (
+        f"{item['Text_Original']}\\n"
+        f"Sentiment: {item['Sentiment_Original']}\\n"
+        f"{item['Text_Contrast']}\\nSentiment: "
+    )
     label_idx = 1 if item["Sentiment_Contrast"] == "Positive" else 0
 
     return {"input": input_str, "label_idx": label_idx}
@@ -12,6 +15,7 @@ def _process_row(item: dict) -> dict:
 def _preprocess_dataset(dataset: dict) -> datasets.Dataset:
     preprocessed_dataset: list = []
 
+    # This is not ideal, should join datasets before handing to harness.
     test_original_dataset = datasets.Dataset.from_dict(dataset[:488])
     test_contrast_dataset = datasets.Dataset.from_dict(dataset[488:])
 

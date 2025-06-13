@@ -35,7 +35,7 @@ def _process_example(item: dict) -> Optional[dict]:
         contrast_question += "?"
     contrast_answer = chosen_contrast["answer"]
 
-    input = (
+    input_str = (
         f"{paragraph}\\n\\n"
         f"Question: {original_question}\\n"
         f"Answer: {original_answer}\\n\\n"
@@ -45,35 +45,12 @@ def _process_example(item: dict) -> Optional[dict]:
 
     label_idx = 1 if contrast_answer == "TRUE" else 0
 
-    return {
-        "input": input,
-        "label_idx": label_idx,
-        "paragraph": paragraph,
-        "original_question": original_question,
-        "original_answer": original_answer,
-        "contrast_question": contrast_question,
-        "contrast_answer": contrast_answer,
-    }
+    return {"input": input_str, "label_idx": label_idx, "paragraph": paragraph}
 
 
 def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
-    output_features = datasets.Features(
-        {
-            "input": datasets.Value("string"),
-            "label_idx": datasets.Value("int32"),
-            "paragraph": datasets.Value("string"),
-            "original_question": datasets.Value("string"),
-            "original_answer": datasets.Value("string"),
-            "contrast_question": datasets.Value("string"),
-            "contrast_answer": datasets.Value("string"),
-        }
-    )
-
     processed_dataset = dataset.map(
-        _process_example,
-        remove_columns=dataset.column_names,
-        features=output_features,
-        batched=False,
+        _process_example, remove_columns=dataset.column_names
     )
 
     return processed_dataset

@@ -26,5 +26,5 @@ metric_list:
     aggregation: mean
     higher_is_better: true
 
-# system_instructions:
-#   - "You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'TRUE' or 'FALSE'. The answer should be exactly 'TRUE' or 'FALSE'.\\n"
+# system_instructions: # source: LatticeFlow AI GO
+#   - "You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'Positive' or 'Negative'. The answer should be exactly 'Positive' or 'Negative'.\\n"
