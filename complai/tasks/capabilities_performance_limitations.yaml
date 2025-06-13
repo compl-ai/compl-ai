@@ -1,0 +1,7 @@
+group: capabilities_performance_and_limitations
+task:
+  - mmlu
+  - arc_challenge
+  - hellaswag
+  - truthfulqa_mc2
+  - humaneval

@@ -1,0 +1,7 @@
+group: robustness_and_predictability
+task:
+  # - mmlu_robustness
+  - boolq_contrastset
+  - imdb_contrastset
+  # - monotonicity_checks
+  # - self-check_consistency

@@ -1,0 +1,14 @@
+group: compl-ai
+task:
+  - robustness_and_predictability
+  # - cyberattack_resilience
+  # - training_data_suitability
+  # - no_copyright_infringement
+  # - user_privacy_protection
+  - capabilities_performance_and_limitations
+  # - interpretability
+  # - disclosure_of_ai
+  # - traceability
+  # - representation_absence_of_bias
+  # - fairness_absence_of_discrimination
+  # - harmful_content_and_toxicity

@@ -1,0 +1,30 @@
+task: imdb_contrastset
+tag: robustness_and_predictability
+dataset_path: csv
+dataset_name: null
+dataset_kwargs:
+  data_files:
+    val:
+      - https://raw.githubusercontent.com/allenai/contrast-sets/refs/heads/main/IMDb/data/test_original.tsv
+      - https://raw.githubusercontent.com/allenai/contrast-sets/refs/heads/main/IMDb/data/test_contrast.tsv
+  delimiter: "\t"
+training_split: null
+test_split: null
+validation_split: val
+fewshot_split: null
+num_fewshot: 0
+output_type: multiple_choice
+process_docs: !function utils.process_docs
+doc_to_text: input
+doc_to_target: label_idx
+doc_to_choice: ["Negative", "Positive"]
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: acc_norm
+    aggregation: mean
+    higher_is_better: true
+
+# system_instructions:
+#   - "You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'TRUE' or 'FALSE'. The answer should be exactly 'TRUE' or 'FALSE'.\\n"

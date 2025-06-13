@@ -1,4 +1,9 @@
 repos:
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.7.13
+    hooks:
+      - id: uv-lock
   - repo: https://github.com/crate-ci/typos
     rev: v1.19.0
     hooks:
@@ -18,7 +23,7 @@ repos:
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
     hooks:
-      - id: shellcheck
+      - id: shellcheck # TODO: had to install this manually
         name: shellcheck
         args: [--severity=error]
   - repo: https://github.com/adrienverge/yamllint
@@ -36,6 +41,8 @@ repos:
       - id: mypy
         name: mypy
         stages: [pre-commit]
-        entry: python -m mypy --show-error-codes src/complai src/tests
+        entry: uv run python -m mypy --show-error-codes --ignore-missing-imports
         language: system
-        pass_filenames: false
+        pass_filenames: true
+        files: \.py$
+        types: [python]

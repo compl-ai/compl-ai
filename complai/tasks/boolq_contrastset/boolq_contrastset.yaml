@@ -1,0 +1,24 @@
+task: boolq_contrastset
+tag: robustness_and_predictability
+dataset_path: json
+dataset_name: null
+dataset_kwargs:
+  data_files:
+    val: https://raw.githubusercontent.com/allenai/contrast-sets/refs/heads/main/BoolQ/boolq_perturbed.json
+  field: data
+output_type: multiple_choice
+training_split: null
+validation_split: val
+test_split: null
+fewshot_split: null
+process_docs: !function utils.process_docs
+doc_to_text: input
+doc_to_target: label_idx
+doc_to_choice: ["FALSE", "TRUE"]
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: acc_norm
+    aggregation: mean
+    higher_is_better: true
