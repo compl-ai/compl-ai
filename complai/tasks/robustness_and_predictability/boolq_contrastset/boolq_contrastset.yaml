@@ -1,5 +1,4 @@
 task: boolq_contrastset
-tag: robustness_and_predictability
 dataset_path: json
 dataset_name: null
 dataset_kwargs:

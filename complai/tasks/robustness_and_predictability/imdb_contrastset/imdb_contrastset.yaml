@@ -1,5 +1,4 @@
 task: imdb_contrastset
-tag: robustness_and_predictability
 dataset_path: csv
 dataset_name: null
 dataset_kwargs:
