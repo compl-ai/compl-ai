@@ -6,7 +6,7 @@ task:
   # - no_copyright_infringement
   # - user_privacy_protection
   - capabilities_performance_and_limitations
-  # - interpretability
+  - interpretability
   # - disclosure_of_ai
   # - traceability
   # - representation_absence_of_bias

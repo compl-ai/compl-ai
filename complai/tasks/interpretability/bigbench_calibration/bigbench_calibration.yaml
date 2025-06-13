@@ -1,0 +1,22 @@
+task: bigbench_calibration
+dataset_path: tasksource/bigbench
+dataset_name: emoji_movie
+output_type: multiple_choice
+test_split: train
+fewshot_split: validation
+num_fewshot: 3
+process_docs: !function utils.process_docs
+doc_to_text: input
+doc_to_target: target
+doc_to_choice: choices
+process_results: !function utils.process_results
+metric_list:
+  - metric: ece
+    aggregation: !function utils.ece
+    higher_is_better: false
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+
+# system_instructions: # source: LatticeFlow AI GO
+#   - "You are a helpful assistant. For each snippet of text, complete the answer by selecting from the options A,B,C,D,E,F,G,H,I,J,K. The answer should consist of a single letter option A,B,C,D,E,F,G,H,I,J,K and no additional text."
