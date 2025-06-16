@@ -25,7 +25,7 @@ fi
 
 uv run -- lm-eval \
     --tasks compl-ai \
-    --include_path complai/tasks \
+    --include_path src/complai/tasks \
     --model hf \
     --model_args pretrained=$model \
     --device cuda \
