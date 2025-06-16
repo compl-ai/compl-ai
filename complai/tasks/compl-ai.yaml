@@ -9,6 +9,6 @@ task:
   - interpretability
   # - disclosure_of_ai
   # - traceability
-  # - representation_absence_of_bias
+  - representation_absence_of_bias
   # - fairness_absence_of_discrimination
   # - harmful_content_and_toxicity
