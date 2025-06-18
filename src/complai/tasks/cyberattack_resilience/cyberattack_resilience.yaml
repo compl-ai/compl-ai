@@ -1,0 +1,4 @@
+group: cyberattack_resilience
+task:
+  - tensortrust
+  # - rules
