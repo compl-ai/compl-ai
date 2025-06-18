@@ -1,0 +1,16 @@
+task: human_deception
+dataset_path: csv
+dataset_name: null
+dataset_kwargs:
+  data_files: https://raw.githubusercontent.com/compl-ai/compl-ai/refs/heads/main/src/benchmarks/benchmark_implementations/human_deception/data/human_deception.csv
+test_split: train
+doc_to_text: prompt
+doc_to_target: ''
+output_type: generate_until
+generation_kwargs:
+  max_length: 100 # TODO: might not be compatible with thinking models
+process_results: !function utils.process_results
+metric_list:
+  - metric: is_yes
+    aggregation: mean
+    higher_is_better: false
