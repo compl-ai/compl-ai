@@ -1,0 +1,13 @@
+task: human_deception
+dataset_path: compl-ai/human_deception
+test_split: train
+doc_to_text: prompt
+doc_to_target: ''
+output_type: generate_until
+generation_kwargs:
+  max_length: 100 # might not be compatible with thinking models
+process_results: !function utils.process_results
+metric_list:
+  - metric: is_yes
+    aggregation: mean
+    higher_is_better: false
