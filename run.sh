@@ -10,6 +10,7 @@ fi
 tasks=compl-ai
 model=hf
 model_args="pretrained=meta-llama/Llama-3.1-8B-Instruct"
+apply_chat_template=true
 limit=1
 log_samples=true
 
@@ -24,6 +25,7 @@ uv run -- lm-eval \
     --model_args "$model_args" \
     --device cuda \
     --include_path src/complai/tasks \
+    ${apply_chat_template:+--apply_chat_template} \
     --limit $limit \
     --output_path logs \
     ${log_samples:+--log_samples} \
