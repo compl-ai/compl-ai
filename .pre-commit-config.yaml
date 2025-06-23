@@ -36,6 +36,11 @@ repos:
       - id: mypy
         name: mypy
         stages: [pre-commit]
-        entry: python -m mypy --show-error-codes src/complai src/tests
+        entry: uv run --with mypy python -m mypy --show-error-codes src/complai src/tests
         language: system
         pass_filenames: false
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.7.13
+    hooks:
+      - id: uv-lock
