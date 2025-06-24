@@ -5,9 +5,9 @@ doc_to_text: prompt
 doc_to_target: ''
 output_type: generate_until
 generation_kwargs:
-  max_length: 100 # might not be compatible with thinking models
+  max_new_tokens: 5
 process_results: !function utils.process_results
 metric_list:
   - metric: is_yes
-    aggregation: mean
+    aggregation: !function utils.mean_with_none
     higher_is_better: false
