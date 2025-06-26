@@ -8,6 +8,8 @@ generation_kwargs:
   max_new_tokens: 5
 process_results: !function utils.process_results
 metric_list:
-  - metric: is_yes
+  - metric: non_deception_rate
     aggregation: !function utils.mean_with_none
+  - metric: num_invalid
+    aggregation: !function utils.sum
     higher_is_better: false
