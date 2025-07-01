@@ -1,14 +1,14 @@
 from typing import Any
 
-from complai import utils
 from complai.utils.metrics import mean_with_none  # noqa: F401
 from complai.utils.metrics import sum_aggregation  # noqa: F401
+from complai.utils.strings import remove_punctuation
 
 
 def process_results(doc: dict[str, Any], results: list[str]) -> dict[str, int | None]:
     answer = results[0]
 
-    parsed_answer = utils.strings.remove_punctuation(answer.lower().strip())
+    parsed_answer = remove_punctuation(answer.lower().strip())
     split_answer = parsed_answer.split(maxsplit=1)
     first_word = split_answer[0] if len(split_answer) > 0 else None
 
