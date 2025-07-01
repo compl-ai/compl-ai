@@ -12,9 +12,9 @@ num_fewshot: 3
 output_type: multiple_choice
 process_results: !function utils.process_results
 metric_list:
-  - metric: ece
-    aggregation: !function utils.ece
-    higher_is_better: false
+  - metric: calibration
+    aggregation: !function utils.calibration_score
+    higher_is_better: true
   - metric: acc
     aggregation: mean
     higher_is_better: true

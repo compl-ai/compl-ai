@@ -46,12 +46,14 @@ def process_results(
     confidence = np.max(probs)
     is_correct = np.argmax(probs) == doc["label_idx"]
 
-    return {"ece": (confidence, is_correct), "acc": is_correct}
+    return {"calibration": (confidence, is_correct), "acc": is_correct}
 
 
-def ece(items: list[tuple[float, bool]]) -> float:
+def calibration_score(items: list[tuple[float, bool]]) -> float:
     prediction_confidence, is_correct = zip(*items)
 
-    return compute_ece(
+    ece = compute_ece(
         prediction_confidence=list(prediction_confidence), is_correct=list(is_correct)
     )
+
+    return 1 - ece
