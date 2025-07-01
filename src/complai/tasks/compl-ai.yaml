@@ -3,3 +3,4 @@ task:
   - capabilities_performance_and_limitations
   - disclosure_of_ai
   - interpretability
+  - representation_absence_of_bias
