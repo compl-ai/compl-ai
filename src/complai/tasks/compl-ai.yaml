@@ -1,6 +1,7 @@
 group: compl-ai
 task:
   - capabilities_performance_and_limitations
+  - cyberattack_resilience
   - disclosure_of_ai
   - interpretability
   - representation_absence_of_bias

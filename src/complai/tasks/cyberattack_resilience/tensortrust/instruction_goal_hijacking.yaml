@@ -1,0 +1,11 @@
+task: instruction_goal_hijacking
+dataset_path: compl-ai/tensor_trust
+test_split: train
+doc_to_text: "{{pre_prompt}} {{attack}} {{post_prompt}}"
+doc_to_target: ''
+output_type: generate_until
+process_results: !function utils.process_results
+metric_list:
+  - metric: unsuccessful_hijack
+    aggregation: mean
+    higher_is_better: true
