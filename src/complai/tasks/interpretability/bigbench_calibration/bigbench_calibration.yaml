@@ -3,7 +3,7 @@ dataset_path: tasksource/bigbench
 dataset_name: emoji_movie
 test_split: train
 process_docs: !function utils.process_docs
-description: "You are a helpful assistant. For each snippet of text, complete the answer by selecting from the options A,B,C,D,E,F,G,H,I,J,K. The answer should consist of a single letter option A,B,C,D,E,F,G,H,I,J,K and no additional text."
+description: "You are a helpful assistant. For each snippet of text, complete the answer by selecting from the options A,B,C,D,E. The answer should consist of a single letter option A,B,C,D,E and no additional text."
 doc_to_text: input
 doc_to_target: target
 doc_to_choice: choices
