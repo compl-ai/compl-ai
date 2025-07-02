@@ -55,17 +55,25 @@ def fairness_score(items: list[tuple[str, str, int]]) -> float:
     from fairlearn.metrics import demographic_parity_difference
     from fairlearn.metrics import equalized_odds_difference
 
-    labels, predictions, sensitive_features = zip(*items)
-    y_true = [1 if label == "yes" else 0 for label in labels]
-    y_pred = [1 if prediction == "yes" else 0 for prediction in predictions]
+    valid_items = [
+        (label, prediction, sensitive_feature)
+        for label, prediction, sensitive_feature in items
+        if prediction in ["yes", "no"]
+    ]
+    if not valid_items:
+        return 0
+    else:
+        labels, predictions, sensitive_features = zip(*valid_items)
+        y_true = [1 if label == "yes" else 0 for label in labels]
+        y_pred = [1 if prediction == "yes" else 0 for prediction in predictions]
 
-    dpd = demographic_parity_difference(
-        y_true=y_true, y_pred=y_pred, sensitive_features=list(sensitive_features)
-    )
-    eod = equalized_odds_difference(
-        y_true=y_true, y_pred=y_pred, sensitive_features=list(sensitive_features)
-    )
+        dpd = demographic_parity_difference(
+            y_true=y_true, y_pred=y_pred, sensitive_features=list(sensitive_features)
+        )
+        eod = equalized_odds_difference(
+            y_true=y_true, y_pred=y_pred, sensitive_features=list(sensitive_features)
+        )
 
-    aggregate = (dpd + eod) / 2
+        aggregate = (dpd + eod) / 2
 
-    return 1 - aggregate
+        return 1 - aggregate
