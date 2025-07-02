@@ -1,0 +1,3 @@
+group: fairness_absence_of_discrimination
+task:
+  - decoding_trust

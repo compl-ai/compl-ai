@@ -322,11 +322,15 @@ name = "compl-ai"
 version = "2.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "fairlearn" },
     { name = "lm-eval" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "lm-eval", git = "https://github.com/EleutherAI/lm-evaluation-harness.git" }]
+requires-dist = [
+    { name = "fairlearn", specifier = ">=0.12.0" },
+    { name = "lm-eval", git = "https://github.com/EleutherAI/lm-evaluation-harness.git" },
+]
 
 [[package]]
 name = "dataproperty"
@@ -396,6 +400,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5a/a0/10a56e0939ece94c54276e81459cb4101f46f0e9a6f54fc31a35f64e8854/evaluate-0.4.3.tar.gz", hash = "sha256:3a5700cf83aabee9549264e1e5666f116367c61dbd4d38352015e859a5e2098d", size = 65679, upload-time = "2024-09-11T10:15:32Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/e7/cbca9e2d2590eb9b5aa8f7ebabe1beb1498f9462d2ecede5c9fd9735faaf/evaluate-0.4.3-py3-none-any.whl", hash = "sha256:47d8770bdea76e2c2ed0d40189273027d1a41ccea861bcc7ba12d30ec5d1e517", size = 84010, upload-time = "2024-09-11T10:15:30.018Z" },
+]
+
+[[package]]
+name = "fairlearn"
+version = "0.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pandas" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/b3/22fc076d5123aaf7774193ec65fb6e968709bc1e30d572244aa55b915274/fairlearn-0.12.0.tar.gz", hash = "sha256:bd3d79a3c0e4b35a9732278e20b6be80cbd6c47cf560326ffe9aaf0b8077e76f", size = 173495, upload-time = "2024-12-11T11:29:35.947Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/83/c2991646a3a24532567e24c2f4e7ae3ddac0d8d322f4f9b84c6c26a15890/fairlearn-0.12.0-py3-none-any.whl", hash = "sha256:bcebeec54a7c35bc2ff0ce6e5cb123b959ad46ff8f9032d9cea9906f604dfaf4", size = 240017, upload-time = "2024-12-11T11:29:34.541Z" },
 ]
 
 [[package]]

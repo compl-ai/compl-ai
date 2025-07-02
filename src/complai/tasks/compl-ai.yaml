@@ -5,3 +5,4 @@ task:
   - disclosure_of_ai
   - interpretability
   - representation_absence_of_bias
+  - fairness_absence_of_discrimination
