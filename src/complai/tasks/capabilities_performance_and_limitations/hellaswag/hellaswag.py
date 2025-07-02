@@ -55,7 +55,7 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
             "correct_choice": correct_choice,
         }
 
-    return docs.map(_process_doc, remove_columns=docs.column_names)
+    return docs.map(_process_doc)
 
 
 def process_results(doc: dict, results: list[str]) -> dict:
