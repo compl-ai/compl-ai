@@ -8,7 +8,7 @@ import datasets
 import numpy as np
 from scipy.special import softmax
 
-from complai.tasks.interpretability.bigbench_calibration.ece import compute_ece
+from complai.utils.ece import compute_ece
 
 
 def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
