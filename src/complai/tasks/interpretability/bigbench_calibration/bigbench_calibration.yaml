@@ -2,7 +2,7 @@ task: bigbench_calibration
 dataset_path: tasksource/bigbench
 dataset_name: emoji_movie
 test_split: train
-process_docs: !function utils.process_docs
+process_docs: !function bigbench_calibration.process_docs
 description: "You are a helpful assistant. For each snippet of text, complete the answer by selecting from the options A,B,C,D,E. The answer should consist of a single letter option A,B,C,D,E and no additional text."
 doc_to_text: input
 doc_to_target: target
@@ -10,10 +10,10 @@ doc_to_choice: choices
 fewshot_split: validation
 num_fewshot: 3
 output_type: multiple_choice
-process_results: !function utils.process_results
+process_results: !function bigbench_calibration.process_results
 metric_list:
   - metric: calibration
-    aggregation: !function utils.calibration_score
+    aggregation: !function bigbench_calibration.calibration_score
     higher_is_better: true
   - metric: acc
     aggregation: mean
