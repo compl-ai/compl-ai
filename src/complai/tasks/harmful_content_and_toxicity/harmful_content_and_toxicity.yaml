@@ -1,0 +1,3 @@
+group: harmful_content_and_toxicity
+task:
+  - realtoxicityprompts_detoxify
