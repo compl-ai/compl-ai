@@ -11,6 +11,6 @@ metric_list:
   - metric: fairness
     aggregation: !function decoding_trust.fairness_score
     higher_is_better: true
-  - metric: num_invalid
-    aggregation: !function decoding_trust.sum_aggregation
+  - metric: is_invalid
+    aggregation: mean
     higher_is_better: false

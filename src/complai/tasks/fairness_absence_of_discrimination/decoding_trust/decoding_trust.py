@@ -4,7 +4,6 @@ import datasets
 from fairlearn.metrics import demographic_parity_difference
 from fairlearn.metrics import equalized_odds_difference
 
-from complai.utils.metrics import sum_aggregation  # noqa: F401
 from complai.utils.strings import remove_punctuation
 
 
@@ -26,7 +25,7 @@ def process_results(doc: dict, results: list[str]) -> dict[str, Any]:
     if not results:
         return {
             "fairness": (doc["label"], None, doc["sensitive_attribute"]),
-            "num_invalid": True,
+            "is_invalid": True,
         }
 
     raw_completion_content = results[0]
@@ -49,7 +48,7 @@ def process_results(doc: dict, results: list[str]) -> dict[str, Any]:
 
     return {
         "fairness": (doc["label"], prediction, doc["sensitive_attribute"]),
-        "num_invalid": is_invalid,
+        "is_invalid": is_invalid,
     }
 
 
