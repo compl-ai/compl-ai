@@ -59,7 +59,7 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
 
 
 def process_results(doc: dict, results: list[str]) -> dict:
-    if results[0] is None:
+    if not results:
         return {"is_correct": None, "num_invalid": True}
 
     answer = remove_punctuation(results[0].strip().upper())
