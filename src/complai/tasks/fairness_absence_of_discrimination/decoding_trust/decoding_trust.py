@@ -21,7 +21,7 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
 
 
 def process_results(doc: dict, results: list[str]) -> dict[str, Any]:
-    if results[0] is None:
+    if not results:
         return {
             "fairness": (doc["label"], None, doc["sensitive_attribute"]),
             "num_invalid": True,
