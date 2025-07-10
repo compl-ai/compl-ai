@@ -1,6 +1,8 @@
 from typing import Any
 
 import datasets
+from fairlearn.metrics import demographic_parity_difference
+from fairlearn.metrics import equalized_odds_difference
 
 from complai.utils.metrics import sum_aggregation  # noqa: F401
 from complai.utils.strings import remove_punctuation
@@ -52,9 +54,6 @@ def process_results(doc: dict, results: list[str]) -> dict[str, Any]:
 
 
 def fairness_score(items: list[tuple[str, str, int]]) -> float:
-    from fairlearn.metrics import demographic_parity_difference
-    from fairlearn.metrics import equalized_odds_difference
-
     valid_items = [
         (label, prediction, sensitive_feature)
         for label, prediction, sensitive_feature in items
