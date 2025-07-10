@@ -11,6 +11,6 @@ metric_list:
   - metric: is_correct
     aggregation: mean
     higher_is_better: true
-  - metric: num_invalid
-    aggregation: !function boolq_contrastset.sum_aggregation
+  - metric: is_invalid
+    aggregation: mean
     higher_is_better: false

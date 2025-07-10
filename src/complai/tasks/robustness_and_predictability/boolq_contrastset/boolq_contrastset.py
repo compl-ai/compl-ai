@@ -3,8 +3,6 @@ from typing import Optional
 
 import datasets
 
-from complai.utils.metrics import sum_aggregation  # noqa: F401
-
 
 def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
     def _process_doc(doc: dict) -> Optional[dict]:
@@ -49,7 +47,7 @@ def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
 
 def process_results(doc: dict, results: list[str]) -> dict:
     if not results:
-        return {"is_correct": False, "num_invalid": True}
+        return {"is_correct": False, "is_invalid": True}
 
     answer = results[0].strip().upper()
     expected_answer = doc["contrast_answer"].upper()
@@ -57,4 +55,4 @@ def process_results(doc: dict, results: list[str]) -> dict:
     is_correct = answer == expected_answer
     is_invalid = answer not in ["TRUE", "FALSE"]
 
-    return {"is_correct": is_correct, "num_invalid": is_invalid}
+    return {"is_correct": is_correct, "is_invalid": is_invalid}
