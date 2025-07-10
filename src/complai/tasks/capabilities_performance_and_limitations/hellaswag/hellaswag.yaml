@@ -8,6 +8,9 @@ doc_to_target: ''
 output_type: generate_until
 process_results: !function hellaswag.process_results
 metric_list:
-  - metric: acc
+  - metric: is_correct
     aggregation: mean
     higher_is_better: true
+  - metric: is_invalid
+    aggregation: mean
+    higher_is_better: false

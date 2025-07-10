@@ -60,7 +60,7 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
 
 def process_results(doc: dict, results: list[str]) -> dict:
     if not results:
-        return {"is_correct": False, "num_invalid": True}
+        return {"is_correct": False, "is_invalid": True}
 
     answer = remove_punctuation(results[0].strip().upper())
     expected_answer = doc["correct_choice"]
@@ -68,4 +68,4 @@ def process_results(doc: dict, results: list[str]) -> dict:
     is_correct = answer == expected_answer
     is_invalid = answer not in ["A", "B", "C", "D"]
 
-    return {"is_correct": is_correct, "num_invalid": is_invalid}
+    return {"is_correct": is_correct, "is_invalid": is_invalid}
