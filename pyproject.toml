@@ -9,7 +9,7 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "lm-eval>=0.4.8",
+    "lm-eval[api]>=0.4.8",
 ]
 
 [project.urls]
