@@ -48,7 +48,7 @@ def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
 
 
 def process_results(doc: dict, results: list[str]) -> dict:
-    if results[0] is None:
+    if not results:
         return {"is_correct": False, "num_invalid": True}
 
     answer = results[0].strip().upper()
