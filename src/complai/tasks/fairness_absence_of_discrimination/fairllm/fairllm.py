@@ -9,9 +9,9 @@ from typing import Any
 import datasets
 import pandas as pd
 
-from complai.utils.math import iou as iou_func
-from complai.utils.math import prag_score as prag_func
-from complai.utils.math import serp_ms as serp_ms_func
+from complai.utils.metrics import iou as iou_func
+from complai.utils.metrics import prag_score as prag_func
+from complai.utils.metrics import serp_ms as serp_ms_func
 
 
 SAMPLE_SIZE = 200
