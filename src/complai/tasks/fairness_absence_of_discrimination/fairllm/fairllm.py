@@ -1,3 +1,8 @@
+"""
+WARNING: Results will not be correct if this task is invoked using the --limit option with a value
+that is not a multiple of the number of attributes (32).
+"""
+
 import re
 from typing import Any
 
