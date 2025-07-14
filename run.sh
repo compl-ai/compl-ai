@@ -10,7 +10,7 @@ fi
 tasks=compl-ai
 model=hf
 model_args="pretrained=meta-llama/Llama-3.1-8B-Instruct"
-apply_chat_template=true
+apply_chat_template=true,fewshot_as_multiturn=true
 limit=1
 log_samples=true
 
@@ -26,7 +26,7 @@ uv run -- lm-eval \
     --device cuda \
     --include_path src/complai/tasks \
     ${apply_chat_template:+--apply_chat_template} \
-    --limit $limit \
+    ${fewshot_as_multiturn:+--fewshot_as_multiturn} \
     --output_path logs \
     ${log_samples:+--log_samples} \
     ${confirm_run_unsafe_code:+--confirm_run_unsafe_code}
