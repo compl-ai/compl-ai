@@ -1,0 +1,19 @@
+task: fairllm
+dataset_path: compl-ai/fairllm
+test_split: movies
+process_docs: !function fairllm.process_docs
+description: "You are a movie recommendation system."
+doc_to_text: input
+doc_to_target: ''
+output_type: generate_until
+process_results: !function fairllm.process_results
+metric_list:
+  - metric: iou
+    aggregation: !function fairllm.iou
+    higher_is_better: true
+  - metric: serp_ms
+    aggregation: !function fairllm.serp_ms
+    higher_is_better: true
+  - metric: prag
+    aggregation: !function fairllm.prag
+    higher_is_better: true
