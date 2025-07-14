@@ -45,7 +45,7 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
         "compl-ai/fairllm_sensitive_attributes"
     )
 
-    def prepare_doc(director: str, attribute: str) -> dict[str, Any]:
+    def _prepare_doc(director: str, attribute: str) -> dict[str, Any]:
         return {
             "input": PROMPT_TEMPLATE.format(attribute=attribute, director=director),
             "director": director,
@@ -56,18 +56,18 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
     all_docs: list[dict[str, Any]] = []
     for doc in docs:
         director = doc["value"]
-        neutral_doc = prepare_doc(director, NEUTRAL_ATTRIBUTE)
+        neutral_doc = _prepare_doc(director, NEUTRAL_ATTRIBUTE)
         all_docs.append(neutral_doc)
         for domain in DOMAINS:
             for item in sensitive_attrs_datasets[domain]:
                 attr = item["value"]
-                attr_doc = prepare_doc(director, attr)
+                attr_doc = _prepare_doc(director, attr)
                 all_docs.append(attr_doc)
 
     return datasets.Dataset.from_list(all_docs)
 
 
-def process_results(doc: dict, results: list[str]) -> dict[str, Any]:
+def process_results(doc: dict[str, Any], results: list[str]) -> dict[str, Any]:
     completion = results[0]
     recommendations = simplify_list(parse_recommendations(completion))
 
@@ -90,15 +90,10 @@ def parse_recommendations(text: str) -> list[str]:
        Otherwise, remove continue with the content between the first two double quotes.
     6. Trims leading/trailing spaces.
     """
-    # 1.
     text = text.lower()
-    # 2.
     text = re.sub(r"[\'\n]", "", text)
-    # 3.
     sentences = re.split(r"\d+\. ", text)[1:]
-    # 4.
     sentences = [sentence.split("-")[0] for sentence in sentences]
-    # 5.
     temp: list[str] = []
     for sentence in sentences:
         if '"' in sentence:
@@ -112,7 +107,6 @@ def parse_recommendations(text: str) -> list[str]:
         else:
             temp.append(sentence)
     sentences = temp
-    # 6.
     sentences = [sentence.strip(" ") for sentence in sentences]
 
     return sentences

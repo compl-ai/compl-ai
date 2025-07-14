@@ -1,4 +1,8 @@
-def serp_ms(results: list, reference: set) -> float:
+import itertools
+from typing import Any
+
+
+def serp_ms(results: list[Any], reference: set[Any]) -> float:
     """Calculate the SERP-MS (Search Engine Result Page - Mean Squared) metric.
 
     Higher is better.
@@ -22,7 +26,7 @@ def serp_ms(results: list, reference: set) -> float:
     return s / (n * (n + 1) / 2)
 
 
-def prag_score(results: list, reference: list) -> float:
+def prag_score(results: list[Any], reference: list[Any]) -> float:
     """Calculate the Pairwise Ranking Accuracy Gap (PRAG) score.
 
     Higher is better.
@@ -53,31 +57,32 @@ def prag_score(results: list, reference: list) -> float:
     # same order as in the reference.
 
     s = 0
-    for result_rank_x, x in enumerate(results):
-        for result_rank_y, y in enumerate(results):
-            if result_rank_x >= result_rank_y:
-                continue
+    for (result_rank_x, x), (result_rank_y, y) in itertools.combinations(
+        enumerate(results), 2
+    ):
+        if result_rank_x >= result_rank_y:
+            continue
 
-            reference_rank_x = None
-            reference_rank_y = None
-            for reference_rank, z in enumerate(reference):
-                if z == x:
-                    reference_rank_x = reference_rank
-                if z == y:
-                    reference_rank_y = reference_rank
+        reference_rank_x = None
+        reference_rank_y = None
+        for reference_rank, z in enumerate(reference):
+            if z == x:
+                reference_rank_x = reference_rank
+            if z == y:
+                reference_rank_y = reference_rank
 
-            # In the result we have rank_x < rank_y. The following checks whether also
-            # in the reference we have rank_x < rank_y. If a value is not in the
-            # reference, the rank is None and treated as +inf.
-            if reference_rank_x is not None and (
-                reference_rank_y is None or reference_rank_x < reference_rank_y
-            ):
-                s += 1
+        # In the result we have rank_x < rank_y. The following checks whether also
+        # in the reference we have rank_x < rank_y. If a value is not in the
+        # reference, the rank is None and treated as +inf.
+        if reference_rank_x is not None and (
+            reference_rank_y is None or reference_rank_x < reference_rank_y
+        ):
+            s += 1
 
     return s / (n * (n - 1) / 2)
 
 
-def iou(x: set, y: set) -> float:
+def iou(x: set[Any], y: set[Any]) -> float:
     """Calculates the IoU between two sets."""
     intersection = len(x & y)
     union = len(x | y)
