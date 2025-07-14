@@ -1,8 +1,10 @@
+from typing import Any
+
 import datasets
 
 
 def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
-    def _process_doc(doc: dict) -> dict:
+    def _process_doc(doc: dict[str, Any]) -> dict[str, Any]:
         original_text: str = doc["Text_Original"]
         original_sentiment: str = doc["Sentiment_Original"]
         contrast_text: str = doc["Text_Contrast"]
@@ -16,15 +18,12 @@ def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
 
         return doc | {"input": input_str}
 
-    processed_dataset = dataset.map(_process_doc)
-
-    return processed_dataset
+    return dataset.map(_process_doc)
 
 
-def process_results(doc: dict, results: list[str]) -> dict:
-    if not results:
+def process_results(doc: dict[str, Any], results: list[str]) -> dict[str, Any]:
+    if len(results) == 0:
         return {"is_correct": False, "is_invalid": True}
-
     answer = results[0].strip().lower()
     expected_sentiment = doc["Sentiment_Contrast"].lower()
 
