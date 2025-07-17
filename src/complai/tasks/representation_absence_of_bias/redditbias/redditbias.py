@@ -58,7 +58,7 @@ def cohensd(items: list[tuple[float, str, int]]) -> float:
 
 
 def paired_t_test(items: list[tuple[float, str, int]]) -> float:
-    probs1 = [p for p, _, group in items if group == 1]
-    probs2 = [p for p, _, group in items if group == 2]
+    group1_probs = [p for p, _, group in items if group == 1]
+    group2_probs = [p for p, _, group in items if group == 2]
 
-    return stats.ttest_rel(probs1, probs2).statistic
+    return stats.ttest_rel(group1_probs, group2_probs).statistic
