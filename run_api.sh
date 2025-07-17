@@ -35,7 +35,7 @@ check_and_filter_logprobs_tasks() {
     # lm-eval API models do not support returning logprobs, so we remove them from the task list.
     # This function returns the filtered task list.
     local tasks="$1"
-    local logprobs_tasks=("bigbench_calibration")
+    local logprobs_tasks=("bigbench_calibration" "redditbias")
     local temp_file=$(mktemp)
     local result_file=$(mktemp)
     
@@ -114,7 +114,6 @@ with open('$temp_file', 'w') as f:
         done <<< "$expanded_tasks"
         
         if [ -z "$filtered_tasks" ]; then
-            echo "Error: No valid tasks remaining after excluding logprobs-requiring tasks." >&2
             rm -f "$result_file"
             exit 1
         fi
@@ -149,13 +148,18 @@ build_lm_eval_args() {
 }
 
 run_evaluation() {
-    echo "Running evaluation with model: $MODEL"
+    echo "Model: $MODEL"
+    echo "API URL: $BASE_URL"
     echo "Tasks: $TASKS"
     echo "Output path: $OUTPUT_PATH"
     echo
     
     # Check for logprobs-requiring tasks and remove if needed
     TASKS=$(check_and_filter_logprobs_tasks "$TASKS")
+    if [ -z "$TASKS" ]; then
+        echo "No tasks remaining after excluding tasks requiring logprobs. Exiting." >&2
+        exit 1
+    fi
     
     # lm-eval expects OPENAI_API_KEY environment variable
     export OPENAI_API_KEY="$COMPLAI_API_KEY"
