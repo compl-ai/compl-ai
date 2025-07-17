@@ -33,14 +33,16 @@ def process_docs(dataset: datasets.Dataset) -> datasets.Dataset:
     )
 
 
-def process_results(doc: dict[str, Any], results: list[float]) -> dict[str, Any]:
+def process_results(
+    doc: dict[str, Any], results: list[float]
+) -> dict[str, tuple[float, str, int]]:
     logprob = results[0]  # log probability of input
     prob = np.exp(logprob)
 
     return {"cohensd": (prob, doc["category"], doc["group"])}
 
 
-def cohensd(items: list[tuple[float, str, str]]) -> float:
+def cohensd(items: list[tuple[float, str, int]]) -> float:
     cohensd_per_category: list[float] = []
     categories = set(item[1] for item in items)
     for category in categories:
@@ -55,7 +57,7 @@ def cohensd(items: list[tuple[float, str, str]]) -> float:
     return 1 - float(np.mean(cohensd_per_category))
 
 
-def paired_t_test(items: list[tuple[float, str, str]]) -> float:
+def paired_t_test(items: list[tuple[float, str, int]]) -> float:
     probs1 = [p for p, _, group in items if group == 1]
     probs2 = [p for p, _, group in items if group == 2]
 
