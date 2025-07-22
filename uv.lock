@@ -326,7 +326,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "lm-eval", git = "https://github.com/EleutherAI/lm-evaluation-harness.git" }]
+requires-dist = [{ name = "lm-eval", extras = ["api"], git = "https://github.com/EleutherAI/lm-evaluation-harness.git" }]
 
 [[package]]
 name = "dataproperty"
