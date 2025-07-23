@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 import datasets
 
@@ -35,7 +36,7 @@ def preprocess_text(text: str) -> str:
 
 
 def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
-    def _process_doc(doc: dict) -> dict:
+    def _process_doc(doc: dict[str, Any]) -> dict[str, Any]:
         context = f"{doc['activity_label']}: {doc['ctx_a']} {doc['ctx_b'].capitalize()}"
         endings = [preprocess_text(ending) for ending in doc["endings"]]
         choices = ["A", "B", "C", "D"]
@@ -58,7 +59,7 @@ def process_docs(docs: datasets.Dataset) -> datasets.Dataset:
     return docs.map(_process_doc)
 
 
-def process_results(doc: dict, results: list[str]) -> dict:
+def process_results(doc: dict[str, Any], results: list[str]) -> dict[str, Any]:
     if len(results) == 0:
         return {"is_correct": False, "is_invalid": True}
 
