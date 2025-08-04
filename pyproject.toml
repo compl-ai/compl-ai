@@ -9,8 +9,15 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "lm-eval[api] @ https://github.com/EleutherAI/lm-evaluation-harness.git",
+    "inspect-evals",
+    "inspect_ai",
+    "openai>=1.90.0",
+    "typer>=0.16.0",
+    "vllm>=0.10.0",
 ]
+
+[project.scripts]
+complai = "complai._cli:main"
 
 [project.urls]
 Homepage = "https://compl-ai.org/"
@@ -24,6 +31,7 @@ packages = ["src/complai"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
 
 [tool.mypy]
 check_untyped_defs = true
@@ -40,3 +48,6 @@ default.extend-ignore-identifiers-re = []
 files.extend-exclude = [
     "*.ipynb",  # Notebook cells are asigned a hash.
 ]
+
+[tool.uv.sources]
+inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
