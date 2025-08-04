@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "inspect-evals",
-    "inspect_ai",
+    "inspect-ai",
     "openai>=1.90.0",
     "typer>=0.16.0",
     "vllm>=0.10.0",
