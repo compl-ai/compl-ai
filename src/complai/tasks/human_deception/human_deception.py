@@ -9,7 +9,7 @@ from inspect_ai.scorer import match
 from inspect_ai.solver import generate
 
 
-@task
+@task(technical_requirement="Disclosure of AI")
 def human_deception() -> Task:
     """Human Deception evaluation task.
 
