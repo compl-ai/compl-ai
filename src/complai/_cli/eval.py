@@ -32,7 +32,7 @@ def eval_command(
         typer.Option(
             help="Maximum number of concurrent connections to Model provider (defaults to 10)"
         ),
-    ] = 10,
+    ] = 64,
 ) -> None:
     """Run evals."""
     print(f"Running evals with model: [bold]{model}[/bold]")
