@@ -1,4 +1,3 @@
-import typer
 from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 from rich import print
@@ -9,7 +8,7 @@ def list_command() -> None:
     # Get all tasks
     tasks = list_tasks()
     if not tasks:
-        typer.echo("No tasks available.")
+        print("No tasks available.")
         return
 
     # Group tasks by technical requirement
