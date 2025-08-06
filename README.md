@@ -14,6 +14,84 @@ This project created by [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](htt
 
 ## Installation
 
+### 1. Clone this repository
+```console
+git clone https://github.com/compl-ai/compl-ai.git
+```
+### 2a. Using `uv run`
+
+You can run the CLI directly using:
+
+```console
+uv run complai --help
+```
+
+### 2b. Manual Installation
+
+You can also create a virtual environment and install the package manually. Using `uv`:
+
+```console
+uv venv
+source .venv/bin/activate
+uv pip install .
+```
+Now you can use the CLI like so:
+
+```console
+complai --help
+```
+
+## CLI
+
+
+```console
+$ complai [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--install-completion`: Install completion for the current shell.
+* `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `eval`: Run evals.
+* `list`: List all available tasks.
+
+### `complai eval`
+
+Run evals.
+
+**Usage**:
+
+```console
+$ complai eval [OPTIONS]
+```
+
+**Options**:
+
+* `-t, --task TEXT`: Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.
+* `-m, --model TEXT`: Model to evaluate  [default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
+* `--log-dir TEXT`: Directory to save logs to.  [default: logs/]
+* `--limit INTEGER`: Limit the number of samples per task.
+* `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider (defaults to 10)  [default: 10]
+* `--help`: Show this message and exit.
+
+### `complai list`
+
+List all available tasks.
+
+**Usage**:
+
+```console
+$ complai list [OPTIONS]
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
 ## Contributing
 
 ## Citation
