@@ -5,7 +5,7 @@ from complai._cli.list import list_command
 
 
 # Create a Typer instance
-app = typer.Typer(rich_markup_mode="rich")
+app = typer.Typer(rich_markup_mode="markdown")
 
 # Add commands
 app.command("eval")(eval_command)

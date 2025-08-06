@@ -72,7 +72,7 @@ $ complai eval [OPTIONS]
 **Options**:
 
 * `-t, --task TEXT`: Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.
-* `-m, --model TEXT`: Model to evaluate  [default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
+* `-m, --model TEXT`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for more details.  [default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
 * `--log-dir TEXT`: Directory to save logs to.  [default: logs/]
 * `--limit INTEGER`: Limit the number of samples per task.
 * `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider (defaults to 10)  [default: 10]
