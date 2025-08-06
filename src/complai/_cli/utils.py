@@ -5,6 +5,16 @@ from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 
 
+def get_complai_tasks() -> list[TaskInfo]:
+    """
+    Get all available tasks implemented in COMPL-AI.
+
+    Returns:
+        list[TaskInfo]: List of all available tasks.
+    """
+    return list_tasks(absolute=True, root_dir=Path(__file__).parent.parent / "tasks")
+
+
 def get_task_infos_from_task_names(task_names: list[str]) -> list[TaskInfo]:
     """
     Get TaskInfo objects from a list of task names.
@@ -19,10 +29,7 @@ def get_task_infos_from_task_names(task_names: list[str]) -> list[TaskInfo]:
         list[TaskInfo]: List of TaskInfo objects for the specified tasks.
     """
     # Get all available tasks
-    available_tasks = {
-        task.name: task
-        for task in list_tasks(root_dir=Path(__file__).parent.parent / "tasks")
-    }
+    available_tasks = {task.name: task for task in get_complai_tasks()}
     if not task_names:
         return list(available_tasks.values())
 

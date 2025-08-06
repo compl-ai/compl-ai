@@ -1,12 +1,13 @@
-from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 from rich import print
+
+from complai._cli.utils import get_complai_tasks
 
 
 def list_command() -> None:
     """List all available tasks."""
     # Get all tasks
-    tasks = list_tasks()
+    tasks = get_complai_tasks()
     if not tasks:
         print("No tasks available.")
         return
