@@ -25,9 +25,7 @@ def eval_command(
     max_connections: Annotated[
         int,
         typer.Option(
-            "-c",
-            "--max-connections",
-            help="Maximum number of concurrent connections to Model provider (defaults to 10)",
+            help="Maximum number of concurrent connections to Model provider (defaults to 10)"
         ),
     ] = 10,
 ) -> None:
