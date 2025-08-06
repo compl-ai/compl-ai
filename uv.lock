@@ -496,6 +496,7 @@ name = "compl-ai"
 version = "2.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "detoxify" },
     { name = "inspect-ai" },
     { name = "inspect-evals" },
     { name = "openai" },
@@ -505,6 +506,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "detoxify", specifier = ">=0.5.2" },
     { name = "inspect-ai" },
     { name = "inspect-evals", git = "https://github.com/UKGovernmentBEIS/inspect_evals" },
     { name = "openai", specifier = ">=1.90.0" },
@@ -612,6 +614,20 @@ wheels = [
 ]
 
 [[package]]
+name = "detoxify"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sentencepiece" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/1f/3b0a6cba11a0e9e2530d6021bb2f723b2c5b6653244e6eda47df80356acc/detoxify-0.5.2.tar.gz", hash = "sha256:c119d0b47545bb076190ff583faad9aa3bb0a90ac01c7c4144758606d21da5b1", size = 13813, upload-time = "2024-02-01T14:51:23.61Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1f/5c/94f765f08fe52473bc945284b7912032c099d0737cb8ad9235deb3b40d35/detoxify-0.5.2-py3-none-any.whl", hash = "sha256:e6135a2d85ad17bfb19d8cf53756a1b499e6d9c03cb1976ddefdc013bf29d32a", size = 12103, upload-time = "2024-02-01T14:51:21.791Z" },
+]
+
+[[package]]
 name = "dill"
 version = "0.3.8"
 source = { registry = "https://pypi.org/simple" }
@@ -683,7 +699,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
