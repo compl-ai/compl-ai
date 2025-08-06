@@ -22,6 +22,14 @@ def eval_command(
     limit: Annotated[
         int | None, typer.Option(help="Limit the number of samples per task.")
     ] = None,
+    max_connections: Annotated[
+        int,
+        typer.Option(
+            "-c",
+            "--max-connections",
+            help="Maximum number of concurrent connections to Model provider (defaults to 10)",
+        ),
+    ] = 10,
 ) -> None:
     """Run evals."""
     print(f"Running evals with model: [bold]{model}[/bold]")
@@ -29,4 +37,10 @@ def eval_command(
     # Get TaskInfo objects from task names
     task_infos: list[TaskInfo] = get_task_infos(tasks)
 
-    eval(tasks=task_infos, model=model, log_dir=log_dir, limit=limit)
+    eval(
+        tasks=task_infos,
+        model=model,
+        log_dir=log_dir,
+        limit=limit,
+        max_connections=max_connections,
+    )
