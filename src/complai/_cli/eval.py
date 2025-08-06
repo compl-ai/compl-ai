@@ -8,9 +8,6 @@ from complai._cli.utils import get_task_infos
 
 
 def eval_command(
-    model: Annotated[
-        str, typer.Option("-m", help="Model to evaluate")
-    ] = "vllm/HuggingFaceTB/SmolLM2-135M-Instruct",
     tasks: Annotated[
         str | None,
         typer.Option(
@@ -18,6 +15,9 @@ def eval_command(
             help="Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.",
         ),
     ] = None,
+    model: Annotated[
+        str, typer.Option("-m", "--model", help="Model to evaluate")
+    ] = "vllm/HuggingFaceTB/SmolLM2-135M-Instruct",
     log_dir: Annotated[str, typer.Option(help="Directory to save logs to.")] = "logs/",
     limit: Annotated[
         int | None, typer.Option(help="Limit the number of samples per task.")
