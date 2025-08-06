@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
@@ -17,7 +19,10 @@ def get_task_infos_from_task_names(task_names: list[str]) -> list[TaskInfo]:
         list[TaskInfo]: List of TaskInfo objects for the specified tasks.
     """
     # Get all available tasks
-    available_tasks = {task.name: task for task in list_tasks()}
+    available_tasks = {
+        task.name: task
+        for task in list_tasks(root_dir=Path(__file__).parent.parent / "tasks")
+    }
     if not task_names:
         return list(available_tasks.values())
 
