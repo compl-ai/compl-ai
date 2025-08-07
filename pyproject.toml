@@ -23,9 +23,6 @@ complai = "complai._cli:main"
 [project.urls]
 Homepage = "https://compl-ai.org/"
 
-[project.entry-points.inspect_ai]
-complai = "complai.tasks._registry"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
