@@ -1,0 +1,75 @@
+import string
+from enum import Enum
+
+
+class OptionPosition(str, Enum):
+    START = "start"
+    """Denotes that the option is at the beginning of the completion"""
+    END = "end"
+    """Denotes that the option is at the end of the completion"""
+    UNKNOWN = "unknown"
+    """Denotes that the option position is unknown"""
+
+
+def remove_punctuation(s: str) -> str:
+    """Removes punctuation from a string.
+
+    Args:
+        s: Input string.
+
+    Returns:
+        The input string with all punctuation removed.
+    """
+    return s.translate(str.maketrans("", "", string.punctuation))
+
+
+def extract_alphabetic_option(completion: str) -> tuple[str, OptionPosition]:
+    """Extracts an alphabetic option from an LLM response (i.e., 'A', 'B', 'C', ...).
+
+    By default, the LLM is instructed to reply in the form of:
+
+    A
+
+    However, the instructions might not always be followed and variations
+    of the answer can be returned, including:
+
+    <space>A
+
+    # Reasoning
+    I think ... Therefore, the correct answer is A
+
+    as well as potentially not even including the option
+
+    # No option returned
+    I don't know what I'm doing, just generating a random answer...
+
+    Args:
+        completion: A string containing LLM response.
+
+    Returns:
+        Value of the option or empty string if no option is found.
+    """
+    completion = remove_punctuation(completion.strip())
+    if len(completion) == 0:
+        return "", OptionPosition.UNKNOWN
+
+    if completion[0] in string.ascii_uppercase and (
+        len(completion) == 1 or completion[1].isspace()
+    ):
+        # A
+        # <space>A
+        # A<space>
+        # A.
+        # A completion
+        return completion[0], OptionPosition.START
+    elif (
+        len(completion) > 1
+        and completion[-1] in string.ascii_uppercase
+        and completion[-2].isspace()
+    ):
+        # ... option A
+        # ... option A.
+        # ... option A<space>
+        return completion[-1], OptionPosition.END
+
+    return "", OptionPosition.UNKNOWN

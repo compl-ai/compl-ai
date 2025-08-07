@@ -14,6 +14,7 @@ dependencies = [
     "openai>=1.90.0",
     "typer>=0.16.0",
     "vllm>=0.10.0",
+    "scipy>=1.15.3",
 ]
 
 [project.scripts]
@@ -21,6 +22,9 @@ complai = "complai._cli:main"
 
 [project.urls]
 Homepage = "https://compl-ai.org/"
+
+[project.entry-points.inspect_ai]
+complai = "complai.tasks._registry"
 
 [build-system]
 requires = ["hatchling"]
@@ -51,3 +55,4 @@ files.extend-exclude = [
 
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
+
