@@ -496,6 +496,7 @@ name = "compl-ai"
 version = "2.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "datasets" },
     { name = "inspect-ai" },
     { name = "inspect-evals" },
     { name = "openai" },
@@ -507,6 +508,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "datasets", specifier = ">=3.6.0" },
     { name = "inspect-ai" },
     { name = "inspect-evals", git = "https://github.com/UKGovernmentBEIS/inspect_evals" },
     { name = "openai", specifier = ">=1.90.0" },
