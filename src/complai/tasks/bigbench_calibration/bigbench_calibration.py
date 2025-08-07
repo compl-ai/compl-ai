@@ -213,9 +213,6 @@ def bigbench_calibration_scorer() -> Scorer:
         completion = state.output.completion
         parsed_answer, option_position = extract_alphabetic_option(completion)
         is_correct = parsed_answer == state.target.text
-        print(
-            f"{is_correct} Parsed answer:{parsed_answer}, Target:{state.target.text},"
-        )
 
         assert len(state.output.choices) == 1
         completion_choice: ChatCompletionChoice = state.output.choices[0]
