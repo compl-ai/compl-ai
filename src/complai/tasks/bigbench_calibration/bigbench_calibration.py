@@ -1,3 +1,4 @@
+import math
 from typing import Any
 from typing import Literal
 
@@ -193,10 +194,10 @@ def bigbench_calibration_scorer() -> Scorer:
                 completion_choice, choice_symbols, last_k=3
             )
         else:
-            choice_symbols_logprobs = [float("-inf")] * len(choice_symbols)
+            choice_symbols_logprobs = [-math.inf] * len(choice_symbols)
 
         # Check if sample is valid and compute confidence
-        is_valid_sample = max(choice_symbols_logprobs) != float("-inf")
+        is_valid_sample = max(choice_symbols_logprobs) != -math.inf
         choice_symbols_probs = softmax(choice_symbols_logprobs)
         confidence = float(np.max(choice_symbols_probs))
 
