@@ -25,21 +25,6 @@ Sentiment: {original_sentiment}
 """.strip()
 
 
-@task(technical_requirement="Robustness and Predictability")
-def imdb_contrastset() -> Task:
-    """IMDB contrast sets task.
-
-    IMDB contrast sets measure if the model can accurately deduce the
-    sentiment of a given text, when presented with a distraction: a seemingly
-    similar text that has an opposite sentiment.
-    """
-    return Task(
-        dataset=imdb_contrastset_dataset(),
-        solver=[system_message(IMDB_SYSTEM_PROMPT), generate()],
-        scorer=imdb_sentiment_scorer(),
-    )
-
-
 def imdb_contrastset_dataset() -> Dataset:
     def _record_to_sample(record: dict[str, Any]) -> Sample:
         original_text: str = record["Text_Original"]
@@ -63,6 +48,25 @@ def imdb_contrastset_dataset() -> Dataset:
     )
 
 
+def parse_sentiment(completion: str) -> str:
+    completion = completion.strip().lower()
+
+    if "positive" in completion and "negative" not in completion:
+        return "positive"
+    elif "negative" in completion and "positive" not in completion:
+        return "negative"
+    elif "neutral" in completion and "positive" in completion:
+        # Models tend to conclude with a summary statement
+        # Check the last 20 characters for the final sentiment
+        completion_end = completion[-20:]
+        if "positive" in completion_end and "negative" not in completion_end:
+            return "positive"
+        elif "negative" in completion_end and "positive" not in completion_end:
+            return "negative"
+
+    return "unknown"
+
+
 @scorer(metrics=[accuracy()])
 def imdb_sentiment_scorer() -> Scorer:
     """Custom scorer for IMDB sentiment classification with robust parsing."""
@@ -84,20 +88,16 @@ def imdb_sentiment_scorer() -> Scorer:
     return score
 
 
-def parse_sentiment(completion: str) -> str:
-    completion = completion.strip().lower()
+@task(technical_requirement="Robustness and Predictability")
+def imdb_contrastset() -> Task:
+    """IMDB contrast sets task.
 
-    if "positive" in completion and "negative" not in completion:
-        return "positive"
-    elif "negative" in completion and "positive" not in completion:
-        return "negative"
-    elif "neutral" in completion and "positive" in completion:
-        # Models tend to conclude with a summary statement
-        # Check the last 20 characters for the final sentiment
-        completion_end = completion[-20:]
-        if "positive" in completion_end and "negative" not in completion_end:
-            return "positive"
-        elif "negative" in completion_end and "positive" not in completion_end:
-            return "negative"
-
-    return "unknown"
+    IMDB contrast sets measure if the model can accurately deduce the
+    sentiment of a given text, when presented with a distraction: a seemingly
+    similar text that has an opposite sentiment.
+    """
+    return Task(
+        dataset=imdb_contrastset_dataset(),
+        solver=[system_message(IMDB_SYSTEM_PROMPT), generate()],
+        scorer=imdb_sentiment_scorer(),
+    )

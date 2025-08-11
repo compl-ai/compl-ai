@@ -24,23 +24,6 @@ Answer: {original_answer}
 """.strip()
 
 
-@task(technical_requirement="Robustness and Predictability")
-def boolq_contrastset(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
-    """BoolQ contrast sets task.
-
-    BoolQ contrast sets measure if the model can answer a given yes-no
-    question accurately, when presented with a distraction: a seemingly
-    similar question that has an opposite answer.
-    """
-    assert num_contrasts > 0, "Number of contrasts must be at least 1."
-    return Task(
-        dataset=boolq_contrastset_dataset(num_contrasts, contrast_seed),
-        solver=[system_message(BOOLQ_SYSTEM_PROMPT), generate()],
-        scorer=match(location="begin", ignore_case=True),
-        metrics=[boolq_contrastset_metric()],
-    )
-
-
 def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset:
     def _record_to_sample(record: dict[str, Any]) -> list[Sample]:
         # Extract relevant fields from the record
@@ -127,3 +110,20 @@ def boolq_contrastset_metric() -> Metric:
         return np.mean(accuracies, dtype=float)
 
     return metric
+
+
+@task(technical_requirement="Robustness and Predictability")
+def boolq_contrastset(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
+    """BoolQ contrast sets task.
+
+    BoolQ contrast sets measure if the model can answer a given yes-no
+    question accurately, when presented with a distraction: a seemingly
+    similar question that has an opposite answer.
+    """
+    assert num_contrasts > 0, "Number of contrasts must be at least 1."
+    return Task(
+        dataset=boolq_contrastset_dataset(num_contrasts, contrast_seed),
+        solver=[system_message(BOOLQ_SYSTEM_PROMPT), generate()],
+        scorer=match(location="begin", ignore_case=True),
+        metrics=[boolq_contrastset_metric()],
+    )
