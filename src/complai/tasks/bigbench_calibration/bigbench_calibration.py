@@ -63,39 +63,35 @@ SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant. For each snippet of tex
 """
 
 
-@task(technical_requirements="Interpretability")
-def bigbench_calibration(
-    bigbench_task: BigBenchTask = "emoji_movie",
-    num_few_shot: int = 3,
-    split: str = "train",
-    few_shot_split: str = "validation",
-    few_shot_seed: int = 0,
-    shuffle_choices: bool = True,
-) -> Task:
-    """BigBench calibration benchmark.
-
-    Args:
-        bigbench_task: Which BigBench task to evaluate
-        num_few_shot: Number of few-shot examples
-        split: Dataset split to use
-        few_shot_split: Split to use for few-shot examples
-        few_shot_seed: Random seed for sampling few-shot examples
-        shuffle_choices: Whether to shuffle choices
-    """
-    return Task(
-        dataset=bigbench_dataset(bigbench_task, split, shuffle_choices),
-        solver=[
-            bigbench_calibration_system_message(
-                bigbench_task,
-                num_few_shot,
-                few_shot_split,
-                few_shot_seed,
-                shuffle_choices,
-            ),
-            generate(logprobs=True, top_logprobs=20),
-        ],
-        scorer=bigbench_calibration_scorer(),
+def format_question_and_choices(question: str, choices: list[str], target: str) -> str:
+    return (
+        f"{question}\n"
+        + "\n".join(
+            [f"{choice}. {answer}" for choice, answer in zip(_CHOICE_SYMBOLS, choices)]
+        )
+        + f"\nAnswer: {target}"
     )
+
+
+def get_input_choices_target(
+    record: dict[str, Any], format_with_target: bool, shuffle_choices: bool
+) -> tuple[str, list[str], str]:
+    question = record["inputs"].splitlines()[0]
+    choices = record["multiple_choice_targets"]
+    target_idx = record["multiple_choice_scores"].index(1)
+    target = _CHOICE_SYMBOLS[target_idx]
+
+    if shuffle_choices:
+        rng = np.random.default_rng(record["idx"])
+        shuffled_indices = rng.permutation(len(choices))
+        choices = [choices[i] for i in shuffled_indices]
+        target = _CHOICE_SYMBOLS[shuffled_indices.tolist().index(target_idx)]
+
+    input_str = format_question_and_choices(
+        question, choices, target if format_with_target else ""
+    )
+
+    return input_str, choices, target
 
 
 def bigbench_dataset(
@@ -156,37 +152,6 @@ def bigbench_calibration_system_message(
     )
 
 
-def get_input_choices_target(
-    record: dict[str, Any], format_with_target: bool, shuffle_choices: bool
-) -> tuple[str, list[str], str]:
-    question = record["inputs"].splitlines()[0]
-    choices = record["multiple_choice_targets"]
-    target_idx = record["multiple_choice_scores"].index(1)
-    target = _CHOICE_SYMBOLS[target_idx]
-
-    if shuffle_choices:
-        rng = np.random.default_rng(record["idx"])
-        shuffled_indices = rng.permutation(len(choices))
-        choices = [choices[i] for i in shuffled_indices]
-        target = _CHOICE_SYMBOLS[shuffled_indices.tolist().index(target_idx)]
-
-    input_str = format_question_and_choices(
-        question, choices, target if format_with_target else ""
-    )
-
-    return input_str, choices, target
-
-
-def format_question_and_choices(question: str, choices: list[str], target: str) -> str:
-    return (
-        f"{question}\n"
-        + "\n".join(
-            [f"{choice}. {answer}" for choice, answer in zip(_CHOICE_SYMBOLS, choices)]
-        )
-        + f"\nAnswer: {target}"
-    )
-
-
 @metric
 def ece() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> Value:
@@ -210,10 +175,12 @@ def ece() -> MetricProtocol:
 @scorer(metrics=[ece()])
 def bigbench_calibration_scorer() -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
+        # Parse and score completion
         completion = state.output.completion
         parsed_answer, option_position = extract_alphabetic_option(completion)
         is_correct = parsed_answer == state.target.text
 
+        # Get logprobs
         assert len(state.output.choices) == 1
         completion_choice: ChatCompletionChoice = state.output.choices[0]
         choice_symbols = _CHOICE_SYMBOLS[: state.metadata["num_choices"]]
@@ -227,12 +194,14 @@ def bigbench_calibration_scorer() -> Scorer:
             )
         else:
             choice_symbols_logprobs = [float("-inf")] * len(choice_symbols)
+
+        # Check if sample is valid and compute confidence
         is_valid_sample = max(choice_symbols_logprobs) != float("-inf")
         choice_symbols_probs = softmax(choice_symbols_logprobs)
-        max_prob = float(np.max(choice_symbols_probs))
+        confidence = float(np.max(choice_symbols_probs))
 
         return Score(
-            value={"confidence": max_prob, "is_correct": is_correct},
+            value={"confidence": confidence, "is_correct": is_correct},
             answer=parsed_answer,
             metadata={
                 "is_valid_answer": is_valid_sample,
@@ -241,3 +210,38 @@ def bigbench_calibration_scorer() -> Scorer:
         )
 
     return score
+
+
+@task(technical_requirements="Interpretability")
+def bigbench_calibration(
+    bigbench_task: BigBenchTask = "emoji_movie",
+    num_few_shot: int = 3,
+    split: str = "train",
+    few_shot_split: str = "validation",
+    few_shot_seed: int = 0,
+    shuffle_choices: bool = True,
+) -> Task:
+    """BigBench calibration benchmark.
+
+    Args:
+        bigbench_task: Which BigBench task to evaluate
+        num_few_shot: Number of few-shot examples
+        split: Dataset split to use
+        few_shot_split: Split to use for few-shot examples
+        few_shot_seed: Random seed for sampling few-shot examples
+        shuffle_choices: Whether to shuffle choices
+    """
+    return Task(
+        dataset=bigbench_dataset(bigbench_task, split, shuffle_choices),
+        solver=[
+            bigbench_calibration_system_message(
+                bigbench_task,
+                num_few_shot,
+                few_shot_split,
+                few_shot_seed,
+                shuffle_choices,
+            ),
+            generate(logprobs=True, top_logprobs=20),
+        ],
+        scorer=bigbench_calibration_scorer(),
+    )
