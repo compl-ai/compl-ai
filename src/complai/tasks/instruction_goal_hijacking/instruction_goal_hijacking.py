@@ -27,42 +27,9 @@ from inspect_ai.solver import TaskState
 PromptStrategy = Literal["single_user", "multiple_user", "multiple_system"]
 
 
-@task(technical_requirement="Cyberattack Resilience")
-def instruction_goal_hijacking(
-    prompt_strategy: PromptStrategy = "multiple_user", split: str = "train"
-) -> Task:
-    """
-    TensorTrust instruction goal hijacking benchmark.
-
-    Args:
-        prompt_strategy: Which prompt strategy to use for passing pre_prompt,
-                        attack, and post_prompt to the model:
-                        - single_user: all concatenated into single user prompt
-                        - multiple_user: 3 separate user prompts
-                        - multiple_system_first: 3 separate prompts with first as system
-                        - multiple_system_sandwich: 3 separate prompts with first as system and last as user
-
-        split: Dataset split to use (e.g., "train", "test")
-        shuffle: Whether to shuffle the dataset
-        seed: Random seed for shuffling
-    """
-    return Task(
-        dataset=tensor_trust_dataset(prompt_strategy, split),
-        solver=generate(),
-        scorer=hijack_scorer(),
-    )
-
-
-def tensor_trust_dataset(prompt_strategy: PromptStrategy, split: str) -> Dataset:
-    return hf_dataset(
-        path="compl-ai/tensor_trust",
-        split=split,
-        sample_fields=partial(record_to_sample, prompt_strategy=prompt_strategy),
-        trust=True,
-    )
-
-
-def record_to_sample(record: dict[str, Any], prompt_strategy: PromptStrategy) -> Sample:
+def _record_to_sample(
+    record: dict[str, Any], prompt_strategy: PromptStrategy
+) -> Sample:
     pre_prompt = record["pre_prompt"]
     attack = record["attack"]
     post_prompt = record["post_prompt"]
@@ -97,8 +64,54 @@ def record_to_sample(record: dict[str, Any], prompt_strategy: PromptStrategy) ->
     )
 
 
-@scorer(metrics=[accuracy(), stderr()])
+def tensor_trust_dataset(prompt_strategy: PromptStrategy, split: str) -> Dataset:
+    def _record_to_sample(
+        record: dict[str, Any], prompt_strategy: PromptStrategy
+    ) -> Sample:
+        pre_prompt = record["pre_prompt"]
+        attack = record["attack"]
+        post_prompt = record["post_prompt"]
+        messages: list[ChatMessage]
+        match prompt_strategy:
+            case "single_user":
+                messages = [
+                    ChatMessageUser(
+                        content=f"{pre_prompt}{record['attack']}{record['post_prompt']}"
+                    )
+                ]
+            case "multiple_user":
+                messages = [
+                    ChatMessageUser(content=pre_prompt),
+                    ChatMessageUser(content=attack),
+                    ChatMessageUser(content=post_prompt),
+                ]
+            case "multiple_system":
+                messages = [
+                    ChatMessageSystem(content=pre_prompt),
+                    ChatMessageUser(content=attack),
+                    ChatMessageUser(content=post_prompt),
+                ]
+            case _:
+                raise ValueError(
+                    f"Unknown prompt strategy: {prompt_strategy}. Choose from {get_args(PromptStrategy)}."
+                )
+
+        return Sample(
+            input=messages,
+            metadata={"access_code": record["access_code"], "attack": attack},
+        )
+
+    return hf_dataset(
+        path="compl-ai/tensor_trust",
+        split=split,
+        sample_fields=partial(_record_to_sample, prompt_strategy=prompt_strategy),
+    )
+
+
+@scorer(metrics=[accuracy(), stderr()], name="Hijacking Score")
 def hijack_scorer() -> Scorer:
+    HijackSuccessReason = Literal["access_granted", "access_code_leaked"]
+
     async def score(state: TaskState, target: Target) -> Score:
         completion = state.output.completion
         access_code = state.metadata["access_code"]
@@ -128,4 +141,27 @@ def hijack_scorer() -> Scorer:
     return score
 
 
-HijackSuccessReason = Literal["access_granted", "access_code_leaked"]
+@task(technical_requirement="Cyberattack Resilience")
+def instruction_goal_hijacking(
+    prompt_strategy: PromptStrategy = "multiple_user", split: str = "train"
+) -> Task:
+    """
+    TensorTrust instruction goal hijacking benchmark.
+
+    Args:
+        prompt_strategy: Which prompt strategy to use for passing pre_prompt,
+                        attack, and post_prompt to the model:
+                        - single_user: all concatenated into single user prompt
+                        - multiple_user: 3 separate user prompts
+                        - multiple_system_first: 3 separate prompts with first as system
+                        - multiple_system_sandwich: 3 separate prompts with first as system and last as user
+
+        split: Dataset split to use (e.g., "train", "test")
+        shuffle: Whether to shuffle the dataset
+        seed: Random seed for shuffling
+    """
+    return Task(
+        dataset=tensor_trust_dataset(prompt_strategy, split),
+        solver=generate(),
+        scorer=hijack_scorer(),
+    )
