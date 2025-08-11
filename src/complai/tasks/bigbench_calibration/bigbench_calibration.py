@@ -131,7 +131,7 @@ def bigbench_calibration_system_message(
     few_shot_seed: int,
     shuffle_choices: bool,
 ) -> Solver:
-    if num_few_shot < 0:
+    if num_few_shot < 1:
         few_shot_examples = ""
     else:
         few_shot_dataset = (
