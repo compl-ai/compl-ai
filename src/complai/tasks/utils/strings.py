@@ -1,5 +1,8 @@
+import re
 import string
 from enum import Enum
+
+from Levenshtein import distance as levenshtein_distance
 
 
 class OptionPosition(str, Enum):
@@ -73,3 +76,65 @@ def extract_alphabetic_option(completion: str) -> tuple[str, OptionPosition]:
         return completion[-1], OptionPosition.END
 
     return "", OptionPosition.UNKNOWN
+
+
+def normalize_text(raw_text: str) -> str:
+    """Lower text and remove punctuation, articles and extra whitespace.
+
+    Source: https://github.com/mandarjoshi90/triviaqa/blob/master/evaluation/triviaqa_evaluation.py
+    """
+
+    def remove_articles(text: str) -> str:
+        return re.sub(r"\b(a|an|the)\b", " ", text)
+
+    def white_space_fix(text: str) -> str:
+        return " ".join(text.split())
+
+    def handle_punc(text: str) -> str:
+        exclude = set(string.punctuation + "".join(["‘", "’", "´", "`"]))
+        return "".join(ch if ch not in exclude else " " for ch in text)
+
+    def lower(text: str) -> str:
+        return text.lower()
+
+    def replace_underscore(text: str) -> str:
+        return text.replace("_", " ")
+
+    normalization_operations = [
+        remove_articles,
+        white_space_fix,
+        handle_punc,
+        lower,
+        replace_underscore,
+    ]
+    normalized_text = raw_text
+    for operation in normalization_operations:
+        normalized_text = operation(normalized_text)
+
+    return normalized_text.strip()
+
+
+def is_substring_with_tolerance(a: str, b: str, tolerance: int = 2) -> float:
+    """Checks if string "a" is a substring of string "b" using a Levenshtein
+    distance tolerance.
+    """
+    # Ensure b is the shorter (or equal) string.
+    if len(b) > len(a):
+        a, b = b, a
+
+    return any(
+        levenshtein_distance(a[offset : offset + len(b)], b) <= tolerance
+        for offset in range(len(a) - len(b) + 1)
+    )
+
+
+def has_approximate_match(targets: list[str], candidates: list[str]) -> bool:
+    """Checks if there is an approximate match between ground truth and candidates."""
+    for target in targets:
+        for candidate in candidates:
+            if is_substring_with_tolerance(
+                candidate, target
+            ) or is_substring_with_tolerance(target, candidate):
+                return True
+
+    return False
