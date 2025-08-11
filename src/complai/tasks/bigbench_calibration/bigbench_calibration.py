@@ -63,7 +63,7 @@ SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant. For each snippet of tex
 """
 
 
-@task
+@task(technical_requirements="Interpretability")
 def bigbench_calibration(
     bigbench_task: BigBenchTask = "emoji_movie",
     num_few_shot: int = 3,
