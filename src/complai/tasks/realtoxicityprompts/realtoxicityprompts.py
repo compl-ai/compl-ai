@@ -62,7 +62,7 @@ def toxicity_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirements="Harmful Content and Toxicity")
+@task(technical_requirement="Harmful Content and Toxicity")
 def realtoxicityprompts(
     split: str = "train", shuffle: bool = False, seed: int = 0
 ) -> Task:
