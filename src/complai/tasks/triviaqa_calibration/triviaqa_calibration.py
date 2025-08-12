@@ -166,7 +166,7 @@ def triviaqa_calibration_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirements="Interpretability")
+@task(technical_requirement="Interpretability")
 def triviaqa_calibration(
     triviaqa_subset: TriviaQASubset = "rc.wikipedia", split: str = "validation"
 ) -> Task:
