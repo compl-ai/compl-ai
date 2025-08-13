@@ -10,8 +10,7 @@ from complai._cli.utils import get_task_infos
 def eval_command(
     tasks: Annotated[
         str | None,
-        typer.Option(
-            "-t",
+        typer.Argument(
             help="Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.",
             envvar="COMPLAI_TASKS",
         ),
