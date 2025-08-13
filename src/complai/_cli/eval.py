@@ -30,7 +30,10 @@ def eval_command(
     limit: Annotated[
         int | None,
         typer.Option(
-            help="Limit the number of samples per task.", envvar="COMPLAI_LIMIT"
+            "-l",
+            "--limit",
+            help="Limit the number of samples per task.",
+            envvar="COMPLAI_LIMIT",
         ),
     ] = None,
     max_connections: Annotated[
