@@ -20,17 +20,17 @@ def eval_command(
         typer.Option(
             "-m",
             "--model",
-            help="Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for more details.",
+            help="Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.",
         ),
     ] = "vllm/HuggingFaceTB/SmolLM2-135M-Instruct",
-    log_dir: Annotated[str, typer.Option(help="Directory to save logs to.")] = "logs/",
+    log_dir: Annotated[str, typer.Option(help="Directory to save logs to.")] = "./logs",
     limit: Annotated[
         int | None, typer.Option(help="Limit the number of samples per task.")
     ] = None,
     max_connections: Annotated[
         int,
         typer.Option(
-            help="Maximum number of concurrent connections to Model provider (defaults to 10)"
+            help="Maximum number of concurrent connections to Model provider."
         ),
     ] = 64,
 ) -> None:
