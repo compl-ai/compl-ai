@@ -72,11 +72,11 @@ $ complai eval [OPTIONS]
 **Options**:
 
 * `-t, --task TEXT`: Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.
-* `-m, --model TEXT`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.  [default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
-* `--log-dir TEXT`: Directory to save logs to.  [default: ./logs]
-* `--limit INTEGER`: Limit the number of samples per task.
-* `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [default: 64]
-* `--retry-on-error INTEGER`: Number of times to retry on error.  [default: 0]
+* `-m, --model TEXT`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.  [env var: COMPLAI_MODEL; default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
+* `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
+* `-l, --limit INTEGER`: Limit the number of samples per task.  [env var: COMPLAI_LIMIT]
+* `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
+* `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 
 ### `complai list`
