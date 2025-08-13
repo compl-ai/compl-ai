@@ -76,6 +76,7 @@ $ complai eval [OPTIONS]
 * `--log-dir TEXT`: Directory to save logs to.  [default: ./logs]
 * `--limit INTEGER`: Limit the number of samples per task.
 * `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [default: 64]
+* `--retry-on-error INTEGER`: Number of times to retry on error.  [default: 0]
 * `--help`: Show this message and exit.
 
 ### `complai list`

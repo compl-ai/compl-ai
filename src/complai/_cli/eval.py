@@ -33,6 +33,9 @@ def eval_command(
             help="Maximum number of concurrent connections to Model provider."
         ),
     ] = 64,
+    retry_on_error: Annotated[
+        int, typer.Option(help="Number of times to retry on error.")
+    ] = 0,
 ) -> None:
     """Run evals."""
     print(f"Running evals with model: [bold]{model}[/bold]")
@@ -46,4 +49,5 @@ def eval_command(
         log_dir=log_dir,
         limit=limit,
         max_connections=max_connections,
+        retry_on_error=retry_on_error,
     )
