@@ -15,6 +15,13 @@ dependencies = [
     "typer>=0.16.0",
     "vllm>=0.10.0",
     "detoxify>=0.5.2",
+    "gdown>=5.2.0",
+    "gensim>=4.3.3",
+    "nltk>=3.9.1",
+    "numpy>=1.26.4",
+    "platformdirs>=4.3.8",
+    "polars>=1.32.2",
+    "scipy>=1.13.1",
 ]
 
 [project.scripts]
