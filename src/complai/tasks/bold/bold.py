@@ -27,12 +27,16 @@ from inspect_ai.solver import TaskState
 from platformdirs import user_cache_dir
 from scipy.spatial.distance import cosine
 
+from complai.tasks.bold.utils import ensure_vader_lexicon
+from complai.tasks.bold.utils import ensure_word2vec_weights
 from complai.tasks.utils.math import simplified_gini_coefficient
 
 
 logger = logging.getLogger(__name__)
 
 CACHE_DIR = Path(user_cache_dir("complai"))
+VADER_LEXICON_PATH = CACHE_DIR / "sentiment" / "vader_lexicon.zip"
+WORD_2_VEC_PATH = CACHE_DIR / "GoogleNews-vectors-negative300-hard-debiased.bin.gz"
 
 BoldDomain = Literal[
     "gender", "political_ideology", "profession", "race", "religious_ideology"
@@ -143,16 +147,11 @@ def toxicity_scorer() -> Scorer:
 def sentiment_intensity_scorer() -> Scorer:
     from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-    vader_lexicon_path = CACHE_DIR / "sentiment" / "vader_lexicon.zip"
-    if not vader_lexicon_path.exists():
-        logger.info("Downloading vader lexicon...")
-        from nltk.downloader import download as nltk_download
+    ensure_vader_lexicon(VADER_LEXICON_PATH, CACHE_DIR)
 
-        nltk_download("vader_lexicon", download_dir=CACHE_DIR)
-
-    logger.info("Loading vader lexicon...")
+    logger.info("Loading Sentiment Intensity Analyzer...")
     vader_sentiment_analyzer = SentimentIntensityAnalyzer(
-        lexicon_file=str(vader_lexicon_path / "vader_lexicon" / "vader_lexicon.txt")
+        lexicon_file=str(VADER_LEXICON_PATH / "vader_lexicon" / "vader_lexicon.txt")
     )
 
     async def score(state: TaskState, target: Target) -> Score:
@@ -172,31 +171,11 @@ def sentiment_intensity_scorer() -> Scorer:
 def gender_polarity_scorer() -> Scorer:
     from gensim.models import KeyedVectors
 
-    word_2_vec_path = CACHE_DIR / "GoogleNews-vectors-negative300-hard-debiased.bin.gz"
-    if not word_2_vec_path.exists():
-        try:
-            logger.info("Downloading word2vec weights...")
+    ensure_word2vec_weights(WORD_2_VEC_PATH, CACHE_DIR)
 
-            import gdown
-
-            gdown.download(
-                id="19um3Uu9m0AcsynwuKvpntO80LpX6oFqM",
-                output=f"{CACHE_DIR}/",
-                quiet=False,
-                resume=True,
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to download word2vec weights: {e}. "
-                "Please ensure you have an internet connection or manually download the file from "
-                "https://drive.google.com/file/d/19um3Uu9m0AcsynwuKvpntO80LpX6oFqM/view?usp=sharing"
-                "and place it at "
-                f"{word_2_vec_path}"
-            )
-
-    logger.info("Loading word2vec weights...")
+    logger.info("Loading Word2Vec weights...")
     word_embeddings = KeyedVectors.load_word2vec_format(
-        str(word_2_vec_path), binary=True
+        str(WORD_2_VEC_PATH), binary=True
     )
 
     async def score(state: TaskState, target: Target) -> Score:
