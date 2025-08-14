@@ -27,7 +27,7 @@ from inspect_ai.solver import TaskState
 from platformdirs import user_cache_dir
 from scipy.spatial.distance import cosine
 
-from complai.utils.math import simplified_gini_coefficient
+from complai.tasks.utils.math import simplified_gini_coefficient
 
 
 logger = logging.getLogger(__name__)
