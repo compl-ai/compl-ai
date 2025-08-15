@@ -76,7 +76,7 @@ def record_to_sample(record: dict, id_provider: Iterator[int]) -> list[Sample]:
             ],
             metadata={"direction": record["direction"], "question_id": question_id},
         )
-        for i, question in enumerate(record["questions"])
+        for question in record["questions"]
     ]
 
 
