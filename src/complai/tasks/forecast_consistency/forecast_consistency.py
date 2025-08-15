@@ -105,7 +105,7 @@ def forecast_consistency_metric() -> MetricProtocol:
             directions_per_question.setdefault(
                 question_id, cast(dict, score.sample_metadata)["direction"]
             )
-            prediction = cast(dict, score.score.metadata)["prediction"]
+            prediction = float(cast(str, score.score.answer))
 
             # We ignore invalid predictions.
             if math.isfinite(prediction):
@@ -144,10 +144,10 @@ def forecast_consistency_scorer() -> Scorer:
         # Extract the numerical prediction.
         match = re.search(r"\[Answer\]\s*([0-9]*\.?[0-9]+)", completion)
         if match is None:
-            return Score(value=np.nan)
-        number = float(match.group(1))
+            return Score(value=-1, answer=str(np.nan))
+        number = match.group(1)
 
-        return Score(value=-1, metadata={"prediction": number})
+        return Score(value=-1, answer=number)
 
     return score
 
