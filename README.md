@@ -82,6 +82,27 @@ $ complai eval [OPTIONS] [TASKS]
 * `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 
+## `eval-retry`
+
+Retry interrupted tasks.
+
+**Usage**:
+
+```console
+$ eval-retry [OPTIONS] LOG_FILES...
+```
+
+**Arguments**:
+
+* `LOG_FILES...`: Log file(s) for task(s) to retry.  [required]
+
+**Options**:
+
+* `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
+* `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
+* `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
+* `--help`: Show this message and exit.
+
 ### `complai list`
 
 List all available tasks.
