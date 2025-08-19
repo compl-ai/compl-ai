@@ -1,4 +1,4 @@
-from .hellaswag import decorated_hellaswag as hellaswag
+from .hellaswag import wrapped_hellaswag as hellaswag
 
 
 __all__ = ["hellaswag"]
