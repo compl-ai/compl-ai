@@ -2,8 +2,6 @@ import typer
 from inspect_ai import eval_retry
 from typing_extensions import Annotated
 
-from complai._cli.utils import get_complai_tasks
-
 
 def eval_retry_command(
     log_files: Annotated[
@@ -27,8 +25,6 @@ def eval_retry_command(
     ] = 0,
 ) -> None:
     """Retry interrupted evals."""
-    get_complai_tasks()
-
     eval_retry(
         tasks=log_files,
         log_dir=log_dir,
