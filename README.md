@@ -79,6 +79,7 @@ $ complai eval [OPTIONS] [TASKS]
 * `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
 * `-l, --limit INTEGER`: Limit the number of samples per task.  [env var: COMPLAI_LIMIT]
 * `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
+* `--max-tasks INTEGER`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
 * `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 
@@ -100,6 +101,7 @@ $ eval-retry [OPTIONS] LOG_FILES...
 
 * `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
 * `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
+* `--max-tasks INTEGER`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
 * `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 

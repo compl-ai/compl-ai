@@ -19,6 +19,13 @@ def eval_retry_command(
             envvar="COMPLAI_MAX_CONNECTIONS",
         ),
     ] = 64,
+    max_tasks: Annotated[
+        int,
+        typer.Option(
+            help="Maximum number of tasks to run in parallel.",
+            envvar="COMPLAI_MAX_TASKS",
+        ),
+    ] = 1,
     retry_on_error: Annotated[
         int,
         typer.Option(
@@ -34,5 +41,6 @@ def eval_retry_command(
         tasks=log_files,
         log_dir=log_dir,
         max_connections=max_connections,
+        max_tasks=max_tasks,
         retry_on_error=retry_on_error,
     )
