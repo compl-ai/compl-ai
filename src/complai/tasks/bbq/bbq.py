@@ -4,5 +4,5 @@ from inspect_evals.bbq import bbq
 
 
 @task(name="bbq", technical_requirement="Representation — Absence of Bias")
-def decorated_bbq() -> Task:
+def wrapped_bbq() -> Task:
     return bbq()
