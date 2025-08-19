@@ -74,3 +74,38 @@ def get_task_infos(tasks: str | None) -> list[TaskInfo]:
     task_names = parse_tasks(tasks)
 
     return get_task_infos_from_task_names(task_names)
+
+
+def patch_display_results() -> None:
+    """
+    Replace "inspect eval-retry" with "complai eval-retry" in display results.
+
+    Should be called before invoking inspect_ai.eval_retry().
+
+    Derived from: https://github.com/groq/openbench/blob/main/src/openbench/monkeypatch/display_results_patch.py
+    """
+    try:
+        from inspect_ai._display.core import results
+
+        original_task_interrupted = results.task_interrupted
+
+        def custom_task_interrupted(profile, samples_completed):  # type: ignore
+            result = original_task_interrupted(profile, samples_completed)
+
+            if isinstance(result, str):
+                return result.replace("inspect eval-retry", "complai eval-retry")
+            elif hasattr(result, "_text") and isinstance(result._text, list):
+                for i, segment in enumerate(result._text):
+                    if isinstance(segment, tuple) and len(segment) >= 1:
+                        text = segment[0]
+                        if isinstance(text, str) and "inspect eval-retry" in text:
+                            new_text = text.replace(
+                                "inspect eval-retry", "complai eval-retry"
+                            )
+                            result._text[i] = (new_text,) + segment[1:]
+                return result
+
+        results.task_interrupted = custom_task_interrupted
+
+    except (ImportError, AttributeError):
+        pass

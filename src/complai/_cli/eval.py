@@ -5,6 +5,7 @@ from rich import print
 from typing_extensions import Annotated
 
 from complai._cli.utils import get_task_infos
+from complai._cli.utils import patch_display_results
 
 
 def eval_command(
@@ -55,6 +56,9 @@ def eval_command(
 
     # Get TaskInfo objects from task names
     task_infos: list[TaskInfo] = get_task_infos(tasks)
+
+    # Apply display monkey patch
+    patch_display_results()
 
     eval(
         tasks=task_infos,
