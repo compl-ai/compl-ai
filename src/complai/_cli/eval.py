@@ -4,6 +4,7 @@ from inspect_ai import TaskInfo
 from typing_extensions import Annotated
 
 from complai._cli.utils import get_task_infos
+from complai._cli.utils import parse_cli_args
 from complai._cli.utils import patch_display_results
 
 
@@ -15,6 +16,10 @@ def eval_command(
             envvar="COMPLAI_TASKS",
         ),
     ] = None,
+    task_args: Annotated[
+        list[str],
+        typer.Option("-T", help="One or more task arguments (e.g. -T arg=value)"),
+    ] = [],
     model: Annotated[
         str,
         typer.Option(
@@ -64,8 +69,12 @@ def eval_command(
     # Apply display monkey patch
     patch_display_results()
 
+    # Parse task arguments
+    parsed_task_args = parse_cli_args(task_args) if task_args else {}
+
     eval(
         tasks=task_infos,
+        task_args=parsed_task_args,
         model=model,
         log_dir=log_dir,
         limit=limit,

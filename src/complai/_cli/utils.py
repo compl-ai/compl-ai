@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Any
 
 import typer
+import yaml
 from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 
@@ -76,13 +78,30 @@ def get_task_infos(tasks: str | None) -> list[TaskInfo]:
     return get_task_infos_from_task_names(task_names)
 
 
+def parse_cli_args(
+    args: tuple[str] | list[str] | None, force_str: bool = False
+) -> dict[str, Any]:
+    params: dict[str, Any] = dict()
+    if args:
+        for arg in list(args):
+            parts = arg.split("=")
+            if len(parts) > 1:
+                key = parts[0].replace("-", "_")
+                value = yaml.safe_load("=".join(parts[1:]))
+                if isinstance(value, str):
+                    value = value.split(",")
+                    value = value if len(value) > 1 else value[0]
+                params[key] = str(value) if force_str else value
+    return params
+
+
 def patch_display_results() -> None:
     """
     Replace "inspect eval-retry" with "complai eval-retry" in display results.
 
     Should be called before invoking inspect_ai.eval_retry().
 
-    Derived from: https://github.com/groq/openbench/blob/main/src/openbench/monkeypatch/display_results_patch.py
+    Derived from: https://github.com/groq/openbench
     """
     try:
         from inspect_ai._display.core import results

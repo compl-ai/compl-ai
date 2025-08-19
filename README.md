@@ -75,6 +75,7 @@ $ complai eval [OPTIONS] [TASKS]
 
 **Options**:
 
+* `-T TEXT`: One or more task arguments (e.g. -T arg=value)
 * `-m, --model TEXT`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.  [env var: COMPLAI_MODEL; default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
 * `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
 * `-l, --limit INTEGER`: Limit the number of samples per task.  [env var: COMPLAI_LIMIT]
