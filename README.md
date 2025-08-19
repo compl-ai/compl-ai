@@ -56,12 +56,12 @@ $ complai [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `eval`: Run evals.
+* `eval`: Run tasks.
 * `list`: List all available tasks.
 
 ### `complai eval`
 
-Run evals.
+Run tasks.
 
 **Usage**:
 

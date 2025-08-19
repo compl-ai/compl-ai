@@ -26,7 +26,7 @@ def eval_retry_command(
         ),
     ] = 0,
 ) -> None:
-    """Retry interrupted evals."""
+    """Retry interrupted tasks."""
     # Apply display monkey patch
     patch_display_results()
 

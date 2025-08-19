@@ -50,7 +50,7 @@ def eval_command(
         ),
     ] = 0,
 ) -> None:
-    """Run evals."""
+    """Run tasks."""
     # Get TaskInfo objects from task names
     task_infos: list[TaskInfo] = get_task_infos(tasks)
 
