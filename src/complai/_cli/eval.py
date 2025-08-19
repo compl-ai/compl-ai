@@ -1,7 +1,6 @@
 import typer
 from inspect_ai import eval
 from inspect_ai import TaskInfo
-from rich import print
 from typing_extensions import Annotated
 
 from complai._cli.utils import get_task_infos
@@ -52,8 +51,6 @@ def eval_command(
     ] = 0,
 ) -> None:
     """Run evals."""
-    print(f"Running evals with model: [bold]{model}[/bold]")
-
     # Get TaskInfo objects from task names
     task_infos: list[TaskInfo] = get_task_infos(tasks)
 
