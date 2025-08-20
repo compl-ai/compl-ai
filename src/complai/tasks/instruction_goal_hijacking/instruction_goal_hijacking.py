@@ -153,12 +153,9 @@ def instruction_goal_hijacking(
                         attack, and post_prompt to the model:
                         - single_user: all concatenated into single user prompt
                         - multiple_user: 3 separate user prompts
-                        - multiple_system_first: 3 separate prompts with first as system
-                        - multiple_system_sandwich: 3 separate prompts with first as system and last as user
+                        - multiple_system: 3 separate prompts with first as system
 
         split: Dataset split to use (e.g., "train", "test")
-        shuffle: Whether to shuffle the dataset
-        seed: Random seed for shuffling
     """
     return Task(
         dataset=tensor_trust_dataset(prompt_strategy, split),
