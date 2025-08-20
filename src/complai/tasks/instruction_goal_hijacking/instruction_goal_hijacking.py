@@ -23,13 +23,12 @@ from inspect_ai.solver import generate
 from inspect_ai.solver import TaskState
 
 
-# Prompt strategy options
+DATASET_PATH = "compl-ai/tensor_trust"
+
 PromptStrategy = Literal["single_user", "multiple_user", "multiple_system"]
 
 
-def _record_to_sample(
-    record: dict[str, Any], prompt_strategy: PromptStrategy
-) -> Sample:
+def record_to_sample(record: dict[str, Any], prompt_strategy: PromptStrategy) -> Sample:
     pre_prompt = record["pre_prompt"]
     attack = record["attack"]
     post_prompt = record["post_prompt"]
@@ -65,46 +64,10 @@ def _record_to_sample(
 
 
 def tensor_trust_dataset(prompt_strategy: PromptStrategy, split: str) -> Dataset:
-    def _record_to_sample(
-        record: dict[str, Any], prompt_strategy: PromptStrategy
-    ) -> Sample:
-        pre_prompt = record["pre_prompt"]
-        attack = record["attack"]
-        post_prompt = record["post_prompt"]
-        messages: list[ChatMessage]
-        match prompt_strategy:
-            case "single_user":
-                messages = [
-                    ChatMessageUser(
-                        content=f"{pre_prompt}{record['attack']}{record['post_prompt']}"
-                    )
-                ]
-            case "multiple_user":
-                messages = [
-                    ChatMessageUser(content=pre_prompt),
-                    ChatMessageUser(content=attack),
-                    ChatMessageUser(content=post_prompt),
-                ]
-            case "multiple_system":
-                messages = [
-                    ChatMessageSystem(content=pre_prompt),
-                    ChatMessageUser(content=attack),
-                    ChatMessageUser(content=post_prompt),
-                ]
-            case _:
-                raise ValueError(
-                    f"Unknown prompt strategy: {prompt_strategy}. Choose from {get_args(PromptStrategy)}."
-                )
-
-        return Sample(
-            input=messages,
-            metadata={"access_code": record["access_code"], "attack": attack},
-        )
-
     return hf_dataset(
-        path="compl-ai/tensor_trust",
+        path=DATASET_PATH,
         split=split,
-        sample_fields=partial(_record_to_sample, prompt_strategy=prompt_strategy),
+        sample_fields=partial(record_to_sample, prompt_strategy=prompt_strategy),
     )
 
 
