@@ -98,10 +98,7 @@ def parse_cli_args(
 def patch_display_results() -> None:
     """
     Replace "inspect eval-retry" with "complai eval-retry" in display results.
-
     Should be called before invoking inspect_ai.eval_retry().
-
-    Derived from: https://github.com/groq/openbench
     """
     try:
         from inspect_ai._display.core import results
