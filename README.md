@@ -136,6 +136,14 @@ $ complai list [OPTIONS]
 
 * `--help`: Show this message and exit.
 
+### Environment Variables
+
+The CLI supports reading argument and option values from environment variables. For instance, you can run:
+```console
+export COMPLAI_MODEL=openai/gpt-5-mini-2025-08-07
+```
+ This model will then be used if no model is provided in the command line.
+
 ## Contributing
 
 ## Citation
