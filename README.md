@@ -41,6 +41,21 @@ Now you can use the CLI like so:
 complai --help
 ```
 
+## Quickstart
+
+```console
+# OpenAI
+export OPENAI_API_KEY=your-openai-api-key
+uv run complai eval -m openai/gpt-5-mini-2025-08-07 --limit 5
+
+# Local (Starts a vLLM server)
+uv run complai eval -m vllm/HuggingFaceTB/SmolLM2-135M-Instruct --limit 5 
+
+# Check results in ./logs/ or run
+uv run inspect view
+```
+
+
 ## CLI
 
 
