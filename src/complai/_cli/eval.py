@@ -44,7 +44,7 @@ def eval_command(
     max_connections: Annotated[
         int,
         typer.Option(
-            help="Maximum number of concurrent connections to Model provider.",
+            help="Maximum number of concurrent connections to model provider.",
             envvar="COMPLAI_MAX_CONNECTIONS",
         ),
     ] = 64,
