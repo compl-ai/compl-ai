@@ -91,13 +91,13 @@ $ complai eval [OPTIONS] [TASKS]
 
 **Options**:
 
-* `-T TEXT`: One or more task arguments (e.g. -T arg=value)
-* `-m, --model TEXT`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.  [env var: COMPLAI_MODEL; default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
-* `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
-* `-l, --limit INTEGER`: Limit the number of samples per task.  [env var: COMPLAI_LIMIT]
-* `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
-* `--max-tasks INTEGER`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
-* `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
+* `-T`: One or more task arguments (e.g. -T arg=value)
+* `-m, --model`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.  [env var: COMPLAI_MODEL; default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
+* `--log-dir`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
+* `-l, --limit`: Limit the number of samples per task.  [env var: COMPLAI_LIMIT]
+* `--max-connections`: Maximum number of concurrent connections to model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
+* `--max-tasks`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
+* `--retry-on-error`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 
 ### `complai eval-retry`
@@ -116,10 +116,10 @@ $ eval-retry [OPTIONS] LOG_FILES...
 
 **Options**:
 
-* `--log-dir TEXT`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
-* `--max-connections INTEGER`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
-* `--max-tasks INTEGER`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
-* `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
+* `--log-dir`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
+* `--max-connections`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
+* `--max-tasks`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
+* `--retry-on-error`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 
 ### `complai list`
