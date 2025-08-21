@@ -100,7 +100,7 @@ $ complai eval [OPTIONS] [TASKS]
 * `--retry-on-error INTEGER`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
 * `--help`: Show this message and exit.
 
-## `eval-retry`
+### `complai eval-retry`
 
 Retry interrupted tasks.
 
