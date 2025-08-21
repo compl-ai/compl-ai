@@ -72,6 +72,7 @@ $ complai [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `eval`: Run tasks.
+* `eval-retry` Retry interrupted tasks.
 * `list`: List all available tasks.
 
 ### `complai eval`
