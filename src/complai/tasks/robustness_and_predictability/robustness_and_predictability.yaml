@@ -1,4 +1,0 @@
-group: robustness_and_predictability
-task:
-  - boolq_contrastset
-  - imdb_contrastset
