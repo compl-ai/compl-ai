@@ -64,20 +64,19 @@ def llm_rules_dataset(evaluation_category: EvaluationCategory) -> Dataset:
     dataset = llm_rules_load_dataset(args)
 
     # Create samples
-    samples: list[Sample] = []
-    for scenario in scenarios.SCENARIOS:
-        for behavior, test_cases in dataset[scenario].items():
-            for test_case in test_cases:
-                samples.append(
-                    Sample(
-                        input="",
-                        metadata={
-                            "test_case": test_case,
-                            "scenario": scenario,
-                            "behavior": behavior,
-                        },
-                    )
-                )
+    samples = [
+        Sample(
+            input="",
+            metadata={
+                "test_case": test_case,
+                "scenario": scenario,
+                "behavior": behavior,
+            },
+        )
+        for scenario in scenarios.SCENARIOS
+        for behavior, test_cases in dataset[scenario].items()
+        for test_case in test_cases
+    ]
 
     return MemoryDataset(samples)
 
