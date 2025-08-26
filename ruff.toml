@@ -2,6 +2,7 @@ line-length = 88
 
 exclude = [
     ".git/",
+    "src/complai/tasks/self_check_consistency/constituent_linking/"
 ]
 
 [lint]
