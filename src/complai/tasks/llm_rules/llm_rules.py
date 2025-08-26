@@ -87,6 +87,8 @@ def llm_rules_solver() -> Solver:
     from llm_rules import Role
     from llm_rules import scenarios
 
+    model = LLMRulesModelWrapper(get_model())
+
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         # Load scenario
         scenario = scenarios.SCENARIOS[state.metadata["scenario"]](
@@ -111,7 +113,6 @@ def llm_rules_solver() -> Solver:
             test_messages = test_messages[last_index + 1 :]
 
         # Solve the test case
-        model = LLMRulesModelWrapper(get_model())
         for test_message in test_messages:
             messages.append(test_message)
             completion = await model(messages)
