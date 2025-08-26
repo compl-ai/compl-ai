@@ -419,9 +419,7 @@ class CompactFactsOpenInformationExtraction:
             #     / "bert"
             # )
             # Load tokenizer from HF repo subfolder
-            tokenizer = BertTokenizer.from_pretrained(
-                hf_model_repo, subfolder="models/bert-base-uncased"
-            )
+            tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
             logger.info("Load bert tokenizer from HF successfully.")
             pretrained_vocab["wordpiece"] = tokenizer.get_vocab()
         elif embedding_model == "pretrained":
