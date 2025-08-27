@@ -2,8 +2,9 @@ import numpy as np
 from inspect_ai.model import ChatCompletionChoice
 
 
-def _num_nonzero_probs(logprobs: list[float]) -> int:
-    """Returns the number of logprobs that are not -np.inf
+def num_nonzero_probs(logprobs: list[float]) -> int:
+    """
+    Returns the number of logprobs that are not -np.inf.
 
     Args:
         logprobs: Input list of logprobs.
@@ -14,7 +15,8 @@ def _num_nonzero_probs(logprobs: list[float]) -> int:
 def get_logprobs_first_token(
     choice: ChatCompletionChoice, tokens: list[str], strip_spaces: bool | None = None
 ) -> list[float]:
-    """Get the logprobs for all tokens in tokens at the first position of
+    """
+    Get the logprobs for all tokens in tokens at the first position of
     the model output. If a token is not in the model output, we assign it a logprob of
     -infinity.
 
@@ -55,8 +57,9 @@ def get_logprobs_last_tokens(
     for position in reversed(range(num_tokens - last_k, num_tokens)):
         # In case of ties, prefer extraction from the later tokens.
         logprobs = get_logprobs(choice, tokens, strip_spaces=True, position=position)
-        if _num_nonzero_probs(logprobs) > _num_nonzero_probs(best_logprobs):
+        if num_nonzero_probs(logprobs) > num_nonzero_probs(best_logprobs):
             best_logprobs = logprobs
+
     return best_logprobs
 
 
@@ -66,10 +69,10 @@ def get_logprobs(
     strip_spaces: bool | None = None,
     position: int = 0,
 ) -> list[float]:
-    """Get the logprobs for all the ``tokens``.
+    """
+    Get the logprobs for all the `tokens` at the given `position` in the model output.
 
-    If a continuation token is not in the provided logprobs,
-    a value of -infinity is assigned.
+    If a token is not in the provided logprobs, we assign it a logprob of -infinity.
 
     Args:
         choice: The model outputs. They must include logprobs.
