@@ -31,6 +31,9 @@ from complai.tasks.utils.strings import extract_alphabetic_option
 from complai.tasks.utils.strings import OptionPosition
 
 
+DATASET_PATH = "tasksource/bigbench"
+
+
 # Available BigBench tasks
 BigBenchTask = Literal[
     "auto_debugging",
@@ -110,7 +113,7 @@ def bigbench_dataset(
         )
 
     dataset = hf_dataset(
-        path="tasksource/bigbench",
+        path=DATASET_PATH,
         name=bigbench_task,
         split=split,
         sample_fields=_record_to_sample,
