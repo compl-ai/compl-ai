@@ -16,6 +16,7 @@ dependencies = [
     "vllm>=0.10.0",
     "scipy>=1.15.3",
     "datasets>=3.6.0",
+    "detoxify>=0.5.2",
 ]
 
 [project.scripts]
