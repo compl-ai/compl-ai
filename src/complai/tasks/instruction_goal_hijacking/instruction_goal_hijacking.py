@@ -25,13 +25,16 @@ from inspect_ai.solver import TaskState
 
 DATASET_PATH = "compl-ai/tensor_trust"
 
-PromptStrategy = Literal["single_user", "multiple_user", "multiple_system"]
+PromptStrategy = Literal[
+    "single_user", "multiple_user", "multiple_system", "multiple_system_sandwich"
+]
 
 
 def record_to_sample(record: dict[str, Any], prompt_strategy: PromptStrategy) -> Sample:
     pre_prompt = record["pre_prompt"]
     attack = record["attack"]
     post_prompt = record["post_prompt"]
+
     messages: list[ChatMessage]
     match prompt_strategy:
         case "single_user":
@@ -51,6 +54,12 @@ def record_to_sample(record: dict[str, Any], prompt_strategy: PromptStrategy) ->
                 ChatMessageSystem(content=pre_prompt),
                 ChatMessageUser(content=attack),
                 ChatMessageUser(content=post_prompt),
+            ]
+        case "multiple_system_sandwich":
+            messages = [
+                ChatMessageSystem(content=pre_prompt),
+                ChatMessageUser(content=attack),
+                ChatMessageSystem(content=post_prompt),
             ]
         case _:
             raise ValueError(
@@ -117,7 +126,7 @@ def instruction_goal_hijacking(
                         - single_user: all concatenated into single user prompt
                         - multiple_user: 3 separate user prompts
                         - multiple_system: 3 separate prompts with first as system
-
+                        - multiple_system_sandwich: 3 separate prompts with first and last as system
         split: Dataset split to use (e.g., "train", "test")
     """
     return Task(
