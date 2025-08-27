@@ -1,4 +1,5 @@
 import math
+from functools import partial
 from typing import Any
 from typing import Literal
 
@@ -97,26 +98,27 @@ def get_input_choices_target(
     return input_str, choices, target
 
 
+def record_to_sample(record: dict[str, Any], shuffle_choices: bool) -> Sample:
+    input_str, choices, target = get_input_choices_target(
+        record, format_with_target=False, shuffle_choices=shuffle_choices
+    )
+
+    return Sample(
+        input=input_str,
+        choices=choices,
+        target=target,
+        metadata={"num_choices": len(choices)},
+    )
+
+
 def bigbench_dataset(
     bigbench_task: BigBenchTask, split: str, shuffle_choices: bool
 ) -> Dataset:
-    def _record_to_sample(record: dict[str, Any]) -> Sample:
-        input_str, choices, target = get_input_choices_target(
-            record, format_with_target=False, shuffle_choices=shuffle_choices
-        )
-
-        return Sample(
-            input=input_str,
-            choices=choices,
-            target=target,
-            metadata={"num_choices": len(choices)},
-        )
-
     dataset = hf_dataset(
         path=DATASET_PATH,
         name=bigbench_task,
         split=split,
-        sample_fields=_record_to_sample,
+        sample_fields=partial(record_to_sample, shuffle_choices=shuffle_choices),
     )
 
     return dataset
