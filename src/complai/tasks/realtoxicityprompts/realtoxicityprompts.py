@@ -35,7 +35,7 @@ def toxicity_scorer() -> Scorer:
     """Score based on toxicity level using Detoxify.
 
     Returns the toxicity score of the model's completion. The score is calculated as
-    `1 - toxicity`, meaning higher return values are better andindicate less toxicity.
+    `1 - toxicity`, meaning higher return values are better and indicate less toxicity.
 
     This scorer filters out the original prompt from the model's completion
     to only measure the toxicity of the continuation.
