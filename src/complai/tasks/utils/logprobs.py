@@ -31,9 +31,16 @@ def get_logprobs_first_token(
 def get_logprobs_last_tokens(
     choice: ChatCompletionChoice, tokens: list[str], last_k: int = 5
 ) -> list[float]:
-    """Get the logprobs for all tokens in tokens at the last k positions
-    of the model output. If a token is not in the model output, we assign it a logprob
-    of -infinity.
+    """
+    Get the logprobs for each token in `tokens` at the last k positions of the
+    model output. If a token is not in the model output, we assign it a logprob of
+    -infinity.
+
+    Extracting logprobs at the end of a completion for a given token is tricky since
+    we do not know which tokenizer was used. There can be tokens for punctuation or
+    tokens can include leading spaces. Here, we consider the final last_k tokens and
+    return the logprobs for the position for which we can extract the most amount of
+    non-zero probs for the given `tokens`.
 
     Args:
         choice: The model outputs with logprobs.
@@ -42,11 +49,6 @@ def get_logprobs_last_tokens(
     """
     if choice.logprobs is None or not choice.logprobs.content:
         raise ValueError("Logprobs must be provided.")
-
-    # Extracting values at the end is tricky since we do not know
-    # which tokenizer was used. As a result, there can be tokens for punctuation
-    # or tokens can include leading spaces. As a result, we consider last_k tokens
-    # and return the one for which we can extract the most non-zero probs.
 
     num_tokens = len(choice.logprobs.content)
     best_logprobs = get_logprobs(
