@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 from inspect_ai.model import ChatCompletionChoice
 
@@ -119,7 +117,3 @@ def get_logprobs(
         token_to_logprobs[token] = logprob.logprob
 
     return [token_to_logprobs.get(token, -np.inf) for token in tokens]
-
-
-def logprobs_to_probs(logprobs: list[float]) -> list[float]:
-    return [math.exp(logprob) for logprob in logprobs]
