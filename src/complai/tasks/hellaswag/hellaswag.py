@@ -6,5 +6,5 @@ from inspect_evals.hellaswag import hellaswag
 @task(
     name="hellaswag", technical_requirement="Capabilities, Performance, and Limitations"
 )
-def decorated_hellaswag() -> Task:
+def wrapped_hellaswag() -> Task:
     return hellaswag()

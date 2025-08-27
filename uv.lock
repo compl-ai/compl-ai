@@ -497,6 +497,7 @@ version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "datasets" },
+    { name = "detoxify" },
     { name = "inspect-ai" },
     { name = "inspect-evals" },
     { name = "openai" },
@@ -509,6 +510,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "datasets", specifier = ">=3.6.0" },
+    { name = "detoxify", specifier = ">=0.5.2" },
     { name = "inspect-ai" },
     { name = "inspect-evals", git = "https://github.com/UKGovernmentBEIS/inspect_evals" },
     { name = "openai", specifier = ">=1.90.0" },
@@ -614,6 +616,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/38/69157d711be575f1b9cf3177b64ef4ade44373fc02839f183fdd98ec2dd6/depyf-0.19.0.tar.gz", hash = "sha256:afed0916b32d141cc90fa6220df01885eda442ca43b297d5050eeb90b4a5cb44", size = 6171405, upload-time = "2025-04-20T08:07:41.224Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/28/4d/1192acbcdc5e843f5e5d51f6e8788f2b60a9fe0b578ac385ded67a0b0b26/depyf-0.19.0-py3-none-any.whl", hash = "sha256:040b35fc0997d49df024b7d094f2a7836f91e9ed02f49982dd37e70aa3285ad5", size = 39034, upload-time = "2025-04-20T08:07:37.036Z" },
+]
+
+[[package]]
+name = "detoxify"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sentencepiece" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/1f/3b0a6cba11a0e9e2530d6021bb2f723b2c5b6653244e6eda47df80356acc/detoxify-0.5.2.tar.gz", hash = "sha256:c119d0b47545bb076190ff583faad9aa3bb0a90ac01c7c4144758606d21da5b1", size = 13813, upload-time = "2024-02-01T14:51:23.61Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1f/5c/94f765f08fe52473bc945284b7912032c099d0737cb8ad9235deb3b40d35/detoxify-0.5.2-py3-none-any.whl", hash = "sha256:e6135a2d85ad17bfb19d8cf53756a1b499e6d9c03cb1976ddefdc013bf29d32a", size = 12103, upload-time = "2024-02-01T14:51:21.791Z" },
 ]
 
 [[package]]
