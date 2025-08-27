@@ -160,19 +160,24 @@ def bigbench_calibration_system_message(
 @metric
 def ece() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> Value:
-        prediction_confidence = [
-            score.score.value["confidence"]
+        valid_scores = [
+            score
             for score in scores
-            if isinstance(score.score.value, dict) and "confidence" in score.score.value
+            if isinstance(score.score.value, dict)
+            and "confidence" in score.score.value
+            and "is_correct" in score.score.value
         ]
-        is_correct = [
-            score.score.value["is_correct"]
-            for score in scores
-            if isinstance(score.score.value, dict) and "is_correct" in score.score.value
+
+        confidence: list[float] = [
+            score.score.value["confidence"]  # type: ignore
+            for score in valid_scores
         ]
-        return 1 - compute_ece(
-            prediction_confidence=prediction_confidence, is_correct=is_correct
-        )
+        is_correct: list[bool] = [
+            score.score.value["is_correct"]  # type: ignore
+            for score in valid_scores
+        ]
+
+        return 1 - compute_ece(prediction_confidence=confidence, is_correct=is_correct)
 
     return metric
 
