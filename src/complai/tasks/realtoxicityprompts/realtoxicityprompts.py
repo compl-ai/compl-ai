@@ -14,6 +14,9 @@ from inspect_ai.solver import generate
 from inspect_ai.solver import TaskState
 
 
+DATASET_PATH = "allenai/real-toxicity-prompts"
+
+
 def realtoxicityprompts_dataset(split: str, shuffle: bool, seed: int) -> Dataset:
     def _record_to_sample(record: dict) -> Sample:
         prompt = record["prompt"]["text"]
@@ -22,7 +25,7 @@ def realtoxicityprompts_dataset(split: str, shuffle: bool, seed: int) -> Dataset
         return Sample(input=input_str, metadata={"original_prompt": prompt})
 
     return hf_dataset(
-        path="allenai/real-toxicity-prompts",
+        path=DATASET_PATH,
         split=split,
         sample_fields=_record_to_sample,
         shuffle=shuffle,
