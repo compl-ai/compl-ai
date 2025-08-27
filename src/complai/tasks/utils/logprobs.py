@@ -14,58 +14,54 @@ def _num_nonzero_probs(logprobs: list[float]) -> int:
 
 
 def get_logprobs_first_token(
-    completion: ChatCompletionChoice,
-    tokens: list[str],
-    strip_spaces: bool | None = None,
+    choice: ChatCompletionChoice, tokens: list[str], strip_spaces: bool | None = None
 ) -> list[float]:
     """Get the logprobs for all tokens in tokens at the first position of
     the model output. If a token is not in the model output, we assign it a logprob of
     -infinity.
 
     Args:
-        completion: The model outputs with logprobs.
+        choice: The model outputs with logprobs.
         tokens: The tokens for which to get logprobs.
         strip_spaces: Whether to strip spaces from logprob tokens.
     """
-    return get_logprobs(completion, tokens, strip_spaces=strip_spaces, position=0)
+    return get_logprobs(choice, tokens, strip_spaces=strip_spaces, position=0)
 
 
 def get_logprobs_last_tokens(
-    completion: ChatCompletionChoice, tokens: list[str], last_k: int = 5
+    choice: ChatCompletionChoice, tokens: list[str], last_k: int = 5
 ) -> list[float]:
     """Get the logprobs for all tokens in tokens at the last k positions
     of the model output. If a token is not in the model output, we assign it a logprob
     of -infinity.
 
     Args:
-        completion: The model outputs with logprobs.
+        choice: The model outputs with logprobs.
         tokens: The tokens for which to get logprobs.
         last_k: The last k positions to check.
     """
-    if completion.logprobs is None or not completion.logprobs.content:
+    if choice.logprobs is None or not choice.logprobs.content:
         raise ValueError("Logprobs must be provided.")
 
-    # Extracting values at the end of a completion is tricky since we do not know
+    # Extracting values at the end is tricky since we do not know
     # which tokenizer was used. As a result, there can be tokens for punctuation
     # or tokens can include leading spaces. As a result, we consider last_k tokens
-    # and return the one for which we can extract the most completions.
+    # and return the one for which we can extract the most non-zero probs.
 
-    num_tokens = len(completion.logprobs.content)
+    num_tokens = len(choice.logprobs.content)
     best_logprobs = get_logprobs(
-        completion, tokens, strip_spaces=True, position=num_tokens - 1
+        choice, tokens, strip_spaces=True, position=num_tokens - 1
     )
     for position in reversed(range(num_tokens - last_k, num_tokens)):
         # In case of ties, prefer extraction from the later tokens.
-        logprobs = get_logprobs(
-            completion, tokens, strip_spaces=True, position=position
-        )
+        logprobs = get_logprobs(choice, tokens, strip_spaces=True, position=position)
         if _num_nonzero_probs(logprobs) > _num_nonzero_probs(best_logprobs):
             best_logprobs = logprobs
     return best_logprobs
 
 
 def get_logprobs(
-    completion: ChatCompletionChoice,
+    choice: ChatCompletionChoice,
     tokens: list[str],
     strip_spaces: bool | None = None,
     position: int = 0,
@@ -76,23 +72,23 @@ def get_logprobs(
     a value of -infinity is assigned.
 
     Args:
-        completion: The model outputs. They must include logprobs.
+        choice: The model outputs. They must include logprobs.
         tokens: The tokens for which to check the logprobs.
         strip_spaces: Whether to strip spaces from logprob tokens.
         position: The position for which to extract logprobs.
     """
-    if completion.logprobs is None or not completion.logprobs.content:
+    if choice.logprobs is None or not choice.logprobs.content:
         raise ValueError("Logprobs must be provided.")
 
-    if position >= len(completion.logprobs.content):
+    if position >= len(choice.logprobs.content):
         raise ValueError(
-            f"Logprobs requested for token at '{position}' position, but only '{len(completion.logprobs.content)}' tokens found."
+            f"Logprobs requested for token at '{position}' position, but only '{len(choice.logprobs.content)}' tokens found."
         )
 
-    top_logprobs = completion.logprobs.content[position].top_logprobs
+    top_logprobs = choice.logprobs.content[position].top_logprobs
     if top_logprobs is None:
         raise ValueError(
-            f"Logprobs for position {position} are not available in the completion."
+            f"Logprobs for position {position} are not available in the choice."
         )
 
     # NOTE: This piece is used to extract the probability a token in the
