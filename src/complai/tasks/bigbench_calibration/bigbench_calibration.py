@@ -23,7 +23,6 @@ from inspect_ai.solver import Solver
 from inspect_ai.solver import solver
 from inspect_ai.solver import system_message
 from inspect_ai.solver import TaskState
-from scipy.special import softmax
 
 from complai.tasks.utils.ece import compute_ece
 from complai.tasks.utils.logprobs import get_logprobs_first_token
@@ -198,8 +197,8 @@ def bigbench_calibration_scorer() -> Scorer:
 
         # Check if sample is valid and compute confidence
         is_valid_sample = max(choice_symbols_logprobs) != -math.inf
-        choice_symbols_probs = softmax(choice_symbols_logprobs)
-        confidence = float(np.max(choice_symbols_probs))
+        choice_symbols_probs = np.exp(choice_symbols_logprobs)
+        confidence = max(choice_symbols_probs)
 
         return Score(
             value={"confidence": confidence, "is_correct": is_correct},
