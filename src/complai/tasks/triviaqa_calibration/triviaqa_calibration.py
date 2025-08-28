@@ -45,17 +45,15 @@ TriviaQASubset = Literal[
 DATASET_PATH = "mandarjoshi/trivia_qa"
 
 
-def get_ground_truths(answer: dict[str, list[str]]) -> list[str]:
-    return answer["normalized_aliases"] + (
+def record_to_sample(record: dict[str, Any]) -> Sample:
+    input_str = f"{record['question']}\n\nAnswer: "
+
+    answer = record["answer"]
+    targets = answer["normalized_aliases"] + (
         [normalize_text(ans) for ans in answer["human_answers"]]
         if "human_answers" in answer
         else []
     )
-
-
-def record_to_sample(record: dict[str, Any]) -> Sample:
-    input_str = f"{record['question']}\n\nAnswer: "
-    targets = get_ground_truths(record["answer"])
 
     return Sample(input=input_str, target=targets)
 
@@ -148,14 +146,14 @@ def triviaqa_calibration_scorer() -> Scorer:
         is_valid = max(choice_symbols_logprobs) != -math.inf
         choice_symbols_probs = np.exp(choice_symbols_logprobs)
         confidence = max(choice_symbols_probs)
-        correct_choice_has_max_logprob = np.argmax(choice_symbols_logprobs) == int(
+        self_assessment_is_correct = np.argmax(choice_symbols_logprobs) == int(
             first_answer_is_correct
         )
 
         return Score(
             value={
                 "confidence": confidence,
-                "self_assessment_is_correct": correct_choice_has_max_logprob,
+                "self_assessment_is_correct": self_assessment_is_correct,
             },
             answer=parsed_answer,
             metadata={
@@ -179,9 +177,10 @@ def triviaqa_calibration(
     After generating an initial response to a question, the original
     prompt and the model's answer are used to create a follow-up
     query asking whether the model's response was correct. The model
-    is given two answer options: \n
-    A) No\n
-    B) Yes\n
+    is given two answer options:
+    A) No
+    B) Yes
+
     The logits of these answer choices are then used to calculate
     the Expected Calibration Error (ECE).
 
