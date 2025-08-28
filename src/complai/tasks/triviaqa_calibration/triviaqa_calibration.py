@@ -54,18 +54,19 @@ def get_ground_truths(answer: dict[str, list[str]]) -> list[str]:
     )
 
 
+def record_to_sample(record: dict[str, Any]) -> Sample:
+    input_str = f"{record['question']}\n\nAnswer: "
+    targets = get_ground_truths(record["answer"])
+
+    return Sample(input=input_str, target=targets)
+
+
 def triviaqa_dataset(triviaqa_subset: TriviaQASubset, split: str) -> Dataset:
-    def _record_to_sample(record: dict[str, Any]) -> Sample:
-        input_str = f"{record['question']}\n\nAnswer: "
-        targets = get_ground_truths(record["answer"])
-
-        return Sample(input=input_str, target=targets)
-
     return hf_dataset(
         path=DATASET_PATH,
         name=triviaqa_subset,
         split=split,
-        sample_fields=_record_to_sample,
+        sample_fields=record_to_sample,
     )
 
 
