@@ -1,3 +1,5 @@
+import math
+from functools import partial
 from typing import Any
 from typing import Literal
 
@@ -22,13 +24,15 @@ from inspect_ai.solver import Solver
 from inspect_ai.solver import solver
 from inspect_ai.solver import system_message
 from inspect_ai.solver import TaskState
-from scipy.special import softmax
 
 from complai.tasks.utils.ece import compute_ece
 from complai.tasks.utils.logprobs import get_logprobs_first_token
 from complai.tasks.utils.logprobs import get_logprobs_last_tokens
 from complai.tasks.utils.strings import extract_alphabetic_option
 from complai.tasks.utils.strings import OptionPosition
+
+
+DATASET_PATH = "tasksource/bigbench"
 
 
 # Available BigBench tasks
@@ -63,7 +67,162 @@ SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant. For each snippet of tex
 """
 
 
-@task
+def format_question_and_choices(question: str, choices: list[str], target: str) -> str:
+    return (
+        f"{question}\n"
+        + "\n".join(
+            [f"{choice}. {answer}" for choice, answer in zip(_CHOICE_SYMBOLS, choices)]
+        )
+        + f"\nAnswer: {target}"
+    )
+
+
+def get_input_choices_target(
+    record: dict[str, Any], format_with_target: bool, shuffle_choices: bool
+) -> tuple[str, list[str], str]:
+    question = record["inputs"].splitlines()[0]
+    choices = record["multiple_choice_targets"]
+    target_idx = record["multiple_choice_scores"].index(1)
+    target = _CHOICE_SYMBOLS[target_idx]
+
+    if shuffle_choices:
+        rng = np.random.default_rng(record["idx"])
+        shuffled_indices = rng.permutation(len(choices))
+        choices = [choices[i] for i in shuffled_indices]
+        target = _CHOICE_SYMBOLS[shuffled_indices.tolist().index(target_idx)]
+
+    input_str = format_question_and_choices(
+        question, choices, target if format_with_target else ""
+    )
+
+    return input_str, choices, target
+
+
+def record_to_sample(record: dict[str, Any], shuffle_choices: bool) -> Sample:
+    input_str, choices, target = get_input_choices_target(
+        record, format_with_target=False, shuffle_choices=shuffle_choices
+    )
+
+    return Sample(
+        input=input_str,
+        choices=choices,
+        target=target,
+        metadata={"num_choices": len(choices)},
+    )
+
+
+def bigbench_dataset(
+    bigbench_task: BigBenchTask, split: str, shuffle_choices: bool
+) -> Dataset:
+    dataset = hf_dataset(
+        path=DATASET_PATH,
+        name=bigbench_task,
+        split=split,
+        sample_fields=partial(record_to_sample, shuffle_choices=shuffle_choices),
+    )
+
+    return dataset
+
+
+@solver
+def bigbench_calibration_system_message(
+    bigbench_task: BigBenchTask,
+    num_few_shot: int,
+    few_shot_split: str,
+    few_shot_seed: int,
+    shuffle_choices: bool,
+) -> Solver:
+    if num_few_shot < 1:
+        few_shot_examples = ""
+    else:
+        few_shot_dataset = (
+            datasets.load_dataset(
+                "tasksource/bigbench", name=bigbench_task, split=few_shot_split
+            )
+            .shuffle(seed=few_shot_seed)
+            .take(num_few_shot)
+        )
+
+        few_shot_examples = "\n\n".join(
+            get_input_choices_target(
+                record, format_with_target=True, shuffle_choices=shuffle_choices
+            )[0]
+            for record in few_shot_dataset
+        )
+
+    return system_message(
+        template=SYSTEM_PROMPT_TEMPLATE,
+        bigbench_task=bigbench_task,
+        few_shot_examples=few_shot_examples,
+    )
+
+
+@metric
+def ece() -> MetricProtocol:
+    def metric(scores: list[SampleScore]) -> Value:
+        valid_scores = [
+            score
+            for score in scores
+            if isinstance(score.score.value, dict)
+            and "confidence" in score.score.value
+            and "is_correct" in score.score.value
+        ]
+
+        confidence: list[float] = [
+            score.score.value["confidence"]  # type: ignore
+            for score in valid_scores
+        ]
+        is_correct: list[bool] = [
+            score.score.value["is_correct"]  # type: ignore
+            for score in valid_scores
+        ]
+
+        return 1 - compute_ece(prediction_confidence=confidence, is_correct=is_correct)
+
+    return metric
+
+
+@scorer(metrics=[ece()])
+def bigbench_calibration_scorer() -> Scorer:
+    async def score(state: TaskState, target: Target) -> Score:
+        # Parse and score completion
+        completion = state.output.completion
+        parsed_answer, option_position = extract_alphabetic_option(completion)
+        is_correct = parsed_answer == state.target.text
+
+        # Get logprobs
+        assert len(state.output.choices) == 1
+        completion_choice: ChatCompletionChoice = state.output.choices[0]
+        choice_symbols = _CHOICE_SYMBOLS[: state.metadata["num_choices"]]
+        if option_position == OptionPosition.START:
+            choice_symbols_logprobs = get_logprobs_first_token(
+                completion_choice, choice_symbols
+            )
+        elif option_position == OptionPosition.END:
+            choice_symbols_logprobs = get_logprobs_last_tokens(
+                completion_choice, choice_symbols, last_k=3
+            )
+        else:
+            choice_symbols_logprobs = [-math.inf] * len(choice_symbols)
+
+        # Check if sample is valid and compute confidence
+        is_valid_sample = max(choice_symbols_logprobs) != -math.inf
+        choice_symbols_probs = np.exp(choice_symbols_logprobs)
+        confidence = max(choice_symbols_probs)
+
+        return Score(
+            value={"confidence": confidence, "is_correct": is_correct},
+            answer=parsed_answer,
+            metadata={
+                "is_valid_answer": is_valid_sample,
+                "option_position": option_position.value,
+            },
+        )
+
+    return score
+
+
+@task(technical_requirement="Interpretability")
 def bigbench_calibration(
     bigbench_task: BigBenchTask = "emoji_movie",
     num_few_shot: int = 3,
@@ -96,148 +255,3 @@ def bigbench_calibration(
         ],
         scorer=bigbench_calibration_scorer(),
     )
-
-
-def bigbench_dataset(
-    bigbench_task: BigBenchTask, split: str, shuffle_choices: bool
-) -> Dataset:
-    def _record_to_sample(record: dict[str, Any]) -> Sample:
-        input_str, choices, target = get_input_choices_target(
-            record, format_with_target=False, shuffle_choices=shuffle_choices
-        )
-
-        return Sample(
-            input=input_str,
-            choices=choices,
-            target=target,
-            metadata={"num_choices": len(choices)},
-        )
-
-    dataset = hf_dataset(
-        path="tasksource/bigbench",
-        name=bigbench_task,
-        split=split,
-        sample_fields=_record_to_sample,
-    )
-
-    return dataset
-
-
-@solver
-def bigbench_calibration_system_message(
-    bigbench_task: BigBenchTask,
-    num_few_shot: int,
-    few_shot_split: str,
-    few_shot_seed: int,
-    shuffle_choices: bool,
-) -> Solver:
-    if num_few_shot < 0:
-        few_shot_examples = ""
-    else:
-        few_shot_dataset = (
-            datasets.load_dataset(
-                "tasksource/bigbench", name=bigbench_task, split=few_shot_split
-            )
-            .shuffle(seed=few_shot_seed)
-            .take(num_few_shot)
-        )
-
-        few_shot_examples = "\n\n".join(
-            get_input_choices_target(
-                record, format_with_target=True, shuffle_choices=shuffle_choices
-            )[0]
-            for record in few_shot_dataset
-        )
-
-    return system_message(
-        template=SYSTEM_PROMPT_TEMPLATE,
-        bigbench_task=bigbench_task,
-        few_shot_examples=few_shot_examples,
-    )
-
-
-def get_input_choices_target(
-    record: dict[str, Any], format_with_target: bool, shuffle_choices: bool
-) -> tuple[str, list[str], str]:
-    question = record["inputs"].splitlines()[0]
-    choices = record["multiple_choice_targets"]
-    target_idx = record["multiple_choice_scores"].index(1)
-    target = _CHOICE_SYMBOLS[target_idx]
-
-    if shuffle_choices:
-        rng = np.random.default_rng(record["idx"])
-        shuffled_indices = rng.permutation(len(choices))
-        choices = [choices[i] for i in shuffled_indices]
-        target = _CHOICE_SYMBOLS[shuffled_indices.tolist().index(target_idx)]
-
-    input_str = format_question_and_choices(
-        question, choices, target if format_with_target else ""
-    )
-
-    return input_str, choices, target
-
-
-def format_question_and_choices(question: str, choices: list[str], target: str) -> str:
-    return (
-        f"{question}\n"
-        + "\n".join(
-            [f"{choice}. {answer}" for choice, answer in zip(_CHOICE_SYMBOLS, choices)]
-        )
-        + f"\nAnswer: {target}"
-    )
-
-
-@metric
-def ece() -> MetricProtocol:
-    def metric(scores: list[SampleScore]) -> Value:
-        prediction_confidence = [
-            score.score.value["confidence"]
-            for score in scores
-            if isinstance(score.score.value, dict) and "confidence" in score.score.value
-        ]
-        is_correct = [
-            score.score.value["is_correct"]
-            for score in scores
-            if isinstance(score.score.value, dict) and "is_correct" in score.score.value
-        ]
-        return 1 - compute_ece(
-            prediction_confidence=prediction_confidence, is_correct=is_correct
-        )
-
-    return metric
-
-
-@scorer(metrics=[ece()])
-def bigbench_calibration_scorer() -> Scorer:
-    async def score(state: TaskState, target: Target) -> Score:
-        completion = state.output.completion
-        parsed_answer, option_position = extract_alphabetic_option(completion)
-        is_correct = parsed_answer == state.target.text
-
-        assert len(state.output.choices) == 1
-        completion_choice: ChatCompletionChoice = state.output.choices[0]
-        choice_symbols = _CHOICE_SYMBOLS[: state.metadata["num_choices"]]
-        if option_position == OptionPosition.START:
-            choice_symbols_logprobs = get_logprobs_first_token(
-                completion_choice, choice_symbols
-            )
-        elif option_position == OptionPosition.END:
-            choice_symbols_logprobs = get_logprobs_last_tokens(
-                completion_choice, choice_symbols, last_k=3
-            )
-        else:
-            choice_symbols_logprobs = [float("-inf")] * len(choice_symbols)
-        is_valid_sample = max(choice_symbols_logprobs) != float("-inf")
-        choice_symbols_probs = softmax(choice_symbols_logprobs)
-        max_prob = float(np.max(choice_symbols_probs))
-
-        return Score(
-            value={"confidence": max_prob, "is_correct": is_correct},
-            answer=parsed_answer,
-            metadata={
-                "is_valid_answer": is_valid_sample,
-                "option_position": option_position.value,
-            },
-        )
-
-    return score

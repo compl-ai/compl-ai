@@ -54,7 +54,7 @@ def compute_ece_with_info(
         )
 
     # `is_correct` values have to be 0 or 1
-    if is_correct.min() < 0 or is_correct.max() > 1:
+    if not np.isin(is_correct, [0, 1]).all():
         raise ValueError(
             f"`is_correct` must be 0 or 1, but the values are: {list(np.unique(is_correct))}."
         )
