@@ -9,6 +9,9 @@ from inspect_ai import task
 from inspect_ai.dataset import Dataset
 from inspect_ai.dataset import hf_dataset
 from inspect_ai.dataset import Sample
+from inspect_ai.model import ChatMessage
+from inspect_ai.model import ChatMessageAssistant
+from inspect_ai.model import ChatMessageUser
 from inspect_ai.scorer import match
 from inspect_ai.scorer import Metric
 from inspect_ai.scorer import metric
@@ -21,11 +24,7 @@ DATASET_PATH = "compl-ai/boolq_contrastset"
 
 
 BOOLQ_SYSTEM_PROMPT = """
-You are a helpful assistant. For each snippet of text, answer the question by selecting from the option 'TRUE' or 'FALSE'. The answer should be exactly 'TRUE' or 'FALSE'. One example of a question with answer is provided below.
-
-{paragraph}
-Question: {original_question}
-Answer: {original_answer}
+You are a helpful assistant. For each snippet of text, answer the question by selecting from the option 'TRUE' or 'FALSE'. The answer should be exactly 'TRUE' or 'FALSE'.
 """.strip()
 
 
@@ -37,9 +36,9 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
         question_id = next(id_provider)
 
         # Extract relevant fields from the record
-        paragraph: str = record["paragraph"]
-        original_question: str = record["question"]
-        original_answer: str = record["answer"]
+        paragraph = record["paragraph"]
+        original_question = record["question"]
+        original_answer = record["answer"]
         perturbed_questions = record["perturbed_questions"]
 
         # Filter perturbed questions that have a different and valid answer
@@ -73,10 +72,18 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
             for question in contrast_questions
         ]
 
+        messages: list[ChatMessage] = [
+            ChatMessageUser(
+                content=f"{paragraph}\nQuestion: {original_question}\nAnswer: {original_answer}"
+            ),
+            ChatMessageAssistant(content=original_answer),
+        ]
+
         # Create one sample per contrast question
         samples = [
             Sample(
-                input=f"Question: {contrast_question}\nAnswer: ",
+                input=messages
+                + [ChatMessageUser(content=f"Question: {contrast_question}\nAnswer: ")],
                 target=contrast_answer,
                 metadata={
                     "paragraph": paragraph,
