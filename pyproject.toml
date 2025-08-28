@@ -17,6 +17,7 @@ dependencies = [
     "fairlearn>=0.12.0",
     "scipy>=1.15.3",
     "datasets>=3.6.0",
+    "polars>=1.32.2",
     "detoxify>=0.5.2",
 ]
 
