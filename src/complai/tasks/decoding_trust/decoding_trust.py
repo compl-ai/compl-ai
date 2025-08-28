@@ -47,7 +47,7 @@ def decoding_trust_dataset() -> Dataset:
 
 
 @metric(name="Fairness Score")
-def decoding_trust_metric() -> Metric:
+def decoding_trust_fairness_score() -> Metric:
     def metric(scores: list[SampleScore]) -> float:
         valid_scores = [
             score
@@ -101,7 +101,7 @@ def parse_completion(completion: str) -> str:
     return "unknown"
 
 
-@scorer(metrics=[decoding_trust_metric()])
+@scorer(metrics=[decoding_trust_fairness_score()])
 def decoding_trust_scorer() -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
         completion = state.output.completion
