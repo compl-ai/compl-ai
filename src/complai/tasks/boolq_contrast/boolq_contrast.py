@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import partial
 from itertools import count
 from typing import Any
 from typing import cast
@@ -28,79 +29,92 @@ You are a helpful assistant. For each snippet of text, answer the question by se
 """.strip()
 
 
+def record_to_sample(
+    record: dict[str, Any],
+    num_contrasts: int,
+    rng: np.random.Generator,
+    id_provider: count,
+) -> list[Sample]:
+    question_id = next(id_provider)
+
+    # Extract relevant fields from the record
+    paragraph = record["paragraph"]
+    original_question = record["question"]
+    original_answer = record["answer"]
+    perturbed_questions = record["perturbed_questions"]
+
+    # Filter perturbed questions that have a different and valid answer
+    contrasting_pairs = [
+        perturbed_question
+        for perturbed_question in perturbed_questions
+        if perturbed_question["answer"] != original_answer
+        and perturbed_question["answer"] in ["TRUE", "FALSE"]
+    ]
+
+    # Randomly choose num_contrasts pairs
+    chosen_contrasts = rng.choice(
+        contrasting_pairs,
+        size=min(num_contrasts, len(contrasting_pairs)),
+        replace=False,
+    )
+    contrast_questions: list[str] = [
+        contrast["perturbed_q"] for contrast in chosen_contrasts
+    ]
+    contrast_answers: list[str] = [contrast["answer"] for contrast in chosen_contrasts]
+
+    # Format paragraph and questions
+    paragraph = paragraph.strip().capitalize()
+    original_question = original_question.strip().capitalize() + (
+        "?" if not original_question.endswith("?") else ""
+    )
+    contrast_questions = [
+        question.strip().capitalize() + ("?" if not question.endswith("?") else "")
+        for question in contrast_questions
+    ]
+
+    messages: list[ChatMessage] = [
+        ChatMessageUser(
+            content=f"{paragraph}\nQuestion: {original_question}\nAnswer: {original_answer}"
+        ),
+        ChatMessageAssistant(content=original_answer),
+    ]
+
+    # Create one sample per contrast question
+    samples = [
+        Sample(
+            input=messages
+            + [ChatMessageUser(content=f"Question: {contrast_question}\nAnswer: ")],
+            target=contrast_answer,
+            metadata={
+                "paragraph": paragraph,
+                "original_question": original_question,
+                "original_answer": original_answer,
+                "title": record["title"],
+                "id": question_id,
+            },
+        )
+        for contrast_question, contrast_answer in zip(
+            contrast_questions, contrast_answers
+        )
+    ]
+
+    return samples
+
+
 def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset:
     rng = np.random.default_rng(seed=contrast_seed)
     id_provider = count(0)
 
-    def _record_to_sample(record: dict[str, Any]) -> list[Sample]:
-        question_id = next(id_provider)
-
-        # Extract relevant fields from the record
-        paragraph = record["paragraph"]
-        original_question = record["question"]
-        original_answer = record["answer"]
-        perturbed_questions = record["perturbed_questions"]
-
-        # Filter perturbed questions that have a different and valid answer
-        contrasting_pairs = [
-            perturbed_question
-            for perturbed_question in perturbed_questions
-            if perturbed_question["answer"] != original_answer
-            and perturbed_question["answer"] in ["TRUE", "FALSE"]
-        ]
-
-        # Randomly choose num_contrasts pairs
-        chosen_contrasts = rng.choice(
-            contrasting_pairs,
-            size=min(num_contrasts, len(contrasting_pairs)),
-            replace=False,
-        )
-        contrast_questions: list[str] = [
-            contrast["perturbed_q"] for contrast in chosen_contrasts
-        ]
-        contrast_answers: list[str] = [
-            contrast["answer"] for contrast in chosen_contrasts
-        ]
-
-        # Format paragraph and questions
-        paragraph = paragraph.strip().capitalize()
-        original_question = original_question.strip().capitalize() + (
-            "?" if not original_question.endswith("?") else ""
-        )
-        contrast_questions = [
-            question.strip().capitalize() + ("?" if not question.endswith("?") else "")
-            for question in contrast_questions
-        ]
-
-        messages: list[ChatMessage] = [
-            ChatMessageUser(
-                content=f"{paragraph}\nQuestion: {original_question}\nAnswer: {original_answer}"
-            ),
-            ChatMessageAssistant(content=original_answer),
-        ]
-
-        # Create one sample per contrast question
-        samples = [
-            Sample(
-                input=messages
-                + [ChatMessageUser(content=f"Question: {contrast_question}\nAnswer: ")],
-                target=contrast_answer,
-                metadata={
-                    "paragraph": paragraph,
-                    "original_question": original_question,
-                    "original_answer": original_answer,
-                    "title": record["title"],
-                    "id": question_id,
-                },
-            )
-            for contrast_question, contrast_answer in zip(
-                contrast_questions, contrast_answers
-            )
-        ]
-
-        return samples
-
-    return hf_dataset(path=DATASET_PATH, split="test", sample_fields=_record_to_sample)
+    return hf_dataset(
+        path=DATASET_PATH,
+        split="test",
+        sample_fields=partial(
+            record_to_sample,
+            num_contrasts=num_contrasts,
+            rng=rng,
+            id_provider=id_provider,
+        ),
+    )
 
 
 @metric

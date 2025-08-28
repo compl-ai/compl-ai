@@ -27,29 +27,30 @@ You are a helpful assistant. For each snippet of text, predict the Sentiment by 
 """.strip()
 
 
+def record_to_sample(record: dict[str, Any]) -> Sample:
+    original_text = record["Text_Original"]
+    original_sentiment = record["Sentiment_Original"]
+    contrast_text = record["Text_Contrast"]
+    contrast_sentiment = record["Sentiment_Contrast"]
+
+    messages: list[ChatMessage] = [
+        ChatMessageUser(content=f"{original_text}\nSentiment: "),
+        ChatMessageAssistant(content=original_sentiment),
+        ChatMessageUser(content=f"\n\n{contrast_text}\nSentiment: "),
+    ]
+
+    return Sample(
+        input=messages,
+        target=contrast_sentiment,
+        metadata={
+            "original_text": original_text,
+            "original_sentiment": original_sentiment,
+        },
+    )
+
+
 def imdb_contrastset_dataset() -> Dataset:
-    def _record_to_sample(record: dict[str, Any]) -> Sample:
-        original_text = record["Text_Original"]
-        original_sentiment = record["Sentiment_Original"]
-        contrast_text = record["Text_Contrast"]
-        contrast_sentiment = record["Sentiment_Contrast"]
-
-        messages: list[ChatMessage] = [
-            ChatMessageUser(content=f"{original_text}\nSentiment: "),
-            ChatMessageAssistant(content=original_sentiment),
-            ChatMessageUser(content=f"\n\n{contrast_text}\nSentiment: "),
-        ]
-
-        return Sample(
-            input=messages,
-            target=contrast_sentiment,
-            metadata={
-                "original_text": original_text,
-                "original_sentiment": original_sentiment,
-            },
-        )
-
-    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=_record_to_sample)
+    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
 
 
 def parse_sentiment(completion: str) -> str:
