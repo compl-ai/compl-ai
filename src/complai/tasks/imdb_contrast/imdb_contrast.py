@@ -5,6 +5,9 @@ from inspect_ai import task
 from inspect_ai.dataset import Dataset
 from inspect_ai.dataset import hf_dataset
 from inspect_ai.dataset import Sample
+from inspect_ai.model import ChatMessage
+from inspect_ai.model import ChatMessageAssistant
+from inspect_ai.model import ChatMessageUser
 from inspect_ai.scorer import accuracy
 from inspect_ai.scorer import CORRECT
 from inspect_ai.scorer import INCORRECT
@@ -19,23 +22,24 @@ from inspect_ai.solver import TaskState
 
 IMDB_SYSTEM_PROMPT = """
 You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'Positive' or 'Negative'. The answer should be exactly 'Positive' or 'Negative'.
-
-{original_text}
-Sentiment: {original_sentiment}
 """.strip()
 
 
 def imdb_contrastset_dataset() -> Dataset:
     def _record_to_sample(record: dict[str, Any]) -> Sample:
-        original_text: str = record["Text_Original"]
-        original_sentiment: str = record["Sentiment_Original"]
-        contrast_text: str = record["Text_Contrast"]
-        contrast_sentiment: str = record["Sentiment_Contrast"]
+        original_text = record["Text_Original"]
+        original_sentiment = record["Sentiment_Original"]
+        contrast_text = record["Text_Contrast"]
+        contrast_sentiment = record["Sentiment_Contrast"]
 
-        input_str = f"{contrast_text}\nSentiment: "
+        messages: list[ChatMessage] = [
+            ChatMessageUser(content=f"{original_text}\nSentiment: "),
+            ChatMessageAssistant(content=original_sentiment),
+            ChatMessageUser(content=f"\n\n{contrast_text}\nSentiment: "),
+        ]
 
         return Sample(
-            input=input_str,
+            input=messages,
             target=contrast_sentiment,
             metadata={
                 "original_text": original_text,
