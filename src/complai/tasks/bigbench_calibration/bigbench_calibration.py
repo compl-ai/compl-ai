@@ -1,3 +1,5 @@
+import math
+from functools import partial
 from typing import Any
 from typing import Literal
 
@@ -22,13 +24,15 @@ from inspect_ai.solver import Solver
 from inspect_ai.solver import solver
 from inspect_ai.solver import system_message
 from inspect_ai.solver import TaskState
-from scipy.special import softmax
 
 from complai.tasks.utils.ece import compute_ece
 from complai.tasks.utils.logprobs import get_logprobs_first_token
 from complai.tasks.utils.logprobs import get_logprobs_last_tokens
 from complai.tasks.utils.strings import extract_alphabetic_option
 from complai.tasks.utils.strings import OptionPosition
+
+
+DATASET_PATH = "tasksource/bigbench"
 
 
 # Available BigBench tasks
@@ -94,26 +98,27 @@ def get_input_choices_target(
     return input_str, choices, target
 
 
+def record_to_sample(record: dict[str, Any], shuffle_choices: bool) -> Sample:
+    input_str, choices, target = get_input_choices_target(
+        record, format_with_target=False, shuffle_choices=shuffle_choices
+    )
+
+    return Sample(
+        input=input_str,
+        choices=choices,
+        target=target,
+        metadata={"num_choices": len(choices)},
+    )
+
+
 def bigbench_dataset(
     bigbench_task: BigBenchTask, split: str, shuffle_choices: bool
 ) -> Dataset:
-    def _record_to_sample(record: dict[str, Any]) -> Sample:
-        input_str, choices, target = get_input_choices_target(
-            record, format_with_target=False, shuffle_choices=shuffle_choices
-        )
-
-        return Sample(
-            input=input_str,
-            choices=choices,
-            target=target,
-            metadata={"num_choices": len(choices)},
-        )
-
     dataset = hf_dataset(
-        path="tasksource/bigbench",
+        path=DATASET_PATH,
         name=bigbench_task,
         split=split,
-        sample_fields=_record_to_sample,
+        sample_fields=partial(record_to_sample, shuffle_choices=shuffle_choices),
     )
 
     return dataset
@@ -155,19 +160,24 @@ def bigbench_calibration_system_message(
 @metric
 def ece() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> Value:
-        prediction_confidence = [
-            score.score.value["confidence"]
+        valid_scores = [
+            score
             for score in scores
-            if isinstance(score.score.value, dict) and "confidence" in score.score.value
+            if isinstance(score.score.value, dict)
+            and "confidence" in score.score.value
+            and "is_correct" in score.score.value
         ]
-        is_correct = [
-            score.score.value["is_correct"]
-            for score in scores
-            if isinstance(score.score.value, dict) and "is_correct" in score.score.value
+
+        confidence: list[float] = [
+            score.score.value["confidence"]  # type: ignore
+            for score in valid_scores
         ]
-        return 1 - compute_ece(
-            prediction_confidence=prediction_confidence, is_correct=is_correct
-        )
+        is_correct: list[bool] = [
+            score.score.value["is_correct"]  # type: ignore
+            for score in valid_scores
+        ]
+
+        return 1 - compute_ece(prediction_confidence=confidence, is_correct=is_correct)
 
     return metric
 
@@ -193,12 +203,12 @@ def bigbench_calibration_scorer() -> Scorer:
                 completion_choice, choice_symbols, last_k=3
             )
         else:
-            choice_symbols_logprobs = [float("-inf")] * len(choice_symbols)
+            choice_symbols_logprobs = [-math.inf] * len(choice_symbols)
 
         # Check if sample is valid and compute confidence
-        is_valid_sample = max(choice_symbols_logprobs) != float("-inf")
-        choice_symbols_probs = softmax(choice_symbols_logprobs)
-        confidence = float(np.max(choice_symbols_probs))
+        is_valid_sample = max(choice_symbols_logprobs) != -math.inf
+        choice_symbols_probs = np.exp(choice_symbols_logprobs)
+        confidence = max(choice_symbols_probs)
 
         return Score(
             value={"confidence": confidence, "is_correct": is_correct},
@@ -212,7 +222,7 @@ def bigbench_calibration_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirements="Interpretability")
+@task(technical_requirement="Interpretability")
 def bigbench_calibration(
     bigbench_task: BigBenchTask = "emoji_movie",
     num_few_shot: int = 3,
