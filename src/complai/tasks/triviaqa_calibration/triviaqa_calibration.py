@@ -43,6 +43,8 @@ TriviaQASubset = Literal[
     "unfiltered.nocontext",
 ]
 
+DATASET_PATH = "mandarjoshi/trivia_qa"
+
 
 def get_ground_truths(answer: dict[str, list[str]]) -> list[str]:
     return answer["normalized_aliases"] + (
@@ -60,7 +62,7 @@ def triviaqa_dataset(triviaqa_subset: TriviaQASubset, split: str) -> Dataset:
         return Sample(input=input_str, target=targets)
 
     return hf_dataset(
-        path="mandarjoshi/trivia_qa",
+        path=DATASET_PATH,
         name=triviaqa_subset,
         split=split,
         sample_fields=_record_to_sample,
