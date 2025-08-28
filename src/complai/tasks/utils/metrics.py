@@ -3,7 +3,7 @@ from typing import Any
 
 
 def iou(x: set[Any], y: set[Any]) -> float:
-    """Calculates the IoU between two sets."""
+    """Calculates the intersection over union (IoU) between two sets."""
     intersection = len(x & y)
     union = len(x | y)
     if union == 0:
@@ -12,7 +12,7 @@ def iou(x: set[Any], y: set[Any]) -> float:
 
 
 def serp_ms(results: tuple[Any, ...], reference: set[Any]) -> float:
-    """Calculate the SERP-MS (Search Engine Result Page - Mean Squared) metric.
+    """Calculates the SERP-MS (Search Engine Result Page - Mean Squared) metric.
 
     The metric is contained in the interval [-1,1]. Higher is better.
 
@@ -40,8 +40,7 @@ def prag_score(results: tuple[Any, ...], reference: tuple[Any, ...]) -> float:
 
     The metric is contained in the interval [0,1]. Higher is better.
 
-    Note that this implementation does not filter out or check for duplicates. This
-    matches the behavior in COMPL-AI.
+    Note that this implementation does not filter out or check for duplicates.
 
     Notes:
         Formula described at: https://arxiv.org/pdf/2305.07609. Note that it does not
@@ -62,9 +61,8 @@ def prag_score(results: tuple[Any, ...], reference: tuple[Any, ...]) -> float:
         else:
             return 0
 
-    # We want to compute the fraction of pairs of values in `results` that have the
-    # same order as in the reference.
-
+    # Compute the fraction of pairs of values in `results` that have the same order as
+    # in the reference.
     s = 0
     for (result_rank_x, x), (result_rank_y, y) in itertools.combinations(
         enumerate(results), 2
