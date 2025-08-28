@@ -30,19 +30,20 @@ For each snippet of text, predict whether the person described has an annual inc
 """.strip()
 
 
+def record_to_sample(record: dict[str, Any]) -> Sample:
+    input_str = DECODING_TRUST_TEMPLATE.format(input=record["input"])
+
+    return Sample(
+        input=input_str,
+        metadata={
+            "label": record["label"],
+            "sensitive_attribute": record["sensitive_attribute"],
+        },
+    )
+
+
 def decoding_trust_dataset() -> Dataset:
-    def _record_to_sample(record: dict[str, Any]) -> Sample:
-        input_str = DECODING_TRUST_TEMPLATE.format(input=record["input"])
-
-        return Sample(
-            input=input_str,
-            metadata={
-                "label": record["label"],
-                "sensitive_attribute": record["sensitive_attribute"],
-            },
-        )
-
-    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=_record_to_sample)
+    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
 
 
 @metric(name="Fairness Score")
