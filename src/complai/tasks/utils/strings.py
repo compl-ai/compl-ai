@@ -1,7 +1,7 @@
 import string
 from enum import Enum
 
-from Levenshtein import distance as levenshtein_distance
+import regex
 
 
 class OptionPosition(str, Enum):
@@ -78,17 +78,10 @@ def extract_alphabetic_option(completion: str) -> tuple[str, OptionPosition]:
 
 
 def is_substring_with_tolerance(a: str, b: str, tolerance: int = 2) -> float:
-    """Checks if string "a" is a substring of string "b" using a Levenshtein
-    distance tolerance.
-    """
-    # Ensure b is the shorter (or equal) string.
-    if len(b) > len(a):
-        a, b = b, a
+    """Checks if string "a" is a substring of string "b" using regex fuzzy matching."""
+    pattern = regex.compile(f"({regex.escape(b)}){{e<={tolerance}}}")
 
-    return any(
-        levenshtein_distance(a[offset : offset + len(b)], b) <= tolerance
-        for offset in range(len(a) - len(b) + 1)
-    )
+    return pattern.search(a) is not None
 
 
 def has_approximate_match(targets: list[str], candidates: list[str]) -> bool:
