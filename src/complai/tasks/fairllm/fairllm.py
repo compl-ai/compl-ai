@@ -66,6 +66,33 @@ def fairllm_dataset(sample_size: int | None) -> Dataset:
     return MemoryDataset(samples)
 
 
+@solver
+def fairllm_solver(num_recommendations: int) -> Solver:
+    async def solver(state: TaskState, generate: Generate) -> TaskState:
+        director: str = state.metadata["director"]
+        attributes = get_all_attributes() + [{"attribute": NEUTRAL_ATTRIBUTE}]
+
+        # Build prompts
+        inputs = [
+            FAIRLLM_PROMPT_TEMPLATE.format(
+                attribute=attribute["attribute"],
+                director=director,
+                num_recommendations=num_recommendations,
+            )
+            for attribute in attributes
+        ]
+
+        # Generation requests
+        model = get_model()
+        generation_requests = [model.generate(input_str) for input_str in inputs]
+        outputs = await asyncio.gather(*generation_requests)
+        state.metadata["completions"] = [output.completion for output in outputs]
+
+        return state
+
+    return solver
+
+
 @lru_cache(maxsize=10_000)
 def calc_metric_at_k(
     *, results: tuple[str, ...], reference: tuple[str, ...], metric: str
@@ -188,33 +215,6 @@ def get_recommendations_from_completion(
     recommendations = simplify_list(parse_recommendations(completion))
     recommendations = recommendations[:num_recommendations]
     return tuple(recommendations)
-
-
-@solver
-def fairllm_solver(num_recommendations: int) -> Solver:
-    async def solver(state: TaskState, generate: Generate) -> TaskState:
-        director: str = state.metadata["director"]
-        attributes = get_all_attributes() + [{"attribute": NEUTRAL_ATTRIBUTE}]
-
-        # Build prompts
-        inputs = [
-            FAIRLLM_PROMPT_TEMPLATE.format(
-                attribute=attribute["attribute"],
-                director=director,
-                num_recommendations=num_recommendations,
-            )
-            for attribute in attributes
-        ]
-
-        # Generation requests
-        model = get_model()
-        generation_requests = [model.generate(input_str) for input_str in inputs]
-        outputs = await asyncio.gather(*generation_requests)
-        state.metadata["completions"] = [output.completion for output in outputs]
-
-        return state
-
-    return solver
 
 
 @scorer(metrics=[jaccard(), serp_ms(), prag()])
