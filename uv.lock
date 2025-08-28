@@ -496,20 +496,25 @@ name = "compl-ai"
 version = "2.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "datasets" },
     { name = "detoxify" },
     { name = "inspect-ai" },
     { name = "inspect-evals" },
     { name = "openai" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "typer" },
     { name = "vllm" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "datasets", specifier = ">=3.6.0" },
     { name = "detoxify", specifier = ">=0.5.2" },
     { name = "inspect-ai" },
     { name = "inspect-evals", git = "https://github.com/UKGovernmentBEIS/inspect_evals" },
     { name = "openai", specifier = ">=1.90.0" },
+    { name = "scipy", specifier = ">=1.15.3" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "vllm", specifier = ">=0.10.0" },
 ]
