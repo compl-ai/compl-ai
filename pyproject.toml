@@ -14,6 +14,7 @@ dependencies = [
     "openai>=1.90.0",
     "typer>=0.16.0",
     "vllm>=0.10.0",
+    "fairlearn>=0.12.0",
     "scipy>=1.15.3",
     "datasets>=3.6.0",
     "detoxify>=0.5.2",
@@ -54,4 +55,3 @@ files.extend-exclude = [
 
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
-
