@@ -28,6 +28,8 @@ Answer: {original_answer}
 
 
 def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset:
+    rng = np.random.default_rng(seed=contrast_seed)
+
     def _record_to_sample(record: dict[str, Any]) -> list[Sample]:
         # Extract relevant fields from the record
         paragraph: str = record["paragraph"]
@@ -44,7 +46,6 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
         ]
 
         # Randomly choose num_contrasts pairs
-        rng = np.random.default_rng(seed=contrast_seed)
         chosen_contrasts = rng.choice(
             contrasting_pairs,
             size=min(num_contrasts, len(contrasting_pairs)),
