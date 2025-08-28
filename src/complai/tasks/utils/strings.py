@@ -1,6 +1,8 @@
 import string
 from enum import Enum
 
+import regex
+
 
 class OptionPosition(str, Enum):
     START = "start"
@@ -73,3 +75,22 @@ def extract_alphabetic_option(completion: str) -> tuple[str, OptionPosition]:
         return completion[-1], OptionPosition.END
 
     return "", OptionPosition.UNKNOWN
+
+
+def is_substring_with_tolerance(a: str, b: str, tolerance: int = 2) -> float:
+    """Checks if string "a" is a substring of string "b" using regex fuzzy matching."""
+    pattern = regex.compile(f"({regex.escape(b)}){{e<={tolerance}}}")
+
+    return pattern.search(a) is not None
+
+
+def has_approximate_match(targets: list[str], candidates: list[str]) -> bool:
+    """Checks if there is an approximate match between ground truth and candidates."""
+    for target in targets:
+        for candidate in candidates:
+            if is_substring_with_tolerance(
+                candidate, target
+            ) or is_substring_with_tolerance(target, candidate):
+                return True
+
+    return False
