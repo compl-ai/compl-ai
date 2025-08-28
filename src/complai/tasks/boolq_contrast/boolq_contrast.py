@@ -15,6 +15,9 @@ from inspect_ai.solver import generate
 from inspect_ai.solver import system_message
 
 
+DATASET_PATH = "compl-ai/boolq_contrastset"
+
+
 BOOLQ_SYSTEM_PROMPT = """
 You are a helpful assistant. For each snippet of text, answer the question by selecting from the option 'TRUE' or 'FALSE'. The answer should be exactly 'TRUE' or 'FALSE'. One example of a question with answer is provided below.
 
@@ -83,9 +86,7 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
 
         return samples
 
-    return hf_dataset(
-        path="compl-ai/boolq_contrastset", split="test", sample_fields=_record_to_sample
-    )
+    return hf_dataset(path=DATASET_PATH, split="test", sample_fields=_record_to_sample)
 
 
 @metric
