@@ -79,9 +79,25 @@ def extract_alphabetic_option(completion: str) -> tuple[str, OptionPosition]:
 
 
 def normalize_text(raw_text: str) -> str:
-    """Lower text and remove punctuation, articles and extra whitespace.
+    """
+    Normalize a string by lowercasing, removing punctuation, articles, underscores, and extra whitespace.
 
-    Source: https://github.com/mandarjoshi90/triviaqa/blob/master/evaluation/triviaqa_evaluation.py
+    This function is adapted from the official TriviaQA evaluation script:
+    https://github.com/mandarjoshi90/triviaqa/blob/master/evaluation/triviaqa_evaluation.py
+
+    The normalization steps are:
+        1. Remove articles ("a", "an", "the").
+        2. Remove punctuation (including some non-ASCII variants).
+        3. Replace underscores with spaces.
+        4. Convert to lowercase.
+        5. Remove extra whitespace.
+
+    Args:
+        raw_text (str): The input string to normalize.
+
+    Returns:
+        str: The normalized string, with articles, punctuation, and extra whitespace removed,
+             all lowercase, and underscores replaced by spaces.
     """
 
     def remove_articles(text: str) -> str:
