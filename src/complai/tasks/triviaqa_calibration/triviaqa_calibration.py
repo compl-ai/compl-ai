@@ -21,7 +21,6 @@ from inspect_ai.solver import Generate
 from inspect_ai.solver import Solver
 from inspect_ai.solver import solver
 from inspect_ai.solver import TaskState
-from scipy.special import softmax
 
 from complai.tasks.utils.ece import compute_ece
 from complai.tasks.utils.logprobs import get_logprobs_first_token
@@ -147,8 +146,8 @@ def triviaqa_calibration_scorer() -> Scorer:
 
         # Check if response is valid and compute confidence
         is_valid = max(choice_symbols_logprobs) != -math.inf
-        choice_symbols_probs = softmax(choice_symbols_logprobs)
-        confidence = float(np.max(choice_symbols_probs))
+        choice_symbols_probs = np.exp(choice_symbols_logprobs)
+        confidence = max(choice_symbols_probs)
         correct_choice_has_max_logprob = np.argmax(choice_symbols_logprobs) == int(
             first_answer_is_correct
         )
