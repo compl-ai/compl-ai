@@ -120,9 +120,9 @@ def boolq_contrastset_metric() -> Metric:
 def boolq_contrastset(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
     """BoolQ contrast sets task.
 
-    BoolQ contrast sets measure if the model can answer a given yes-no
-    question accurately, when presented with a distraction: a seemingly
-    similar question that has an opposite answer.
+    BoolQ contrast sets measure if the model can answer a given yes-no question
+    accurately, when presented with a distraction: seemingly similar questions
+    that have the opposite answer.
     """
     assert num_contrasts > 0, "Number of contrasts must be at least 1."
     return Task(
