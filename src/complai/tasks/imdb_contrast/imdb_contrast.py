@@ -20,6 +20,8 @@ from inspect_ai.solver import system_message
 from inspect_ai.solver import TaskState
 
 
+DATASET_PATH = "compl-ai/imdb_contrastset"
+
 IMDB_SYSTEM_PROMPT = """
 You are a helpful assistant. For each snippet of text, predict the Sentiment by selecting from the option 'Positive' or 'Negative'. The answer should be exactly 'Positive' or 'Negative'.
 """.strip()
@@ -47,9 +49,7 @@ def imdb_contrastset_dataset() -> Dataset:
             },
         )
 
-    return hf_dataset(
-        path="compl-ai/imdb_contrastset", split="train", sample_fields=_record_to_sample
-    )
+    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=_record_to_sample)
 
 
 def parse_sentiment(completion: str) -> str:
