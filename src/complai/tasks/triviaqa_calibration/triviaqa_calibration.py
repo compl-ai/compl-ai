@@ -209,6 +209,7 @@ def triviaqa_calibration_scorer() -> Scorer:
                 "self_assessment_is_correct": self_assessment_is_correct,
             },
             answer=parsed_answer,
+            explanation=first_completion,
             metadata={
                 "first_answer_is_correct": first_answer_is_correct,
                 "is_valid_answer": is_valid,
