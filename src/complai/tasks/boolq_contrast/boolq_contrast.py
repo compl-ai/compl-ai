@@ -1,5 +1,7 @@
 from collections import defaultdict
+from itertools import count
 from typing import Any
+from typing import cast
 
 import numpy as np
 from inspect_ai import Task
@@ -29,8 +31,11 @@ Answer: {original_answer}
 
 def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset:
     rng = np.random.default_rng(seed=contrast_seed)
+    id_provider = count(0)
 
     def _record_to_sample(record: dict[str, Any]) -> list[Sample]:
+        question_id = next(id_provider)
+
         # Extract relevant fields from the record
         paragraph: str = record["paragraph"]
         original_question: str = record["question"]
@@ -78,6 +83,7 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
                     "original_question": original_question,
                     "original_answer": original_answer,
                     "title": record["title"],
+                    "id": question_id,
                 },
             )
             for contrast_question, contrast_answer in zip(
@@ -93,21 +99,17 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
 @metric
 def boolq_contrastset_metric() -> Metric:
     def metric(scores: list[SampleScore]) -> float:
-        # Aggregate samples with the same original question (group by title)
-        counts_per_title: dict[str, dict[str, int]] = defaultdict(
-            lambda: {"correct": 0, "total": 0}
-        )
+        # Aggregate samples with the same original question (group by id)
+        correct: dict[int, int] = defaultdict(int)
+        total: dict[int, int] = defaultdict(int)
         for score in scores:
-            assert score.sample_metadata is not None
-            title = score.sample_metadata["title"]
+            id = cast(dict, score.sample_metadata)["id"]
             if score.score.value:
-                counts_per_title[title]["correct"] += 1
-            counts_per_title[title]["total"] += 1
+                correct[id] += 1
+            total[id] += 1
 
         # Calculate accuracy for each original question
-        accuracies = [
-            counts["correct"] / counts["total"] for counts in counts_per_title.values()
-        ]
+        accuracies = [correct[id] / total[id] for id in correct]
 
         return np.mean(accuracies, dtype=float)
 
