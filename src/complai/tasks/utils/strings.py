@@ -1,4 +1,3 @@
-import re
 import string
 from enum import Enum
 
@@ -76,58 +75,6 @@ def extract_alphabetic_option(completion: str) -> tuple[str, OptionPosition]:
         return completion[-1], OptionPosition.END
 
     return "", OptionPosition.UNKNOWN
-
-
-def normalize_text(raw_text: str) -> str:
-    """
-    Normalize a string by lowercasing, removing punctuation, articles, underscores, and extra whitespace.
-
-    This function is adapted from the official TriviaQA evaluation script:
-    https://github.com/mandarjoshi90/triviaqa/blob/master/evaluation/triviaqa_evaluation.py
-
-    The normalization steps are:
-        1. Remove articles ("a", "an", "the").
-        2. Remove punctuation (including some non-ASCII variants).
-        3. Replace underscores with spaces.
-        4. Convert to lowercase.
-        5. Remove extra whitespace.
-
-    Args:
-        raw_text (str): The input string to normalize.
-
-    Returns:
-        str: The normalized string, with articles, punctuation, and extra whitespace removed,
-             all lowercase, and underscores replaced by spaces.
-    """
-
-    def remove_articles(text: str) -> str:
-        return re.sub(r"\b(a|an|the)\b", " ", text)
-
-    def white_space_fix(text: str) -> str:
-        return " ".join(text.split())
-
-    def handle_punc(text: str) -> str:
-        exclude = set(string.punctuation + "".join(["‘", "’", "´", "`"]))
-        return "".join(ch if ch not in exclude else " " for ch in text)
-
-    def lower(text: str) -> str:
-        return text.lower()
-
-    def replace_underscore(text: str) -> str:
-        return text.replace("_", " ")
-
-    normalization_operations = [
-        remove_articles,
-        white_space_fix,
-        handle_punc,
-        lower,
-        replace_underscore,
-    ]
-    normalized_text = raw_text
-    for operation in normalization_operations:
-        normalized_text = operation(normalized_text)
-
-    return normalized_text.strip()
 
 
 def is_substring_with_tolerance(a: str, b: str, tolerance: int = 2) -> float:
