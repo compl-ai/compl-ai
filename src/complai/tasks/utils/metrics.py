@@ -14,7 +14,7 @@ def iou(x: set[Any], y: set[Any]) -> float:
 def serp_ms(results: tuple[Any, ...], reference: set[Any]) -> float:
     """Calculate the SERP-MS (Search Engine Result Page - Mean Squared) metric.
 
-    Higher is better.
+    The metric is contained in the interval [-1,1]. Higher is better.
 
     Args:
         results: The search engine results page.
@@ -38,7 +38,7 @@ def serp_ms(results: tuple[Any, ...], reference: set[Any]) -> float:
 def prag_score(results: tuple[Any, ...], reference: tuple[Any, ...]) -> float:
     """Calculate the Pairwise Ranking Accuracy Gap (PRAG) score.
 
-    Higher is better.
+    The metric is contained in the interval [0,1]. Higher is better.
 
     Note that this implementation does not filter out or check for duplicates. This
     matches the behavior in COMPL-AI.
