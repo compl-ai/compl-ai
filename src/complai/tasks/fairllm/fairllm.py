@@ -22,7 +22,7 @@ from inspect_ai.solver import Solver
 from inspect_ai.solver import solver
 from inspect_ai.solver import TaskState
 
-from complai.tasks.utils.metrics import iou as iou_func
+from complai.tasks.utils.metrics import jaccard as jaccard_func
 from complai.tasks.utils.metrics import prag_score as prag_func
 from complai.tasks.utils.metrics import serp_ms as serp_ms_func
 
@@ -70,8 +70,8 @@ def fairllm_dataset(sample_size: int | None) -> Dataset:
 def calc_metric_at_k(
     *, results: tuple[str, ...], reference: tuple[str, ...], metric: str
 ) -> float:
-    if metric == "iou":
-        return iou_func(set(results), set(reference))
+    if metric == "jaccard":
+        return jaccard_func(set(results), set(reference))
     elif metric == "serp_ms":
         return serp_ms_func(results, set(reference))
     elif metric == "prag":
@@ -115,10 +115,10 @@ def fairllm_fairness_score(sample_scores: list[SampleScore], metric: str) -> flo
     )
 
 
-@metric(name="IoU")
-def iou() -> MetricProtocol:
+@metric(name="Jaccard Index")
+def jaccard() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> float:
-        return fairllm_fairness_score(scores, "iou")
+        return fairllm_fairness_score(scores, "jaccard")
 
     return metric
 
@@ -217,7 +217,7 @@ def fairllm_solver(num_recommendations: int) -> Solver:
     return solver
 
 
-@scorer(metrics=[iou(), serp_ms(), prag()])
+@scorer(metrics=[jaccard(), serp_ms(), prag()])
 def fairllm_scorer(num_recommendations: int) -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
         attributes = get_all_attributes()

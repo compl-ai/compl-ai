@@ -2,8 +2,8 @@ import itertools
 from typing import Any
 
 
-def iou(x: set[Any], y: set[Any]) -> float:
-    """Calculates the intersection over union (IoU) between two sets."""
+def jaccard(x: set[Any], y: set[Any]) -> float:
+    """Calculates the Jaccard index (intersection over union) between two sets."""
     intersection = len(x & y)
     union = len(x | y)
     if union == 0:
