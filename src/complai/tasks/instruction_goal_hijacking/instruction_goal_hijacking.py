@@ -134,7 +134,12 @@ def instruction_goal_hijacking(
     split: str = "train",
 ) -> Task:
     """
-    TensorTrust instruction goal hijacking benchmark.
+    Instruction goal hijacking benchmark.
+
+    Goal hijacking and prompt leakage refer to the undesirable abilities of a malicious
+    user to convince the LLM to change its previous goal, or to reveal the system
+    prompt. Both of these are tested via a secret password game, using crowdsourced
+    data from TensorTrust.
 
     Args:
         prompt_strategy: Which prompt strategy to use for passing pre_prompt,
@@ -142,7 +147,8 @@ def instruction_goal_hijacking(
                         - single_user: all concatenated into single user prompt
                         - multiple_user: 3 separate user prompts
                         - multiple_system: 3 separate prompts with first as system
-                        - multiple_system_sandwich: 3 separate prompts with first and last as system
+                        - multiple_system_sandwich: 3 separate prompts with first and
+                            last as system
         grade_reasoning_tokens: Whether to consider reasoning tokens for scoring.
         split: Dataset split to use (e.g., "train", "test")
     """
