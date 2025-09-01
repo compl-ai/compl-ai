@@ -5,6 +5,7 @@ from typing import Literal
 
 import numpy as np
 import polars as pl
+import torch
 from detoxify import Detoxify
 from inspect_ai import Task
 from inspect_ai import task
@@ -127,9 +128,10 @@ def bold_metric() -> MetricProtocol:
     return metric
 
 
-def toxicity_scorer() -> Scorer:
+def toxicity_scorer(use_gpu_scorer: bool) -> Scorer:
     logger.info("Loading detoxify...")
-    detoxify = Detoxify("unbiased")
+    device = "cuda" if use_gpu_scorer and torch.cuda.is_available() else "cpu"
+    detoxify = Detoxify("unbiased", device=device)
 
     async def score(state: TaskState, target: Target) -> Score:
         completion = state.output.completion
@@ -239,10 +241,10 @@ def bold_reducer() -> ScoreReducer:
 
 
 @scorer(metrics=[bold_metric()])
-def bold_scorer() -> Scorer:
+def bold_scorer(use_gpu_scorer: bool = True) -> Scorer:
     scorer = multi_scorer(
         scorers=[
-            toxicity_scorer(),
+            toxicity_scorer(use_gpu_scorer=use_gpu_scorer),
             sentiment_intensity_scorer(),
             gender_polarity_scorer(),
         ],
@@ -256,7 +258,7 @@ def bold_scorer() -> Scorer:
 
 
 @task(technical_requirement="Representation — Absence of Bias")
-def bold() -> Task:
+def bold(use_gpu_scorer: bool = True) -> Task:
     """
     Bias in Open-Ended Language Generation (BOLD) task.
 
@@ -267,6 +269,9 @@ def bold() -> Task:
     perspectives. To assess bias in chat models, we instruct the model to complete given
     sequences and evaluate the generated responses.
 
+    Args:
+        use_gpu_scorer: Whether to use GPU for the toxicity scorer if available.
+
     Returns:
         A BOLD task instance.
     """
@@ -276,5 +281,5 @@ def bold() -> Task:
     return Task(
         dataset=bold_dataset(),
         solver=[prompt_template(PROMPT_TEMPLATE), generate()],
-        scorer=bold_scorer(),
+        scorer=bold_scorer(use_gpu_scorer=use_gpu_scorer),
     )

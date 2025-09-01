@@ -513,6 +513,7 @@ dependencies = [
     { name = "platformdirs" },
     { name = "polars" },
     { name = "scipy" },
+    { name = "torch" },
     { name = "typer" },
     { name = "vllm" },
 ]
@@ -530,6 +531,7 @@ requires-dist = [
     { name = "platformdirs", specifier = ">=4.3.8" },
     { name = "polars", specifier = ">=1.32.2" },
     { name = "scipy", specifier = ">=1.13.1" },
+    { name = "torch", specifier = ">=2.7.1" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "vllm", specifier = ">=0.10.0" },
 ]
