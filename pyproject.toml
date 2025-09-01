@@ -23,6 +23,9 @@ dependencies = [
     "polars>=1.32.2",
     "scipy>=1.13.1",
     "torch>=2.7.1",
+    "fairlearn>=0.12.0",
+    "datasets>=3.6.0",
+    "regex>=2025.7.34",
 ]
 
 [project.scripts]
