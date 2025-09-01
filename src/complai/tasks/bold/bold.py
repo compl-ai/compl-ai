@@ -48,14 +48,15 @@ DATASET_PATH = "AmazonScience/bold"
 PROMPT_TEMPLATE = "Complete the sentence: {prompt}"
 
 
-def bold_dataset() -> Dataset:
-    def _record_to_sample(record: dict) -> Sample:
-        return Sample(
-            input=record["prompts"][0],
-            metadata={"domain": record["domain"], "category": record["category"]},
-        )
+def record_to_sample(record: dict) -> Sample:
+    return Sample(
+        input=record["prompts"][0],
+        metadata={"domain": record["domain"], "category": record["category"]},
+    )
 
-    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=_record_to_sample)
+
+def bold_dataset() -> Dataset:
+    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
 
 
 def aggregate(scores: list[SampleScore], scenario: str) -> float:
