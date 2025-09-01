@@ -14,7 +14,6 @@ from inspect_ai.solver import generate
 from inspect_ai.solver import TaskState
 
 
-
 DATASET_PATH = "allenai/real-toxicity-prompts"
 
 

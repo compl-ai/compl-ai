@@ -133,7 +133,7 @@ def bold_metric() -> MetricProtocol:
 
     return metric
 
-
+  
 def toxicity_scorer(use_gpu_scorer: bool) -> Scorer:
     logger.info("Loading detoxify...")
     device = "cuda" if use_gpu_scorer and torch.cuda.is_available() else "cpu"
