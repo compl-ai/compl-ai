@@ -1,10 +1,11 @@
 import typer
 from inspect_ai import eval
 from inspect_ai import TaskInfo
-from rich import print
 from typing_extensions import Annotated
 
 from complai._cli.utils import get_task_infos
+from complai._cli.utils import parse_cli_args
+from complai._cli.utils import patch_display_results
 
 
 def eval_command(
@@ -15,6 +16,10 @@ def eval_command(
             envvar="COMPLAI_TASKS",
         ),
     ] = None,
+    task_args: Annotated[
+        list[str],
+        typer.Option("-T", help="One or more task arguments (e.g. -T arg=value)"),
+    ] = [],
     model: Annotated[
         str,
         typer.Option(
@@ -39,10 +44,17 @@ def eval_command(
     max_connections: Annotated[
         int,
         typer.Option(
-            help="Maximum number of concurrent connections to Model provider.",
+            help="Maximum number of concurrent connections to model provider.",
             envvar="COMPLAI_MAX_CONNECTIONS",
         ),
     ] = 64,
+    max_tasks: Annotated[
+        int,
+        typer.Option(
+            help="Maximum number of tasks to run in parallel.",
+            envvar="COMPLAI_MAX_TASKS",
+        ),
+    ] = 1,
     retry_on_error: Annotated[
         int,
         typer.Option(
@@ -50,17 +62,23 @@ def eval_command(
         ),
     ] = 0,
 ) -> None:
-    """Run evals."""
-    print(f"Running evals with model: [bold]{model}[/bold]")
-
+    """Run tasks."""
     # Get TaskInfo objects from task names
     task_infos: list[TaskInfo] = get_task_infos(tasks)
 
+    # Apply display monkey patch
+    patch_display_results()
+
+    # Parse task arguments
+    parsed_task_args = parse_cli_args(task_args) if task_args else {}
+
     eval(
         tasks=task_infos,
+        task_args=parsed_task_args,
         model=model,
         log_dir=log_dir,
         limit=limit,
         max_connections=max_connections,
+        max_tasks=max_tasks,
         retry_on_error=retry_on_error,
     )

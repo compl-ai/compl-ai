@@ -2,7 +2,7 @@ import typer
 from inspect_ai import eval_retry
 from typing_extensions import Annotated
 
-from complai._cli.utils import get_complai_tasks
+from complai._cli.utils import patch_display_results
 
 
 def eval_retry_command(
@@ -19,6 +19,13 @@ def eval_retry_command(
             envvar="COMPLAI_MAX_CONNECTIONS",
         ),
     ] = 64,
+    max_tasks: Annotated[
+        int,
+        typer.Option(
+            help="Maximum number of tasks to run in parallel.",
+            envvar="COMPLAI_MAX_TASKS",
+        ),
+    ] = 1,
     retry_on_error: Annotated[
         int,
         typer.Option(
@@ -26,12 +33,14 @@ def eval_retry_command(
         ),
     ] = 0,
 ) -> None:
-    """Retry interrupted evals."""
-    get_complai_tasks()
+    """Retry interrupted tasks."""
+    # Apply display monkey patch
+    patch_display_results()
 
     eval_retry(
         tasks=log_files,
         log_dir=log_dir,
         max_connections=max_connections,
+        max_tasks=max_tasks,
         retry_on_error=retry_on_error,
     )
