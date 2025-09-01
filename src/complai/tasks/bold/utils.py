@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 
 def ensure_vader_lexicon(vader_lexicon_path: Path, cache_dir: Path) -> None:
     if not vader_lexicon_path.exists():
-        logger.info("Downloading VADER lexicon...")
-        from nltk.downloader import download as nltk_download
-
         try:
+            logger.info("Downloading VADER lexicon...")
+            from nltk.downloader import download as nltk_download
+
             nltk_download("vader_lexicon", download_dir=cache_dir)
         except Exception as e:
             raise RuntimeError(f"Failed to download VADER lexicon: {e}. ")
@@ -20,7 +20,6 @@ def ensure_word2vec_weights(word_2_vec_path: Path, cache_dir: Path) -> None:
     if not word_2_vec_path.exists():
         try:
             logger.info("Downloading Word2Vec weights...")
-
             import gdown
 
             gdown.download(
