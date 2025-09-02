@@ -1,4 +1,4 @@
-from .boolq_contrast import boolq_contrastset
+from .boolq_contrast import boolq_contrast
 
 
-__all__ = ["boolq_contrastset"]
+__all__ = ["boolq_contrast"]

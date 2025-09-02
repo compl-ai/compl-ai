@@ -23,7 +23,6 @@ from inspect_ai.solver import system_message
 
 DATASET_PATH = "compl-ai/boolq_contrastset"
 
-
 BOOLQ_SYSTEM_PROMPT = """
 You are a helpful assistant. For each snippet of text, answer the question by selecting from the option 'TRUE' or 'FALSE'. The answer should be exactly 'TRUE' or 'FALSE'.
 """.strip()
@@ -35,16 +34,15 @@ def record_to_sample(
     rng: np.random.Generator,
     id_provider: count,
 ) -> list[Sample]:
-    question_id = next(id_provider)
-
     # Extract relevant fields from the record
     paragraph = record["paragraph"]
     original_question = record["question"]
     original_answer = record["answer"]
     perturbed_questions = record["perturbed_questions"]
 
-    # Filter perturbed questions that have a different and valid answer
-    contrasting_pairs = [
+    # Filter perturbed questions that have a valid answer that is different from
+    # the original answer
+    contrasts = [
         perturbed_question
         for perturbed_question in perturbed_questions
         if perturbed_question["answer"] != original_answer
@@ -53,25 +51,24 @@ def record_to_sample(
 
     # Randomly choose num_contrasts pairs
     chosen_contrasts = rng.choice(
-        contrasting_pairs,
-        size=min(num_contrasts, len(contrasting_pairs)),
-        replace=False,
+        contrasts, size=min(num_contrasts, len(contrasts)), replace=False
     )
-    contrast_questions: list[str] = [
-        contrast["perturbed_q"] for contrast in chosen_contrasts
-    ]
-    contrast_answers: list[str] = [contrast["answer"] for contrast in chosen_contrasts]
 
-    # Format paragraph and questions
+    # Format paragraph
     paragraph = paragraph.strip().capitalize()
-    original_question = original_question.strip().capitalize() + (
-        "?" if not original_question.endswith("?") else ""
-    )
-    contrast_questions = [
-        question.strip().capitalize() + ("?" if not question.endswith("?") else "")
-        for question in contrast_questions
-    ]
 
+    # Format questions
+    def format_question(question: str) -> str:
+        question = question.strip().capitalize()
+        if not question.endswith("?"):
+            return question + "?"
+        return question
+
+    original_question = format_question(original_question)
+    for contrast in chosen_contrasts:
+        contrast["question"] = format_question(contrast["perturbed_q"])
+
+    # Init messages
     messages: list[ChatMessage] = [
         ChatMessageUser(
             content=f"{paragraph}\nQuestion: {original_question}\nAnswer: {original_answer}"
@@ -79,23 +76,23 @@ def record_to_sample(
         ChatMessageAssistant(content=original_answer),
     ]
 
+    # Get a unique id for this set of contrasts
+    id = next(id_provider)
+
     # Create one sample per contrast question
     samples = [
         Sample(
             input=messages
-            + [ChatMessageUser(content=f"Question: {contrast_question}\nAnswer: ")],
-            target=contrast_answer,
+            + [ChatMessageUser(content=f"Question: {contrast['question']}\nAnswer: ")],
+            target=contrast["answer"],
             metadata={
                 "paragraph": paragraph,
                 "original_question": original_question,
                 "original_answer": original_answer,
-                "title": record["title"],
-                "id": question_id,
+                "id": id,
             },
         )
-        for contrast_question, contrast_answer in zip(
-            contrast_questions, contrast_answers
-        )
+        for contrast in chosen_contrasts
     ]
 
     return samples
@@ -125,12 +122,12 @@ def boolq_contrastset_metric() -> Metric:
         total: dict[int, int] = defaultdict(int)
         for score in scores:
             id = cast(dict, score.sample_metadata)["id"]
-            if score.score.value:
+            if score.score.as_bool():
                 correct[id] += 1
             total[id] += 1
 
         # Calculate accuracy for each original question
-        accuracies = [correct[id] / total[id] for id in correct]
+        accuracies = [correct[id] / total[id] for id in total]
 
         return np.mean(accuracies, dtype=float)
 
@@ -138,7 +135,7 @@ def boolq_contrastset_metric() -> Metric:
 
 
 @task(technical_requirement="Robustness and Predictability")
-def boolq_contrastset(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
+def boolq_contrast(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
     """BoolQ contrast sets task.
 
     BoolQ contrast sets measure if the model can answer a given yes-no question

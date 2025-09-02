@@ -1,4 +1,4 @@
-from .imdb_contrast import imdb_contrastset
+from .imdb_contrast import imdb_contrast
 
 
-__all__ = ["imdb_contrastset"]
+__all__ = ["imdb_contrast"]

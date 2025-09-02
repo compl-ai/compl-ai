@@ -14,6 +14,7 @@ from inspect_ai.scorer import INCORRECT
 from inspect_ai.scorer import Score
 from inspect_ai.scorer import Scorer
 from inspect_ai.scorer import scorer
+from inspect_ai.scorer import stderr
 from inspect_ai.scorer import Target
 from inspect_ai.solver import generate
 from inspect_ai.solver import system_message
@@ -36,7 +37,7 @@ def record_to_sample(record: dict[str, Any]) -> Sample:
     messages: list[ChatMessage] = [
         ChatMessageUser(content=f"{original_text}\nSentiment: "),
         ChatMessageAssistant(content=original_sentiment),
-        ChatMessageUser(content=f"\n\n{contrast_text}\nSentiment: "),
+        ChatMessageUser(content=f"{contrast_text}\nSentiment: "),
     ]
 
     return Sample(
@@ -72,7 +73,7 @@ def parse_sentiment(completion: str) -> str:
     return "unknown"
 
 
-@scorer(metrics=[accuracy()])
+@scorer(metrics=[accuracy(), stderr()])
 def imdb_sentiment_scorer() -> Scorer:
     """Custom scorer for IMDB sentiment classification with robust parsing."""
 
@@ -94,7 +95,7 @@ def imdb_sentiment_scorer() -> Scorer:
 
 
 @task(technical_requirement="Robustness and Predictability")
-def imdb_contrastset() -> Task:
+def imdb_contrast() -> Task:
     """IMDB contrast sets task.
 
     IMDB contrast sets measure if the model can accurately deduce the
