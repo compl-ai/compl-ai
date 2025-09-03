@@ -90,6 +90,10 @@ def llm_rules_solver() -> Solver:
     model = LLMRulesModelWrapper(get_model())
 
     async def solve(state: TaskState, generate: Generate) -> TaskState:
+        """
+        This solver reimplements the sample evaluation logic from the llm_rules package.
+        https://github.com/normster/llm_rules/blob/f627e569146015d7fd6f200bb758b2591f9eb6c6/llm_rules/scripts/evaluate.py#L144
+        """
         # Load scenario
         scenario = scenarios.SCENARIOS[state.metadata["scenario"]](
             state.metadata["test_case"]["params"]
