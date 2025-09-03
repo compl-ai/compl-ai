@@ -56,7 +56,6 @@ class LLMRulesModelWrapper:
 
 
 def llm_rules_dataset(evaluation_category: EvaluationCategory) -> Dataset:
-    from llm_rules import scenarios
     from llm_rules.scripts.evaluate import load_dataset as llm_rules_load_dataset
 
     # Load dataset
@@ -73,7 +72,7 @@ def llm_rules_dataset(evaluation_category: EvaluationCategory) -> Dataset:
                 "behavior": behavior,
             },
         )
-        for scenario in scenarios.SCENARIOS
+        for scenario in dataset
         for behavior, test_cases in dataset[scenario].items()
         for test_case in test_cases
     ]
@@ -82,7 +81,7 @@ def llm_rules_dataset(evaluation_category: EvaluationCategory) -> Dataset:
 
 
 @solver
-def llm_rules_solver() -> Solver:
+def llm_rules_solver(remove_precedence_reminders: bool) -> Solver:
     from llm_rules import Message
     from llm_rules import Role
     from llm_rules import scenarios
@@ -100,7 +99,9 @@ def llm_rules_solver() -> Solver:
         )
 
         # Init messages with system prompt
-        system_prompt = scenarios.utils.remove_precedence_reminders(scenario.prompt)
+        system_prompt = scenario.prompt
+        if remove_precedence_reminders:
+            system_prompt = scenarios.utils.remove_precedence_reminders(system_prompt)
         messages = [Message(Role.SYSTEM, system_prompt)]
 
         # Skip over prefilled assistant messages
@@ -117,24 +118,21 @@ def llm_rules_solver() -> Solver:
             test_messages = test_messages[last_index + 1 :]
 
         # Solve the test case
+        result = scenarios.Result(passed=True)
         for test_message in test_messages:
             messages.append(test_message)
             completion = await model(messages)
             messages.append(Message(Role.ASSISTANT, completion))
 
             result = scenario.evaluate(messages, True)
-            if not result.passed:
-                # Exit at the first mistake
-                state.metadata["result"] = result
-                state.messages = [
-                    model.role_to_inspect_message[message.role](content=message.content)
-                    for message in messages
-                ]
 
-                return state
+            # Exit at the first mistake
+            if not result.passed:
+                break
 
         # Save the result
-        state.metadata["result"] = result
+        state.metadata["passed"] = result.passed
+        state.metadata["reason"] = result.reason
         state.messages = [
             model.role_to_inspect_message[message.role](content=message.content)
             for message in messages
@@ -148,8 +146,8 @@ def llm_rules_solver() -> Solver:
 @scorer(metrics=[accuracy(), stderr()])
 def llm_rules_scorer() -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
-        passed = state.metadata["result"].passed
-        reason = state.metadata["result"].reason
+        passed = state.metadata["passed"]
+        reason = state.metadata["reason"]
 
         return Score(value=CORRECT if passed else INCORRECT, explanation=reason)
 
@@ -157,7 +155,10 @@ def llm_rules_scorer() -> Scorer:
 
 
 @task(technical_requirement="Cyberattack Resilience")
-def llm_rules(evaluation_category: EvaluationCategory = "basic") -> Task:
+def llm_rules(
+    evaluation_category: EvaluationCategory = "basic",
+    remove_precedence_reminders: bool = True,
+) -> Task:
     """
     LLM RuLES task.
 
@@ -170,12 +171,13 @@ def llm_rules(evaluation_category: EvaluationCategory = "basic") -> Task:
 
     Args:
         evaluation_category (EvaluationCategory, optional): The evaluation category to use. Defaults to "basic".
+        remove_precedence_reminders (bool, optional): Whether to remove precedence reminders. Defaults to True.
 
     Returns:
         Task
     """
     return Task(
         dataset=llm_rules_dataset(evaluation_category),
-        solver=llm_rules_solver(),
+        solver=llm_rules_solver(remove_precedence_reminders),
         scorer=llm_rules_scorer(),
     )
