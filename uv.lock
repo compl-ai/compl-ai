@@ -521,6 +521,7 @@ dependencies = [
     { name = "datasets" },
     { name = "inspect-ai" },
     { name = "inspect-evals" },
+    { name = "llm-rules" },
     { name = "nltk" },
     { name = "numpy" },
     { name = "openai" },
@@ -546,6 +547,7 @@ requires-dist = [
     { name = "gensim", specifier = ">=4.3.3" },
     { name = "inspect-ai" },
     { name = "inspect-evals", git = "https://github.com/UKGovernmentBEIS/inspect_evals" },
+    { name = "llm-rules", git = "https://github.com/normster/llm_rules" },
     { name = "nltk", specifier = ">=3.9.1" },
     { name = "numpy", specifier = ">=1.26.4" },
     { name = "openai", specifier = ">=1.90.0" },
@@ -1511,6 +1513,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/af/80/5a40b9689f17612434b820854cba9b8cabd5142072c491b5280fe5f7a35e/llguidance-0.7.30-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9edc409b9decd6cffba5f5bf3b4fbd7541f95daa8cbc9510cbf96c6ab1ffc153", size = 15004926, upload-time = "2025-06-23T00:23:43.965Z" },
     { url = "https://files.pythonhosted.org/packages/99/47/58e49a118b514855b245f8a962c6aaf9a5cc95a0f61eac7e230e691c7b7e/llguidance-0.7.30-cp39-abi3-win_amd64.whl", hash = "sha256:05234ecceea7c9c6ff13b9739112043173a3bcb88cae860249b20335a07b3075", size = 2796878, upload-time = "2025-06-23T00:23:51Z" },
 ]
+
+[[package]]
+name = "llm-rules"
+version = "3.0.0"
+source = { git = "https://github.com/normster/llm_rules#f627e569146015d7fd6f200bb758b2591f9eb6c6" }
 
 [[package]]
 name = "llvmlite"
