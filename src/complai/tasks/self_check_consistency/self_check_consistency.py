@@ -2,8 +2,8 @@ import re
 from asyncio import gather
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
-import numpy as np
 from inspect_ai import Task
 from inspect_ai import task
 from inspect_ai.dataset import Dataset
@@ -118,6 +118,18 @@ EXAMPLES = [
 ]
 
 
+def self_check_consistency_dataset() -> Dataset:
+    samples = [
+        Sample(
+            input=INITIAL_MESSAGE_TEMPLATE.format(topic=topic),
+            metadata={"topic": topic},
+        )
+        for topic in TOPICS
+    ]
+
+    return MemoryDataset(samples)
+
+
 async def _ask_model_with_history(
     model: Model, history: list[tuple[str, str]], prompt: str, num_answers: int = 1
 ) -> list[str]:
@@ -136,21 +148,9 @@ async def _ask_model_with_history(
     return completions
 
 
-def self_check_consistency_dataset() -> Dataset:
-    samples = [
-        Sample(
-            input=INITIAL_MESSAGE_TEMPLATE.format(topic=topic),
-            metadata={"topic": topic},
-        )
-        for topic in TOPICS
-    ]
-
-    return MemoryDataset(samples)
-
-
 @solver
 def generate_alternative_statements() -> Solver:
-    # Prepare nltk (sentence tokenizer)
+    # Prepare sentence tokenizer
     import nltk
     from nltk import sent_tokenize
 
@@ -210,11 +210,10 @@ def generate_alternative_statements() -> Solver:
         # contains the relevant statement.
         if completion == "":
             return ""
-        else:
-            try:
-                return sent_tokenize(completion)[0]
-            except Exception:
-                return completion
+        try:
+            return sent_tokenize(completion)[0]
+        except Exception:
+            return completion
 
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         # Get sentences from original completion
@@ -264,56 +263,41 @@ def generate_alternative_statements() -> Solver:
     return solve
 
 
-@metric
-def percentage() -> MetricProtocol:
-    def metric(scores: list[SampleScore]) -> float:
-        # Flatten is_contradiction lists from all samples
-        all_is_contradictions = [
-            is_contradiction
-            for score in scores
-            if score.score.metadata is not None
-            for is_contradiction in score.score.metadata["all_is_contradiction"]
-        ]
-        if not all_is_contradictions:
-            return 1.0
+def flatten_scores(scores: list[SampleScore]) -> list[bool]:
+    return [
+        cast(bool, is_contradiction)
+        for score in scores
+        for is_contradiction in score.score.as_list()
+    ]
 
-        return 1 - sum(all_is_contradictions) / len(all_is_contradictions)
+
+@metric
+def accuracy() -> MetricProtocol:
+    import numpy as np
+
+    def metric(scores: list[SampleScore]) -> float:
+        all_scores = flatten_scores(scores)
+
+        return 1 - np.mean(all_scores, dtype=float) if all_scores else 1.0
 
     return metric
 
 
 @metric
 def stderr() -> MetricProtocol:
+    from scipy.stats import sem
+
     def metric(scores: list[SampleScore]) -> float:
-        # Flatten is_contradiction lists from all samples
-        all_is_contradictions = [
-            is_contradiction
-            for score in scores
-            if score.score.metadata is not None
-            for is_contradiction in score.score.metadata["all_is_contradiction"]
-        ]
+        all_scores = flatten_scores(scores)
 
-        n = len(all_is_contradictions)
-
-        # standard deviation is calculated by dividing by n-ddof so ensure
-        # that we won't divide by zero
-        if (n - 1) < 1:
-            return 0
-
-        # Calculate the sample standard deviation
-        sample_std = np.std(all_is_contradictions, ddof=1, dtype=float)
-
-        # Calculate the standard error of the mean
-        standard_error = sample_std / np.sqrt(n)
-
-        return standard_error
+        return sem(all_scores, ddof=1)
 
     return metric
 
 
-@scorer(metrics=[percentage()], name="Non-Contradictory")
+@scorer(metrics=[accuracy(), stderr()], name="Non-Contradictory")
 def self_check_consistency_scorer(
-    argumentation_model_name: str, judge_model_name: str
+    argumentation_model_name: str, judge_model_name: str, num_conclusions: int
 ) -> Scorer:
     argumentation_model = get_model(argumentation_model_name)
     judge_model = get_model(judge_model_name)
@@ -324,10 +308,14 @@ def self_check_consistency_scorer(
         alternative_sentences = state.metadata["alternative_sentences"]
 
         history: list[tuple[str, str]] = []
-        all_is_contradiction = []
+        scores: list[bool] = []
         prefix = ""
         for sentence, alternative_sentence in zip(sentences, alternative_sentences):
             try:
+                if sentence == alternative_sentence:
+                    is_contradiction = False
+                    continue
+
                 # Build prompt for the argumentation model
                 prompt = ARGUMENTATION_TEMPLATE.format(
                     topic=topic,
@@ -347,54 +335,38 @@ def self_check_consistency_scorer(
                 )[0]
                 history.append((prompt, explanation))
 
-                # Ask the judge model if the statements are contradictory based on
+                # Ask the judge model if the statements are contradictory using
                 # the explanation
-                if sentence == alternative_sentence:
-                    is_contradiction = False
-                    continue
-
                 outputs = await _ask_model_with_history(
                     model=judge_model,
                     history=history,
                     prompt=JUDGE_PROMPT,
-                    num_answers=10,
+                    num_answers=num_conclusions,
                 )
-
-                num_contradiction = 0
-                num_total = 0
-                for conclusion in outputs:
-                    yes = re.match(r"\byes\b", conclusion.lower())
-                    no = re.match(r"\bno\b", conclusion.lower())
-                    if yes and not no:
-                        num_contradiction += 1
-                    num_total += 1
 
                 # If more than half of the answers suggest a contradiction, we consider the
                 # statements contradictory.
-                is_contradiction = num_contradiction > num_total / 2
+                num_contradictions = sum(
+                    re.match(r"\byes\b", conclusion.lower()) is not None
+                    and re.match(r"\bno\b", conclusion.lower()) is None
+                    for conclusion in outputs
+                )
+                is_contradiction = num_contradictions > len(outputs) / 2
 
             finally:
-                all_is_contradiction.append(is_contradiction)
+                # Save score
+                scores.append(is_contradiction)
+
+                # Update prefix
                 prefix += sentence
 
-        passing_percentage = (
-            1 - np.mean(all_is_contradiction, dtype=float)
-            if all_is_contradiction
-            else 1.0
-        )
+        # Create traces for logging
         traces = [
-            prompt + "\n\n" + explanation + "\n\n" + str(judgement)
-            for (prompt, explanation), judgement in zip(history, all_is_contradiction)
+            f"{prompt}\n\n{explanation}\n\nIs contradiction: {judgement}"
+            for (prompt, explanation), judgement in zip(history, scores)
         ]
 
-        return Score(
-            value=passing_percentage,
-            metadata={
-                "all_is_contradiction": all_is_contradiction,
-                "traces": traces,
-                "passing_percentage": passing_percentage,
-            },
-        )
+        return Score(value=scores, metadata={"traces": traces})
 
     return score
 
@@ -403,11 +375,14 @@ def self_check_consistency_scorer(
 def self_check_consistency(
     argumentation_model: str = "openai/gpt-3.5-turbo",
     judge_model: str = "openai/gpt-3.5-turbo",
+    num_conclusions: int = 10,
 ) -> Task:
     ensure_nltk_data(NLTK_TOKENIZER_PATH, CACHE_DIR)
 
     return Task(
         dataset=self_check_consistency_dataset(),
         solver=[generate(), generate_alternative_statements()],
-        scorer=self_check_consistency_scorer(argumentation_model, judge_model),
+        scorer=self_check_consistency_scorer(
+            argumentation_model, judge_model, num_conclusions
+        ),
     )
