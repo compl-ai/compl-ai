@@ -43,7 +43,7 @@ warn_redundant_casts = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 exclude = [
-    "src/complai/tasks/self_check_consistency/constituent_linking/"
+    "src/complai/tasks/self_check_consistency/compact_ie/"
 ]
 
 [tool.typos]
@@ -53,7 +53,7 @@ default.extend-ignore-identifiers-re = []
 files.extend-exclude = [
     "*.ipynb",  # Notebook cells are asigned a hash.
     "src/complai/tasks/self_check_consistency/topics.py",
-    "src/complai/tasks/self_check_consistency/constituent_linking/",
+    "src/complai/tasks/self_check_consistency/compact_ie/",
 ]
 
 [tool.uv.sources]

@@ -5,13 +5,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from complai.tasks.self_check_consistency.constituent_linking.models.embedding_models.bert_embedding_model import (
+from complai.tasks.self_check_consistency.compact_ie.models.embedding_models.bert_embedding_model import (
     BertEmbedModel,
 )
-from complai.tasks.self_check_consistency.constituent_linking.models.embedding_models.pretrained_embedding_model import (
+from complai.tasks.self_check_consistency.compact_ie.models.embedding_models.pretrained_embedding_model import (
     PretrainedEmbedModel,
 )
-from complai.tasks.self_check_consistency.constituent_linking.modules.token_embedders.bert_encoder import (
+from complai.tasks.self_check_consistency.compact_ie.modules.token_embedders.bert_encoder import (
     BertLinear,
 )
 

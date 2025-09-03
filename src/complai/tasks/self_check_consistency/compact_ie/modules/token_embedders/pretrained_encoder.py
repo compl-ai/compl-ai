@@ -4,10 +4,10 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel
 
-from complai.tasks.self_check_consistency.constituent_linking.modules.token_embedders.bert_encoder import (
+from complai.tasks.self_check_consistency.compact_ie.modules.token_embedders.bert_encoder import (
     BertLinear,
 )
-from complai.tasks.self_check_consistency.constituent_linking.utils.nn_utils import gelu
+from complai.tasks.self_check_consistency.compact_ie.utils.nn_utils import gelu
 
 
 logger = logging.getLogger(__name__)

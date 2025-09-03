@@ -16,34 +16,30 @@ import torch
 from huggingface_hub import hf_hub_download
 from transformers import BertTokenizer
 
-from complai.tasks.self_check_consistency.constituent_linking.inputs.dataset_readers.oie_reader_for_ent_rel_decoding import (
+from complai.tasks.self_check_consistency.compact_ie.inputs.dataset_readers.oie_reader_for_ent_rel_decoding import (
     OIE4ReaderForEntRelDecoding,
 )
-from complai.tasks.self_check_consistency.constituent_linking.inputs.datasets.dataset import (
+from complai.tasks.self_check_consistency.compact_ie.inputs.datasets.dataset import (
     Dataset,
 )
-from complai.tasks.self_check_consistency.constituent_linking.inputs.fields.map_token_field import (
+from complai.tasks.self_check_consistency.compact_ie.inputs.fields.map_token_field import (
     MapTokenField,
 )
-from complai.tasks.self_check_consistency.constituent_linking.inputs.fields.raw_token_field import (
+from complai.tasks.self_check_consistency.compact_ie.inputs.fields.raw_token_field import (
     RawTokenField,
 )
-from complai.tasks.self_check_consistency.constituent_linking.inputs.fields.token_field import (
+from complai.tasks.self_check_consistency.compact_ie.inputs.fields.token_field import (
     TokenField,
 )
-from complai.tasks.self_check_consistency.constituent_linking.inputs.instance import (
-    Instance,
-)
-from complai.tasks.self_check_consistency.constituent_linking.inputs.vocabulary import (
-    Vocabulary,
-)
-from complai.tasks.self_check_consistency.constituent_linking.models.joint_decoding.joint_decoder import (
+from complai.tasks.self_check_consistency.compact_ie.inputs.instance import Instance
+from complai.tasks.self_check_consistency.compact_ie.inputs.vocabulary import Vocabulary
+from complai.tasks.self_check_consistency.compact_ie.models.joint_decoding.joint_decoder import (
     EntRelJointDecoder,
 )
-from complai.tasks.self_check_consistency.constituent_linking.models.relation_decoding.relation_decoder import (
+from complai.tasks.self_check_consistency.compact_ie.models.relation_decoding.relation_decoder import (
     RelDecoder,
 )
-from complai.tasks.self_check_consistency.constituent_linking.utils.prediction_outputs import (
+from complai.tasks.self_check_consistency.compact_ie.utils.prediction_outputs import (
     print_extractions_jsonl_format,
 )
 
@@ -280,7 +276,7 @@ def run_model(
     )
 
 
-class CompactFactsOpenInformationExtraction:
+class IEPipeline:
     def __init__(
         self,
         *,
@@ -319,9 +315,11 @@ class CompactFactsOpenInformationExtraction:
         self.test_batch_size = test_batch_size
         self.hf_model_repo = hf_model_repo
 
-        # compact_ie_dir = str(Path(__file__).parent / "constituent_linking" / "data")
-        # constituent_vocab = os.path.join(compact_ie_dir, "constituent_vocabulary.pkl")
-        # relation_vocab = os.path.join(compact_ie_dir, "relation_vocabulary.pkl")
+        # compact_ie_dir = str(
+        #     Path(__file__).parent.parent.parent.parent.parent.parent / "data"
+        # )
+        # constituent_vocab = os.path.join(compact_ie_dir, "constituent_vocabulary2.pkl")
+        # relation_vocab = os.path.join(compact_ie_dir, "relation_vocabulary2.pkl")
         # constituent_model_path = os.path.join(
         #     compact_ie_dir, "constituent_model_weights"
         # )

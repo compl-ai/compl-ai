@@ -1,8 +1,6 @@
 import logging
 
-from complai.tasks.self_check_consistency.constituent_linking.inputs.fields.field import (
-    Field,
-)
+from complai.tasks.self_check_consistency.compact_ie.inputs.fields.field import Field
 
 
 logger = logging.getLogger(__name__)

@@ -157,11 +157,9 @@ def generate_alternative_statements() -> Solver:
     nltk.data.path.append(CACHE_DIR)
 
     # Prepare triplet extraction model
-    from complai.tasks.self_check_consistency.compact_ie import (
-        CompactFactsOpenInformationExtraction,
-    )
+    from complai.tasks.self_check_consistency.compact_ie.ie_pipeline import IEPipeline
 
-    compact_ie = CompactFactsOpenInformationExtraction()
+    compact_ie = IEPipeline()
 
     # Get model instance
     model = get_model()

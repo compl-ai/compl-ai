@@ -1,12 +1,12 @@
 import torch.nn as nn
 
-from complai.tasks.self_check_consistency.constituent_linking.modules.token_embedders.bert_encoder import (
+from complai.tasks.self_check_consistency.compact_ie.modules.token_embedders.bert_encoder import (
     BertEncoder,
 )
-from complai.tasks.self_check_consistency.constituent_linking.utils.nn_utils import (
+from complai.tasks.self_check_consistency.compact_ie.utils.nn_utils import (
     batched_index_select,
 )
-from complai.tasks.self_check_consistency.constituent_linking.utils.nn_utils import gelu
+from complai.tasks.self_check_consistency.compact_ie.utils.nn_utils import gelu
 
 
 class BertEmbedModel(nn.Module):

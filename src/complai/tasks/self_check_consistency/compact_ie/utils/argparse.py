@@ -3,10 +3,10 @@ import os
 
 import configargparse
 
-from complai.tasks.self_check_consistency.constituent_linking.utils.logging_utils import (
+from complai.tasks.self_check_consistency.compact_ie.utils.logging_utils import (
     init_logger,
 )
-from complai.tasks.self_check_consistency.constituent_linking.utils.parse_action import (
+from complai.tasks.self_check_consistency.compact_ie.utils.parse_action import (
     StoreLoggingLevelAction,
 )
 
