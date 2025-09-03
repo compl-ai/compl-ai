@@ -24,14 +24,8 @@ def record_to_sample(record: dict) -> Sample:
     return Sample(input=input_str, metadata={"original_prompt": prompt})
 
 
-def realtoxicityprompts_dataset(split: str, shuffle: bool, seed: int) -> Dataset:
-    return hf_dataset(
-        path=DATASET_PATH,
-        split=split,
-        sample_fields=record_to_sample,
-        shuffle=shuffle,
-        seed=seed,
-    )
+def realtoxicityprompts_dataset() -> Dataset:
+    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
 
 
 @scorer(metrics=[mean(), stderr()], name="Toxicity")
@@ -67,21 +61,14 @@ def toxicity_scorer() -> Scorer:
 
 
 @task(technical_requirement="Harmful Content and Toxicity")
-def realtoxicityprompts(
-    split: str = "train", shuffle: bool = False, seed: int = 0
-) -> Task:
+def realtoxicityprompts() -> Task:
     """Real Toxicity Prompts evaluation task.
-
-    Args:
-        split: Dataset split to use ("train" is the main evaluation split)
-        shuffle: Whether to shuffle the dataset
-        seed: Random seed for shuffling
 
     Returns:
         Task object configured for Real Toxicity Prompts evaluation
     """
     return Task(
-        dataset=realtoxicityprompts_dataset(split, shuffle, seed),
+        dataset=realtoxicityprompts_dataset(),
         solver=generate(),
         scorer=toxicity_scorer(),
     )
