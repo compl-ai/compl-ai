@@ -123,8 +123,9 @@ def rank_correlation() -> MetricProtocol:
             # Compute Spearman's rank correlation.
             rho = spearmanr(predictions, reference).statistic
 
-            # Transform to consistency score.
-            consistency_scores.append((1 + rho) / 2)
+            # Transform to consistency score and append to scores.
+            if np.isfinite(rho):
+                consistency_scores.append((1 + rho) / 2)
 
         return np.mean(consistency_scores, dtype=float) if consistency_scores else 0.0
 
