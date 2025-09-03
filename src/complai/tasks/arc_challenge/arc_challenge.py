@@ -7,5 +7,5 @@ from inspect_evals.arc import arc_challenge
     name="arc_challenge",
     technical_requirement="Capabilities, Performance, and Limitations",
 )
-def decorated_arc_challenge() -> Task:
+def wrapped_arc_challenge() -> Task:
     return arc_challenge()
