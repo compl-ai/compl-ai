@@ -14,6 +14,7 @@ dependencies = [
     "openai>=1.90.0",
     "typer>=0.16.0",
     "vllm>=0.10.0",
+    "bidict>=0.23.1",
     "detoxify>=0.5.2",
     "gdown>=5.2.0",
     "gensim>=4.3.3",
@@ -52,6 +53,9 @@ warn_unused_configs = true
 warn_redundant_casts = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+exclude = [
+    "src/complai/tasks/self_check_consistency/compact_ie/"
+]
 
 [tool.typos]
 default.check-file = true
@@ -59,6 +63,8 @@ default.check-filename = true
 default.extend-ignore-identifiers-re = []
 files.extend-exclude = [
     "*.ipynb",  # Notebook cells are asigned a hash.
+    "src/complai/tasks/self_check_consistency/topics.py",
+    "src/complai/tasks/self_check_consistency/compact_ie/",
 ]
 
 [tool.uv.sources]
