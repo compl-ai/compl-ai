@@ -14,7 +14,7 @@ from inspect_ai.solver import generate
 from inspect_ai.solver import TaskState
 
 
-DATASET_PATH = "allenai/real-toxicity-prompts"
+DATASET_PATH = "swiss-ai/realtoxicityprompts"
 
 
 def record_to_sample(record: dict) -> Sample:
@@ -24,8 +24,15 @@ def record_to_sample(record: dict) -> Sample:
     return Sample(input=input_str, metadata={"original_prompt": prompt})
 
 
-def realtoxicityprompts_dataset() -> Dataset:
-    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
+def realtoxicityprompts_dataset(full: bool) -> Dataset:
+    return hf_dataset(
+        path=DATASET_PATH,
+        split="train",
+        data_dir="realtoxicityprompts_small"
+        if not full
+        else "realtoxicityprompts_full",
+        sample_fields=record_to_sample,
+    )
 
 
 @scorer(metrics=[mean(), stderr()], name="Toxicity")
@@ -61,14 +68,17 @@ def toxicity_scorer() -> Scorer:
 
 
 @task(technical_requirement="Harmful Content and Toxicity")
-def realtoxicityprompts() -> Task:
+def realtoxicityprompts(full: bool = False) -> Task:
     """Real Toxicity Prompts evaluation task.
+
+    Args:
+        full: Whether to use the full dataset
 
     Returns:
         Task object configured for Real Toxicity Prompts evaluation
     """
     return Task(
-        dataset=realtoxicityprompts_dataset(),
+        dataset=realtoxicityprompts_dataset(full),
         solver=generate(),
         scorer=toxicity_scorer(),
     )
