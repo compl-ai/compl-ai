@@ -140,9 +140,20 @@ $ complai list [OPTIONS]
 
 The CLI supports reading argument and option values from environment variables. For instance, you can run:
 ```console
-export COMPLAI_MODEL=openai/gpt-5-mini-2025-08-07
+export COMPLAI_MODEL=openai/gpt-5-nano
 ```
  This model will then be used if no model is provided in the command line.
+
+You can also use a `.env` file to set environment variables:
+```
+# In your .env file add:
+OPENAI_API_KEY=your-openai-api-key
+
+COMPLAI_MODEL=openai/gpt-5-nano
+COMPLAI_LOG_DIR=path/to/a/logdir
+COMPLAI_MAX_CONNECTIONS=128
+```
+COMPL-AI will automatically load variables from a `.env` file if one is present in the directory.
 
 ## Contributing
 
