@@ -335,7 +335,7 @@ def self_check_consistency_scorer(
 
                 # Ask the judge model if the statements are contradictory using
                 # the explanation
-                outputs = await _ask_model_with_history(
+                conclusions = await _ask_model_with_history(
                     model=judge_model,
                     history=history,
                     prompt=JUDGE_PROMPT,
@@ -347,9 +347,9 @@ def self_check_consistency_scorer(
                 num_contradictions = sum(
                     re.match(r"\byes\b", conclusion.lower()) is not None
                     and re.match(r"\bno\b", conclusion.lower()) is None
-                    for conclusion in outputs
+                    for conclusion in conclusions
                 )
-                is_contradiction = num_contradictions > len(outputs) / 2
+                is_contradiction = num_contradictions > len(conclusions) / 2
 
             finally:
                 # Save score
