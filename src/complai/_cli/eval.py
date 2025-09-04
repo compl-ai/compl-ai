@@ -1,4 +1,3 @@
-import logging
 from enum import Enum
 
 import typer
@@ -9,9 +8,6 @@ from typing_extensions import Annotated
 
 from complai._cli.utils import get_task_infos
 from complai._cli.utils import patch_display_results
-
-
-logger = logging.getLogger(__name__)
 
 
 class LoggingLevel(str, Enum):
