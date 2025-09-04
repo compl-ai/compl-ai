@@ -369,7 +369,7 @@ def self_check_consistency_scorer(
     return score
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task(technical_requirement="Robustness and Predictability")
 def self_check_consistency(
     argumentation_model: str = "openai/gpt-3.5-turbo",
     judge_model: str = "openai/gpt-3.5-turbo",
