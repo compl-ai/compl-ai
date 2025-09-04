@@ -271,7 +271,7 @@ def eval_command(
     parsed_task_args = parse_cli_config(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
 
-    print("Preparing evals...")
+    typer.echo("Starting evals...")
     eval(
         model=model,
         tasks=task_infos,
