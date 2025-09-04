@@ -36,9 +36,11 @@ repos:
       - id: mypy
         name: mypy
         stages: [pre-commit]
-        entry: uv run --with mypy python -m mypy --show-error-codes src/complai src/tests --ignore-missing-imports
+        entry: uv run --with mypy python -m mypy --show-error-codes --ignore-missing-imports
         language: system
-        pass_filenames: false
+        pass_filenames: true
+        files: \.py$
+        types: [python]
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
     rev: 0.7.13
