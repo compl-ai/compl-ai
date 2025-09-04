@@ -1,4 +1,5 @@
 import argparse
+from contextlib import redirect_stdout
 from typing import Literal
 
 from inspect_ai import Task
@@ -60,7 +61,8 @@ def llm_rules_dataset(evaluation_category: EvaluationCategory) -> Dataset:
 
     # Load dataset
     args = argparse.Namespace(test_suite=evaluation_category)
-    dataset = llm_rules_load_dataset(args)
+    with redirect_stdout(None):  # Suppress print statements
+        dataset = llm_rules_load_dataset(args)
 
     # Create samples
     samples = [
