@@ -14,13 +14,16 @@ This project created by [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](htt
 
 ## Installation
 
+Prerequisite: [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/).
+
 ### 1. Clone this repository
 ```console
 git clone https://github.com/compl-ai/compl-ai.git
+cd compl-ai
 ```
 ### 2a. Using `uv run`
 
-You can run the CLI directly using:
+You can run the CLI directly using `uv run`:
 
 ```console
 uv run complai --help
@@ -41,17 +44,31 @@ Now you can use the CLI like so:
 complai --help
 ```
 
+
 ## Quickstart
+
+The command 
+```console
+uv run complai eval provider/model
+```
+runs *all* benchmarks. Concrete examples:
 
 ```console
 # OpenAI
 export OPENAI_API_KEY=your-openai-api-key
-uv run complai eval -m openai/gpt-5-mini-2025-08-07 --limit 5
-
+uv run complai eval openai/gpt-5-mini-2025-08-07 --limit 5
+```
+```console
 # Local (Starts a vLLM server)
-uv run complai eval -m vllm/HuggingFaceTB/SmolLM2-135M-Instruct --limit 5 
-
-# Check results in ./logs/ or run
+uv run complai eval vllm/HuggingFaceTB/SmolLM2-135M-Instruct --limit 5 
+```
+```console
+# Local (Using an OpenAI-compatible API endpoint)
+EXPORT {provider_name}_API_KEY
+uv run complai eval openai-api/{provider_name}/{model_name} --base-url https://your.base/url --limit 5
+```
+You can view detailed sample-level logs with the [Inspect AI VS Code extension](https://marketplace.cursorapi.com/items/?itemName=ukaisi.inspect-ai), or in your browser with:
+```console
 uv run inspect view
 ```
 
@@ -60,81 +77,16 @@ uv run inspect view
 
 
 ```console
-$ complai [OPTIONS] COMMAND [ARGS]...
+complai COMMAND [ARGS]...
 ```
 
-**Options**:
-
-* `--install-completion`: Install completion for the current shell.
-* `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
-* `--help`: Show this message and exit.
-
-**Commands**:
+**Available Commands**:
 
 * `eval`: Run tasks.
 * `eval-retry` Retry interrupted tasks.
 * `list`: List all available tasks.
 
-### `complai eval`
-
-Run tasks.
-
-**Usage**:
-
-```console
-$ complai eval [OPTIONS] [TASKS]
-```
-
-**Arguments**:
-
-* `[TASKS]`: Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.  [env var: COMPLAI_TASKS]
-
-**Options**:
-
-* `-T`: One or more task arguments (e.g. -T arg=value)
-* `-m, --model`: Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models. See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details.  [env var: COMPLAI_MODEL; default: vllm/HuggingFaceTB/SmolLM2-135M-Instruct]
-* `--log-dir`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
-* `-l, --limit`: Limit the number of samples per task.  [env var: COMPLAI_LIMIT]
-* `--max-connections`: Maximum number of concurrent connections to model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
-* `--max-tasks`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
-* `--retry-on-error`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
-* `--help`: Show this message and exit.
-
-### `complai eval-retry`
-
-Retry interrupted tasks.
-
-**Usage**:
-
-```console
-$ eval-retry [OPTIONS] LOG_FILES...
-```
-
-**Arguments**:
-
-* `LOG_FILES...`: Log file(s) for task(s) to retry.  [required]
-
-**Options**:
-
-* `--log-dir`: Directory to save logs to.  [env var: COMPLAI_LOG_DIR; default: ./logs]
-* `--max-connections`: Maximum number of concurrent connections to Model provider.  [env var: COMPLAI_MAX_CONNECTIONS; default: 64]
-* `--max-tasks`: Maximum number of tasks to run in parallel.  [env var: COMPLAI_MAX_TASKS; default: 1]
-* `--retry-on-error`: Number of times to retry on error.  [env var: COMPLAI_RETRY_ON_ERROR; default: 0]
-* `--help`: Show this message and exit.
-
-### `complai list`
-
-List all available tasks.
-
-**Usage**:
-
-```console
-$ complai list [OPTIONS]
-```
-
-**Options**:
-
-* `--help`: Show this message and exit.
+Run `complai COMMAND --help` for information on CLI arguments and options.
 
 ### Environment Variables
 
