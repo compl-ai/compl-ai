@@ -31,7 +31,7 @@ uv run complai --help
 
 ### 2b. Manual Installation
 
-You can also create a virtual environment and install the package and manually. Using `uv`:
+You can also create a virtual environment and install the package manually. Using `uv`:
 
 ```console
 uv venv
