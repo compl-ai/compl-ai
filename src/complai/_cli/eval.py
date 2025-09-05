@@ -87,12 +87,12 @@ def eval_command(
         typer.Option(
             "-M",
             "--model-arg",
-            help="One or more model arguments (e.g. `-M arg1=value1,arg2=value2`)",
+            help="One or more model arguments (e.g. `-M arg1=value1,arg2=value2`).",
         ),
     ] = [],
     model_config: Annotated[
         str | None,
-        typer.Option("--model-config", help="Model arguments (JSON or YAML file)"),
+        typer.Option("--model-config", help="Model arguments (JSON or YAML file)."),
     ] = None,
     limit: Annotated[
         int | None,
@@ -103,10 +103,17 @@ def eval_command(
             envvar="COMPLAI_LIMIT",
         ),
     ] = None,
+    sample_id: Annotated[
+        int | None,
+        typer.Option(
+            help="Evaluate a specific sample (e.g. 44) or list of samples (e.g. 44,63,91).",
+            envvar="COMPLAI_SAMPLE_ID",
+        ),
+    ] = None,
     epochs: Annotated[
         int,
         typer.Option(
-            help="Number of times to repeat each sample (defaults to 1)",
+            help="Number of times to repeat each sample (defaults to 1).",
             envvar="COMPLAI_EPOCHS",
         ),
     ] = 1,
@@ -279,6 +286,7 @@ def eval_command(
         model_base_url=model_base_url,
         model_args=parsed_model_args,
         limit=limit,
+        sample_id=sample_id,
         epochs=epochs,
         max_tokens=max_tokens,
         temperature=temperature,
