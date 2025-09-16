@@ -212,7 +212,7 @@ def eval_command(
             help="Number of samples to buffer before writing log file. If not specified, an appropriate default for the format and filesystem is chosen (10 for most cases, 100 for JSON logs on remote filesystems).",
             envvar="COMPLAI_LOG_BUFFER",
         ),
-    ] = None,
+    ] = 1000,
     log_format: Annotated[
         LogFormat,
         typer.Option(help="Format for writing log files.", envvar="COMPLAI_LOG_FORMAT"),
