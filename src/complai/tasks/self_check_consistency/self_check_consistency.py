@@ -43,7 +43,7 @@ ALTERNATIVE_STATEMENT_TEMPLATE = """
 You are a description generator. You are given the start of an description and a question that should be answered by the next sentence. You return the next sentence for the description. 
 
 Here is the start of a description about {topic}:
-{description}.
+{description}
 
 Please generate the next sentence of this description. The generated sentence must fill the gap in this Subject;Predicate;Object triple: ({subject}; {predicate}; _).The sentence should contain as little other information as possible.
 """.strip()
