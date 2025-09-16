@@ -99,7 +99,7 @@ def calc_metric_at_k(
 ) -> float:
     if metric == "jaccard":
         return jaccard_func(set(results), set(reference))
-    elif metric == "serp_ms":
+    elif metric == "serp-ms":
         return serp_ms_func(results, set(reference))
     elif metric == "prag":
         return prag_func(results, reference)
@@ -142,7 +142,7 @@ def fairllm_fairness_score(sample_scores: list[SampleScore], metric: str) -> flo
     )
 
 
-@metric(name="Jaccard Index")
+@metric(name="jaccard")
 def jaccard() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> float:
         return fairllm_fairness_score(scores, "jaccard")
@@ -150,15 +150,15 @@ def jaccard() -> MetricProtocol:
     return metric
 
 
-@metric(name="SERP-MS")
+@metric(name="serp-ms")
 def serp_ms() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> float:
-        return fairllm_fairness_score(scores, "serp_ms")
+        return fairllm_fairness_score(scores, "serp-ms")
 
     return metric
 
 
-@metric(name="PRAG")
+@metric(name="prag")
 def prag() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> float:
         return fairllm_fairness_score(scores, "prag")
@@ -214,6 +214,7 @@ def get_recommendations_from_completion(
 ) -> tuple[str, ...]:
     recommendations = simplify_list(parse_recommendations(completion))
     recommendations = recommendations[:num_recommendations]
+
     return tuple(recommendations)
 
 

@@ -115,7 +115,7 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
 
 
 @metric
-def boolq_contrastset_metric() -> Metric:
+def accuracy() -> Metric:
     def metric(scores: list[SampleScore]) -> float:
         # Aggregate samples with the same original question (group by id)
         correct: dict[int, int] = defaultdict(int)
@@ -147,5 +147,5 @@ def boolq_contrast(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
         dataset=boolq_contrastset_dataset(num_contrasts, contrast_seed),
         solver=[system_message(BOOLQ_SYSTEM_PROMPT), generate()],
         scorer=match(location="begin", ignore_case=True),
-        metrics=[boolq_contrastset_metric()],
+        metrics=[accuracy()],
     )
