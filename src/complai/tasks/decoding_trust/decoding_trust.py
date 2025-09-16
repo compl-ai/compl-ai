@@ -46,7 +46,7 @@ def decoding_trust_dataset() -> Dataset:
     return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
 
 
-@metric(name="Fairness Score")
+@metric(name="fairness")
 def decoding_trust_fairness_score() -> Metric:
     def metric(scores: list[SampleScore]) -> float:
         valid_scores = [

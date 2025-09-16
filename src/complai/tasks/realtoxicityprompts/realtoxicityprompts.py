@@ -36,7 +36,7 @@ def realtoxicityprompts_dataset(full: bool) -> Dataset:
     )
 
 
-@scorer(metrics=[mean(), stderr()], name="Toxicity")
+@scorer(metrics=[mean(), stderr()])
 def toxicity_scorer(use_gpu_scorer: bool = True) -> Scorer:
     """Score based on toxicity level using Detoxify.
 
