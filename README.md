@@ -49,7 +49,7 @@ complai --help
 
 The command 
 ```
-uv run complai eval provider/model
+uv run complai eval <provider>/<model>
 ```
 runs *all* benchmarks. Concrete examples:
 
@@ -85,14 +85,7 @@ complai COMMAND [ARGS]...
 * `eval`: Run tasks.
 * `list`: List all available tasks.
 
-Run `complai COMMAND --help` for information on CLI arguments and options.
-
-### Retry
-
-To continue interrupted tasks or retry failed tasks, you can specify a `--log-dir` argument in the `eval` command. This will automatically retry the tasks in the log directory.
-```
-uv run complai eval --log-dir path/to/logdir
-```
+Run `complai COMMAND --help` for detailed information on CLI arguments and options.
 
 ### Environment Variables
 
@@ -112,6 +105,18 @@ COMPLAI_LOG_DIR=path/to/a/logdir
 COMPLAI_MAX_CONNECTIONS=128
 ```
 COMPL-AI will automatically load variables from a `.env` file if one is present in the directory.
+
+### Retrying
+
+You can specify a `--log-dir` argument in the `eval` command to continue interrupted tasks or retry failed tasks.
+
+For example, you may have started a set of evaluations that did not complete and want to continue it. To continue, find the path to the corresponding log directory and run:
+```
+complai eval openai/gpt-5-nano --log-dir path/to/logdir
+```
+
+You can also amend a run with additional tasks, models, or epochs. Just re-issue the same command with the additions.
+
 
 ## Contributing
 

@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+import typer
 from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 from rich import print
@@ -131,16 +132,26 @@ def patch_display_results() -> None:
         pass
 
 
-def get_log_dir(model: str, log_dir: str | None) -> str:
+def get_log_dir(model: str) -> str:
     """
     Get the log directory for the model. If no log directory is provided,
     use model and timestamp to create a unique log directory name.
     """
-    if not log_dir:
-        model_name = "_".join(model.split("/")[-2:])
-        timestamp = (
-            datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
-        )
-        log_dir = f"./logs/{model_name}_{timestamp}"
+    model_name = "_".join(model.split("/")[-2:])
+    timestamp = (
+        datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
+    )
 
-    return log_dir
+    return f"./logs/{model_name}_{timestamp}"
+
+
+def bool_or_float(value: str) -> bool | float:
+    """Parses a string into a boolean or a float."""
+    if value.lower() in ("true", "t", "1"):
+        return True
+    if value.lower() in ("false", "f", "0"):
+        return False
+    try:
+        return float(value)
+    except ValueError:
+        raise typer.BadParameter("Could not parse value as a boolean or a float")

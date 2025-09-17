@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import cast
 
 import typer
 from inspect_ai import eval_set
@@ -7,6 +8,7 @@ from inspect_ai._cli.util import parse_cli_config
 from rich import print
 from typing_extensions import Annotated
 
+from complai._cli.utils import bool_or_float
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
 from complai._cli.utils import patch_display_results
@@ -71,17 +73,17 @@ def eval_command(
         typer.Option(
             "-T",
             "--task-arg",
-            help="One or more task arguments (e.g. `-T arg1=value1,arg2=value2`)",
+            help="One or more task arguments (e.g. `-T arg1=value1,arg2=value2`).",
         ),
     ] = [],
     task_config: Annotated[
         str | None,
-        typer.Option("--task-config", help="Task arguments (JSON or YAML file)"),
+        typer.Option("--task-config", help="Task arguments file (JSON or YAML)."),
     ] = None,
     model_base_url: Annotated[
         str | None,
         typer.Option(
-            help="Base URL for for model API", envvar="COMPLAI_MODEL_BASE_URL"
+            help="Base URL for for model API.", envvar="COMPLAI_MODEL_BASE_URL"
         ),
     ] = None,
     model_args: Annotated[
@@ -94,7 +96,7 @@ def eval_command(
     ] = [],
     model_config: Annotated[
         str | None,
-        typer.Option("--model-config", help="Model arguments (JSON or YAML file)."),
+        typer.Option("--model-config", help="Model arguments file (JSON or YAML)."),
     ] = None,
     retry_attempts: Annotated[
         int | None,
@@ -226,7 +228,7 @@ def eval_command(
     max_tasks: Annotated[
         int | None,
         typer.Option(
-            help="Maximum number of tasks to run in parallel. (defaults to the greater of 4 and the number of models being evaluated)",
+            help="Maximum number of tasks to run in parallel.",
             envvar="COMPLAI_MAX_TASKS",
         ),
     ] = 2,
@@ -254,11 +256,18 @@ def eval_command(
         LogFormat,
         typer.Option(help="Format for writing log files.", envvar="COMPLAI_LOG_FORMAT"),
     ] = LogFormat.EVAL,
+    fail_on_error: Annotated[
+        str,
+        typer.Option(
+            help="If True, fail tasks on first sample error; If False, never fail tasks on sample errors; Value between 0 and 1 to fail tasks if a proportion of total samples fails. Value greater than 1 to fail tasks if a count of samples fails.",
+            envvar="COMPLAI_FAIL_ON_ERROR",
+            parser=bool_or_float,
+        ),
+    ] = "True",
     continue_on_fail: Annotated[
         bool,
         typer.Option(
-            "--no-fail-on-error",
-            help="True to continue running and only fail at the end if the fail_on_error condition is met. False to fail eval immediately when the fail_on_error condition is met",
+            help="If False, fail tasks immediately when the fail_on_error condition is met. If True, continue running the failing task and only fail at the end of the task if the fail_on_error condition is met.",
             envvar="COMPLAI_CONTINUE_ON_FAIL",
         ),
     ] = False,
@@ -323,7 +332,8 @@ def eval_command(
     parsed_model_args = parse_cli_config(model_args, model_config)
 
     # Define log directory
-    log_dir = get_log_dir(model, log_dir)
+    if log_dir is None:
+        log_dir = get_log_dir(model)
 
     try:
         print("Starting evals...")
@@ -358,6 +368,7 @@ def eval_command(
             log_samples=log_samples,
             log_buffer=log_buffer,
             log_format=log_format.value if log_format else None,
+            fail_on_error=cast(bool | float, fail_on_error),
             continue_on_fail=continue_on_fail,
             retry_on_error=retry_on_error,
             debug_errors=debug_errors,
@@ -368,8 +379,7 @@ def eval_command(
         )
     except Exception as e:
         if debug:
-            # Show full stack trace
-            raise
+            raise  # Show full stack trace
         else:
             import sys
 
