@@ -53,6 +53,7 @@ def get_task_infos_from_task_names(
     tasks_to_run = get_complai_tasks(filter=filter)
 
     # Put human_eval first if it is in the list
+    # https://github.com/UKGovernmentBEIS/inspect_ai/issues/2446
     humaneval = next((task for task in tasks_to_run if task.name == "humaneval"), None)
     if humaneval:
         tasks_to_run.remove(humaneval)
