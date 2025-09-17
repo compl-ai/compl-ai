@@ -17,7 +17,7 @@ This project created by [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](htt
 Prerequisite: [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/).
 
 ### 1. Clone this repository
-```console
+```
 git clone https://github.com/compl-ai/compl-ai.git
 cd compl-ai
 ```
@@ -25,7 +25,7 @@ cd compl-ai
 
 You can run the CLI directly using `uv run`:
 
-```console
+```
 uv run complai --help
 ```
 
@@ -33,14 +33,14 @@ uv run complai --help
 
 You can also create a virtual environment and install the package manually. Using `uv`:
 
-```console
+```
 uv venv
 source .venv/bin/activate
 uv pip install .
 ```
 Now you can use the CLI like so:
 
-```console
+```
 complai --help
 ```
 
@@ -48,27 +48,27 @@ complai --help
 ## Quickstart
 
 The command 
-```console
-uv run complai eval provider/model
+```
+uv run complai eval <provider>/<model>
 ```
 runs *all* benchmarks. Concrete examples:
 
-```console
+```
 # OpenAI
 export OPENAI_API_KEY=your-openai-api-key
-uv run complai eval openai/gpt-5-mini-2025-08-07 --limit 5
+uv run complai eval openai/gpt-5-nano --limit 5
 ```
-```console
+```
 # Local (Starts a vLLM server)
 uv run complai eval vllm/HuggingFaceTB/SmolLM2-135M-Instruct --limit 5 
 ```
-```console
-# Local (Using an OpenAI-compatible API endpoint)
+```
+# OpenAI-compatible API endpoint
 EXPORT {provider_name}_API_KEY
 uv run complai eval openai-api/{provider_name}/{model_name} --base-url https://your.base/url --limit 5
 ```
 You can view detailed sample-level logs with the [Inspect AI VS Code extension](https://marketplace.cursorapi.com/items/?itemName=ukaisi.inspect-ai), or in your browser with:
-```console
+```
 uv run inspect view
 ```
 
@@ -76,25 +76,24 @@ uv run inspect view
 ## CLI
 
 
-```console
+```
 complai COMMAND [ARGS]...
 ```
 
 **Available Commands**:
 
 * `eval`: Run tasks.
-* `eval-retry` Retry interrupted tasks.
 * `list`: List all available tasks.
 
-Run `complai COMMAND --help` for information on CLI arguments and options.
+Run `complai COMMAND --help` for detailed information on CLI arguments and options.
 
 ### Environment Variables
 
 The CLI supports reading argument and option values from environment variables. For instance, you can run:
-```console
+```
 export COMPLAI_MODEL=openai/gpt-5-nano
 ```
- This model will then be used if no model is provided in the command line.
+ This model will then be used if no model is provided to the `eval` command.
 
 You can also use a `.env` file to set environment variables:
 ```
@@ -106,6 +105,18 @@ COMPLAI_LOG_DIR=path/to/a/logdir
 COMPLAI_MAX_CONNECTIONS=128
 ```
 COMPL-AI will automatically load variables from a `.env` file if one is present in the directory.
+
+### Retrying
+
+You can specify a `--log-dir` argument in the `eval` command to continue interrupted tasks or retry failed tasks.
+
+For example, you may have started a set of evaluations that did not complete and want to continue it. To continue, find the path to the corresponding log directory and run:
+```
+complai eval openai/gpt-5-nano --log-dir path/to/logdir
+```
+
+You can also amend a run with additional tasks, models, or epochs. Just re-issue the same command with the additions.
+
 
 ## Contributing
 

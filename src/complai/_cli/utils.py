@@ -1,18 +1,28 @@
+from datetime import datetime
 from pathlib import Path
+from typing import Callable
 
 import typer
 from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
+from rich import print
 
 
-def get_complai_tasks() -> list[TaskInfo]:
+def get_complai_tasks(
+    filter: Callable[[TaskInfo], bool] | None = None,
+) -> list[TaskInfo]:
     """
     Get all available tasks implemented in COMPL-AI.
+
+    Args:
+        filter (Callable[[TaskInfo], bool]): Filter to apply to the tasks.
 
     Returns:
         list[TaskInfo]: List of all available tasks.
     """
-    return list_tasks(absolute=True, root_dir=Path(__file__).parent.parent / "tasks")
+    return list_tasks(
+        absolute=True, root_dir=Path(__file__).parent.parent / "tasks", filter=filter
+    )
 
 
 def get_task_infos_from_task_names(
@@ -22,7 +32,8 @@ def get_task_infos_from_task_names(
     Get TaskInfo objects from a list of task names.
 
     Args:
-        tasks_names (list[str]): List of task names to retrieve TaskInfo for.
+        tasks_names (list[str]): List of task names to retrieve TaskInfo for. If empty,
+            all available tasks are returned.
         tasks_to_skip (list[str]): List of task names to skip.
 
     Raises:
@@ -31,38 +42,28 @@ def get_task_infos_from_task_names(
     Returns:
         list[TaskInfo]: List of TaskInfo objects for the specified tasks.
     """
-    # Get all available tasks
-    available_tasks = {task.name: task for task in get_complai_tasks()}
-    if not task_names:
-        # Remove tasks to skip from available tasks
-        not_removed_tasks = []
-        for task_name in set(tasks_to_skip):
-            if task_name in available_tasks:
-                available_tasks.pop(task_name)
-            else:
-                not_removed_tasks.append(task_name)
-        # Warn about tasks that were not skipped
-        if not_removed_tasks:
-            typer.echo(
-                f"[WARNING] Task(s) '{', '.join(not_removed_tasks)}' were not skipped."
-            )
 
-        return list(available_tasks.values())
+    def filter(task: TaskInfo) -> bool:
+        if task.name in tasks_to_skip:
+            tasks_to_skip.remove(task.name)
+            return False
 
-    # Validate task names and get TaskInfo objects
-    tasks_to_run: list[TaskInfo] = []
-    for task_name in task_names:
-        if task_name not in available_tasks:
-            raise typer.BadParameter(f"'{task_name}' is not a valid task.")
-        task = available_tasks[task_name]
-        if task_name in tasks_to_skip:
-            tasks_to_skip.remove(task_name)
-            continue
-        tasks_to_run.append(task)
+        return not task_names or task.name in task_names
+
+    tasks_to_run = get_complai_tasks(filter=filter)
 
     # Warn about tasks that were not skipped
-    for task_name in tasks_to_skip:
-        typer.echo(f"[WARNING] Task(s) '{', '.join(tasks_to_skip)}' were not skipped.")
+    if tasks_to_skip:
+        print(
+            f"[yellow]WARNING[/yellow] The following task(s) were not skipped: {', '.join(tasks_to_skip)}"
+        )
+
+    # Warn about tasks that were not found
+    not_found = set(task_names) - set(task.name for task in tasks_to_run)
+    if not_found:
+        print(
+            f"[yellow]WARNING[/yellow] The following task(s) were not found: {', '.join(not_found)}"
+        )
 
     return tasks_to_run
 
@@ -129,3 +130,28 @@ def patch_display_results() -> None:
 
     except (ImportError, AttributeError):
         pass
+
+
+def get_log_dir(model: str) -> str:
+    """
+    Get the log directory for the model. If no log directory is provided,
+    use model and timestamp to create a unique log directory name.
+    """
+    model_name = "_".join(model.split("/")[-2:])
+    timestamp = (
+        datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
+    )
+
+    return f"./logs/{model_name}_{timestamp}"
+
+
+def bool_or_float(value: str) -> bool | float:
+    """Parses a string into a boolean or a float."""
+    if value.lower() in ("true", "t", "1"):
+        return True
+    if value.lower() in ("false", "f", "0"):
+        return False
+    try:
+        return float(value)
+    except ValueError:
+        raise typer.BadParameter("Could not parse value as a boolean or a float")

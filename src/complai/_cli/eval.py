@@ -1,11 +1,15 @@
 from enum import Enum
+from typing import cast
 
 import typer
-from inspect_ai import eval
+from inspect_ai import eval_set
 from inspect_ai import TaskInfo
 from inspect_ai._cli.util import parse_cli_config
+from rich import print
 from typing_extensions import Annotated
 
+from complai._cli.utils import bool_or_float
+from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
 from complai._cli.utils import patch_display_results
 
@@ -69,17 +73,17 @@ def eval_command(
         typer.Option(
             "-T",
             "--task-arg",
-            help="One or more task arguments (e.g. `-T arg1=value1,arg2=value2`)",
+            help="One or more task arguments (e.g. `-T arg1=value1,arg2=value2`).",
         ),
     ] = [],
     task_config: Annotated[
         str | None,
-        typer.Option("--task-config", help="Task arguments (JSON or YAML file)"),
+        typer.Option("--task-config", help="Task arguments file (JSON or YAML)."),
     ] = None,
     model_base_url: Annotated[
         str | None,
         typer.Option(
-            help="Base URL for for model API", envvar="COMPLAI_MODEL_BASE_URL"
+            help="Base URL for for model API.", envvar="COMPLAI_MODEL_BASE_URL"
         ),
     ] = None,
     model_args: Annotated[
@@ -92,8 +96,36 @@ def eval_command(
     ] = [],
     model_config: Annotated[
         str | None,
-        typer.Option("--model-config", help="Model arguments (JSON or YAML file)."),
+        typer.Option("--model-config", help="Model arguments file (JSON or YAML)."),
     ] = None,
+    retry_attempts: Annotated[
+        int | None,
+        typer.Option(
+            help="Maximum number of retry attempts before giving up.",
+            envvar="COMPLAI_RETRY_ATTEMPTS",
+        ),
+    ] = 3,
+    retry_wait: Annotated[
+        float,
+        typer.Option(
+            help="Time to wait between attempts, increased exponentially. (30 results in waits of 30, 60, 120, 240, etc.). Wait time per-retry will in no case by longer than 1 hour.",
+            envvar="COMPLAI_RETRY_WAIT",
+        ),
+    ] = 30,
+    retry_connections: Annotated[
+        float,
+        typer.Option(
+            help="Reduce max_connections at this rate with each retry (1.0 results in no reduction).",
+            envvar="COMPLAI_RETRY_CONNECTIONS",
+        ),
+    ] = 1.0,
+    retry_cleanup: Annotated[
+        bool,
+        typer.Option(
+            help="Cleanup failed log files after retries.",
+            envvar="COMPLAI_RETRY_CLEANUP",
+        ),
+    ] = True,
     limit: Annotated[
         int | None,
         typer.Option(
@@ -110,11 +142,17 @@ def eval_command(
             envvar="COMPLAI_SAMPLE_ID",
         ),
     ] = None,
+    sample_shuffle: Annotated[
+        int | None,
+        typer.Option(
+            help="Shuffle order of samples (pass a seed).",
+            envvar="COMPLAI_SAMPLE_SHUFFLE",
+        ),
+    ] = None,
     epochs: Annotated[
         int,
         typer.Option(
-            help="Number of times to repeat each sample (defaults to 1).",
-            envvar="COMPLAI_EPOCHS",
+            help="Number of times to repeat each sample.", envvar="COMPLAI_EPOCHS"
         ),
     ] = 1,
     max_tokens: Annotated[
@@ -148,7 +186,7 @@ def eval_command(
     reasoning_effort: Annotated[
         ReasoningEffortLevel | None,
         typer.Option(
-            help="Constrains effort on reasoning for reasoning models (defaults to medium). Open AI o-series and gpt-5 models only.",
+            help="Constrains effort on reasoning for reasoning models. Open AI o-series and gpt-5 models only.",
             envvar="COMPLAI_REASONING_EFFORT",
         ),
     ] = None,
@@ -183,17 +221,17 @@ def eval_command(
     max_sandboxes: Annotated[
         int | None,
         typer.Option(
-            help="Maximum number of sandboxes (per-provider) to run in parallel (default is `2 * os.cpu_count()`).",
+            help="Maximum number of sandboxes (per-provider) to run in parallel.",
             envvar="COMPLAI_MAX_SANDBOXES",
         ),
     ] = None,
     max_tasks: Annotated[
-        int,
+        int | None,
         typer.Option(
             help="Maximum number of tasks to run in parallel.",
             envvar="COMPLAI_MAX_TASKS",
         ),
-    ] = 1,
+    ] = 2,
     log_level: Annotated[
         LoggingLevel,
         typer.Option(
@@ -201,15 +239,16 @@ def eval_command(
         ),
     ] = LoggingLevel.WARNING,
     log_dir: Annotated[
-        str, typer.Option(help="Directory to save logs to.", envvar="COMPLAI_LOG_DIR")
-    ] = "./logs",
+        str | None,
+        typer.Option(help="Directory to save logs to.", envvar="COMPLAI_LOG_DIR"),
+    ] = None,
     log_samples: Annotated[
         bool, typer.Option(help="Log sample details", envvar="COMPLAI_LOG_SAMPLES")
     ] = True,
     log_buffer: Annotated[
         int | None,
         typer.Option(
-            help="Number of samples to buffer before writing log file. If not specified, an appropriate default for the format and filesystem is chosen (10 for most cases, 100 for JSON logs on remote filesystems).",
+            help="Number of samples to buffer before writing log file.",
             envvar="COMPLAI_LOG_BUFFER",
         ),
     ] = 1000,
@@ -218,26 +257,34 @@ def eval_command(
         typer.Option(help="Format for writing log files.", envvar="COMPLAI_LOG_FORMAT"),
     ] = LogFormat.EVAL,
     fail_on_error: Annotated[
-        int | None,
+        str,
         typer.Option(
-            help="Threshold of sample errors to tolerate (by default, evals fail when any error occurs). Value between 0 to 1 to set a proportion; value greater than 1 to set a count.",
+            help="If True, fail tasks on first sample error; If False, never fail tasks on sample errors; Value between 0 and 1 to fail tasks if a proportion of total samples fails. Value greater than 1 to fail tasks if a count of samples fails.",
             envvar="COMPLAI_FAIL_ON_ERROR",
+            parser=bool_or_float,
         ),
-    ] = None,
+    ] = "True",
     continue_on_fail: Annotated[
         bool,
         typer.Option(
-            "--no-fail-on-error",
-            help="Do not fail the eval if errors occur within samples (instead, continue running other samples)",
+            help="If False, fail tasks immediately when the fail_on_error condition is met. If True, continue running the failing task and only fail at the end of the task if the fail_on_error condition is met.",
             envvar="COMPLAI_CONTINUE_ON_FAIL",
         ),
     ] = False,
     retry_on_error: Annotated[
         int,
         typer.Option(
-            help="Number of times to retry on error.", envvar="COMPLAI_RETRY_ON_ERROR"
+            help="Number of times to retry samples if they encounter errors.",
+            envvar="COMPLAI_RETRY_ON_ERROR",
         ),
     ] = 0,
+    debug_errors: Annotated[
+        bool,
+        typer.Option(
+            help="Raise task errors (rather than logging them) so they can be debugged.",
+            envvar="COMPLAI_DEBUG_ERRORS",
+        ),
+    ] = False,
     message_limit: Annotated[
         int | None,
         typer.Option(
@@ -266,6 +313,12 @@ def eval_command(
             envvar="COMPLAI_WORKING_LIMIT",
         ),
     ] = None,
+    debug: Annotated[
+        bool,
+        typer.Option(
+            "--debug", help="Enable full stack traces.", envvar="COMPLAI_DEBUG"
+        ),
+    ] = False,
 ) -> None:
     """Run tasks."""
     # Get TaskInfo objects from task names
@@ -278,38 +331,61 @@ def eval_command(
     parsed_task_args = parse_cli_config(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
 
-    typer.echo("Starting evals...")
-    eval(
-        model=model,
-        tasks=task_infos,
-        task_args=parsed_task_args,
-        model_base_url=model_base_url,
-        model_args=parsed_model_args,
-        limit=limit,
-        sample_id=sample_id,
-        epochs=epochs,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        top_p=top_p,
-        top_k=top_k,
-        seed=seed,
-        reasoning_effort=reasoning_effort.value if reasoning_effort else None,
-        reasoning_tokens=reasoning_tokens,
-        max_connections=max_connections,
-        max_samples=max_samples,
-        max_subprocesses=max_subprocesses,
-        max_sandboxes=max_sandboxes,
-        max_tasks=max_tasks,
-        log_level=log_level.value if log_level else None,
-        log_dir=log_dir,
-        log_samples=log_samples,
-        log_buffer=log_buffer,
-        log_format=log_format.value if log_format else None,
-        fail_on_error=fail_on_error,
-        continue_on_fail=continue_on_fail,
-        retry_on_error=retry_on_error,
-        message_limit=message_limit,
-        token_limit=token_limit,
-        time_limit=time_limit,
-        working_limit=working_limit,
-    )
+    # Define log directory
+    if log_dir is None:
+        log_dir = get_log_dir(model)
+
+    try:
+        print("Starting evals...")
+        eval_set(
+            model=model,
+            tasks=task_infos,
+            log_dir=log_dir,
+            retry_attempts=retry_attempts,
+            retry_wait=retry_wait,
+            retry_connections=retry_connections,
+            retry_cleanup=retry_cleanup,
+            task_args=parsed_task_args,
+            model_base_url=model_base_url,
+            model_args=parsed_model_args,
+            limit=limit,
+            sample_id=sample_id,
+            sample_shuffle=sample_shuffle,
+            epochs=epochs,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            seed=seed,
+            reasoning_effort=reasoning_effort.value if reasoning_effort else None,
+            reasoning_tokens=reasoning_tokens,
+            max_connections=max_connections,
+            max_samples=max_samples,
+            max_subprocesses=max_subprocesses,
+            max_sandboxes=max_sandboxes,
+            max_tasks=max_tasks,
+            log_level=log_level.value if log_level else None,
+            log_samples=log_samples,
+            log_buffer=log_buffer,
+            log_format=log_format.value if log_format else None,
+            fail_on_error=cast(bool | float, fail_on_error),
+            continue_on_fail=continue_on_fail,
+            retry_on_error=retry_on_error,
+            debug_errors=debug_errors,
+            message_limit=message_limit,
+            token_limit=token_limit,
+            time_limit=time_limit,
+            working_limit=working_limit,
+        )
+    except Exception as e:
+        if debug:
+            raise  # Show full stack trace
+        else:
+            import sys
+
+            error_msg = (
+                f"\n[bold][bright_red]{e.__class__.__name__}:[/bright_red][/bold] {e}"
+                "\n\nRun with [bold][cyan]--debug[/cyan][/bold] flag for full stack trace."
+            )
+            print(error_msg, file=sys.stderr)
+            sys.exit(1)
