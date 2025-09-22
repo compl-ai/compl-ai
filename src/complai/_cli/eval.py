@@ -1,5 +1,5 @@
-from enum import Enum
 from typing import cast
+from typing import Literal
 
 import typer
 from inspect_ai import eval_set
@@ -12,34 +12,6 @@ from complai._cli.utils import bool_or_float
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
 from complai._cli.utils import patch_display_results
-
-
-class LoggingLevel(str, Enum):
-    """Logging level."""
-
-    DEBUG = "debug"
-    TRACE = "trace"
-    HTTP = "http"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-
-
-class LogFormat(str, Enum):
-    """Output format for logs."""
-
-    EVAL = "eval"
-    JSON = "json"
-
-
-class ReasoningEffortLevel(str, Enum):
-    """Reasoning effort level."""
-
-    MINIMAL = "minimal"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
 
 
 def eval_command(
@@ -184,7 +156,7 @@ def eval_command(
         ),
     ] = None,
     reasoning_effort: Annotated[
-        ReasoningEffortLevel | None,
+        Literal["minimal", "low", "medium", "high"] | None,
         typer.Option(
             help="Constrains effort on reasoning for reasoning models. Open AI o-series and gpt-5 models only.",
             envvar="COMPLAI_REASONING_EFFORT",
@@ -233,11 +205,11 @@ def eval_command(
         ),
     ] = 2,
     log_level: Annotated[
-        LoggingLevel,
+        Literal["debug", "trace", "http", "info", "warning", "error", "critical"],
         typer.Option(
             help="Python logger level for console.", envvar="COMPLAI_LOG_LEVEL"
         ),
-    ] = LoggingLevel.WARNING,
+    ] = "warning",
     log_dir: Annotated[
         str | None,
         typer.Option(help="Directory to save logs to.", envvar="COMPLAI_LOG_DIR"),
@@ -253,9 +225,9 @@ def eval_command(
         ),
     ] = 1000,
     log_format: Annotated[
-        LogFormat,
+        Literal["eval", "json"],
         typer.Option(help="Format for writing log files.", envvar="COMPLAI_LOG_FORMAT"),
-    ] = LogFormat.EVAL,
+    ] = "eval",
     fail_on_error: Annotated[
         str,
         typer.Option(
@@ -357,17 +329,17 @@ def eval_command(
             top_p=top_p,
             top_k=top_k,
             seed=seed,
-            reasoning_effort=reasoning_effort.value if reasoning_effort else None,
+            reasoning_effort=reasoning_effort,
             reasoning_tokens=reasoning_tokens,
             max_connections=max_connections,
             max_samples=max_samples,
             max_subprocesses=max_subprocesses,
             max_sandboxes=max_sandboxes,
             max_tasks=max_tasks,
-            log_level=log_level.value if log_level else None,
+            log_level=log_level,
             log_samples=log_samples,
             log_buffer=log_buffer,
-            log_format=log_format.value if log_format else None,
+            log_format=log_format,
             fail_on_error=cast(bool | float, fail_on_error),
             continue_on_fail=continue_on_fail,
             retry_on_error=retry_on_error,
