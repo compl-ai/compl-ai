@@ -11,6 +11,8 @@ from typing_extensions import Annotated
 from complai._cli.utils import bool_or_float
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
+from complai._cli.utils import parse_sample_id
+from complai._cli.utils import parse_samples_limit
 from complai._cli.utils import patch_display_results
 
 
@@ -127,16 +129,16 @@ def eval_command(
         ),
     ] = True,
     limit: Annotated[
-        int | None,
+        str | None,
         typer.Option(
             "-l",
             "--limit",
-            help="Limit the number of samples per task.",
+            help="Limit the number of samples per task, e.g. 10 or 10-20.",
             envvar="COMPLAI_LIMIT",
         ),
     ] = None,
     sample_id: Annotated[
-        int | None,
+        str | None,
         typer.Option(
             help="Evaluate a specific sample (e.g. 44) or list of samples (e.g. 44,63,91).",
             envvar="COMPLAI_SAMPLE_ID",
@@ -327,9 +329,11 @@ def eval_command(
     # Apply display monkey patch
     patch_display_results()
 
-    # Parse task arguments
+    # Parse args
     parsed_task_args = parse_cli_config(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
+    parsed_limit = parse_samples_limit(limit)
+    parsed_sample_id = parse_sample_id(sample_id)
 
     # Define log directory
     if log_dir is None:
@@ -348,8 +352,8 @@ def eval_command(
             task_args=parsed_task_args,
             model_base_url=model_base_url,
             model_args=parsed_model_args,
-            limit=limit,
-            sample_id=sample_id,
+            limit=parsed_limit,
+            sample_id=parsed_sample_id,
             sample_shuffle=sample_shuffle,
             epochs=epochs,
             max_tokens=max_tokens,
