@@ -46,7 +46,7 @@ def eval_command(
     model: Annotated[
         str,
         typer.Argument(
-            help="Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models: provider/model_name (e.g. openai/gpt-5-nano or vllm/Qwen/Qwen3-1.7B). See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details and supported providers.",
+            help="Model to evaluate. Use the [Inspect](https://inspect.aisi.org.uk/) syntax for specifying models: provider/model_name (e.g. openai/gpt-5-nano or vllm/Qwen/Qwen3-8B). See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for details and supported providers.",
             envvar="COMPLAI_MODEL",
         ),
     ],
