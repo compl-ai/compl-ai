@@ -68,6 +68,14 @@ def eval_command(
             envvar="COMPLAI_TASKS_TO_SKIP",
         ),
     ] = None,
+    task_filter: Annotated[
+        list[str] | None,
+        typer.Option(
+            "-F",
+            "--task-filter",
+            help="Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).",
+        ),
+    ] = None,
     task_args: Annotated[
         list[str],
         typer.Option(
@@ -322,7 +330,10 @@ def eval_command(
 ) -> None:
     """Run tasks."""
     # Get TaskInfo objects from task names
-    task_infos: list[TaskInfo] = get_task_infos(tasks, tasks_to_skip)
+    parsed_task_filters = parse_cli_config(task_filter, None)
+    task_infos: list[TaskInfo] = get_task_infos(
+        tasks, tasks_to_skip, parsed_task_filters
+    )
 
     # Apply display monkey patch
     patch_display_results()
