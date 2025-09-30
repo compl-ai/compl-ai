@@ -12,6 +12,7 @@ from complai._cli.utils import bool_or_float
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
 from complai._cli.utils import patch_display_results
+from complai._cli.utils import validate_model_args
 
 
 class LoggingLevel(str, Enum):
@@ -330,6 +331,9 @@ def eval_command(
     # Parse task arguments
     parsed_task_args = parse_cli_config(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
+
+    # Validate model arguments
+    validate_model_args(model, task_infos, parsed_model_args)
 
     # Define log directory
     if log_dir is None:
