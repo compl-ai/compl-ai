@@ -1,5 +1,5 @@
-from enum import Enum
 from typing import cast
+from typing import Literal
 
 import typer
 from inspect_ai import eval_set
@@ -11,35 +11,9 @@ from typing_extensions import Annotated
 from complai._cli.utils import bool_or_float
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
+from complai._cli.utils import parse_sample_id
+from complai._cli.utils import parse_samples_limit
 from complai._cli.utils import patch_display_results
-
-
-class LoggingLevel(str, Enum):
-    """Logging level."""
-
-    DEBUG = "debug"
-    TRACE = "trace"
-    HTTP = "http"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-
-
-class LogFormat(str, Enum):
-    """Output format for logs."""
-
-    EVAL = "eval"
-    JSON = "json"
-
-
-class ReasoningEffortLevel(str, Enum):
-    """Reasoning effort level."""
-
-    MINIMAL = "minimal"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
 
 
 def eval_command(
@@ -66,6 +40,14 @@ def eval_command(
             "--tasks-to-skip",
             help="Comma-separated list of tasks to skip.",
             envvar="COMPLAI_TASKS_TO_SKIP",
+        ),
+    ] = None,
+    task_filter: Annotated[
+        list[str] | None,
+        typer.Option(
+            "-F",
+            "--task-filter",
+            help="Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).",
         ),
     ] = None,
     task_args: Annotated[
@@ -127,16 +109,16 @@ def eval_command(
         ),
     ] = True,
     limit: Annotated[
-        int | None,
+        str | None,
         typer.Option(
             "-l",
             "--limit",
-            help="Limit the number of samples per task.",
+            help="Limit the number of samples per task, e.g. 10 or 10-20.",
             envvar="COMPLAI_LIMIT",
         ),
     ] = None,
     sample_id: Annotated[
-        int | None,
+        str | None,
         typer.Option(
             help="Evaluate a specific sample (e.g. 44) or list of samples (e.g. 44,63,91).",
             envvar="COMPLAI_SAMPLE_ID",
@@ -184,7 +166,7 @@ def eval_command(
         ),
     ] = None,
     reasoning_effort: Annotated[
-        ReasoningEffortLevel | None,
+        Literal["minimal", "low", "medium", "high"] | None,
         typer.Option(
             help="Constrains effort on reasoning for reasoning models. Open AI o-series and gpt-5 models only.",
             envvar="COMPLAI_REASONING_EFFORT",
@@ -233,11 +215,11 @@ def eval_command(
         ),
     ] = 2,
     log_level: Annotated[
-        LoggingLevel,
+        Literal["debug", "trace", "http", "info", "warning", "error", "critical"],
         typer.Option(
             help="Python logger level for console.", envvar="COMPLAI_LOG_LEVEL"
         ),
-    ] = LoggingLevel.WARNING,
+    ] = "warning",
     log_dir: Annotated[
         str | None,
         typer.Option(help="Directory to save logs to.", envvar="COMPLAI_LOG_DIR"),
@@ -253,9 +235,9 @@ def eval_command(
         ),
     ] = 1000,
     log_format: Annotated[
-        LogFormat,
+        Literal["eval", "json"],
         typer.Option(help="Format for writing log files.", envvar="COMPLAI_LOG_FORMAT"),
-    ] = LogFormat.EVAL,
+    ] = "eval",
     fail_on_error: Annotated[
         str,
         typer.Option(
@@ -322,14 +304,19 @@ def eval_command(
 ) -> None:
     """Run tasks."""
     # Get TaskInfo objects from task names
-    task_infos: list[TaskInfo] = get_task_infos(tasks, tasks_to_skip)
+    parsed_task_filters = parse_cli_config(task_filter, None)
+    task_infos: list[TaskInfo] = get_task_infos(
+        tasks, tasks_to_skip, parsed_task_filters
+    )
 
     # Apply display monkey patch
     patch_display_results()
 
-    # Parse task arguments
+    # Parse args
     parsed_task_args = parse_cli_config(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
+    parsed_limit = parse_samples_limit(limit)
+    parsed_sample_id = parse_sample_id(sample_id)
 
     # Define log directory
     if log_dir is None:
@@ -348,8 +335,8 @@ def eval_command(
             task_args=parsed_task_args,
             model_base_url=model_base_url,
             model_args=parsed_model_args,
-            limit=limit,
-            sample_id=sample_id,
+            limit=parsed_limit,
+            sample_id=parsed_sample_id,
             sample_shuffle=sample_shuffle,
             epochs=epochs,
             max_tokens=max_tokens,
@@ -357,17 +344,17 @@ def eval_command(
             top_p=top_p,
             top_k=top_k,
             seed=seed,
-            reasoning_effort=reasoning_effort.value if reasoning_effort else None,
+            reasoning_effort=reasoning_effort,
             reasoning_tokens=reasoning_tokens,
             max_connections=max_connections,
             max_samples=max_samples,
             max_subprocesses=max_subprocesses,
             max_sandboxes=max_sandboxes,
             max_tasks=max_tasks,
-            log_level=log_level.value if log_level else None,
+            log_level=log_level,
             log_samples=log_samples,
             log_buffer=log_buffer,
-            log_format=log_format.value if log_format else None,
+            log_format=log_format,
             fail_on_error=cast(bool | float, fail_on_error),
             continue_on_fail=continue_on_fail,
             retry_on_error=retry_on_error,

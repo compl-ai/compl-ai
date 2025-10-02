@@ -26,7 +26,7 @@ def get_complai_tasks(
 
 
 def get_task_infos_from_task_names(
-    task_names: list[str], tasks_to_skip: list[str]
+    task_names: list[str], tasks_to_skip: list[str], task_filter: dict[str, str] | None
 ) -> list[TaskInfo]:
     """
     Get TaskInfo objects from a list of task names.
@@ -35,6 +35,7 @@ def get_task_infos_from_task_names(
         tasks_names (list[str]): List of task names to retrieve TaskInfo for. If empty,
             all available tasks are returned.
         tasks_to_skip (list[str]): List of task names to skip.
+        task_filter (dict[str, str] | None): Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).
 
     Raises:
         typer.BadParameter: If one of the task names is not valid.
@@ -48,9 +49,21 @@ def get_task_infos_from_task_names(
             tasks_to_skip.remove(task.name)
             return False
 
+        if task_filter and not any(
+            task.attribs.get(key) == value for key, value in task_filter.items()
+        ):
+            return False
+
         return not task_names or task.name in task_names
 
     tasks_to_run = get_complai_tasks(filter=filter)
+
+    # Put human_eval first if it is in the list
+    # https://github.com/UKGovernmentBEIS/inspect_ai/issues/2446
+    humaneval = next((task for task in tasks_to_run if task.name == "humaneval"), None)
+    if humaneval:
+        tasks_to_run.remove(humaneval)
+        tasks_to_run.insert(0, humaneval)
 
     # Warn about tasks that were not skipped
     if tasks_to_skip:
@@ -83,13 +96,16 @@ def parse_tasks(tasks: str | None) -> list[str]:
     return task_names
 
 
-def get_task_infos(tasks: str | None, tasks_to_skip: str | None) -> list[TaskInfo]:
+def get_task_infos(
+    tasks: str | None, tasks_to_skip: str | None, task_filter: dict[str, str] | None
+) -> list[TaskInfo]:
     """
     Get TaskInfo objects for the specified tasks.
 
     Args:
         tasks (str | None): Comma-separated list of task names. If None, all available tasks are returned.
         tasks_to_skip (str | None): Comma-separated list of task names to skip. If None, no tasks are skipped.
+        task_filter (dict[str, str] | None): Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).
 
     Returns:
         list[TaskInfo]: List of TaskInfo objects for the specified tasks.
@@ -97,7 +113,7 @@ def get_task_infos(tasks: str | None, tasks_to_skip: str | None) -> list[TaskInf
     task_names = parse_tasks(tasks)
     tasks_to_skip_names = parse_tasks(tasks_to_skip)
 
-    return get_task_infos_from_task_names(task_names, tasks_to_skip_names)
+    return get_task_infos_from_task_names(task_names, tasks_to_skip_names, task_filter)
 
 
 def patch_display_results() -> None:
@@ -155,3 +171,21 @@ def bool_or_float(value: str) -> bool | float:
         return float(value)
     except ValueError:
         raise typer.BadParameter("Could not parse value as a boolean or a float")
+
+
+def parse_samples_limit(limit: str | None) -> int | tuple[int, int] | None:
+    if limit is not None:
+        if "-" not in limit:
+            return int(limit)
+        else:
+            limit_split = [int(r) for r in limit.split("-")]
+            return (limit_split[0] - 1, limit_split[1])
+    else:
+        return None
+
+
+def parse_sample_id(sample_id: str | None) -> list[str] | None:
+    if sample_id is not None:
+        return [id.strip() for id in sample_id.split(",")]
+    else:
+        return None
