@@ -30,6 +30,7 @@ dependencies = [
     "regex>=2025.7.34",
     "accelerate>=1.10.1",
     "transformers>=4.56.0",
+    "livebench",
 ]
 
 [project.scripts]
@@ -73,3 +74,4 @@ files.extend-exclude = [
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
+livebench = { git = "https://github.com/MattFisher/LiveBench.git", rev = "py311-compat" }
