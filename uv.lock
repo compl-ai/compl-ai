@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'darwin'",
@@ -1514,8 +1514,8 @@ dependencies = [
 
 [[package]]
 name = "inspect-evals"
-version = "0.3.dev1391+gbc2511ed9"
-source = { git = "https://github.com/UKGovernmentBEIS/inspect_evals#bc2511ed99f0e38d76f52081640f86a72f77a535" }
+version = "0.3.dev1414+g96dde4e52"
+source = { git = "https://github.com/UKGovernmentBEIS/inspect_evals#96dde4e523ed15f30969a203ccc22401a5fb88fa" }
 dependencies = [
     { name = "datasets" },
     { name = "inspect-ai" },
