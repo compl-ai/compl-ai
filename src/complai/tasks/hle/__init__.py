@@ -1,4 +1,4 @@
-from .hle import wrapped_hle as hle
+from .hle import hle
 
 
 __all__ = ["hle"]
