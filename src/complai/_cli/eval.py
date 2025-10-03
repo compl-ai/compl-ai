@@ -14,6 +14,7 @@ from complai._cli.utils import get_task_infos
 from complai._cli.utils import parse_sample_id
 from complai._cli.utils import parse_samples_limit
 from complai._cli.utils import patch_display_results
+from complai._cli.utils import validate_model_args
 
 
 def eval_command(
@@ -317,6 +318,9 @@ def eval_command(
     parsed_model_args = parse_cli_config(model_args, model_config)
     parsed_limit = parse_samples_limit(limit)
     parsed_sample_id = parse_sample_id(sample_id)
+
+    # Validate model arguments
+    validate_model_args(model, task_infos, parsed_model_args)
 
     # Define log directory
     if log_dir is None:

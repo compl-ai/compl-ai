@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from typing import Callable
 
 import typer
@@ -114,6 +115,24 @@ def get_task_infos(
     tasks_to_skip_names = parse_tasks(tasks_to_skip)
 
     return get_task_infos_from_task_names(task_names, tasks_to_skip_names, task_filter)
+
+
+def validate_model_args(
+    model: str, task_infos: list[TaskInfo], model_args: dict[str, Any]
+) -> None:
+    """Validate model arguments."""
+    if "swe_bench_verified" in {task.name for task in task_infos} and (
+        model.startswith("vllm/") or model.startswith("sglang/")
+    ):
+        if "tool_call_parser" not in model_args:
+            raise typer.BadParameter(
+                "Tool call parser is required when running SWE-Bench with vLLM/SGLang backend. "
+                "If running your own server, specify the tool call parser in your server launch command and provide a dummy value to complai. "
+                "If not running your own server, specify the tool call parser as a model argument to complai: "
+                "'-M tool-call-parser=<parser>'"
+            )
+        if model.startswith("vllm/"):
+            model_args["enable_auto_tool_choice"] = None
 
 
 def patch_display_results() -> None:
