@@ -31,6 +31,8 @@ uv venv
 source .venv/bin/activate
 uv pip install .
 ```
+Alternatively, you can skip creating a virtual environment manually and prepend `uv run` to all commands to run the CLI.
+
 ### 2. Test the CLI
 ```
 complai --help
@@ -40,12 +42,12 @@ complai --help
 
 Run all benchmarks:
 ```
-uv run complai eval <provider>/<model> # e.g. openai/gpt-5-nano or vllm/Qwen/Qwen3-8B
+complai eval <provider>/<model> # e.g. openai/gpt-5-nano or vllm/Qwen/Qwen3-8B
 ```
 
 You can view detailed sample-level logs with the [Inspect AI VS Code extension](https://marketplace.cursorapi.com/items/?itemName=ukaisi.inspect-ai), or in your browser with:
 ```
-uv run inspect view
+inspect view
 ```
 
 
@@ -69,7 +71,7 @@ To get detailed information on CLI arguments and options, e.g. to
 
  run: 
 ```
-complai COMMAND --help
+complai eval --help
 ```
 
 ## 🔌 Providers
@@ -84,10 +86,10 @@ COMPL-AI has support for the same set of model providers and backends as [Inspec
 
 To select a model for an evaluation, pass its name using the [Inspect](https://inspect.aisi.org.uk/) naming convention `<provider>/<model>`:
 ```
-uv run complai eval openai/gpt-4o-mini
-uv run complai eval anthropic/claude-sonnet-4-0
-uv run complai eval vllm/Qwen/Qwen3-8B
-uv run complai eval hf/Qwen/Qwen3-8B
+complai eval openai/gpt-4o-mini
+complai eval anthropic/claude-sonnet-4-0
+complai eval vllm/Qwen/Qwen3-8B
+complai eval hf/Qwen/Qwen3-8B
 ```
 See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for more information.
 
@@ -117,14 +119,14 @@ The default batch size for Hugging Face is 32, but you should tune your `max_con
 The PyTorch cuda device will be used automatically if CUDA is available (as will the Mac OS mps device). If you want to override the device used, use the device model argument. For example:
 
 ```
-uv run complai eval hf/Qwen/Qwen3-8B -M device=cuda:0
+complai eval hf/Qwen/Qwen3-8B -M device=cuda:0
 ```
 
 
 In addition to using models from the Hugging Face Hub, the Hugging Face provider can also use local model weights and tokenizers (e.g. for a locally fine tuned model). Use `hf/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
 
 ```
-uv run complai eval hf/local -M model_path=./my-model
+complai eval hf/local -M model_path=./my-model
 ```
 
 
@@ -136,13 +138,13 @@ If you want to use the vLLM or SGLang backend, COMPL-AI will automatically start
 Similar to the Hugging Face provider, you can also use local models with vLLM or SGLang. Use `vllm/local` or `sglang/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
 
 ```
-uv run complai eval vllm/local -M model_path=./my-model
+complai eval vllm/local -M model_path=./my-model
 ```
 
 Note that some benchmarks in COMPL-AI use tool calling, which often requires model dependent configuration. For example, when using vLLM, make sure to supply the correct `tool-call-parser` model argument. For example: 
 
 ```
-uv run complai eval vllm/Qwen/Qwen3-8B -M tool-call-parser=hermes
+complai eval vllm/Qwen/Qwen3-8B -M tool-call-parser=hermes
 ```
 
 See the [Tool Use](https://docs.vllm.ai/en/stable/features/tool_calling.html) section of the vLLM documentation for details. For SGLang, refer to the [Tool Parser](https://docs.sglang.ai/advanced_features/tool_parser.html) section.
@@ -167,13 +169,13 @@ Here is how you would access DeepSeek using the openai-api provider:
 ```
 export DEEPSEEK_API_KEY=your-deepseek-api-key
 export DEEPSEEK_BASE_URL=https://api.deepseek.com
-uv run complai eval openai-api/deepseek/deepseek-reasoner
+complai eval openai-api/deepseek/deepseek-reasoner
 ```
 
 You can enable the use of the Responses API with the `openai-api` provider by passing the `responses_api` model arg. For example:
 
 ```
-uv run complai eval openai-api/<provider>/<model> -M responses_api=true
+complai eval openai-api/<provider>/<model> -M responses_api=true
 ```
 
 ### Environment Variables
