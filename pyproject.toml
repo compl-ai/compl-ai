@@ -31,6 +31,8 @@ dependencies = [
     "accelerate>=1.10.1",
     "transformers>=4.56.0",
     "livebench",
+    "swebench>=4.1.0",
+    "docker>=7.1.0",
 ]
 
 [project.scripts]
