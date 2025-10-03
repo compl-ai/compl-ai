@@ -12,7 +12,7 @@ dependencies = [
     "inspect-evals",
     "inspect-ai",
     "openai>=1.90.0",
-    "typer>=0.16.0",
+    "typer>=0.19.0",
     "vllm>=0.10.0",
     "bidict>=0.23.1",
     "detoxify>=0.5.2",
@@ -32,6 +32,7 @@ dependencies = [
     "transformers>=4.56.0",
     "swebench>=4.1.0",
     "docker>=7.1.0",
+    "livebench",
 ]
 
 [project.scripts]
@@ -75,3 +76,4 @@ files.extend-exclude = [
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
+livebench = { git = "https://github.com/MattFisher/LiveBench.git", rev = "py311-compat" }
