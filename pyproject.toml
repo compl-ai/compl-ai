@@ -9,7 +9,7 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "inspect-evals",
+    "inspect-evals[bbq,livebench,swe_bench]",
     "inspect-ai",
     "openai>=1.90.0",
     "typer>=0.19.0",
@@ -30,9 +30,6 @@ dependencies = [
     "regex>=2025.7.34",
     "accelerate>=1.10.1",
     "transformers>=4.56.0",
-    "swebench>=4.1.0",
-    "docker>=7.1.0",
-    "livebench",
 ]
 
 [project.scripts]
@@ -76,4 +73,3 @@ files.extend-exclude = [
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
-livebench = { git = "https://github.com/MattFisher/LiveBench.git", rev = "py311-compat" }
