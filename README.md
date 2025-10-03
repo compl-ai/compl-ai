@@ -74,6 +74,46 @@ To get detailed information on CLI arguments and options, e.g. to
 complai eval --help
 ```
 
+To select a model for an evaluation, pass its name using the [Inspect](https://inspect.aisi.org.uk/) naming convention `<provider>/<model>`:
+```
+complai eval openai/gpt-4o-mini
+complai eval anthropic/claude-sonnet-4-0
+complai eval vllm/Qwen/Qwen3-8B
+complai eval hf/Qwen/Qwen3-8B
+```
+
+See the [Providers](#-providers) section for more information on different providers.
+
+### Environment Variables
+
+The CLI supports reading argument and option values from environment variables. For instance, you can set the `COMPLAI_MODEL` environment variable:
+```
+export COMPLAI_MODEL=openai/gpt-5-nano
+```
+ This model will then be used automatically if no model is provided to the `eval` command.
+
+You can also create a `.env` file to set environment variables:
+```
+# In your .env file add:
+OPENAI_API_KEY=your-openai-api-key
+
+COMPLAI_MODEL=openai/gpt-5-nano
+COMPLAI_LOG_DIR=path/to/a/logdir
+COMPLAI_MAX_CONNECTIONS=128
+```
+COMPL-AI will automatically load variables from a `.env` file if one is present in the directory.
+
+Values provided in the CLI take precedence over environment variables and values in the `.env` file.
+
+### Retrying
+
+To retry failed tasks or continue an interrupted evaluation, you can specify a `--log-dir` in the `eval` command. To continue an interrupted evaluation, find the path to the corresponding log directory and add it to the `eval` command:
+```
+complai eval openai/gpt-5-nano --log-dir path/to/logdir
+```
+
+You can also amend a run with additional tasks, models, or epochs. Just re-issue the same command with the additions.
+
 ## 🔌 Providers
 
 COMPL-AI has support for the same set of model providers and backends as [Inspect](https://inspect.aisi.org.uk/models.html). The following providers are supported at the time of writing:
@@ -84,16 +124,9 @@ COMPL-AI has support for the same set of model providers and backends as [Inspec
 | Open (Hosted)    | Groq, Together AI, Fireworks AI, Cloudflare                               |
 | Open (Local)     | Hugging Face, vLLM, SGLang, Ollama, Llama-cpp-python, TransformerLens     |
 
-To select a model for an evaluation, pass its name using the [Inspect](https://inspect.aisi.org.uk/) naming convention `<provider>/<model>`:
-```
-complai eval openai/gpt-4o-mini
-complai eval anthropic/claude-sonnet-4-0
-complai eval vllm/Qwen/Qwen3-8B
-complai eval hf/Qwen/Qwen3-8B
-```
-See [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html) for more information.
+For more details, see [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html).
 
-You may be prompted to install additional dependencies for some providers upon first use. Install using:
+When using a provider for the first time, you may be prompted to install additional dependencies. Install using:
 ```
 uv pip install <package-name>
 ```
@@ -178,35 +211,6 @@ You can enable the use of the Responses API with the `openai-api` provider by pa
 complai eval openai-api/<provider>/<model> -M responses_api=true
 ```
 
-### Environment Variables
-
-The CLI supports reading argument and option values from environment variables. For instance, you can set the `COMPLAI_MODEL` environment variable:
-```
-export COMPLAI_MODEL=openai/gpt-5-nano
-```
- This model will then be used automatically if no model is provided to the `eval` command.
-
-You can also create a `.env` file to set environment variables:
-```
-# In your .env file add:
-OPENAI_API_KEY=your-openai-api-key
-
-COMPLAI_MODEL=openai/gpt-5-nano
-COMPLAI_LOG_DIR=path/to/a/logdir
-COMPLAI_MAX_CONNECTIONS=128
-```
-COMPL-AI will automatically load variables from a `.env` file if one is present in the directory.
-
-Values provided in the CLI take precedence over environment variables and values in the `.env` file.
-
-### Retrying
-
-To retry failed tasks or continue an interrupted evaluation, you can specify a `--log-dir` in the `eval` command. To continue an interrupted evaluation, find the path to the corresponding log directory and add it to the `eval` command:
-```
-complai eval openai/gpt-5-nano --log-dir path/to/logdir
-```
-
-You can also amend a run with additional tasks, models, or epochs. Just re-issue the same command with the additions.
 
 
 ## 🤝 Contributing
