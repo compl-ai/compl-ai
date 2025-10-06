@@ -674,7 +674,6 @@ name = "complai"
 version = "2.0.0"
 source = { editable = "." }
 dependencies = [
-    { name = "accelerate" },
     { name = "bidict" },
     { name = "datasets" },
     { name = "detoxify" },
@@ -692,18 +691,22 @@ dependencies = [
     { name = "regex" },
     { name = "scipy" },
     { name = "torch" },
-    { name = "transformers" },
     { name = "typer" },
 ]
 
 [package.optional-dependencies]
-backends = [
+huggingface = [
+    { name = "accelerate" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+vllm = [
     { name = "vllm" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "accelerate", specifier = ">=1.10.1" },
+    { name = "accelerate", marker = "extra == 'huggingface'" },
     { name = "bidict", specifier = ">=0.23.1" },
     { name = "datasets", specifier = ">=3.6.0" },
     { name = "detoxify", specifier = ">=0.5.2" },
@@ -721,11 +724,12 @@ requires-dist = [
     { name = "regex", specifier = ">=2025.7.34" },
     { name = "scipy", specifier = ">=1.13.1" },
     { name = "torch", specifier = ">=2.7.1" },
-    { name = "transformers", specifier = ">=4.56.0" },
+    { name = "torch", marker = "extra == 'huggingface'" },
+    { name = "transformers", marker = "extra == 'huggingface'" },
     { name = "typer", specifier = ">=0.19.0" },
-    { name = "vllm", marker = "extra == 'backends'", specifier = ">=0.10.0" },
+    { name = "vllm", marker = "extra == 'vllm'" },
 ]
-provides-extras = ["backends"]
+provides-extras = ["huggingface", "vllm"]
 
 [[package]]
 name = "compressed-tensors"
