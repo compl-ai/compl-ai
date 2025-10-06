@@ -152,3 +152,6 @@ temp_link
 
 # Packaged sources
 dist_py_*
+
+# AI Inspect
+/logs
