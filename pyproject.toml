@@ -13,7 +13,6 @@ dependencies = [
     "inspect-ai",
     "openai>=1.90.0",
     "typer>=0.19.0",
-    "vllm>=0.10.0",
     "bidict>=0.23.1",
     "detoxify>=0.5.2",
     "gdown>=5.2.0",
@@ -31,6 +30,9 @@ dependencies = [
     "accelerate>=1.10.1",
     "transformers>=4.56.0",
 ]
+
+[project.optional-dependencies]
+backends = ["vllm>=0.10.0"]
 
 [project.scripts]
 complai = "complai._cli:main"
