@@ -32,7 +32,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-backends = ["vllm>=0.10.0"]
+huggingface = ["torch", "transformers", "accelerate"]
+vllm = ["vllm"]
 
 [project.entry-points.inspect_ai]
 complai = "complai._registry"
