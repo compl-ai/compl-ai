@@ -694,6 +694,10 @@ dependencies = [
     { name = "torch" },
     { name = "transformers" },
     { name = "typer" },
+]
+
+[package.optional-dependencies]
+backends = [
     { name = "vllm" },
 ]
 
@@ -719,8 +723,9 @@ requires-dist = [
     { name = "torch", specifier = ">=2.7.1" },
     { name = "transformers", specifier = ">=4.56.0" },
     { name = "typer", specifier = ">=0.19.0" },
-    { name = "vllm", specifier = ">=0.10.0" },
+    { name = "vllm", marker = "extra == 'backends'", specifier = ">=0.10.0" },
 ]
+provides-extras = ["backends"]
 
 [[package]]
 name = "compressed-tensors"
