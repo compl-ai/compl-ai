@@ -83,7 +83,7 @@ complai eval anthropic/claude-sonnet-4-0
 # Locally with HF backend, set cuda device (use mps for macOS)
 complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
 
-# Using vLLM backend, target specific sample and cap number of sandboxes for agentic benchmarks
+# Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
 complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
 
 # Retry (if eval failed)
