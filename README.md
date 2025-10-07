@@ -93,7 +93,7 @@ complai eval openai/gpt-5-nano --log-dir path/to/logdir
 See the [Providers](providers/README.md) section for more information on different providers.
 
 #### Environment Variables
-COMPL-AI will auto-load models `COMPLAI_MODEL`, api keys `OPENAI_API_KEY`, and other vars  `COMPLAI_LOG_DIR` from your local `env` file. The CLI values take precedence over `.env` vars.
+COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
 
 
 ## 🧪 Framework
