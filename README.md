@@ -118,7 +118,7 @@ COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act prici
 - Societal and Environmental Well-being: AI systems should be developed in a way that benefits society and the environment, avoiding negative impacts on fundamental rights and democratic values. 
 
 ### Technical Requirements and Benchmarks
-You can see list of all technical requirements and their respective benchmarks using `complai list`:
+You can see a list of all technical requirements and their respective benchmarks using `complai list`:
 - Capabilities, Performance, and Limitations
   - aime_2025, arc_challenge, hellaswag, humaneval, livebench_coding, mmlu_pro, swe_bench_verified, truthfulqa
 - Representation — Absence of Bias
