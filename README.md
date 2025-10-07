@@ -18,7 +18,7 @@
 </div>
 
 ## Overview
-COMPL-AI is an EU AI Act benchmarking framework allowing for technical assessment of LLM models. It includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (This repo). The key feature are:
+COMPL-AI is an EU AI Act benchmarking framework allowing for technical assessment of LLMs. It includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
 
 - Built on the [AI Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
 - Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (23 and growing)
