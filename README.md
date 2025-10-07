@@ -23,7 +23,7 @@ COMPL-AI is an EU AI Act benchmarking framework allowing for technical assessmen
 - Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
 - Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (23 and growing)
 - A public Hugging Face leaderboard of our [latest evaluation results](https://huggingface.co/spaces/latticeflow/compl-ai-board)   
-- Extensive set of supported [providers](providers/README.md) (API, Cloud, Local, vLLM, SGLang, ..).
+- Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
 - A custom eval CLI (run `complai --help` for usage)
 
 Community contributions for benchmarks and new mappings are welcome! We are actively looking to exapand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contribution guide](#-contributing) section below.
