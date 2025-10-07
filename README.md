@@ -36,7 +36,7 @@ To run an evaluation yourself, please follow the instructions below (or contact 
 # Clone and create a virtual environment
 git clone https://github.com/compl-ai/compl-ai.git
 cd compl-ai
-uv venv
+uv sync
 source .venv/bin/activate
 
 # Set your API key
