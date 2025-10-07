@@ -1,6 +1,6 @@
 # 🔌 Providers
 
-COMPL-AI supports for the same set of model providers and backends as [Inspect](https://inspect.aisi.org.uk/models.html). 
+COMPL-AI supports the same set of model providers and backends as [Inspect](https://inspect.aisi.org.uk/models.html). 
 
 
 | Category         | Providers                                                                 |
