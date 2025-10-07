@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://compl-ai.org"><img  style="max-height: 50px;" src="https://compl-ai.org/compl-ai-logo.svg" alt="COMPL-AI">
+  <a href="https://compl-ai.org"><img  style="max-height: 50px;" src="compl-ai-logo.svg" alt="COMPL-AI">
 </a>
 </p>
 
 <div align="center">
-    COMPL-AI is a compliance-centered evaluation framework for Generative AI models, created and maintained by
+    COMPL-AI is a compliance-centered evaluation framework for LLMs created and maintained by
       
   [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](https://insait.ai/) and [LatticeFlow AI](https://latticeflow.ai/).
 </div>
@@ -18,7 +18,7 @@
 </div>
 
 ## Overview
-COMPL-AI is an EU AI Act benchmarking framework allowing for technical assessment of LLMs. It includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
+The COMPL-AI framework includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
 
 - Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
 - Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (23 and growing)
@@ -99,7 +99,7 @@ COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), an
 ## 🧪 Framework
 
 #### 🚧 Update in Progress
-The current version of the framework is published here [here](https://compl-ai.org/interpretation/). 
+The current version of the framework is published [here](https://compl-ai.org/interpretation/). 
 
 We are currently in the process of renewing our coverage of the EU AI Act by updating the set of benchmarks, thus the supported set of benchmark may differ from this original mapping. The goals of this update are:
 - To increase coverage over the EU AI Act principles
@@ -108,8 +108,10 @@ We are currently in the process of renewing our coverage of the EU AI Act by upd
 - Adding the notion of `risk` along side `technical requirements`
 - Refreshing the supported benchmarks to ensure they remain challenging for frontier models (addressing saturation, contamination, and other benchmark quality issues).
 
+As part of our update, the renewed benchmarking suite is now built on the UK Security Institute’s [Inspect Framework](https://github.com/UKGovernmentBEIS/inspect_ai), which offers improved ease of use and greater overall consistency. This means that several benchmarks are now evaluated differently (e.g. full-text answers instead of logits for multiple-choice questions) reflecting more modern and opinionated approaches to LLM evaluation. Thus, benchmark scores from the v1 and v2 suites, even for the same benchmark, should not be considered directly comparable.
+
 ### Principles
-COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act priciples:
+COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act principles:
 - Human Agency and Oversight: AI systems should be supervised by people, not by automation alone, to prevent harmful outcomes and allow for human intervention. 
 - Technical Robustness and Safety: AI systems must be safe and secure, implementing risk management, data quality, and - cybersecurity measures to prevent undue risks. 
 - Privacy and Data Governance: The Act sets rules for the quality and governance of data used in AI, emphasizing the protection of personal and sensitive information. 

@@ -1,6 +1,6 @@
 # 🔌 Providers
 
-COMPL-AI has support for the same set of model providers and backends as [Inspect](https://inspect.aisi.org.uk/models.html). 
+COMPL-AI supports for the same set of model providers and backends as [Inspect](https://inspect.aisi.org.uk/models.html). 
 
 
 | Category         | Providers                                                                 |
@@ -37,14 +37,14 @@ Concurrency for REST API based models is managed using the `max_connections` opt
 
 The default batch size for Hugging Face is 32, but you should tune your `max_connections` to maximise performance and ensure that batches don’t exceed available GPU memory. The Pipeline Batching section of the transformers documentation is a helpful guide to the ways batch size and performance interact.
 
-The PyTorch cuda device will be used automatically if CUDA is available (as will the Mac OS mps device). If you want to override the device used, use the device model argument. For example:
+The PyTorch CUDA device will be used automatically if CUDA is available (as will the Mac OS mps device). If you want to override the device used, use the device model argument. For example:
 
 ```
 complai eval hf/Qwen/Qwen3-8B -M device=cuda:0
 ```
 
 
-In addition to using models from the Hugging Face Hub, the Hugging Face provider can also use local model weights and tokenizers (e.g. for a locally fine tuned model). Use `hf/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
+In addition to using models from the Hugging Face Hub, the Hugging Face provider can also use local model weights and tokenizers (e.g., for a locally fine tuned model). Use `hf/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
 
 ```
 complai eval hf/local -M model_path=./my-model
@@ -72,19 +72,19 @@ See the [Tool Use](https://docs.vllm.ai/en/stable/features/tool_calling.html) se
 
 
 ### Ollama and Llama-cpp-python
-If you want to use Ollama or Llama-cpp-python you need to start the server manually.
+If you want to use Ollama or Llama-cpp-python, you need to start the server manually.
 
 ### OpenAI-compatible API endpoints
 If you want to use an OpenAI-compatible API endpoint, you can use it with the `openai-api` provider, which uses the following model naming convention:
 ```
 openai-api/<provider-name>/<model-name>
 ```
-COMPL-AI will read environment variables corresponding to the api key and base url of your provider using the following convention (note that the provider name is capitalized):
+COMPL-AI will read environment variables corresponding to the API key and base URL of your provider using the following convention (note that the provider name is capitalized):
 ```
 <PROVIDER_NAME>_API_KEY
 <PROVIDER_NAME>_BASE_URL
 ```
-Hyphens within provider names will be converted to underscores so they conform to requirements of environment variable names. For example, if the provider is named awesome-models then the API key environment variable should be AWESOME_MODELS_API_KEY.
+Hyphens within provider names will be converted to underscores so they conform to the requirements of environment variable names. For example, if the provider is named awesome-models then the API key environment variable should be AWESOME_MODELS_API_KEY.
 
 Here is how you would access DeepSeek using the openai-api provider:
 ```
