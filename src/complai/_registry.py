@@ -13,6 +13,7 @@ from complai.tasks.hellaswag import hellaswag
 from complai.tasks.human_deception import human_deception
 from complai.tasks.humaneval import humaneval
 from complai.tasks.imdb_contrast import imdb_contrast
+from complai.tasks.include import include
 from complai.tasks.instruction_goal_hijacking import instruction_goal_hijacking
 from complai.tasks.livebench_coding import livebench_coding
 from complai.tasks.llm_rules import llm_rules
