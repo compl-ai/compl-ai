@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# OSX
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
@@ -20,12 +23,12 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
-poetry.lock
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -55,12 +58,6 @@ cover/
 # Translations
 *.mo
 *.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -95,36 +92,20 @@ ipython_config.py
 #   install all needed dependencies.
 #Pipfile.lock
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
 
 # Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
+venv3.6/
 ENV/
 env.bak/
 venv.bak/
@@ -144,17 +125,6 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# VSCode+extensions
-.vscode/
-.history/
-.idea/
-
-# Results
-outputs/
-
-# Data
-# src/benchmarks/data/
-
 # Pyre type checker
 .pyre/
 
@@ -164,17 +134,24 @@ outputs/
 # Cython debug symbols
 cython_debug/
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+# JetBrains
+.idea
+.uuid
 
-# Directory for storing external files and folders
-benchmark_data
-.editorconfig
-*.pk # Don't store binary pickle files
-runs*
+# VS Code
+.vscode
 
-.DS_Store
+# Ignore Numpy datafiles
+*.npy
+
+# Ignore temp and swap files
+*~
+
+# Temporary files
+temp_link
+
+# Packaged sources
+dist_py_*
+
+# AI Inspect
+/logs

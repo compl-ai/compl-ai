@@ -1,606 +1,159 @@
-<div>
-  <p>
-    <a href="https://compl-ai.org" target="_blank">
-      <img width="100%" style="max-width: 600px;" src="banner.png" alt="YOLO Vision banner"></a>
-  </p>
+<p align="center">
+  <a href="https://compl-ai.org"><img  style="max-height: 50px;" src="compl-ai-logo.svg" alt="COMPL-AI">
+</a>
+</p>
+
+<div align="center">
+    COMPL-AI is a compliance-centered evaluation framework for LLMs created and maintained by
+      
+  [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](https://insait.ai/) and [LatticeFlow AI](https://latticeflow.ai/).
 </div>
 
+<div align="center">
 
-This repository contains the open-source framework and the corresponding technical mapping for evaluating generative AI models.
-- To run the evaluation yourself, please follow the instructions below.
-- To request an evaluation, please contact us through the [compl-ai.org](https://compl-ai.org) website. 
+[![arXiv](https://img.shields.io/badge/arXiv-2410.07959-b31b1b)](https://arxiv.org/abs/2410.07959)
+[![Web](https://img.shields.io/badge/Website-compl--ai.org-blue)](https://compl-ai.org)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-g)](LICENSE)
 
-This project created by [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](https://insait.ai/) and [LatticeFlow AI](https://latticeflow.ai/).
+</div>
 
-## Installation
+## Overview
+The COMPL-AI framework includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
 
-> [!IMPORTANT]  
-> Before cloning the repository, make sure you have [git lfs](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage) (Large File Storage) extension installed.
+- Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
+- Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (23 and growing)
+- A public Hugging Face leaderboard of our [latest evaluation results](https://huggingface.co/spaces/latticeflow/compl-ai-board)   
+- Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
+- A custom eval CLI (run `complai --help` for usage)
 
-Clone the repository and fetch all the submodules:
+Community contributions for benchmarks and new mappings are welcome! We are actively looking to exapand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contributing](#-contributing) section below.
+
+## ⏩ Quickstart
+To run an evaluation yourself, please follow the instructions below (or contact us through [compl-ai.org](https://compl-ai.org)). 
+
 
 ```bash
+# Clone and create a virtual environment
 git clone https://github.com/compl-ai/compl-ai.git
 cd compl-ai
-git submodule update --init --recursive
+uv sync
+source .venv/bin/activate
+
+# Set your API key
+export OPENAI_API_KEY=your_key
+
+# Run 5 samples on a single benchmark
+complai eval openai/gpt-5-nano --tasks mmlu_pro --limit 5
+
+# Or run the full framework
+complai eval openai/gpt-5-nano
 ```
 
-and download the benchmark data:
+You can then view a detailed sample-level log of your results with the [Inspect AI VS Code extension](https://marketplace.cursorapi.com/items/?itemName=ukaisi.inspect-ai), or in your browser with:
+```
+inspect view
+```
+
+
+## 💻 CLI
+
+
+#### Get help with any command
 ```bash
-# Manual Download
-# download the file from https://drive.google.com/file/d/19um3Uu9m0AcsynwuKvpntO80LpX6oFqM/view?usp=sharing
-# and put it in the folder: benchmark_data/bold/
-
-# Automatic Download
-pip3 install gdown
-gdown "https://drive.google.com/uc?export=download&id=19um3Uu9m0AcsynwuKvpntO80LpX6oFqM" -O benchmark_data/bold/
+complai COMMAND --help
 ```
 
-Then, setup the project either using docker (recommended) or natively without docker.
-
-<details>
-<summary>With docker</summary>
-
-[After installing docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository), use the following command to get an interactive shell with all the dependencies installed:
-```
-docker compose run interactive_shell
-```
-To use a cpu-only environment, run `docker compose run interactive_shell_cpu` instead.
-
----
-</details>
-
-
-<details>
-<summary>Without docker</summary>
-
-### Python Environment
-This project was tested with python3.10.
-Set up a virtual environment (or use conda/mamba) and install the dependencies of this project using poetry install.
+#### List Tasks
 
 ```bash
-curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-bash Miniforge3-$(uname)-$(uname -m).sh
+complai list
 ```
 
-For conda, navigate to the root folder and run:
+#### Run Evals with the following syntax
 ```bash
-mamba env create -f compl_ai.yaml
+complai eval <provider>/<model> -t <task_name> -l <n_samples>
 ```
 
-After installing, enter the environment in the root directory and run the poetry install:
+#### Command Examples
 ```bash
-conda activate compl_ai
-poetry install --no-root
+# Remote API
+complai eval openai/gpt-4o-mini
+complai eval anthropic/claude-sonnet-4-0
+
+# Locally with HF backend, set cuda device (use mps for macOS)
+complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
+
+# Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
+complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
+
+# Retry (if eval failed)
+complai eval openai/gpt-5-nano --log-dir path/to/logdir
 ```
 
----
-</details>
+See the [Providers](providers/README.md) section for more information on different providers.
+
+#### Environment Variables
+COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
 
 
-### Test the Installation
+## 🧪 Framework
 
-> [!TIP]
-> Running a full benchmark suite can take more than a day, depending on the model size. It is recommended to do a debug evaluation to test the infrastructure.
+#### 🚧 Update in Progress
+The current version of the framework is published [here](https://compl-ai.org/interpretation/). 
 
+We are currently in the process of renewing our coverage of the EU AI Act by updating the set of benchmarks, thus the supported set of benchmark may differ from this original mapping. The goals of this update are:
+- To increase coverage over the EU AI Act principles
+- To increase coverage over technical requirements
+- Adding support for the Code of Practice, namely the [Safety and Security](https://code-of-practice.ai/?section=safety-security) chapter.
+- Adding the notion of `risk` along side `technical requirements`
+- Refreshing the supported benchmarks to ensure they remain challenging for frontier models (addressing saturation, contamination, and other benchmark quality issues).
 
-<details>
-<summary>Step 0: Test the infrastructure by running a single benchmark</summary>
+As part of our update, the renewed benchmarking suite is now built on the UK Security Institute’s [Inspect Framework](https://github.com/UKGovernmentBEIS/inspect_ai), which offers improved ease of use and greater overall consistency. This means that several benchmarks are now evaluated differently (e.g. full-text answers instead of logits for multiple-choice questions) reflecting more modern and opinionated approaches to LLM evaluation. Thus, benchmark scores from the v1 and v2 suites, even for the same benchmark, should not be considered directly comparable.
 
-To ensure everything is set up correctly, we recommend first running a single check and resolving any issues. 
-To run a single benchmark, use:
+### Principles
+COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act principles:
+- Human Agency and Oversight: AI systems should be supervised by people, not by automation alone, to prevent harmful outcomes and allow for human intervention. 
+- Technical Robustness and Safety: AI systems must be safe and secure, implementing risk management, data quality, and - cybersecurity measures to prevent undue risks. 
+- Privacy and Data Governance: The Act sets rules for the quality and governance of data used in AI, emphasizing the protection of personal and sensitive information. 
+- Transparency: Users should understand when they are interacting with an AI system and how it functions, fostering trust and enabling accountability. 
+- Diversity, Non-Discrimination, and Fairness: AI systems should be designed and used to uphold human rights, including fairness and equality, and avoid biases that could lead to discrimination. 
+- Societal and Environmental Well-being: AI systems should be developed in a way that benefits society and the environment, avoiding negative impacts on fundamental rights and democratic values. 
 
-```bash
-# poetry run python3 run.py $DEBUG_MODE --model_config=$model_config --model=$MODEL_PATH --batch_size=$batch_size --results_folder="runs_debug_model" --answers_file=$answers_file $benchmark_config 
-# for example instantiated as 
-poetry run python3 run.py \
-    --model_config configs/models/default_model.yaml \
-    --model EleutherAI/gpt-neo-125m \
-    --batch_size 10 \
-    --results_folder="runs_debug_model" \
-    configs/toxicity/toxicity_advbench.yaml \
-    --debug_mode --subset_size 10
-```
-
-This creates a new folder `runs_debug_model` and stores the results in it. 
-For testing, the flags `--debug_mode --subset_size 10` are used to evaluate using only 10 prompts.
-
----
-</details>
-
-### Benchmark Specific Installation
-
-> [!IMPORTANT]  
-> Some benchmarks require additional installation steps. If omitted, the benchmark will fail to evaluate.
-
-<details>
-<summary>Self-Check-Consistency Benchmark Setup</summary>
-
-
-For the `self_consistency_check` benchmarks, additional API keys and services are required. If the following requirements are missing, this check will not be evaluated.
-
-#### API Keys
-Export your OpenAI `API Key` and `Org` (if applicable):
-
-```bash
-export OPENAI_API_KEY=""
-export OPENAI_ORG=""
-```
-
-#### Start Service
-```
-docker compose up --detach compact_ie_api
-```
-
----
-</details>
-
-## Run the Benchmark Suite
-
-To run **all** benchmarks, run the following script:
-```bash
-bash run_scripts/run_all.sh
-```
-
-The final output JSON file summarizes the results and can be found under `runs/`, (e.g. `runs/gpt-neo-125m/2024-10-08_07:06:07/gpt-neo-125m_results.json`) after `run_all.sh` script has finished running. 
-
-> [!NOTE]  
-> `run_all.sh` redirects outputs to log files in the output directory under `runs` (e.g.: `runs/gpt-neo-125m/2024-10-08_07:06:07`). Use those files to analyze errors (if any) and debug logs.
+### Technical Requirements and Benchmarks
+You can see a list of all technical requirements and their respective benchmarks using `complai list`:
+- Capabilities, Performance, and Limitations
+  - aime_2025, arc_challenge, hellaswag, humaneval, livebench_coding, mmlu_pro, swe_bench_verified, truthfulqa
+- Representation — Absence of Bias
+  - bbq, bold
+- Interpretability
+  - bigbench_calibration, triviaqa_calibration
+- Robustness and Predictability
+  - boolq_contrast, forecast_consistency, imdb_contrast, self_check_consistency
+- Fairness — Absence of Discrimination
+  - decoding_trust, fairllm
+- Disclosure of AI
+  - human_deception
+- Cyberattack Resilience
+  - instruction_goal_hijacking, llm_rules
+- Harmful Content and Toxicity
+  - realtoxicityprompts
 
 
-### Specify a Model to Evaluate
-
-By default, `run_scripts/run_all.sh` evaluates `EleutherAI/gpt-neo-125m` model. You can select a custom model by:
-
-<details><summary>Step 1. Passing the `MODEL_PATH`</summary>
-
-This is the name of the model being evaluated. Set this value on top of the `run_scripts/run_all.sh`. Also, change the `RUN_NAME` value as the output will be stored in `runs/$RUN_NAME`.
 
 
-For a HuggingFace model, use the respective model name from HuggingFace hub:
-```
-MODEL_PATH="meta-llama/Llama-2-7b-chat-hf"
-```
-
-For an OpenAI model:
-```
-MODEL_PATH="gpt-4-1106-preview"  # "gpt-3.5-turbo"
-```
-
----
-</details>
-
-<details>
-<summary>Step 2. Passing the model config YAML</summary>
-
-Depending on the model vendor choose the appropriate file from `configs/models`. We recommend that you familiarize yourself with the settings in the model config.
-
-
-For example, here is what the default YAML looks like `configs/models/default_model.yaml`:
-```yaml
-name: "mistralai/Mistral-7B-Instruct-v0.1" 
-provider: "hf"
-type: "causal_lm"
-device: "cuda"
-padding_side: "left"
-batch_size: 20
-tokenizer_name: "mistralai/Mistral-7B-Instruct-v0.1"
-generation_args:
-    do_sample: True
-```
-
-For models that run locally, make sure to specify the correct device, batch size that fits on your GPU and other configs. You can find more details about the available fields in the config YAML `src/configs/base_model_config.py`.
-
-
-For a HuggingFace model, use the `default_model.yaml`:
-```
-model_config=${3:-"configs/models/default_model.yaml"}
-```
-
-For an OpenAI model, use `openai_model.yaml`:
-```
-model_config=${3:-"configs/models/openai_model.yaml"}
-```
-
-Other model vendors such as Anthropic are also supported. Please see the configs in `configs/models/`.
-
----
-</details>
-
-
-### [New] Track Evaluation Progress
-
-To easily keep track of the evaluation progress, we include the `summarize_report.py` script. 
-To execute, please provide the directory where the run results are stored as follows: 
-
-```bash
-python helper_tools/summarize_report.py --parent_dir runs/Mistral-7B-Instruct-v0.3/2024-30-11/ --refresh 30
-```
-
-which produces the following output that is refreshed periodically:
+## 🤝 Contributing
+We welcome contributions! When contributing, please make sure to activate pre-commit hooks to ensure code quality and consistency. You can install pre-commit hooks with:
 
 ```
- status                           name                     runtime  result    category
---------  ----------------------------  --------------------------  --------  ----------
-   ◷                        human_eval    (running) 12 min /56 min
-   ∙                   truthful_qa_mc2  (estimated)          8 min
-   ∙                 toxicity_advbench  (estimated)          2 min
-   ∙                          toxicity  (estimated)   1 hr, 35 min
-   ∙            self_check_consistency  (estimated)         37 min
-   ∙                       reddit_bias  (estimated)          4 min
-   ∙                           privacy  (estimated)          4 min
-   ∙          multiturn_goal_hijacking  (estimated)         21 min
-   ∙                   mmlu_robustness  (estimated)   1 hr, 20 min
-   ∙                              mmlu  (estimated)   2 hr, 26 min
-   ∙                      memorization  (estimated)          8 min
-   ∙        instruction_goal_hijacking  (estimated)          9 min
-   ∙          imdb_contrast_robustness  (estimated)          3 min
-   ∙                   human_deception  (estimated)          2 min
-   ∙                         hellaswag  (estimated)   3 hr, 37 min
-   ∙              forecast_consistency  (estimated)         11 min
-   ∙                           fairllm  (estimated)   2 hr, 18 min
-   ∙                    decoding_trust  (estimated)          2 min
-   ∙      calibration_big_bench_i_know  (estimated)   1 hr, 50 min
-   ∙             calibration_big_bench  (estimated)          2 min
-   ∙         boolq_contrast_robustness  (estimated)          2 min
-   ∙                              bold  (estimated)         29 min
-   ∙                               bbq  (estimated)          2 min
-   ∙                     ai2_reasoning  (estimated)         30 min
-
-Legend:
-└── ✓ OK, └── ✗ ERROR, └── ∙ PENDING, └── ◷ RUNNING
+pip install pre-commit
+pre-commit install
 ```
 
-### Generate a Technical Report
+## 📄 License
 
-<img width="100%" style="max-width: 600px;" src="report.png" alt="Technical Report"></a>
+This project is licensed under the Apache 2.0 License - see [LICENSE](LICENSE) for details.
 
-To generate a model evaluation report, the following two steps are required.
-
-<details>
-<summary>Step 1. Prepare Model Metadata</summary>
-
-First, let's prepare the model metadata. This includes model name, model provider and other information.
-
-The metadata for selected models is available as markdown files in `model_descriptions/`. An example template can be found at `model_descriptions/template.md`.
-
----
-</details>
-
-<details>
-<summary>Step 2. Add Model Metadata</summary>
-
-
-To add the metadata, run the following command from the main directory. Here is an example command. Please replace the paths with the appropriate model evaluation JSON and model description.
-
-```bash
-poetry run python3 helper_tools/include_metadata.py \
-       --model_json runs/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/mistralai_mistral-7b-instruct-v0.2_results.json \
-       --metadata_path model_descriptions/Mistral-7B-Instruct-v0.2.md \
-       --out_prefix runs_with_metadata
-```
-
-This generates an updated json file in the `runs_with_metadata/runs/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/mistralai_mistral-7b-instruct-v0.2_results_with_metadata.json`
-
----
-</details>
-
-<details>
-<summary>Step 3. Generate the Technical Report</summary>
-
-To generate the report, visit [compl-ai.org](https://compl-ai.org/report) and upload the resulting json file from `runs_with_metadata/Mistral-7B-Instruct-v0.2/2024-10-08_07:06:07/`.
-
----
-</details>
-
-
-## Troubleshooting
-
-<details>
-<summary>CUDA version mismatch</summary>
-
-The dockerfile uses CUDA 12.4.1, to run the docker. For a different CUDA version modify the version in  `infrastructure/Dockerfile` and `infrastructure/compact_ie/Dockerfile`.
-
-For example, to use CUDA 12.1.0, update the version as follows:
-```dockerfile
-FROM nvidia/cuda:12.1.0-runtime-ubuntu20.04
-```
-
----
-</details>
-
-<details>
-<summary>Hugging Face Login</summary>
-
-To access some of the Hugging Face models, one needs to go to the respective model page on Hugging Face Hub (e.g. [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)) and accept the terms of use for the particular model.
-
-After this login via the `huggingface-cli` with your [access token](https://huggingface.co/settings/tokens) by using and following the steps shown on the screen:
-```bash
-poetry run huggingface-cli login
-```
-
----
-</details>
-
-
-## Benchmarks
-
-<details>
-<summary>Benchmark Config File</summary>
-
-In a first step we will explain the benchmark config, by an annotated example of a version of a [MMLU](https://huggingface.co/datasets/cais/mmlu) config:
-
-```yaml
-# Defining the data
-data_config: &data_config   # Allows us to link to the data config later
-  type: "mmlu_data" # Data type as registered in config.py
-  path: "cais/mmlu" # Load path
-  name: "all"   # Name
-  split: "test" # Which data split to run on
-  k_shot: 5 # Number of shots to give
-  k_shot_split: dev # Where to take shots from
-  subset_size: 10   # Can be specified for debugging purposes if we don't want to run the entire benchmark (note: generally requires the debug flag to be set)
-
-# Define the metric to evaluate with, you can also implement you own metrics and register them 
-metric_config: &metric_config   # Allows us to link to the metric config later
-  type: "hf_metric" # hugging face provided metric -> registered in config.py
-  name: "accuracy"  # base accuracy 
-
-# Actual benchmark run config
-config:
-  run_id: 1 # Id
-  model: !include models/default_model.yaml # Model config to use -> Will be partially overwritten by the model you provide via CLI flags
-  seed: 36  # Seed
-  benchmark_configs:
-    - name: "mmlu"  # Name
-      type: "mmlu"  # Type (also for later mapping)
-      provider: "hf"    # Benchmark provider (options "hf", "local", "json", "tsv", "txt")
-      data_config: *data_config # Data config from above
-      num_workers: 1    # Num workers to use for the benchmark (generally just for loading data)
-      metric_configs:   # List of metrics
-        - *metric_config
-      postprocessor: # Post-process results (see config.py BENCHMARK_PROCESSORS for references)
-        type: "mmlu"
-```
-
-Notably the relevant files to look for (and described also below) are `config.py` for registering data, metrics, benchmarks, and post_processors as well as the corresponding benchmark implementation file (in this case `src/benchmarks/benchmark_implementations/capabilities/mmlu.py`).
-
-</details>
-
-<details>
-<summary>Benchmark Output</summary>
-
-Once a benchmark finished running (using the `run_all.sh`) you find the corresponding output in the run output directory (e.g., `runs/<model_name>/<DATE>/<benchmark_name>__<DATE>`). In each folder you will find 
-
-```bash
-config.json # Contains the config with which the benchmark was run
-eval_results.json   # Empty when processed into final_results (used to be populated in previous versions)
-final_results.json  # Contains the final processed json described below
-prompts_idx.json    # To be ignored
-prompts.json    # All benchmark inputs and outputs as individual batches
-```
-
-generally `final_results.json` has the following format (exemplary for `toxicity_advbench`)
-
-```json
-{
-    "run_id": "d255ae72-2c28-4684-b472-ae8628ff4975", 
-    "time": 1718475189.0623307, 
-    "category": "toxicity",     // Category as defined in our mapping
-    "benchmark": "toxicity_advbench", // Registered benchmark name
-    "FinalResult": {    // Final results as by the post_processor
-        "aggregate_score": 0.9965582014261879,  // Single numerical benchmark score
-        "raw_metrics": {    // Baseline metrics from which the score is derived
-            "advbench_behaviors": {
-                "average_toxicity": 0.003441798573812076
-            }
-        }
-    }
-}
-```
-
-additionally on the level `src/benchmarks/benchmark_implementations/capabilities/` there will be log files (one with `.errors` and one with `.logs`) that contain the entire console output of the benchmark.
-
-Results in this format can later be aggregated using `./run_scripts/run_processor.sh runs` resulting in aggregations over individual models. These aggregations can be combined into a single csv for exporting using `python helper_tools/all_results_to_csv.py --parent_dir runs`.
-
-</details>
-
-
-
-
-
-## Contributing
-
-<details>
-<summary>Code structure</summary> 
-
-- `configs/`: This directory includes all the yaml configuration files for benchmarks and models.
-- `external/`: All additional GitHub requirements not available using pip, go here.
-- `helper_tools/`: This includes one-off scripts, which are used for post-processing the results of the benchmark runs.
-- `infrastructure/`: Contains all the Dockerfiles encoding the environment, dependencies, and services.
-- `prompt_templates/`: Folder with jinja2 templates for benchmarks, currently only contains multiple-choice templates. This is where parametrized prompts should go such that they are not hidden somewhere in the code.
-- `run_scripts/`: Next to the main `run.py` module, this directory contains shell scripts which perform all the benchmarks by looping over them.
-- `runs/`: Here, the results of the benchmarks are stored. In the future, the data could be captured using a database to facilitate ease of data manipulation. A simple & easy-to-integrate database would be MongoDB.
-- `src/`: Where the actual code is.
-- `config.py `: This is where newly written benchmarks should be added, such that they can be referenced in the configuration in the `configs/` folder.
-- `secret.py`: One place for all the api-keys needed.
-- `run.py`: At last, the main file for running an individual benchmark.
-
----
-</details>
-
-<details>
-<summary>How to add a benchmark</summary>
-
-In this section we will give a brief overview of how to add a new benchmark into the suite using the example of the `toxicity_advbench` benchmark.
-
-### 1. Write the actual benchmark in `src/benchmarks/benchmark_implementations`
-
-In this case we write the benchmark in `src/benchmarks/benchmark_implementations/toxicity/toxicity_advbench.py`. We have to define 4 base classes for this:
-
-```python
-class ToxicityAdvBenchDataConfig(DataConfig):
-    # We could store more intricate config information here
-    pass
-
-class ToxicityAdvBenchData(BaseData):
-    # Class handling the data loading and formatting
-
-    def __init__(self, data_context: BaseDataContext):
-        # Config setup and prompt formatting
-        data_config = data_context.get_data_config()
-        self.config = data_config
-        self.prompt_formatter = data_context.get_prompt_formatter()
-
-    def get_data(self) -> Dict[str, Dataset]:
-        # Defines the data given to the actual benchmark (for implementation we refer to the file).
-        ...
-
-class ToxicityAdvBenchConfig(BenchmarkConfig):
-    # Additional Information for running the benchmark 
-    toxicity_batch_size: int = Field(500, description="Batch size for toxicity pipeline")   # Batch-size for the toxicity evaluation
-
-class ToxicityAdvBenchBenchmark(BaseBenchmark):
-    def __init__(self, context: BaseBenchmarkContext):
-        ### Default setup
-        super().__init__(context)
-        self.context = context
-        self.dataset = cast(ToxicityAdvBenchData, context.get_dataset())
-        self.config: ToxicityAdvBenchConfig = cast(ToxicityAdvBenchConfig, self.context.get_benchmark_config())
-
-        device = 0
-        if self.config.is_cpu_mode():
-            device = "cpu"  # type: ignore
-        ###
-        # Benchmark specific setup
-        self.toxicity_pipeline = pipeline(
-            "text-classification", model="unitary/toxic-bert", device=device
-        )
-
-    def run(self, model: BaseModel) -> Dict[str, Any]:
-        # Runs the benchmark on a model (needs to be implemented)
-        datasets = self.dataset.get_data()
-        adv_bench = self.evaluate_toxicity(model, datasets["advbench_behaviors"])
-        return {"advbench_behaviors": adv_bench}
-
-    def evaluate_toxicity(self, model: BaseModel, dataset: Dataset) -> Dict[str, Any]:
-        # Actual benchmark implementation (note that we could implement everything in run)
-        ...
-```
-
-
-### 2. Register the benchmark and data-provider modules in `config.py`
-
-Once we have written the benchmark and respective configs we can register them in our framework. In particular, we can do this in `config.py`:
-
-```python
-from src.benchmarks.benchmark_implementations.toxicity import toxicity_advbench
-
-benchmark_registry.register_logic_config_classes(
-    "toxicity_advbench",                            # Name
-    toxicity_advbench.ToxicityAdvBenchBenchmark,    # Benchmark class
-    toxicity_advbench.ToxicityAdvBenchConfig,       # Benchmark Config class
-    category="toxicity"                             # Category
-)
-
-dataset_registry.register_logic_config_classes(
-    "toxicity_advbench",                            # Name
-    toxicity_advbench.ToxicityAdvBenchData,         # Data class
-    toxicity_advbench.ToxicityAdvBenchDataConfig,   # Data config class
-)
-```
-
-### 3. Write and Register Benchmark processors
-
-Now we can write and register the result post-processor used. In particular, we write a new function in `helper_tools/results_processor.py`
-
-```python
-def reformat_toxicity_advbench_metric(eval_results: dict, legacy: bool = False) -> dict:
-    # Legacy handling for older benchmark formats
-    if legacy is True:
-        data = json.loads(eval_results["benchmark_specific_info"])[0]
-    else:
-        data = json.loads(eval_results["benchmark_specific_info"])[0][0]
-    result = {
-        "raw_metrics": data,
-        "aggregate_score": 1 - data["advbench_behaviors"]["average_toxicity"]   # Whatever you want as final score (here we just invert)
-    }
-    return result
-```
-
-and register it in two locations: 1. At the bottom of `helper_tools/results_processor.py`
-
-```python
-BENCHMARK_PROCESSORS = {
-    "bbq": reformat_bbq_metric,
-    "bold": reformat_bold_metric,
-    "toxicity": reformat_toxicity_metric,
-    "toxicity_advbench": reformat_toxicity_advbench_metric,
-    ...
-}
-```
-
-and in 2. in `config.py`
-
-```python
-####
-# Benchmark Postprocessing
-####
-BENCHMARK_PROCESSORS |= {
-    "bbq": reformat_bbq_metric,
-    "bold": reformat_bold_metric,
-    "toxicity": reformat_toxicity_metric,
-    "toxicity_advbench": reformat_toxicity_advbench_metric,
-    ...
-}
-```
-
-### 4. Write a yaml config file in `configs/`
-
-Lastly we can write a `.yaml` file in the `configs/` folder that makes use of all our implementations. In our case we find this in 
-
-```yaml
-data_config: &data_config
-  type: "toxicity_advbench" # Use our data config
-  debug: false
-  subset_size: 520
-
-config:
-  run_id: 1
-  model: !include models/default_model.yaml
-  seed: 36
-  benchmark_configs:
-    - name: "toxicity_advbench" 
-      type: "toxicity_advbench" # Use our benchmark
-      data_config: *data_config
-      provider: "hf"
-      num_workers: 1
-      postprocessor: 
-        type: "toxicity_advbench"   # Use our post_processor
-```
-
----
-</details>
-
-<details>
-<summary>Dev tooling</summary>
-This project uses `black`, `isort`, `flake8`, and `mypy` to enforce code and typing conventions. 
-Please have these tools installed (happens automatically when you follow the setup) and make sure that you have the git commit hooks as specified in `.pre-commit-config.yaml`, so that code is formatted/checked automatically. 
-You can register these hooks via `pre-commit install`.
-
----
-</details>
-
-<details>
-<summary>Adding your benchmark / evaluation</summary>
-
-To add your benchmark or evaluation to the suite, please follow the steps above and open a pull request. 
-If you have any questions, feel free to reach out to us.
-
----
-</details>
-
-## Citation
+## 📝 Citation
 
 Please cite our work as follows:
 

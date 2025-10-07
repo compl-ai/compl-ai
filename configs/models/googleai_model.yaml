@@ -1,3 +1,0 @@
-name: "gemini-1.5-flash"
-provider: "googleai"
-batch_size: 40
