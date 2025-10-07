@@ -1,51 +1,55 @@
-<div align="center"><h1>COMPL-AI</h1></div>
+<p align="center">
+  <a href="https://compl-ai.org"><img  style="max-height: 50px;" src="compl-ai-logo.svg" alt="COMPL-AI">
+</a>
+</p>
+
+<div align="center">
+    COMPL-AI is a compliance-centered evaluation framework for LLMs created and maintained by
+      
+  [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](https://insait.ai/) and [LatticeFlow AI](https://latticeflow.ai/).
+</div>
+
+<div align="center">
 
 [![arXiv](https://img.shields.io/badge/arXiv-2410.07959-b31b1b)](https://arxiv.org/abs/2410.07959)
 [![Web](https://img.shields.io/badge/Website-compl--ai.org-blue)](https://compl-ai.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-g)](LICENSE)
 
-COMPL-AI is a compliance-centered evaluation framework for Generative AI models.
-<div>
-  <p>
-    <a href="https://compl-ai.org" target="_blank">
-      <img width="100%" style="max-width: 600px;" src="banner.png" alt="COMPL-AI banner"></a>
-  </p>
 </div>
 
+## Overview
+The COMPL-AI framework includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
 
-This repository contains the COMPL-AI evaluation suite for generative AI models.
-- To run an evaluation yourself, please follow the instructions below.
-- To request an evaluation, please contact us through [compl-ai.org](https://compl-ai.org). 
+- Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
+- Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (23 and growing)
+- A public Hugging Face leaderboard of our [latest evaluation results](https://huggingface.co/spaces/latticeflow/compl-ai-board)   
+- Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
+- A custom eval CLI (run `complai --help` for usage)
 
-COMPL-AI was created at [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](https://insait.ai/) and [LatticeFlow AI](https://latticeflow.ai/).
-
-## 🛠️ Installation
-
-Prerequisites: [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
-
-### 1. Clone the repository and create a virtual environment
-```
-git clone https://github.com/compl-ai/compl-ai.git
-cd compl-ai
-uv venv
-source .venv/bin/activate
-uv pip install .
-```
-Alternatively, you can skip creating a virtual environment manually and prepend `uv run` to all commands to run the CLI.
-
-### 2. Test the CLI
-```
-complai --help
-```
+Community contributions for benchmarks and new mappings are welcome! We are actively looking to exapand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contributing](#-contributing) section below.
 
 ## ⏩ Quickstart
+To run an evaluation yourself, please follow the instructions below (or contact us through [compl-ai.org](https://compl-ai.org)). 
 
-Run all benchmarks:
-```
-complai eval <provider>/<model> # e.g. openai/gpt-5-nano or vllm/Qwen/Qwen3-8B
+
+```bash
+# Clone and create a virtual environment
+git clone https://github.com/compl-ai/compl-ai.git
+cd compl-ai
+uv sync
+source .venv/bin/activate
+
+# Set your API key
+export OPENAI_API_KEY=your_key
+
+# Run 5 samples on a single benchmark
+complai eval openai/gpt-5-nano --tasks mmlu_pro --limit 5
+
+# Or run the full framework
+complai eval openai/gpt-5-nano
 ```
 
-You can view detailed sample-level logs with the [Inspect AI VS Code extension](https://marketplace.cursorapi.com/items/?itemName=ukaisi.inspect-ai), or in your browser with:
+You can then view a detailed sample-level log of your results with the [Inspect AI VS Code extension](https://marketplace.cursorapi.com/items/?itemName=ukaisi.inspect-ai), or in your browser with:
 ```
 inspect view
 ```
@@ -54,162 +58,86 @@ inspect view
 ## 💻 CLI
 
 
-```
-complai COMMAND [ARGS]...
-```
-
-**Available Commands**:
-
-* `eval`: Run tasks.
-* `list`: List all available tasks.
-
-To get detailed information on CLI arguments and options, e.g. to 
-- select a subset of tasks to run,
-- change the number of samples to evaluate concurrently,
-- change sampling parameters,
-- etc.,
-
- run: 
-```
-complai eval --help
+#### Get help with any command
+```bash
+complai COMMAND --help
 ```
 
-To select a model for an evaluation, pass its name using the [Inspect](https://inspect.aisi.org.uk/) naming convention `<provider>/<model>`:
+#### List Tasks
+
+```bash
+complai list
 ```
+
+#### Run Evals with the following syntax
+```bash
+complai eval <provider>/<model> -t <task_name> -l <n_samples>
+```
+
+#### Command Examples
+```bash
+# Remote API
 complai eval openai/gpt-4o-mini
 complai eval anthropic/claude-sonnet-4-0
-complai eval vllm/Qwen/Qwen3-8B
-complai eval hf/Qwen/Qwen3-8B
-```
 
-See the [Providers](#-providers) section for more information on different providers.
+# Locally with HF backend, set cuda device (use mps for macOS)
+complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
 
-### Environment Variables
+# Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
+complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
 
-The CLI supports reading argument and option values from environment variables. For instance, you can set the `COMPLAI_MODEL` environment variable:
-```
-export COMPLAI_MODEL=openai/gpt-5-nano
-```
- This model will then be used automatically if no model is provided to the `eval` command.
-
-You can also create a `.env` file to set environment variables:
-```
-# In your .env file add:
-OPENAI_API_KEY=your-openai-api-key
-
-COMPLAI_MODEL=openai/gpt-5-nano
-COMPLAI_LOG_DIR=path/to/a/logdir
-COMPLAI_MAX_CONNECTIONS=128
-```
-COMPL-AI will automatically load variables from a `.env` file if one is present in the directory.
-
-Values provided in the CLI take precedence over environment variables and values in the `.env` file.
-
-### Retrying
-
-To retry failed tasks or continue an interrupted evaluation, you can specify a `--log-dir` in the `eval` command. To continue an interrupted evaluation, find the path to the corresponding log directory and add it to the `eval` command:
-```
+# Retry (if eval failed)
 complai eval openai/gpt-5-nano --log-dir path/to/logdir
 ```
 
-You can also amend a run with additional tasks, models, or epochs. Just re-issue the same command with the additions.
+See the [Providers](providers/README.md) section for more information on different providers.
 
-## 🔌 Providers
-
-COMPL-AI has support for the same set of model providers and backends as [Inspect](https://inspect.aisi.org.uk/models.html). The following providers are supported at the time of writing:
-| Category         | Providers                                                                 |
-|------------------|---------------------------------------------------------------------------|
-| APIs             | OpenAI, Anthropic, Google, Grok, Mistral, DeepSeek, Perplexity            |
-| Cloud            | AWS Bedrock, Azure AI, Vertex                                                     |
-| Open (Hosted)    | Groq, Together AI, Fireworks AI, Cloudflare                               |
-| Open (Local)     | Hugging Face, vLLM, SGLang, Ollama, Llama-cpp-python, TransformerLens     |
-
-For more details, see [inspect.aisi.org.uk/models](https://inspect.aisi.org.uk/models.html) and [inspect.aisi.org.uk/providers](https://inspect.aisi.org.uk/providers.html).
-
-When using a provider for the first time, you may be prompted to install additional dependencies. Install using:
-```
-uv pip install <package-name>
-```
-
-### Local Models
-
-COMPL-AI supports the same local model endpoints as Inspect AI. At the time of writing, the following providers are supported:
--  	Hugging Face `transformers`
--   vLLM 
--   SGLang
--   Ollama
--   Llama-cpp-python
--   TransformerLens
-
-Check [the Inspect AI list](https://inspect.aisi.org.uk/providers.html) for the full list of supported models.
-
-#### Hugging Face `transformers`
-
-Concurrency for REST API based models is managed using the `max_connections` option. The same option is used for transformers inference—up to `max_connections` calls to `generate()` will be batched together (note that batches will proceed at a smaller size if no new calls to `generate()` have occurred in the last 2 seconds).
-
-The default batch size for Hugging Face is 32, but you should tune your `max_connections` to maximise performance and ensure that batches don’t exceed available GPU memory. The Pipeline Batching section of the transformers documentation is a helpful guide to the ways batch size and performance interact.
-
-The PyTorch cuda device will be used automatically if CUDA is available (as will the Mac OS mps device). If you want to override the device used, use the device model argument. For example:
-
-```
-complai eval hf/Qwen/Qwen3-8B -M device=cuda:0
-```
+#### Environment Variables
+COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
 
 
-In addition to using models from the Hugging Face Hub, the Hugging Face provider can also use local model weights and tokenizers (e.g. for a locally fine tuned model). Use `hf/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
+## 🧪 Framework
 
-```
-complai eval hf/local -M model_path=./my-model
-```
+#### 🚧 Update in Progress
+The current version of the framework is published [here](https://compl-ai.org/interpretation/). 
 
+We are currently in the process of renewing our coverage of the EU AI Act by updating the set of benchmarks, thus the supported set of benchmark may differ from this original mapping. The goals of this update are:
+- To increase coverage over the EU AI Act principles
+- To increase coverage over technical requirements
+- Adding support for the Code of Practice, namely the [Safety and Security](https://code-of-practice.ai/?section=safety-security) chapter.
+- Adding the notion of `risk` along side `technical requirements`
+- Refreshing the supported benchmarks to ensure they remain challenging for frontier models (addressing saturation, contamination, and other benchmark quality issues).
 
-#### vLLM and SGLang
-The vLLM and SGLang backends are generally much faster than the Hugging Face provider as the libraries are designed entirely for inference speed whereas the Hugging Face library is more general purpose.
+As part of our update, the renewed benchmarking suite is now built on the UK Security Institute’s [Inspect Framework](https://github.com/UKGovernmentBEIS/inspect_ai), which offers improved ease of use and greater overall consistency. This means that several benchmarks are now evaluated differently (e.g. full-text answers instead of logits for multiple-choice questions) reflecting more modern and opinionated approaches to LLM evaluation. Thus, benchmark scores from the v1 and v2 suites, even for the same benchmark, should not be considered directly comparable.
 
-If you want to use the vLLM or SGLang backend, COMPL-AI will automatically start a server for you in the background. To avoid repeated server starts (which can take several minutes for large models), you can start your own server and set the `VLLM_BASE_URL` and `VLLM_API_KEY` environment variables. For SGLang, use `SGLANG_BASE_URL` and `SGLANG_API_KEY`.
+### Principles
+COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act principles:
+- Human Agency and Oversight: AI systems should be supervised by people, not by automation alone, to prevent harmful outcomes and allow for human intervention. 
+- Technical Robustness and Safety: AI systems must be safe and secure, implementing risk management, data quality, and - cybersecurity measures to prevent undue risks. 
+- Privacy and Data Governance: The Act sets rules for the quality and governance of data used in AI, emphasizing the protection of personal and sensitive information. 
+- Transparency: Users should understand when they are interacting with an AI system and how it functions, fostering trust and enabling accountability. 
+- Diversity, Non-Discrimination, and Fairness: AI systems should be designed and used to uphold human rights, including fairness and equality, and avoid biases that could lead to discrimination. 
+- Societal and Environmental Well-being: AI systems should be developed in a way that benefits society and the environment, avoiding negative impacts on fundamental rights and democratic values. 
 
-Similar to the Hugging Face provider, you can also use local models with vLLM or SGLang. Use `vllm/local` or `sglang/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
+### Technical Requirements and Benchmarks
+You can see a list of all technical requirements and their respective benchmarks using `complai list`:
+- Capabilities, Performance, and Limitations
+  - aime_2025, arc_challenge, hellaswag, humaneval, livebench_coding, mmlu_pro, swe_bench_verified, truthfulqa
+- Representation — Absence of Bias
+  - bbq, bold
+- Interpretability
+  - bigbench_calibration, triviaqa_calibration
+- Robustness and Predictability
+  - boolq_contrast, forecast_consistency, imdb_contrast, self_check_consistency
+- Fairness — Absence of Discrimination
+  - decoding_trust, fairllm
+- Disclosure of AI
+  - human_deception
+- Cyberattack Resilience
+  - instruction_goal_hijacking, llm_rules
+- Harmful Content and Toxicity
+  - realtoxicityprompts
 
-```
-complai eval vllm/local -M model_path=./my-model
-```
-
-Note that some benchmarks in COMPL-AI use tool calling, which often requires model dependent configuration. For example, when using vLLM, make sure to supply the correct `tool-call-parser` model argument. For example: 
-
-```
-complai eval vllm/Qwen/Qwen3-8B -M tool-call-parser=hermes
-```
-
-See the [Tool Use](https://docs.vllm.ai/en/stable/features/tool_calling.html) section of the vLLM documentation for details. For SGLang, refer to the [Tool Parser](https://docs.sglang.ai/advanced_features/tool_parser.html) section.
-
-
-#### Ollama and Llama-cpp-python
-If you want to use Ollama or Llama-cpp-python you need to start the server manually.
-
-#### OpenAI-compatible API endpoints
-If you want to use an OpenAI-compatible API endpoint, you can use it with the `openai-api` provider, which uses the following model naming convention:
-```
-openai-api/<provider-name>/<model-name>
-```
-COMPL-AI will read environment variables corresponding to the api key and base url of your provider using the following convention (note that the provider name is capitalized):
-```
-<PROVIDER_NAME>_API_KEY
-<PROVIDER_NAME>_BASE_URL
-```
-Hyphens within provider names will be converted to underscores so they conform to requirements of environment variable names. For example, if the provider is named awesome-models then the API key environment variable should be AWESOME_MODELS_API_KEY.
-
-Here is how you would access DeepSeek using the openai-api provider:
-```
-export DEEPSEEK_API_KEY=your-deepseek-api-key
-export DEEPSEEK_BASE_URL=https://api.deepseek.com
-complai eval openai-api/deepseek/deepseek-reasoner
-```
-
-You can enable the use of the Responses API with the `openai-api` provider by passing the `responses_api` model arg. For example:
-
-```
-complai eval openai-api/<provider>/<model> -M responses_api=true
-```
 
 
 
