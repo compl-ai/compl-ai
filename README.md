@@ -26,7 +26,7 @@ COMPL-AI is an EU AI Act benchmarking framework allowing for technical assessmen
 - Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
 - A custom eval CLI (run `complai --help` for usage)
 
-Community contributions for benchmarks and new mappings are welcome! We are actively looking to exapand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contribution guide](#-contributing) section below.
+Community contributions for benchmarks and new mappings are welcome! We are actively looking to exapand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contributing](#-contributing) section below.
 
 ## ⏩ Quickstart
 To run an evaluation yourself, please follow the instructions below (or contact us through [compl-ai.org](https://compl-ai.org)). 
