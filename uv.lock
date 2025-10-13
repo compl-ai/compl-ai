@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform == 'darwin'",
@@ -681,7 +681,7 @@ dependencies = [
     { name = "gdown" },
     { name = "gensim" },
     { name = "inspect-ai" },
-    { name = "inspect-evals", extra = ["bbq", "livebench", "swe-bench"] },
+    { name = "inspect-evals", extra = ["livebench", "swe-bench"] },
     { name = "llm-rules" },
     { name = "nltk" },
     { name = "numpy" },
@@ -849,12 +849,13 @@ wheels = [
 
 [[package]]
 name = "datasets"
-version = "3.6.0"
+version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dill" },
     { name = "filelock" },
     { name = "fsspec", extra = ["http"] },
+    { name = "httpx" },
     { name = "huggingface-hub" },
     { name = "multiprocess" },
     { name = "numpy" },
@@ -866,9 +867,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "xxhash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/89/d3d6fef58a488f8569c82fd293ab7cbd4250244d67f425dcae64c63800ea/datasets-3.6.0.tar.gz", hash = "sha256:1b2bf43b19776e2787e181cfd329cb0ca1a358ea014780c3581e0f276375e041", size = 569336, upload-time = "2025-05-07T15:15:02.659Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/48/0186fbc4b86a4f9ecaf04eb01e877e78b53bfa0b03be9c84b2298431ba33/datasets-4.2.0.tar.gz", hash = "sha256:8333a7db9f3bb8044c1b819a35d4e3e2809596c837793b0921382efffdc36e78", size = 582256, upload-time = "2025-10-09T16:10:15.534Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/34/a08b0ee99715eaba118cbe19a71f7b5e2425c2718ef96007c325944a1152/datasets-3.6.0-py3-none-any.whl", hash = "sha256:25000c4a2c0873a710df127d08a202a06eab7bf42441a6bc278b499c2f72cd1b", size = 491546, upload-time = "2025-05-07T15:14:59.742Z" },
+    { url = "https://files.pythonhosted.org/packages/91/9e/0bbbd09b116fd8ee2d3617e28e6598551d2f0f24d3a2ce99cc87ec85aeb0/datasets-4.2.0-py3-none-any.whl", hash = "sha256:fdc43aaf4a73b31f64f80f72f195ab413a1141ed15555d675b2fd17926f8b026", size = 506316, upload-time = "2025-10-09T16:10:13.375Z" },
 ]
 
 [[package]]
@@ -1854,8 +1855,8 @@ dependencies = [
 
 [[package]]
 name = "inspect-evals"
-version = "0.3.dev1423+g416bcffe6"
-source = { git = "https://github.com/UKGovernmentBEIS/inspect_evals#416bcffe645beaae7830fd9641b49ae9999cbca1" }
+version = "0.3.dev1437+gc194f402d"
+source = { git = "https://github.com/UKGovernmentBEIS/inspect_evals#c194f402d0cd7b68584b0424e5344e491cc9f010" }
 dependencies = [
     { name = "datasets" },
     { name = "inspect-ai" },
@@ -1869,9 +1870,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-bbq = [
-    { name = "datasets" },
-]
 livebench = [
     { name = "livebench" },
     { name = "nltk" },

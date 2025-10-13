@@ -1,45 +1,34 @@
-from typing import Any
-
+from inspect_ai import Epochs
 from inspect_ai import Task
 from inspect_ai import task
-from inspect_ai.dataset import Dataset
-from inspect_ai.dataset import hf_dataset
-from inspect_ai.dataset import Sample
-from inspect_ai.scorer import match
-from inspect_ai.solver import generate
-from inspect_ai.solver import prompt_template
+from inspect_ai import task_with
+from inspect_ai.scorer import Score
+from inspect_ai.scorer import score_reducer
+from inspect_ai.scorer import ScoreReducer
+from inspect_ai.scorer import value_to_float
+from inspect_evals.aime2025.aime2025 import aime2025 as inspect_aime2025
 
 
-DATASET_PATH = "MathArena/aime_2025"
+@score_reducer(name="aime_2025")
+def aime_2025_reducer() -> ScoreReducer:
+    to_float = value_to_float()
 
-PROMPT_TEMPLATE = """
-Solve the following math problem step by step.
-The last line of your response should be of the form "ANSWER: $ANSWER" (without quotes) where $ANSWER is the answer to the problem.
+    def reduce(scores: list[Score]) -> Score:
+        """Compute a mean value of all scores."""
+        values = [to_float(score.value) for score in scores]
+        mean_value = sum(values) / len(values)
+        if mean_value == 0:
+            return Score(value=0)
+        elif mean_value == 1:
+            return Score(value=1)
+        else:
+            return Score(value=0.5)
 
-{prompt}
-
-Remember to put your answer on its own line at the end in the form "ANSWER: $ANSWER" (without quotes) where $ANSWER is the answer to the problem, and you do not need to use a \\boxed command.
-""".strip()
-
-
-def record_to_sample(record: dict[str, Any]) -> Sample:
-    sample = Sample(
-        id=record["problem_idx"],
-        input=record["problem"],
-        target=str(record["answer"]),
-        metadata={"problem_type": record["problem_type"]},
-    )
-    return sample
+    return reduce
 
 
-def aime_2025_dataset() -> Dataset:
-    return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
-
-
-@task(technical_requirement="Capabilities, Performance, and Limitations")
-def aime_2025() -> Task:
-    return Task(
-        dataset=aime_2025_dataset(),
-        solver=[prompt_template(PROMPT_TEMPLATE), generate()],
-        scorer=match(numeric=True),
-    )
+@task(
+    name="aime_2025", technical_requirement="Capabilities, Performance, and Limitations"
+)
+def aime_2025(num_epochs: int = 4) -> Task:
+    return task_with(inspect_aime2025(), epochs=Epochs(num_epochs, aime_2025_reducer()))
