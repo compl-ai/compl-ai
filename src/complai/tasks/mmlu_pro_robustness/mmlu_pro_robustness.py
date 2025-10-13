@@ -83,10 +83,15 @@ def filter_dataset(
 
 
 def mmlu_pro_robustness_dataset(
-    categories: list[str] | None, num_samples: int
+    categories: list[str] | None, num_samples: int, seed: int
 ) -> Dataset:
     dataset = hf_dataset(
-        path=DATASET_PATH, split="test", sample_fields=FIELD_SPEC, shuffle_choices=True
+        path=DATASET_PATH,
+        split="test",
+        sample_fields=FIELD_SPEC,
+        shuffle_choices=True,
+        shuffle=True,
+        seed=seed,
     )
     dataset = filter_dataset(dataset, categories, num_samples)
 
@@ -270,6 +275,7 @@ def mmlu_pro_robustness(
     num_samples: int = 200,
     num_fewshot: int = 5,
     perturbations: PerturbationName | list[PerturbationName] | None = None,
+    seed: int = 0,
 ) -> Task:
     """
     MMLU-Pro robustness benchmark.
@@ -279,6 +285,7 @@ def mmlu_pro_robustness(
         num_samples (int): Number of samples to take.
         num_fewshot (int): Number of few shot examples to use.
         perturbations (PerturbationName | list[PerturbationName] | None): List of perturbations to apply.
+        seed (int): Seed for choosing the samples to be evaluated on.
     """
     categories = (
         categories
@@ -300,7 +307,7 @@ def mmlu_pro_robustness(
     ]
 
     return Task(
-        dataset=mmlu_pro_robustness_dataset(categories, num_samples),
+        dataset=mmlu_pro_robustness_dataset(categories, num_samples, seed),
         solver=mmlu_pro_robustness_solver(num_fewshot, initialized_perturbations),
         scorer=mmlu_pro_robustness_scorer(),
     )
