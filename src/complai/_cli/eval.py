@@ -142,11 +142,11 @@ def eval_command(
         ),
     ] = None,
     epochs: Annotated[
-        int,
+        int | None,
         typer.Option(
             help="Number of times to repeat each sample.", envvar="COMPLAI_EPOCHS"
         ),
-    ] = 1,
+    ] = None,
     max_tokens: Annotated[
         int | None,
         typer.Option(

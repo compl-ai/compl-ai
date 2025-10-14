@@ -1,4 +1,4 @@
-from .humaneval import wrapped_humaneval as humaneval
+from .humaneval import humaneval
 
 
 __all__ = ["humaneval"]

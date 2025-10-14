@@ -27,6 +27,8 @@ dependencies = [
     "fairlearn>=0.12.0",
     "datasets>=3.6.0",
     "regex>=2025.7.34",
+    "spacy>=3.8.7",
+    "en-core-web-sm",
 ]
 
 [project.optional-dependencies]
@@ -71,15 +73,18 @@ exclude = [
 default.check-file = true
 default.check-filename = true
 default.extend-ignore-identifiers-re = []
+default.extend-ignore-re = ["(?Rm)^.*(#|//)\\s*spellchecker:disable-line$"]
 files.extend-exclude = [
     "*.ipynb",  # Notebook cells are asigned a hash.
     "src/complai/tasks/self_check_consistency/topics.py",
     "src/complai/tasks/self_check_consistency/compact_ie/",
+    "src/complai/tasks/mmlu_pro_robustness/correct_to_misspelling.json",
 ]
 
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
