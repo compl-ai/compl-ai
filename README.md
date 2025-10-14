@@ -86,10 +86,21 @@ complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
 # Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
 complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
 
+# Use task configuration file or CLI task args
+complai eval openai/gpt-5-nano --task-config default_config.yaml -T mmlu_pro:num_fewshot=5
+
 # Retry (if eval failed)
 complai eval openai/gpt-5-nano --log-dir path/to/logdir
 ```
 
+#### Task Configuration
+COMPL-AI supports task-specific configuration via YAML or JSON files. See `default_config.yaml` for a reference of all configurable parameters. You can:
+
+- Use the default config as a template: `cp default_config.yaml my_config.yaml`
+- Modify the tasks and parameters you want
+- Pass it to any eval: `complai eval <model> --task-config my_config.yaml`
+
+#### Providers
 See the [Providers](providers/README.md) section for more information on different providers.
 
 #### Environment Variables
@@ -144,10 +155,17 @@ You can see a list of all technical requirements and their respective benchmarks
 ## 🤝 Contributing
 We welcome contributions! When contributing, please make sure to activate pre-commit hooks to ensure code quality and consistency. You can install pre-commit hooks with:
 
-```
+```bash
 pip install pre-commit
 pre-commit install
 ```
+
+To run tests, run the following command:
+
+```bash
+make test
+```
+
 
 ## 📄 License
 

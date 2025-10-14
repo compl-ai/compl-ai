@@ -33,6 +33,9 @@ dependencies = [
 huggingface = ["torch", "transformers", "accelerate"]
 vllm = ["vllm"]
 
+[dependency-groups]
+dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "types-PyYAML"]
+
 [project.entry-points.inspect_ai]
 complai = "complai._registry"
 
@@ -61,7 +64,8 @@ warn_redundant_casts = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 exclude = [
-    "src/complai/tasks/self_check_consistency/compact_ie/"
+    "src/complai/tasks/self_check_consistency/compact_ie/",
+    "src/tests/"
 ]
 
 [tool.typos]
@@ -77,3 +81,10 @@ files.extend-exclude = [
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-rA --strict-markers --color=yes"

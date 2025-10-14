@@ -9,10 +9,13 @@ from rich import print
 from typing_extensions import Annotated
 
 from complai._cli.utils import bool_or_float
+from complai._cli.utils import error_handler
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
+from complai._cli.utils import instantiate_tasks_from_infos
 from complai._cli.utils import parse_sample_id
 from complai._cli.utils import parse_samples_limit
+from complai._cli.utils import parse_task_args
 from complai._cli.utils import patch_display_results
 from complai._cli.utils import validate_model_args
 
@@ -37,6 +40,7 @@ def eval_command(
     tasks_to_skip: Annotated[
         str | None,
         typer.Option(
+            "-s",
             "--skip",
             "--tasks-to-skip",
             help="Comma-separated list of tasks to skip.",
@@ -48,7 +52,7 @@ def eval_command(
         typer.Option(
             "-F",
             "--task-filter",
-            help="Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).",
+            help='Filter tasks by attribute (e.g. `-F technical_requirement="Capabilities, Performance, and Limitations"`).',
         ),
     ] = None,
     task_args: Annotated[
@@ -56,12 +60,17 @@ def eval_command(
         typer.Option(
             "-T",
             "--task-arg",
-            help="One or more task arguments (e.g. `-T arg1=value1,arg2=value2`).",
+            help="One or more task arguments (e.g. `-T aime_2025:num_epochs=4 -T mmlu_pro:num_fewshot=0`).",
         ),
     ] = [],
     task_config: Annotated[
         str | None,
-        typer.Option("--task-config", help="Task arguments file (JSON or YAML)."),
+        typer.Option(
+            "-tc",
+            "--task-config",
+            help="Task arguments file (JSON or YAML).",
+            envvar="COMPLAI_TASK_CONFIG",
+        ),
     ] = None,
     model_base_url: Annotated[
         str | None,
@@ -74,7 +83,7 @@ def eval_command(
         typer.Option(
             "-M",
             "--model-arg",
-            help="One or more model arguments (e.g. `-M arg1=value1,arg2=value2`).",
+            help="One or more model arguments (e.g. `-M arg1=value1 -M arg2=value2`).",
         ),
     ] = [],
     model_config: Annotated[
@@ -314,7 +323,7 @@ def eval_command(
     patch_display_results()
 
     # Parse args
-    parsed_task_args = parse_cli_config(task_args, task_config)
+    parsed_task_args = parse_task_args(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
     parsed_limit = parse_samples_limit(limit)
     parsed_sample_id = parse_sample_id(sample_id)
@@ -326,17 +335,19 @@ def eval_command(
     if log_dir is None:
         log_dir = get_log_dir(model)
 
-    try:
-        print("Starting evals...")
+    # Instantiate tasks with task-specific args
+    with error_handler(debug):
+        instantiated_tasks = instantiate_tasks_from_infos(task_infos, parsed_task_args)
+
+        print("\nStarting evals...")
         eval_set(
             model=model,
-            tasks=task_infos,
+            tasks=instantiated_tasks,
             log_dir=log_dir,
             retry_attempts=retry_attempts,
             retry_wait=retry_wait,
             retry_connections=retry_connections,
             retry_cleanup=retry_cleanup,
-            task_args=parsed_task_args,
             model_base_url=model_base_url,
             model_args=parsed_model_args,
             limit=parsed_limit,
@@ -368,15 +379,3 @@ def eval_command(
             time_limit=time_limit,
             working_limit=working_limit,
         )
-    except Exception as e:
-        if debug:
-            raise  # Show full stack trace
-        else:
-            import sys
-
-            error_msg = (
-                f"\n[bold][bright_red]{e.__class__.__name__}:[/bright_red][/bold] {e}"
-                "\n\nRun with [bold][cyan]--debug[/cyan][/bold] flag for full stack trace."
-            )
-            print(error_msg, file=sys.stderr)
-            sys.exit(1)

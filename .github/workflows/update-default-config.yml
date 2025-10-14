@@ -1,0 +1,37 @@
+name: Update Default Config
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/complai/tasks/**"
+      - "tools/generate_default_config.py"
+
+jobs:
+  update-config:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-python@v5
+
+      - name: Generate default_config.yaml
+        run: uv run --with inspect-ai pyyaml --no-project tools/generate_default_config.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add config/default_config.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit --no-verify -m "chore: update default_config.yaml"
+            git pull --rebase
+            git push
+          fi

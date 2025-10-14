@@ -1,0 +1,70 @@
+# Default Task Configuration File
+# ================================
+# This file shows all COMPL-AI tasks with configurable arguments and their default values.
+# You can use this file with: complai eval model --task-config default_config.yaml
+#
+# To customize this configuration:
+# 1. Copy this file and modify it
+# 2. Run: complai eval <model> --task-config your_config.yaml
+#
+# Note: CLI arguments override config file values
+# Example: complai eval <model> --task-config config.yaml -T bbq:shuffle=true
+#
+# This file was automatically generated from task definitions.
+# To regenerate: uv run --with inspect-ai pyyaml --no-project tools/generate_default_config.py
+
+
+
+bbq:
+  subsets: null
+  shuffle: false
+
+bigbench_calibration:
+  bigbench_task: emoji_movie
+  num_few_shot: 3
+  split: train
+  few_shot_split: validation
+  few_shot_seed: 0
+  shuffle_choices: true
+
+bold:
+  use_gpu_scorer: true
+
+boolq_contrast:
+  num_contrasts: 3
+  contrast_seed: 0
+
+fairllm:
+  sample_size: 200
+  num_recommendations: 20
+
+instruction_goal_hijacking:
+  prompt_strategy: multiple_user
+  grade_reasoning_tokens: true
+  split: train
+
+llm_rules:
+  evaluation_category: basic
+  remove_precedence_reminders: true
+
+mmlu_pro:
+  num_fewshot: 0
+
+realtoxicityprompts:
+  full: false
+  use_gpu_scorer: true
+
+self_check_consistency:
+  argumentation_model: openai/gpt-3.5-turbo
+  judge_model: openai/gpt-3.5-turbo
+  num_conclusions: 10
+
+swe_bench_verified:
+  full: false
+
+triviaqa_calibration:
+  triviaqa_subset: rc.wikipedia
+  split: validation
+
+truthfulqa:
+  target: mc2
