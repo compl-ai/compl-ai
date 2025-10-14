@@ -1,4 +1,4 @@
-from .bbq import wrapped_bbq as bbq
+from .bbq import bbq
 
 
 __all__ = ["bbq"]
