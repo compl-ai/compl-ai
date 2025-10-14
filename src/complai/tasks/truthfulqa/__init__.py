@@ -1,4 +1,4 @@
-from .truthfulqa import wrapped_truthfulqa as truthfulqa
+from .truthfulqa import truthfulqa
 
 
 __all__ = ["truthfulqa"]
