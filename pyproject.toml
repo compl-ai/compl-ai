@@ -65,7 +65,6 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 exclude = [
     "src/complai/tasks/self_check_consistency/compact_ie/",
-    "src/tests/"
 ]
 
 [tool.typos]
