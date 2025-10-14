@@ -1,11 +1,19 @@
+import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 from typing import Callable
 
 import typer
+import yaml
 from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
+from inspect_ai._eval.loader import load_task_spec
+from inspect_ai._eval.task import Task
+from inspect_ai._util.config import resolve_args
 from rich import print
 
 
@@ -69,14 +77,14 @@ def get_task_infos_from_task_names(
     # Warn about tasks that were not skipped
     if tasks_to_skip:
         print(
-            f"[yellow]WARNING[/yellow] The following task(s) were not skipped: {', '.join(tasks_to_skip)}"
+            f"[yellow][WARNING][/yellow] The following task(s) were not skipped: {', '.join(tasks_to_skip)}"
         )
 
-    # Warn about tasks that were not found
+    # Raise error if tasks were not found or skipped
     not_found = set(task_names) - set(task.name for task in tasks_to_run)
     if not_found:
-        print(
-            f"[yellow]WARNING[/yellow] The following task(s) were not found: {', '.join(not_found)}"
+        raise typer.BadParameter(
+            f"The following task(s) were skipped or not found: {', '.join(not_found)}"
         )
 
     return tasks_to_run
@@ -115,6 +123,124 @@ def get_task_infos(
     tasks_to_skip_names = parse_tasks(tasks_to_skip)
 
     return get_task_infos_from_task_names(task_names, tasks_to_skip_names, task_filter)
+
+
+def parse_task_args(
+    task_args: list[str], task_config: str | None
+) -> dict[str, dict[str, Any]]:
+    """
+    Parse per-task arguments from CLI and config file. CLI args take precedence over config file.
+
+    Args:
+        task_args: List of CLI task args in format "task_name:key=value"
+        task_config: Path to config file (JSON or YAML)
+
+    Returns:
+        Dict mapping task_name -> args dict
+    """
+    result: dict[str, dict[str, Any]] = {}  # task_name -> {key: value}
+
+    # Parse config file
+    if task_config is not None:
+        config = resolve_args(task_config)
+        if any(not isinstance(value, dict) for value in config.values()):
+            raise typer.BadParameter(
+                "Task config file must specify a mapping of task names to argument dictionaries. See `config/default_config.yaml` for an example of a valid config file."
+            )
+        result = config
+
+    # Parse CLI args (override config file)
+    for arg in task_args:
+        if ":" not in arg or "=" not in arg:
+            raise typer.BadParameter(
+                f"Task argument must be in format 'task_name:key=value', got '{arg}'"
+            )
+
+        # Split on first colon to get task_name and key=value part
+        task_name, key_value = arg.split(":", 1)
+
+        # Split on first equals to get key and value
+        key, value_str = key_value.split("=", 1)
+
+        # Parse value
+        try:
+            value = yaml.safe_load(value_str)
+        except yaml.YAMLError as e:
+            raise typer.BadParameter(
+                f"Could not parse value '{value_str}' in argument '{arg}': {e}"
+            )
+
+        # Handle comma-separated values
+        if isinstance(value, str):
+            value_list = value.split(",")
+            value = value_list if len(value_list) > 1 else value_list[0]
+
+        # Initialize task dict if not present
+        if task_name not in result:
+            result[task_name] = {}
+
+        # Set the value (CLI overrides config)
+        result[task_name][key] = value
+
+    return result
+
+
+def instantiate_task_from_info(task_info: TaskInfo, task_args: dict = {}) -> Task:
+    """
+    Instantiate a Task from a TaskInfo object and task args.
+
+    Args:
+        task_info: TaskInfo object.
+        task_args: Dictionary mapping task names to their specific args.
+
+    Returns:
+        Task: Instantiated Task object.
+    """
+    task_spec = f"{task_info.file}@{task_info.name}"
+
+    return load_task_spec(task_spec, task_args)[0]
+
+
+def instantiate_tasks_from_infos(
+    task_infos: list[TaskInfo], task_args: dict[str, dict[str, Any]] = {}
+) -> list[Task]:
+    """
+    Instantiate tasks from TaskInfo objects with per-task args.
+
+    Args:
+        task_infos: List of TaskInfo objects.
+        task_args: Dictionary mapping task names to their specific args.
+
+    Returns:
+        list[Task]: List of instantiated Task objects.
+    """
+    tasks = []
+
+    # Warn about args for tasks that aren't in the list of tasks to run
+    tasks_to_run = {info.name for info in task_infos}
+    extra_task_args = set(task_args.keys()) - tasks_to_run
+    if extra_task_args:
+        print(
+            f"[yellow][WARNING][/yellow] Task arguments provided for tasks not being run: {', '.join(extra_task_args)}"
+        )
+
+    # Instantiate tasks
+    print(f"Loading {len(task_infos)} task{'' if len(task_infos) == 1 else 's'}...")
+    start_time = perf_counter()
+
+    for i, info in enumerate(task_infos):
+        task_start = perf_counter()
+        args = task_args.get(info.name, {})
+        task = instantiate_task_from_info(info, args)
+        tasks.append(task)
+        print(
+            f"  ✓ {info.name}: {perf_counter() - task_start:.2f}s ({i + 1}/{len(task_infos)})"
+        )
+
+    total_time = perf_counter() - start_time
+    print(f"Total loading time: {total_time:.2f}s")
+
+    return tasks
 
 
 def validate_model_args(
@@ -208,3 +334,20 @@ def parse_sample_id(sample_id: str | None) -> list[str] | None:
         return [id.strip() for id in sample_id.split(",")]
     else:
         return None
+
+
+@contextmanager
+def error_handler(debug: bool) -> Iterator:
+    """Context manager for error handling."""
+    try:
+        yield
+    except Exception as e:
+        if debug:
+            raise
+        else:
+            error_msg = (
+                f"\n[bold][bright_red]{e.__class__.__name__}:[/bright_red][/bold] {e}"
+                "\n\nRun with [bold][cyan]--debug[/cyan][/bold] flag for full stack trace."
+            )
+            print(error_msg, file=sys.stderr)
+            sys.exit(1)

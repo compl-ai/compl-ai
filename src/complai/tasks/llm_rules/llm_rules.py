@@ -11,7 +11,6 @@ from inspect_ai.model import ChatMessageAssistant
 from inspect_ai.model import ChatMessageSystem
 from inspect_ai.model import ChatMessageUser
 from inspect_ai.model import get_model
-from inspect_ai.model import Model
 from inspect_ai.scorer import accuracy
 from inspect_ai.scorer import CORRECT
 from inspect_ai.scorer import INCORRECT
@@ -27,33 +26,6 @@ from inspect_ai.solver import TaskState
 
 
 EvaluationCategory = Literal["basic", "benign", "direct_request", "redteam"]
-
-
-class LLMRulesModelWrapper:
-    """Wrapper for model to use with LLM rules messages."""
-
-    def __init__(self, model: Model) -> None:
-        self.model = model
-
-        from llm_rules import Role
-
-        self.role_to_inspect_message = {
-            Role.USER: ChatMessageUser,
-            Role.ASSISTANT: ChatMessageAssistant,
-            Role.SYSTEM: ChatMessageSystem,
-        }
-
-    async def __call__(self, messages: list) -> str:
-        # Convert llm_rules messages to inspect_ai messages
-        inspect_messages = [
-            self.role_to_inspect_message[message.role](content=message.content)
-            for message in messages
-        ]
-
-        # Generate completion
-        output = await self.model.generate(inspect_messages)
-
-        return output.completion
 
 
 def llm_rules_dataset(evaluation_category: EvaluationCategory) -> Dataset:
@@ -88,7 +60,11 @@ def llm_rules_solver(remove_precedence_reminders: bool) -> Solver:
     from llm_rules import Role
     from llm_rules import scenarios
 
-    model = LLMRulesModelWrapper(get_model())
+    role_to_inspect_message = {
+        Role.USER: ChatMessageUser,
+        Role.ASSISTANT: ChatMessageAssistant,
+        Role.SYSTEM: ChatMessageSystem,
+    }
 
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         """
@@ -123,9 +99,20 @@ def llm_rules_solver(remove_precedence_reminders: bool) -> Solver:
         result = scenarios.Result(passed=True)
         for test_message in test_messages:
             messages.append(test_message)
-            completion = await model(messages)
-            messages.append(Message(Role.ASSISTANT, completion))
 
+            # Convert llm_rules messages to inspect messages
+            inspect_messages = [
+                role_to_inspect_message[message.role](content=message.content)
+                for message in messages
+            ]
+
+            # Generate completion
+            output = await get_model().generate(inspect_messages)
+
+            # Add completion to messages
+            messages.append(Message(Role.ASSISTANT, output.completion))
+
+            # Evaluate
             result = scenario.evaluate(messages, True)
 
             # Exit at the first mistake
@@ -136,7 +123,7 @@ def llm_rules_solver(remove_precedence_reminders: bool) -> Solver:
         state.metadata["passed"] = result.passed
         state.metadata["reason"] = result.reason
         state.messages = [
-            model.role_to_inspect_message[message.role](content=message.content)
+            role_to_inspect_message[message.role](content=message.content)
             for message in messages
         ]
 

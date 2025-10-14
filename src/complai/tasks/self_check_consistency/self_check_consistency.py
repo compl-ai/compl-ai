@@ -161,9 +161,6 @@ def generate_alternative_statements() -> Solver:
 
     compact_ie = IEPipeline()
 
-    # Get model instance
-    model = get_model()
-
     # Prepare in-context examples
     alternative_statement_examples: list[ChatMessage] = []
     for example in EXAMPLES:
@@ -201,7 +198,7 @@ def generate_alternative_statements() -> Solver:
         ]
 
         # Generate alternative statement
-        output = await model.generate(messages)
+        output = await get_model().generate(messages)
         completion = output.completion
 
         # Try to take the first sentence from the completion since it likely
