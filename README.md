@@ -86,10 +86,10 @@ complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
 # Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
 complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
 
-# Use task configuration file or CLI task args
+# Use task configuration file or CLI task args (CLI args take precedence)
 complai eval openai/gpt-5-nano --task-config default_config.yaml -T mmlu_pro:num_fewshot=5
 
-# Retry (if eval failed)
+# Retry (if eval failed) with existing log directory or specify custom log directory (supports S3 URLs)
 complai eval openai/gpt-5-nano --log-dir path/to/logdir
 ```
 
