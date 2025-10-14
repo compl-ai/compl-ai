@@ -178,11 +178,19 @@ bbq:
 
     def test_empty_string_value(self) -> None:
         """Test parsing empty string values."""
-        result = parse_task_args(["task1:value="], None)
-        # Empty string after = should parse as None or empty string
+        result = parse_task_args(["task1:key=''"], None)
+        # Empty string after = should parse as ""
         assert "task1" in result
-        assert "value" in result["task1"]
-        assert result["task1"]["value"] == "" or result["task1"]["value"] is None
+        assert "key" in result["task1"]
+        assert result["task1"]["key"] == ""
+
+    def test_none_value(self) -> None:
+        """Test parsing empty string values."""
+        result = parse_task_args(["task1:key="], None)
+        # No value after = should parse as None
+        assert "task1" in result
+        assert "key" in result["task1"]
+        assert result["task1"]["key"] is None
 
     def test_task_name_with_underscores(self) -> None:
         """Test task names with underscores."""
