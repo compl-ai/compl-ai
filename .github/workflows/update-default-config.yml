@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
 
       - name: Generate default_config.yaml
-        run: uv run --with inspect-ai pyyaml --no-project tools/generate_default_config.py
+        run: uv run --with inspect-ai,pyyaml --no-project tools/generate_default_config.py
 
       - name: Commit and push if changed
         run: |
