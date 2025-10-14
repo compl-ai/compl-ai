@@ -1,11 +1,11 @@
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any
 from typing import Callable
-from typing import Iterator
 
 import typer
 import yaml
@@ -234,7 +234,7 @@ def instantiate_tasks_from_infos(
         task = instantiate_task_from_info(info, args)
         tasks.append(task)
         print(
-            f"  ✓ {info.name}: {perf_counter() - task_start:.2f}s {f'({i + 1}/{len(task_infos)})' if len(task_infos) > 1 else ''}"
+            f"  ✓ {info.name}: {perf_counter() - task_start:.2f}s ({i + 1}/{len(task_infos)})"
         )
 
     total_time = perf_counter() - start_time
