@@ -1,7 +1,6 @@
 """This script generates a YAML file listing the default values for each task parameter."""
 
 import ast
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -10,15 +9,7 @@ from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 
 
-def format_type_annotation(annotation_node: ast.expr | None) -> str:
-    """Format an AST type annotation into a readable string."""
-    if annotation_node is None:
-        return "any"
-
-    return ast.unparse(annotation_node)
-
-
-def eval_default_value(default_node: ast.expr) -> Any:
+def eval_default_expr(default_node: ast.expr) -> Any:
     """Safely evaluate a default value from an AST node."""
     try:
         # Use ast.literal_eval for safe evaluation of literals
@@ -28,8 +19,21 @@ def eval_default_value(default_node: ast.expr) -> Any:
         return ast.unparse(default_node)
 
 
+def extract_params(function_node: ast.FunctionDef) -> dict[str, Any]:
+    """Extract parameters and their defaults from a task function."""
+    result = {}
+    params = function_node.args.args
+    defaults = function_node.args.defaults
+    # Defaults are aligned to the right (args with defaults are last)
+    for param, default in zip(params[-len(defaults) :], defaults):
+        param_name = param.arg
+        result[param_name] = eval_default_expr(default)
+
+    return result
+
+
 def find_task_func_node(tree: ast.Module, task_name: str) -> ast.FunctionDef | None:
-    """Find a function with the @task decorator in the AST."""
+    """Find a function with the @task decorator and the given task name in the AST."""
     task_func_node = None
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
@@ -66,12 +70,11 @@ def find_task_func_node(tree: ast.Module, task_name: str) -> ast.FunctionDef | N
     return task_func_node
 
 
-def extract_task_defaults(task_info: TaskInfo) -> dict[str, dict[str, Any]]:
+def extract_task_defaults(task_info: TaskInfo) -> dict[str, Any]:
     """Extract parameters and their defaults from a task function.
 
     Returns:
-        Tuple of (defaults_dict, task_description) where task_description is the first line
-        of the docstring or None.
+        Dictionary of parameters and their defaults.
     """
     task_module_path = Path(task_info.file)
     task_name = task_info.name
@@ -91,15 +94,7 @@ def extract_task_defaults(task_info: TaskInfo) -> dict[str, dict[str, Any]]:
         return {}
 
     # Extract default values
-    defaults_dict: dict[str, dict[str, Any]] = defaultdict(dict)
-    params = task_func_node.args.args
-    defaults = task_func_node.args.defaults
-    # Defaults are aligned to the right (args with defaults are last)
-    for param, default in zip(params[-len(defaults) :], defaults):
-        param_name = param.arg
-        defaults_dict[param_name] = eval_default_value(default)
-
-    return defaults_dict
+    return extract_params(task_func_node)
 
 
 def generate_default_config_yaml(task_dir: Path) -> str:
