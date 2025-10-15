@@ -170,7 +170,7 @@ def triviaqa_calibration_scorer() -> Scorer:
 
     async def score(state: TaskState, target: Target) -> Score:
         # Parse and score the first answer
-        first_completion = state.messages[1].content
+        first_completion = state.messages[1].text
         if not isinstance(first_completion, str):
             raise ValueError(f"First completion is not a string: {first_completion}")
         targets = state.target.target
