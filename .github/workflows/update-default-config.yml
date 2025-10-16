@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -23,15 +24,22 @@ jobs:
       - name: Generate default_config.yaml
         run: uv run --with inspect-ai,pyyaml --no-project tools/generate_default_config.py
 
-      - name: Commit and push if changed
+      - name: Skip if no changes
+        id: diff
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add config/default_config.yaml
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
           else
-            git commit --no-verify -m "chore: update default_config.yaml"
-            git pull --rebase
-            git push
+            echo "changed=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Create or update PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: Update Default Config"
+          title: "chore: Update Default Config"
+          body: |
+            This PR was automatically created by the update-default-config workflow to update the default_config.yaml file.
+          branch: chore/update-default-config
+          delete-branch: true
