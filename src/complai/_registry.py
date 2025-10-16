@@ -10,6 +10,7 @@ from complai.tasks.decoding_trust import decoding_trust
 from complai.tasks.fairllm import fairllm
 from complai.tasks.forecast_consistency import forecast_consistency
 from complai.tasks.hellaswag import hellaswag
+from complai.tasks.hle import hle
 from complai.tasks.human_deception import human_deception
 from complai.tasks.humaneval import humaneval
 from complai.tasks.imdb_contrast import imdb_contrast
