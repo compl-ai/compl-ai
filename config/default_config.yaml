@@ -9,6 +9,9 @@
 
 
 
+aime_2025:
+  num_epochs: 4
+
 bbq:
   subsets: null
   shuffle: false
@@ -32,6 +35,14 @@ fairllm:
   sample_size: 200
   num_recommendations: 20
 
+hle:
+  grader_model: openai/o3-mini-2025-01-31
+  text_only: false
+  max_tokens: 8192
+
+include:
+  full: false
+
 instruction_goal_hijacking:
   prompt_strategy: multiple_user
   grade_reasoning_tokens: true
@@ -43,6 +54,13 @@ llm_rules:
 
 mmlu_pro:
   num_fewshot: 0
+
+mmlu_pro_robustness:
+  categories: null
+  num_samples: 200
+  num_fewshot: 5
+  perturbations: null
+  seed: 0
 
 realtoxicityprompts:
   full: false
