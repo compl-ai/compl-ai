@@ -22,40 +22,30 @@
 #
 # Source: https://github.com/groq/openbench
 # Modifications: Compl-AI Team
-import base64
 import re
-from typing import Any
-from typing import Callable
-from typing import cast
-from typing import List
-from typing import Union
 
 from inspect_ai import Task
 from inspect_ai import task
 from inspect_ai.dataset import Dataset
 from inspect_ai.dataset import hf_dataset
-from inspect_ai.dataset import MemoryDataset
 from inspect_ai.dataset import Sample
 from inspect_ai.model import ChatMessageUser
+from inspect_ai.model import Content
 from inspect_ai.model import ContentImage
 from inspect_ai.model import ContentText
 from inspect_ai.model import GenerateConfig
 from inspect_ai.model import get_model
 from inspect_ai.model import Model
 from inspect_ai.scorer import accuracy
-from inspect_ai.scorer import Metric
-from inspect_ai.scorer import metric
-from inspect_ai.scorer import SampleScore
 from inspect_ai.scorer import Score
+from inspect_ai.scorer import Scorer
 from inspect_ai.scorer import scorer
 from inspect_ai.scorer import stderr
 from inspect_ai.scorer import Target
-from inspect_ai.scorer import Value
 from inspect_ai.solver import generate
 from inspect_ai.solver import system_message
 from inspect_ai.solver import TaskState
-
-from complai.tasks.hle.utils import detect_image_mime_type
+from inspect_evals.hle.judge import cerr
 
 
 # HLE system prompt as used in the original implementation
@@ -88,47 +78,26 @@ def record_to_sample(record: dict) -> Sample:
     input_text = record["question"]
 
     # Create multimodal content starting with the text
-    input_content: List[Union[ContentText, ContentImage]] = [
-        ContentText(text=input_text)
-    ]
-
-    # Include metadata for tracking
-    metadata = {"question_id": record["id"]}
+    content: list[Content] = [ContentText(text=input_text)]
 
     # Handle multimodal questions by adding images to the input content
-    if record.get("image"):
-        image_data = record["image"]
-
-        # Handle the image data - it should be in bytes format
-        if isinstance(image_data, dict) and "bytes" in image_data:
-            image_bytes = image_data["bytes"]
-        elif isinstance(image_data, bytes):
-            image_bytes = image_data
-        else:
-            # If it's a string, it might be base64 encoded or a URL
-            # For now, store in metadata and skip adding to content
-            metadata["image_url"] = str(image_data)
-            image_bytes = None
-
-        if image_bytes:
-            # Convert to base64 data URI with proper MIME type detection
-            base64_image = base64.b64encode(image_bytes).decode("utf-8")
-            mime_type = detect_image_mime_type(image_bytes)
-            data_uri = f"data:{mime_type};base64,{base64_image}"
-
-            # Add the image to the input content using data URI
-            input_content.append(ContentImage(image=data_uri))
-            metadata["image_url"] = data_uri
+    if record["image"]:
+        image_content = ContentImage(image=record["image"])
+        content.append(image_content)
 
     return Sample(
-        id=record["id"],
-        input=[ChatMessageUser(content=cast(Any, input_content))],
+        input=[ChatMessageUser(content=content)],
         target=record["answer"],
-        metadata=metadata,
+        metadata={
+            "uid": record["id"],
+            "raw_subject": record["raw_subject"],
+            "category": record["category"],
+            "has_image": bool(record["image"]),
+        },
     )
 
 
-def get_dataset(text_only: bool = False) -> Dataset:
+def hle_dataset(text_only: bool = False) -> Dataset:
     """Load the HLE (Humanity's Last Exam) dataset.
 
     Args:
@@ -140,42 +109,14 @@ def get_dataset(text_only: bool = False) -> Dataset:
     # Load the dataset from HuggingFace (no 'name' parameter - uses default config)
     dataset = hf_dataset("cais/hle", split="test", sample_fields=record_to_sample)
 
-    # Convert to list for MemoryDataset
-    samples = list(dataset)
-
-    # Filter out image questions if text_only is True
+    # Remove image questions if text_only is True
     if text_only:
-        samples = [
-            s for s in samples if not (s.metadata and s.metadata.get("image_url"))
-        ]
-        dataset_name = "hle_text"
-    else:
-        dataset_name = "hle"
+        dataset = dataset.filter(
+            lambda sample: sample.metadata is not None
+            and sample.metadata["has_image"] is False
+        )
 
-    return MemoryDataset(samples=samples, name=dataset_name)
-
-
-@metric
-def hle_metrics() -> Metric:
-    """Calculate HLE specific metrics including average confidence."""
-
-    def metric_calculator(scores: List[SampleScore]) -> Value:
-        if not scores:
-            return {"avg_confidence": 0.0}
-
-        confidences = []
-
-        for sample_score in scores:
-            # Get confidence from metadata
-            metadata = sample_score.score.metadata
-            if metadata and "confidence" in metadata:
-                confidences.append(metadata["confidence"])
-
-        avg_confidence = sum(confidences) / len(confidences) if confidences else 100.0
-
-        return {"avg_confidence": avg_confidence}
-
-    return metric_calculator
+    return dataset
 
 
 def parse_judge_response(judge_response: str) -> tuple[str, str, int]:
@@ -244,8 +185,8 @@ def extract_confidence_score(response: str, default: int = 100) -> int:
     return default
 
 
-@scorer(metrics=[accuracy(), stderr(), hle_metrics()])
-def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Callable:
+@scorer(metrics=[accuracy(), stderr(), cerr()])
+def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
     """HLE scorer using model grading.
 
     Args:
@@ -282,11 +223,11 @@ def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Callable:
         message = ChatMessageUser(content=judge_prompt)
 
         # Get grading response
-        grading_response = await grader_model.generate([message])
-        judge_text = grading_response.completion
+        judge_message = await grader_model.generate([message])
+        judge_response = judge_message.completion
 
         # Parse the judge's response
-        is_correct, reasoning, judge_confidence = parse_judge_response(judge_text)
+        is_correct, reasoning, judge_confidence = parse_judge_response(judge_response)
 
         # Use model's confidence if judge didn't extract one properly
         final_confidence = (
@@ -300,14 +241,7 @@ def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Callable:
             value=score_value,
             answer=model_response,
             explanation=reasoning,
-            metadata={
-                "correct": is_correct,
-                "confidence": final_confidence,
-                "judge_response": judge_text,
-                "question_id": state.metadata.get("question_id")
-                if state.metadata
-                else None,
-            },
+            metadata={"confidence": final_confidence, "judge_response": judge_response},
         )
 
     return score
@@ -333,10 +267,9 @@ def hle(
         Task configured for HLE evaluation
     """
     return Task(
-        dataset=get_dataset(text_only=text_only),
+        dataset=hle_dataset(text_only=text_only),
         solver=[system_message(HLE_SYSTEM_PROMPT), generate()],
         scorer=hle_scorer(model=grader_model),
-        name="hle",
         config=GenerateConfig(
             temperature=0.0,  # Use deterministic generation as per HLE
             max_tokens=max_tokens,  # HLE recommends at least 8192 for reasoning models
