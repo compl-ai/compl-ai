@@ -170,8 +170,6 @@ def mmlu_pro_robustness_solver(
 ) -> Solver:
     mc_solver = multiple_choice(template=SINGLE_ANSWER_TEMPLATE_COT)
 
-    model = get_model()
-
     fewshot_samples = hf_dataset(
         path=DATASET_PATH, split="validation", sample_fields=FIELD_SPEC
     )
@@ -222,7 +220,7 @@ def mmlu_pro_robustness_solver(
             for perturbation in perturbations
         ]
 
-        outputs = await collect(*[model.generate(input) for input in perturbed])
+        outputs = await collect(*[get_model().generate(input) for input in perturbed])
         answers = [parse_answers(output.completion, num_choices) for output in outputs]
         state.metadata["perturbed_answers"] = ["".join(answer) for answer in answers]
 
@@ -254,7 +252,7 @@ def mmlu_pro_robustness_scorer() -> Scorer:
     mc_scorer = choice()
 
     async def score(state: TaskState, target: Target) -> Score:
-        unperturbed_score = await mc_scorer(state, target)
+        unperturbed_score = cast(Score, await mc_scorer(state, target))
 
         perturbed_answers = state.metadata["perturbed_answers"]
         perturbed_scores = [target.text == answer for answer in perturbed_answers]
