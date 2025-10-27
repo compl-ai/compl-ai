@@ -224,6 +224,10 @@ def eval_command(
             envvar="COMPLAI_MAX_TASKS",
         ),
     ] = 2,
+    display: Annotated[
+        Literal["full", "rich", "plain", "log", "none"],
+        typer.Option(help="Display type.", envvar="COMPLAI_DISPLAY"),
+    ] = "full",
     log_level: Annotated[
         Literal["debug", "trace", "http", "info", "warning", "error", "critical"],
         typer.Option(
@@ -366,6 +370,7 @@ def eval_command(
             max_subprocesses=max_subprocesses,
             max_sandboxes=max_sandboxes,
             max_tasks=max_tasks,
+            display=display,
             log_level=log_level,
             log_samples=log_samples,
             log_buffer=log_buffer,
