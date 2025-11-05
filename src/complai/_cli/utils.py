@@ -293,7 +293,7 @@ def patch_display_results() -> None:
         pass
 
 
-def get_log_dir(model: str) -> str:
+def get_log_dir(model: str, base_log_dir: str | None = "./logs/") -> str:
     """
     Get the log directory for the model. If no log directory is provided,
     use model and timestamp to create a unique log directory name.
@@ -303,7 +303,7 @@ def get_log_dir(model: str) -> str:
         datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
     )
 
-    return f"./logs/{model_name}_{timestamp}"
+    return f"{base_log_dir}/{model_name}_{timestamp}"
 
 
 def bool_or_float(value: str) -> bool | float:
