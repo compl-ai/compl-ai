@@ -336,8 +336,7 @@ def eval_command(
     validate_model_args(model, task_infos, parsed_model_args)
 
     # Define log directory
-    if log_dir is None:
-        log_dir = get_log_dir(model)
+    log_dir = get_log_dir(model, log_dir)
 
     # Instantiate tasks with task-specific args
     with error_handler(debug):
