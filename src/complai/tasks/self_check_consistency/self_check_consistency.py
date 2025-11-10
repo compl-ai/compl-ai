@@ -29,7 +29,7 @@ from inspect_ai.solver import TaskState
 from platformdirs import user_cache_dir
 
 from complai.tasks.self_check_consistency.topics import TOPICS
-from complai.tasks.self_check_consistency.utils import ensure_nltk_data
+from complai.tasks.utils.download import ensure_punkt_tab_tokenizer
 
 
 CACHE_DIR = Path(user_cache_dir("complai"))
@@ -372,7 +372,7 @@ def self_check_consistency(
     judge_model: str = "openai/gpt-3.5-turbo",
     num_conclusions: int = 10,
 ) -> Task:
-    ensure_nltk_data(NLTK_TOKENIZER_PATH, CACHE_DIR)
+    ensure_punkt_tab_tokenizer(NLTK_TOKENIZER_PATH, CACHE_DIR)
 
     return Task(
         dataset=self_check_consistency_dataset(),

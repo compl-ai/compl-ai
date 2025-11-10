@@ -25,7 +25,7 @@ from platformdirs import user_cache_dir
 
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import match_case
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import Perturbation
-from complai.tasks.mmlu_pro_robustness.utils import ensure_dialect_mapping
+from complai.tasks.utils.download import ensure_dialect_mapping
 
 
 class DialectPerturbation(Perturbation):
