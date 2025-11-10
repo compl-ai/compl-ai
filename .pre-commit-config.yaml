@@ -36,9 +36,10 @@ repos:
       - id: mypy
         name: mypy
         stages: [pre-commit]
-        entry: uv run --with mypy python -m mypy --show-error-codes --ignore-missing-imports
+        entry: uv run --with mypy python -m mypy --show-error-codes --ignore-missing-imports --config-file pyproject.toml
         language: system
         pass_filenames: true
+        exclude: (?x)^( src/complai/tasks/self_check_consistency/compact_ie/| src/complai/tasks/ifbench/instructions.*| src/complai/tasks/ifbench/evaluation_lib\.py$ )
         files: \.py$
         types: [python]
   - repo: https://github.com/astral-sh/uv-pre-commit
