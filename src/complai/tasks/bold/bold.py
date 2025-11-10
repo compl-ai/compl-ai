@@ -28,8 +28,8 @@ from inspect_ai.solver import TaskState
 from platformdirs import user_cache_dir
 from scipy.spatial.distance import cosine
 
-from complai.tasks.bold.utils import ensure_vader_lexicon
-from complai.tasks.bold.utils import ensure_word2vec_weights
+from complai.tasks.utils.download import ensure_vader_lexicon
+from complai.tasks.utils.download import ensure_word2vec_weights
 from complai.tasks.utils.math import simplified_gini_coefficient
 
 
@@ -257,7 +257,7 @@ def bold_scorer(use_gpu_scorer: bool = True) -> Scorer:
         reducer=bold_reducer(),
     )
 
-    async def score(state: TaskState, target: Target) -> Score:
+    async def score(state: TaskState, target: Target) -> Score | None:
         return await scorer(state, target)
 
     return score

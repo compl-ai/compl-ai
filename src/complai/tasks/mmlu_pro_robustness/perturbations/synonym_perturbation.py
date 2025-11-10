@@ -35,8 +35,8 @@ from platformdirs import user_cache_dir
 
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import match_case
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import Perturbation
-from complai.tasks.mmlu_pro_robustness.utils import ensure_nltk_wordnet
-from complai.tasks.mmlu_pro_robustness.utils import ensure_wordnet_synonyms
+from complai.tasks.utils.download import ensure_nltk_wordnet
+from complai.tasks.utils.download import ensure_wordnet_synonyms
 
 
 if TYPE_CHECKING:
