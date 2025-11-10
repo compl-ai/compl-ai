@@ -1,3 +1,4 @@
+import re
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -293,12 +294,21 @@ def patch_display_results() -> None:
         pass
 
 
-def get_log_dir(model: str, base_log_dir: str | None = "./logs/") -> str:
+def get_log_dir(model: str, base_log_dir: str) -> str:
     """
     Get the log directory for the model. If no log directory is provided,
     use model and timestamp to create a unique log directory name.
     """
     model_name = "_".join(model.split("/")[-2:])
+
+    # Check if the log directory is of a previous run
+    timestamp_pattern = (
+        r"([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}[+-][0-9]{2}-[0-9]{2})"
+    )
+    pattern = rf"{model_name}_{timestamp_pattern}"
+    if re.search(pattern, base_log_dir) is not None:
+        return base_log_dir
+
     timestamp = (
         datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
     )
