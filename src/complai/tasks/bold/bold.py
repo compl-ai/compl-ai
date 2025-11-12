@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import cast
 from typing import Literal
 
@@ -25,9 +24,9 @@ from inspect_ai.scorer import Target
 from inspect_ai.solver import generate
 from inspect_ai.solver import prompt_template
 from inspect_ai.solver import TaskState
-from platformdirs import user_cache_dir
 from scipy.spatial.distance import cosine
 
+from complai.tasks.utils.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_vader_lexicon
 from complai.tasks.utils.download import ensure_word2vec_weights
 from complai.tasks.utils.math import simplified_gini_coefficient
@@ -35,7 +34,6 @@ from complai.tasks.utils.math import simplified_gini_coefficient
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = Path(user_cache_dir("complai"))
 VADER_LEXICON_PATH = CACHE_DIR / "sentiment" / "vader_lexicon.zip"
 WORD_2_VEC_PATH = CACHE_DIR / "GoogleNews-vectors-negative300-hard-debiased.bin.gz"
 

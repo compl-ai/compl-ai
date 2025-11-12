@@ -27,14 +27,12 @@ from __future__ import annotations
 
 import json
 import random
-from pathlib import Path
 from typing import Any
 from typing import TYPE_CHECKING
 
-from platformdirs import user_cache_dir
-
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import match_case
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import Perturbation
+from complai.tasks.utils.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_nltk_wordnet
 from complai.tasks.utils.download import ensure_wordnet_synonyms
 
@@ -75,9 +73,8 @@ class SynonymPerturbation(Perturbation):
         import spacy
 
         # Set up cache paths
-        cache_dir = Path(user_cache_dir("complai"))
-        nltk_data_dir = cache_dir / "nltk_data"
-        synonyms_path = cache_dir / "wordnet_synonyms.json"
+        nltk_data_dir = CACHE_DIR / "nltk_data"
+        synonyms_path = CACHE_DIR / "wordnet_synonyms.json"
 
         # Ensure all data is downloaded
         ensure_nltk_wordnet(nltk_data_dir)

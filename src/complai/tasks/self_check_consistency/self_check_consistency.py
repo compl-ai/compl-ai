@@ -1,7 +1,6 @@
 import re
 from asyncio import gather
 from dataclasses import dataclass
-from pathlib import Path
 from typing import cast
 
 from inspect_ai import Task
@@ -26,13 +25,12 @@ from inspect_ai.solver import generate
 from inspect_ai.solver import Solver
 from inspect_ai.solver import solver
 from inspect_ai.solver import TaskState
-from platformdirs import user_cache_dir
 
 from complai.tasks.self_check_consistency.topics import TOPICS
+from complai.tasks.utils.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_punkt_tab_tokenizer
 
 
-CACHE_DIR = Path(user_cache_dir("complai"))
 NLTK_TOKENIZER_PATH = CACHE_DIR / "tokenizers" / "punkt_tab"
 
 INITIAL_MESSAGE_TEMPLATE = """
