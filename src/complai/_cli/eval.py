@@ -235,9 +235,8 @@ def eval_command(
         ),
     ] = "warning",
     log_dir: Annotated[
-        str | None,
-        typer.Option(help="Directory to save logs to.", envvar="COMPLAI_LOG_DIR"),
-    ] = None,
+        str, typer.Option(help="Directory to save logs to.", envvar="COMPLAI_LOG_DIR")
+    ] = "./logs/",
     log_samples: Annotated[
         bool, typer.Option(help="Log sample details", envvar="COMPLAI_LOG_SAMPLES")
     ] = True,
