@@ -32,6 +32,9 @@ import nltk
 import syllapy
 
 from complai.tasks.ifbench import instructions_util
+from complai.tasks.utils.constants import CACHE_DIR
+
+nltk.data.path.append(CACHE_DIR)
 
 
 # download("en_core_web_sm")
@@ -226,7 +229,7 @@ class SentTypeRatioChecker(Instruction):
         self._description_pattern = (
             "Maintain a 2:1 ratio of declarative to interrogative sentences."
         )
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         return self._description_pattern
 
     def get_instruction_args(self):
@@ -252,7 +255,7 @@ class SentBalanceChecker(Instruction):
 
     def build_description(self):
         """Build the instruction description."""
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "Ensure that the ratio of sentence types (declarative, interrogative, exclamatory) is balanced."
         return self._description_pattern
 
@@ -586,7 +589,7 @@ class IncrementingAlliterationChecker(Instruction):
 
     def build_description(self):
         """Build the instruction description."""
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "Each sentence must have a longer sequence of consecutive alliterative words than the previous one."
         return self._description_pattern
 
@@ -905,7 +908,7 @@ class EmojiSentenceChecker(Instruction):
 
     def build_description(self):
         """Build the instruction description."""
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "Please use an emoji at the end of every sentence."
         return self._description_pattern
 
@@ -953,7 +956,7 @@ class CharacterCountUniqueWordsChecker(Instruction):
 
     def build_description(self):
         """Build the instruction description."""
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "Respond with three sentences, all containing the same number of characters but using all different words."
         return self._description_pattern
 
@@ -1126,7 +1129,7 @@ class IncludeKeywordChecker(Instruction):
         Returns:
           A string representing the instruction description.
         """
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
 
         if not word:
             self._keyword = instructions_util.generate_keywords(num_keywords=1)[0]
@@ -1267,7 +1270,7 @@ class LastWordFirstNextChecker(Instruction):
 
     def build_description(self):
         """Build the instruction description."""
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "The last word of each sentence must become the first word of the next sentence."
         return self._description_pattern
 
@@ -1342,7 +1345,7 @@ class IncrementingWordCountChecker(Instruction):
         if self._num_increment is None or self._num_increment < 0:
             self._num_increment = random.randint(1, _NUM_INCREMENT)
 
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
 
         self._description_pattern = "Each sentence must contain exactly {small_n} more words than the previous one."
         return self._description_pattern.format(small_n=self._num_increment)
@@ -1751,7 +1754,7 @@ class WordReverseOrderChecker(Instruction):
     """What animal is the national symbol of the US? Respond to this query, but make your sentence in reverse order of what it should be, per word."""
 
     def build_description(self, **kwargs):
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "What animal is the national symbol of the US? Respond to this query, but make your sentence in reverse order of what it should be, per word."
         return self._description_pattern
 
@@ -1798,7 +1801,7 @@ class SentenceAlphabetChecker(Instruction):
     """Tell me a 26-sentence story where each sentence's first word starts with the letters of the alphabet in order."""
 
     def build_description(self, **kwargs):
-        nltk.download("punkt_tab")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
         self._description_pattern = "Tell me a 26-sentence story where each sentence's first word starts with the letters of the alphabet in order."
         return self._description_pattern
 

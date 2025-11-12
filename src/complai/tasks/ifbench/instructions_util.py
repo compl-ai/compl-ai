@@ -19,6 +19,7 @@ import random
 import re
 
 import nltk
+from complai.tasks.utils.constants import CACHE_DIR
 
 
 WORD_LIST = [
@@ -1555,7 +1556,7 @@ def download_nltk_resources():
     try:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
-        nltk.download("punkt")
+        nltk.download("punkt", download_dir=CACHE_DIR, quiet=True)
 
 
 download_nltk_resources()
@@ -1635,7 +1636,7 @@ def _get_sentence_tokenizer():
 
 def count_stopwords(text):
     """Counts the number of stopwords."""
-    nltk.download("stopwords")
+    nltk.download("stopwords", download_dir=CACHE_DIR, quiet=True)
     stopwords = nltk.corpus.stopwords.words("english")
     tokenizer = nltk.tokenize.RegexpTokenizer(r"\w+")
     tokens = tokenizer.tokenize(text)
