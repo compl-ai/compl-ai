@@ -18,13 +18,11 @@ from __future__ import annotations
 import json
 import random
 import re
-from pathlib import Path
 from typing import Any
-
-from platformdirs import user_cache_dir
 
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import match_case
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import Perturbation
+from complai.tasks.utils.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_dialect_mapping
 
 
@@ -88,8 +86,7 @@ class DialectPerturbation(Perturbation):
         }
 
     def load_mapping_dict(self) -> dict[str, list[str]]:
-        cache_dir = Path(user_cache_dir("complai"))
-        mapping_file = cache_dir / self.FILENAME
+        mapping_file = CACHE_DIR / self.FILENAME
 
         # Ensure the file exists
         ensure_dialect_mapping(mapping_file)

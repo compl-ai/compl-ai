@@ -6,18 +6,18 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def ensure_vader_lexicon(vader_lexicon_path: Path, cache_dir: Path) -> None:
+def ensure_vader_lexicon(vader_lexicon_path: Path, download_dir: Path) -> None:
     if not vader_lexicon_path.exists():
         try:
             logger.info("Downloading VADER lexicon...")
             from nltk.downloader import download as nltk_download
 
-            nltk_download("vader_lexicon", download_dir=cache_dir)
+            nltk_download("vader_lexicon", download_dir=download_dir)
         except Exception as e:
             raise RuntimeError(f"Failed to download VADER lexicon: {e}. ")
 
 
-def ensure_word2vec_weights(word_2_vec_path: Path, cache_dir: Path) -> None:
+def ensure_word2vec_weights(word_2_vec_path: Path, download_dir: Path) -> None:
     if not word_2_vec_path.exists():
         try:
             logger.info("Downloading Word2Vec weights...")
@@ -25,7 +25,7 @@ def ensure_word2vec_weights(word_2_vec_path: Path, cache_dir: Path) -> None:
 
             gdown.download(
                 id="19um3Uu9m0AcsynwuKvpntO80LpX6oFqM",
-                output=f"{cache_dir}/",
+                output=f"{download_dir}/",
                 quiet=False,
                 resume=True,
             )
@@ -39,17 +39,17 @@ def ensure_word2vec_weights(word_2_vec_path: Path, cache_dir: Path) -> None:
             )
 
 
-def ensure_nltk_wordnet(nltk_data_dir: Path) -> None:
+def ensure_nltk_wordnet(download_dir: Path) -> None:
     """Ensure NLTK WordNet data is downloaded."""
-    wordnet_path = nltk_data_dir / "corpora" / "wordnet.zip"
-    omw_path = nltk_data_dir / "corpora" / "omw-1.4.zip"
+    wordnet_path = download_dir / "corpora" / "wordnet.zip"
+    omw_path = download_dir / "corpora" / "omw-1.4.zip"
     if not wordnet_path.exists() or not omw_path.exists():
         try:
             logger.info("MMLU-Pro Robustness: Downloading NLTK data...")
             import nltk
 
-            nltk.download("wordnet", download_dir=nltk_data_dir, quiet=False)
-            nltk.download("omw-1.4", download_dir=nltk_data_dir, quiet=False)
+            nltk.download("wordnet", download_dir=download_dir, quiet=False)
+            nltk.download("omw-1.4", download_dir=download_dir, quiet=False)
         except Exception as e:
             raise RuntimeError(
                 f"MMLU-Pro Robustness: Failed to download NLTK WordNet data: {e}"
@@ -92,15 +92,16 @@ def ensure_dialect_mapping(dialect_mapping_path: Path) -> None:
             )
 
 
-def ensure_punkt_tab_tokenizer(punkt_tab_tokenizer_path: Path, cache_dir: Path) -> None:
+def ensure_punkt_tab_tokenizer(
+    punkt_tab_tokenizer_path: Path, download_dir: Path
+) -> None:
     if not punkt_tab_tokenizer_path.exists():
         try:
             logger.info("Downloading nltk data...")
-            from nltk.data import path as nltk_data_path
-            from nltk.downloader import download
+            import nltk
 
-            download("punkt_tab", download_dir=cache_dir)
-            nltk_data_path.append(str(cache_dir))
+            nltk.download("punkt_tab", download_dir=download_dir)
+            nltk.data.path.append(download_dir)
 
         except Exception as e:
             raise RuntimeError(f"Failed to download NLTK tokenizer data: {e}. ")
