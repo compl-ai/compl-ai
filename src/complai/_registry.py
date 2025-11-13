@@ -12,7 +12,6 @@ from complai.tasks.forecast_consistency import forecast_consistency
 from complai.tasks.hellaswag import hellaswag
 from complai.tasks.hle import hle
 from complai.tasks.human_deception import human_deception
-from complai.tasks.humaneval import humaneval
 from complai.tasks.imdb_contrast import imdb_contrast
 from complai.tasks.include import include
 from complai.tasks.instruction_goal_hijacking import instruction_goal_hijacking

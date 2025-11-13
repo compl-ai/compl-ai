@@ -133,7 +133,7 @@ COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act princ
 ### Technical Requirements and Benchmarks
 You can see a list of all technical requirements and their respective benchmarks using `complai list`:
 - Capabilities, Performance, and Limitations
-  - aime_2025, arc_challenge, hellaswag, humaneval, livebench_coding, mmlu_pro, swe_bench_verified, truthfulqa
+  - aime_2025, arc_challenge, hellaswag, livebench_coding, mmlu_pro, swe_bench_verified, truthfulqa
 - Representation — Absence of Bias
   - bbq, bold
 - Interpretability
