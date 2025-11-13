@@ -18,6 +18,7 @@ from complai.tasks.include import include
 from complai.tasks.instruction_goal_hijacking import instruction_goal_hijacking
 from complai.tasks.livebench_coding import livebench_coding
 from complai.tasks.llm_rules import llm_rules
+from complai.tasks.mask import mask
 from complai.tasks.mmlu_pro import mmlu_pro
 from complai.tasks.mmlu_pro_robustness import mmlu_pro_robustness
 from complai.tasks.realtoxicityprompts import realtoxicityprompts
