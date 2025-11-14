@@ -3,6 +3,8 @@ line-length = 88
 exclude = [
     ".git/",
     "src/complai/tasks/self_check_consistency/compact_ie/",
+    "src/complai/tasks/ifbench/instructions*",
+    "src/complai/tasks/ifbench/evaluation_lib.py",
 ]
 
 [lint]
