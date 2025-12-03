@@ -308,6 +308,13 @@ def eval_command(
             envvar="COMPLAI_WORKING_LIMIT",
         ),
     ] = None,
+    log_dir_allow_dirty: Annotated[
+        bool,
+        typer.Option(
+            help="Do not fail if the log-dir contains files that are not part of the Inspect eval set.",
+            envvar="COMPLAI_LOG_DIR_ALLOW_DIRTY",
+        ),
+    ] = False,
     debug: Annotated[
         bool,
         typer.Option(
@@ -381,4 +388,5 @@ def eval_command(
             token_limit=token_limit,
             time_limit=time_limit,
             working_limit=working_limit,
+            log_dir_allow_dirty=log_dir_allow_dirty,
         )
