@@ -5,7 +5,7 @@
 # Usage: complai eval <model> --task-config default_config.yaml
 #
 # This file was automatically generated from task code.
-# To regenerate: uv run --with inspect-ai pyyaml --no-project tools/generate_default_config.py
+# To regenerate: uv run --with inspect-ai,pyyaml --no-project tools/generate_default_config.py
 
 
 
@@ -34,6 +34,9 @@ boolq_contrast:
 fairllm:
   sample_size: 200
   num_recommendations: 20
+
+gpqa_diamond:
+  num_epochs: 4
 
 hle:
   grader_model: openai/o3-mini-2025-01-31
