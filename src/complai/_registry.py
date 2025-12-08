@@ -9,6 +9,7 @@ from complai.tasks.boolq_contrast import boolq_contrast
 from complai.tasks.decoding_trust import decoding_trust
 from complai.tasks.fairllm import fairllm
 from complai.tasks.forecast_consistency import forecast_consistency
+from complai.tasks.gpqa_diamond import gpqa_diamond
 from complai.tasks.hellaswag import hellaswag
 from complai.tasks.hle import hle
 from complai.tasks.human_deception import human_deception
