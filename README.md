@@ -146,9 +146,10 @@ You can see a list of all technical requirements and their respective benchmarks
   - human_deception
 - Cyberattack Resilience
   - instruction_goal_hijacking, llm_rules
+- Societal Alignment
+  - mask, simpleqa_verified, truthfulqa
 - Harmful Content and Toxicity
-  - mask, realtoxicityprompts, simpleqa_verified, truthfulqa
-
+  - realtoxicityprompts
 
 
 
