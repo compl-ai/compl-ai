@@ -69,7 +69,7 @@ def ifbench_scorer() -> Scorer:
     return score
 
 
-@task
+@task(technical_requirement="Capabilities, Performance, and Limitations")
 def ifbench() -> Task:
     ensure_punkt_tab_tokenizer(NLTK_TOKENIZER_PATH, CACHE_DIR)
 

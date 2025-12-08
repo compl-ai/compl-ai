@@ -247,7 +247,7 @@ def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
     return score
 
 
-@task
+@task(technical_requirement="Capabilities, Performance, and Limitations")
 def hle(
     grader_model: str = "openai/o3-mini-2025-01-31",
     text_only: bool = False,
