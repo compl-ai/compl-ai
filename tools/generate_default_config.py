@@ -112,7 +112,7 @@ def generate_default_config_yaml(task_dir: Path) -> str:
         "# Usage: complai eval <model> --task-config default_config.yaml",
         "#",
         "# This file was automatically generated from task code.",
-        "# To regenerate: uv run --with inspect-ai pyyaml --no-project tools/generate_default_config.py",
+        "# To regenerate: uv run --with inspect-ai,pyyaml --no-project tools/generate_default_config.py",
         "",
         "",
         "",
