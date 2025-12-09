@@ -7,7 +7,7 @@ authors = [
 ]
 license = "Apache-2.0"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10, <3.14"
 dependencies = [
     "inspect-evals[bbq,livebench,swe_bench]",
     "inspect-ai",
@@ -29,6 +29,8 @@ dependencies = [
     "regex>=2025.7.34",
     "spacy>=3.8.7",
     "en-core-web-sm",
+    "emoji>=2.15.0",
+    "syllapy>=0.7.2",
 ]
 
 [project.optional-dependencies]
@@ -66,7 +68,9 @@ warn_redundant_casts = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 exclude = [
-    "src/complai/tasks/self_check_consistency/compact_ie/",
+    "^src/complai/tasks/self_check_consistency/compact_ie/", 
+    "^src/complai/tasks/ifbench/instructions.*",  
+    "^src/complai/tasks/ifbench/evaluation_lib\\.py$",
 ]
 
 [tool.typos]

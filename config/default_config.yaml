@@ -5,7 +5,7 @@
 # Usage: complai eval <model> --task-config default_config.yaml
 #
 # This file was automatically generated from task code.
-# To regenerate: uv run --with inspect-ai pyyaml --no-project tools/generate_default_config.py
+# To regenerate: uv run --with inspect-ai,pyyaml --no-project tools/generate_default_config.py
 
 
 
@@ -35,9 +35,12 @@ fairllm:
   sample_size: 200
   num_recommendations: 20
 
+gpqa_diamond:
+  num_epochs: 4
+
 hle:
   grader_model: openai/o3-mini-2025-01-31
-  text_only: false
+  text_only: true
   max_tokens: 8192
 
 include:
@@ -51,6 +54,10 @@ instruction_goal_hijacking:
 llm_rules:
   evaluation_category: basic
   remove_precedence_reminders: true
+
+mask:
+  binary_judge_model: openai/gpt-4o
+  numeric_judge_model: openai/o3-mini
 
 mmlu_pro:
   num_fewshot: 0
@@ -70,6 +77,9 @@ self_check_consistency:
   argumentation_model: openai/gpt-3.5-turbo
   judge_model: openai/gpt-3.5-turbo
   num_conclusions: 10
+
+simpleqa_verified:
+  grader_model: openai/gpt-4.1-2025-04-14
 
 swe_bench_verified:
   full: false

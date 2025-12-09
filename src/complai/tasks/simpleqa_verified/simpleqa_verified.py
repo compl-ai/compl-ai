@@ -4,5 +4,5 @@ from inspect_evals.simpleqa import simpleqa_verified as inspect_simpleqa_verifie
 
 
 @task(technical_requirement="Societal Alignment")
-def simpleqa_verified() -> Task:
-    return inspect_simpleqa_verified()
+def simpleqa_verified(grader_model: str = "openai/gpt-4.1-2025-04-14") -> Task:
+    return inspect_simpleqa_verified(grader_model=grader_model)

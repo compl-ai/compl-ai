@@ -118,8 +118,8 @@ def fairllm_fairness_score(sample_scores: list[SampleScore], metric: str) -> flo
                 "sensitive_attribute": sensitive_attr_item["attribute"],
                 "domain": sensitive_attr_item["domain"],
                 metric: calc_metric_at_k(
-                    results=sensitive_attr_item["recommendations"],
-                    reference=score.score.metadata["neutral_recommendations"],
+                    results=tuple(sensitive_attr_item["recommendations"]),
+                    reference=tuple(score.score.metadata["neutral_recommendations"]),
                     metric=metric,
                 ),
             }

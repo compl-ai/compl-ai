@@ -26,7 +26,7 @@ The COMPL-AI framework includes a [technical interpretation](https://compl-ai.or
 - Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
 - A custom eval CLI (run `complai --help` for usage)
 
-Community contributions for benchmarks and new mappings are welcome! We are actively looking to exapand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contributing](#-contributing) section below.
+Community contributions for benchmarks and new mappings are welcome! We are actively looking to expand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contributing](#-contributing) section below.
 
 ## ⏩ Quickstart
 To run an evaluation yourself, please follow the instructions below (or contact us through [compl-ai.org](https://compl-ai.org)). 
@@ -133,22 +133,23 @@ COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act princ
 ### Technical Requirements and Benchmarks
 You can see a list of all technical requirements and their respective benchmarks using `complai list`:
 - Capabilities, Performance, and Limitations
-  - aime_2025, arc_challenge, hellaswag, humaneval, livebench_coding, mmlu_pro, swe_bench_verified, truthfulqa
+  - aime_2025, arc_challenge, gpqa_diamond, hle, ifbench, include, livebench_coding, mmlu_pro, swe_bench_verified
 - Representation — Absence of Bias
   - bbq, bold
 - Interpretability
   - bigbench_calibration, triviaqa_calibration
 - Robustness and Predictability
-  - boolq_contrast, forecast_consistency, imdb_contrast, self_check_consistency
+  - boolq_contrast, forecast_consistency, imdb_contrast, mmlu_pro_robustness, self_check_consistency
 - Fairness — Absence of Discrimination
   - decoding_trust, fairllm
 - Disclosure of AI
   - human_deception
 - Cyberattack Resilience
   - instruction_goal_hijacking, llm_rules
+- Societal Alignment
+  - mask, simpleqa_verified, truthfulqa
 - Harmful Content and Toxicity
   - realtoxicityprompts
-
 
 
 

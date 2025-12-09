@@ -5,6 +5,7 @@ import typer
 from inspect_ai import eval_set
 from inspect_ai import TaskInfo
 from inspect_ai._cli.util import parse_cli_config
+from inspect_ai.model import CachePolicy
 from rich import print
 from typing_extensions import Annotated
 
@@ -89,6 +90,18 @@ def eval_command(
     model_config: Annotated[
         str | None,
         typer.Option("--model-config", help="Model arguments file (JSON or YAML)."),
+    ] = None,
+    generate_args: Annotated[
+        list[str],
+        typer.Option(
+            "-G",
+            "--generate-arg",
+            help="One or more generate config arguments (e.g. `-G frequency_penalty=0.5 -G extra_body=\"{'chat_template_kwargs': {'enable_thinking': false}}\"`). See [inspect_ai.model.GenerateConfig](https://inspect.aisi.org.uk/reference/inspect_ai.model.html#generateconfig) for available options.",
+        ),
+    ] = [],
+    generate_config: Annotated[
+        str | None,
+        typer.Option("--generate-config", help="Generate config file (JSON or YAML)."),
     ] = None,
     retry_attempts: Annotated[
         int | None,
@@ -187,6 +200,20 @@ def eval_command(
         typer.Option(
             help="Maximum number of tokens to use for reasoning. Anthropic Claude models only.",
             envvar="COMPLAI_REASONING_TOKENS",
+        ),
+    ] = None,
+    cache: Annotated[
+        str | None,
+        typer.Option(
+            help="Policy for caching of model generations. Specify an explicit duration (e.g. (e.g. 1h, 3d, 6M) to set the expiration explicitly (durations can be expressed as s, m, h, D, W, M, or Y). The cache can be managed using `inspect cache`.",
+            envvar="COMPLAI_CACHE",
+        ),
+    ] = None,
+    batch: Annotated[
+        str | None,
+        typer.Option(
+            help="Batch requests together to reduce API calls when using a model that supports batching (by default, no batching). Specify a batch size e.g. `--batch 1000` to configure batches of 1000 requests, or pass the file path to a YAML or JSON config file with batch configuration.",
+            envvar="COMPLAI_BATCH",
         ),
     ] = None,
     max_connections: Annotated[
@@ -308,6 +335,13 @@ def eval_command(
             envvar="COMPLAI_WORKING_LIMIT",
         ),
     ] = None,
+    log_dir_allow_dirty: Annotated[
+        bool,
+        typer.Option(
+            help="Do not fail if the log-dir contains files that are not part of the Inspect eval set.",
+            envvar="COMPLAI_LOG_DIR_ALLOW_DIRTY",
+        ),
+    ] = False,
     debug: Annotated[
         bool,
         typer.Option(
@@ -328,8 +362,15 @@ def eval_command(
     # Parse args
     parsed_task_args = parse_task_args(task_args, task_config)
     parsed_model_args = parse_cli_config(model_args, model_config)
+    parsed_generate_args = parse_cli_config(generate_args, generate_config)
     parsed_limit = parse_samples_limit(limit)
     parsed_sample_id = parse_sample_id(sample_id)
+
+    # Add cache and batch to generate args if specified (passed via **kwargs to eval_set)
+    if cache is not None:
+        parsed_generate_args["cache"] = CachePolicy.from_string(cache)
+    if batch is not None:
+        parsed_generate_args["batch"] = batch
 
     # Validate model arguments
     validate_model_args(model, task_infos, parsed_model_args)
@@ -381,4 +422,6 @@ def eval_command(
             token_limit=token_limit,
             time_limit=time_limit,
             working_limit=working_limit,
+            log_dir_allow_dirty=log_dir_allow_dirty,
+            **parsed_generate_args,
         )
