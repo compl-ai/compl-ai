@@ -250,7 +250,7 @@ def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
 @task(technical_requirement="Capabilities, Performance, and Limitations")
 def hle(
     grader_model: str = "openai/o3-mini-2025-01-31",
-    text_only: bool = False,
+    text_only: bool = True,
     max_tokens: int = 8192,
 ) -> Task:
     """Humanity's Last Exam: A benchmark at the frontier of human knowledge.

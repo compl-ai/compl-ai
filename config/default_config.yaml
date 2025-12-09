@@ -40,7 +40,7 @@ gpqa_diamond:
 
 hle:
   grader_model: openai/o3-mini-2025-01-31
-  text_only: false
+  text_only: true
   max_tokens: 8192
 
 include:
