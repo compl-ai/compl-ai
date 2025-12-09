@@ -32,7 +32,7 @@ import nltk
 import syllapy
 
 from complai.tasks.ifbench import instructions_util
-from complai.tasks.utils.constants import CACHE_DIR
+from complai.constants import CACHE_DIR
 
 nltk.data.path.append(CACHE_DIR)
 

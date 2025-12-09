@@ -22,7 +22,7 @@ from typing import Any
 
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import match_case
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import Perturbation
-from complai.tasks.utils.constants import CACHE_DIR
+from complai.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_dialect_mapping
 
 
