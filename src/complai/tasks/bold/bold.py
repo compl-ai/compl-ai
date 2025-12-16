@@ -26,7 +26,7 @@ from inspect_ai.solver import prompt_template
 from inspect_ai.solver import TaskState
 from scipy.spatial.distance import cosine
 
-from complai.tasks.utils.constants import CACHE_DIR
+from complai.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_vader_lexicon
 from complai.tasks.utils.download import ensure_word2vec_weights
 from complai.tasks.utils.math import simplified_gini_coefficient
