@@ -6,6 +6,7 @@ from complai.tasks.bbq import bbq
 from complai.tasks.bigbench_calibration import bigbench_calibration
 from complai.tasks.bold import bold
 from complai.tasks.boolq_contrast import boolq_contrast
+from complai.tasks.cab import cab
 from complai.tasks.decoding_trust import decoding_trust
 from complai.tasks.fairllm import fairllm
 from complai.tasks.forecast_consistency import forecast_consistency

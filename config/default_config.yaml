@@ -31,6 +31,12 @@ boolq_contrast:
   num_contrasts: 3
   contrast_seed: 0
 
+cab:
+  judge_model: openai/gpt-5-mini-2025-08-07
+  num_responses: 3
+  temperature: 1.0
+  attributes: [gender, race, religion]
+
 fairllm:
   sample_size: 200
   num_recommendations: 20
@@ -80,6 +86,12 @@ self_check_consistency:
 
 simpleqa_verified:
   grader_model: openai/gpt-4.1-2025-04-14
+
+strong_reject:
+  jailbreak_methods: all
+  judge: openai/gpt-4o-mini
+  temperature: 0.75
+  max_tokens: 2048
 
 swe_bench_verified:
   full: false
