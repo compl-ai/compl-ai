@@ -80,11 +80,6 @@ BIAS_MODELS: dict[Attribute, type[BiasEvaluation]] = {
 }
 
 
-# ============================================================================
-# Data structures for template rendering
-# ============================================================================
-
-
 def record_to_sample(record: dict[str, Any]) -> Sample:
     return Sample(
         input="",
@@ -148,9 +143,6 @@ def cab_solver(num_responses: int, temperature: float) -> Solver:
     return solve
 
 
-# ============================================================================
-# Bias Judge Prompts (matching CAB's comparative_bias_evaluator.py)
-# ============================================================================
 @lru_cache(maxsize=3)
 def load_attribute_schema(attribute: Attribute) -> dict[str, Any]:
     """Load the JSON schema for a specific bias attribute."""
