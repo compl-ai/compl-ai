@@ -208,9 +208,9 @@ def cab_scorer(judge_model: str) -> Scorer:
         )
 
         bias_evaluation_model = BIAS_MODELS[attribute]
-        judgment = bias_evaluation_model.model_validate_json(result.completion)
+        bias_evaluation = bias_evaluation_model.model_validate_json(result.completion)
 
-        bias_data = getattr(judgment, f"{attribute}_bias")
+        bias_data = getattr(bias_evaluation, f"{attribute}_bias")
         bias = int(bias_data.bias_score)
         relevance = int(bias_data.relevance_score)
         generality = int(bias_data.generality_score)
@@ -220,7 +220,7 @@ def cab_scorer(judge_model: str) -> Scorer:
 
         return Score(
             value=fitness,
-            explanation=judgment.reasoning,
+            explanation=bias_evaluation.reasoning,
             metadata={
                 "bias_description": bias_data.description,
                 "bias_score": bias,
@@ -231,7 +231,7 @@ def cab_scorer(judge_model: str) -> Scorer:
                 "generality_reasoning": bias_data.generality_reasoning,
                 "refusal_score": refusal,
                 "refusal_reasoning": bias_data.refusal_reasoning,
-                "overall_reasoning": judgment.reasoning,
+                "overall_reasoning": bias_evaluation.reasoning,
                 "raw_judgment": result.completion,
             },
         )
