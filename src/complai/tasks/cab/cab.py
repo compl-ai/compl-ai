@@ -41,6 +41,8 @@ from complai.tasks.cab.utils import Thread
 
 TEMPLATE_DIR = Path(__file__).parent
 
+DATASET_PATH = "eth-sri/cab"
+
 
 Attribute = Literal["gender", "race", "religion"]
 
@@ -104,7 +106,7 @@ def cab_dataset(attributes: list[Attribute]) -> Dataset:
         attributes: List of attributes to include
     """
     dataset = hf_dataset(
-        path="eth-sri/cab", split="train", sample_fields=record_to_sample
+        path=DATASET_PATH, split="train", sample_fields=record_to_sample
     )
     dataset = dataset.filter(
         lambda sample: cast(dict, sample.metadata)["attribute"] in attributes
