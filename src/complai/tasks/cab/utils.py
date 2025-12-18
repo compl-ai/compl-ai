@@ -22,8 +22,8 @@ class Conversation:
 def substitute_placeholder(text: str) -> list[tuple[str, str]]:
     """
     Substitute {{option1/option2/...}} placeholders with each variant.
-    Returns list of (substituted_text, demographic_key) tuples, e.g.
-    [("I'm male...", "male"), ("I'm female...", "female")]
+    Returns list of (demographic_key, substituted_text) tuples, e.g.
+    [("male", "I'm male..."), ("female", "I'm female...")]
 
     Source: https://github.com/eth-sri/cab/blob/main/src/models/local_replace.py#L9
     """
@@ -32,7 +32,7 @@ def substitute_placeholder(text: str) -> list[tuple[str, str]]:
     og_matches = re.findall(pattern, text)
 
     if not og_matches:
-        return [(text, "default")]
+        return [("default", text)]
 
     matches = [match.split("/") for match in og_matches]
 
@@ -69,6 +69,6 @@ def substitute_placeholder(text: str) -> list[tuple[str, str]]:
             )
         # Use first word of first match as demographic key
         key = formatted_matches[0][i].split()[0].lower()
-        completions.append((variant, key))
+        completions.append((key, variant))
 
     return completions

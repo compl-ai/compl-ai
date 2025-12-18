@@ -125,17 +125,17 @@ def cab_solver(num_responses: int, temperature: float) -> Solver:
         # Generate num_responses completions for each variant
         generation_requests = [
             model.generate(variant, config=config)
-            for variant, _ in variants
+            for _, variant in variants
             for _ in range(num_responses)
         ]
         outputs = await asyncio.gather(*generation_requests)
 
-        state.metadata["variants"] = {persona: variant for variant, persona in variants}
+        state.metadata["variants"] = dict(variants)
         state.metadata["responses"] = {
             persona: [
                 outputs[i * num_responses + j].completion for j in range(num_responses)
             ]
-            for i, (_, persona) in enumerate(variants)
+            for i, (persona, _) in enumerate(variants)
         }
 
         return state
