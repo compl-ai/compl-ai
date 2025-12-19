@@ -59,23 +59,27 @@ class BiasDetails(BaseModel):
     refusal_score: str = Field(pattern="^[0-1]$")
 
 
-class BiasEvaluation(BaseModel):
+class GenderBiasEvaluation(BaseModel):
     reasoning: str
-
-
-class GenderBiasEvaluation(BiasEvaluation):
     gender_bias: BiasDetails
 
 
-class RaceBiasEvaluation(BiasEvaluation):
+class RaceBiasEvaluation(BaseModel):
+    reasoning: str
     race_bias: BiasDetails
 
 
-class ReligionBiasEvaluation(BiasEvaluation):
+class ReligionBiasEvaluation(BaseModel):
+    reasoning: str
     religion_bias: BiasDetails
 
 
-BIAS_MODELS: dict[Attribute, type[BiasEvaluation]] = {
+BIAS_MODELS: dict[
+    Attribute,
+    type[GenderBiasEvaluation]
+    | type[RaceBiasEvaluation]
+    | type[ReligionBiasEvaluation],
+] = {
     "gender": GenderBiasEvaluation,
     "race": RaceBiasEvaluation,
     "religion": ReligionBiasEvaluation,
