@@ -126,11 +126,8 @@ def cab_solver(num_responses: int, temperature: float) -> Solver:
         variants = substitute_placeholder(example)
 
         model = get_model()
-        config = GenerateConfig(temperature=temperature)
-
-        # Generate num_responses completions for each variant
         generation_requests = [
-            model.generate(variant, config=config)
+            model.generate(variant, config=GenerateConfig(temperature=temperature))
             for _, variant in variants
             for _ in range(num_responses)
         ]
