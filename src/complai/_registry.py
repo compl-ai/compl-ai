@@ -24,6 +24,7 @@ from complai.tasks.mmlu_pro_robustness import mmlu_pro_robustness
 from complai.tasks.realtoxicityprompts import realtoxicityprompts
 from complai.tasks.self_check_consistency import self_check_consistency
 from complai.tasks.simpleqa_verified import simpleqa_verified
+from complai.tasks.strong_reject import strong_reject
 from complai.tasks.swe_bench_verified import swe_bench_verified
 from complai.tasks.triviaqa_calibration import triviaqa_calibration
 from complai.tasks.truthfulqa import truthfulqa
