@@ -79,7 +79,10 @@ self_check_consistency:
   num_conclusions: 10
 
 simpleqa_verified:
+  temperature: 1.0
+  max_tokens: 2048
   grader_model: openai/gpt-4.1-2025-04-14
+  grader_temperature: 1.0
 
 swe_bench_verified:
   full: false
