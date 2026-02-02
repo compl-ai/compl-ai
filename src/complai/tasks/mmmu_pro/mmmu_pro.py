@@ -99,17 +99,13 @@ def create_content(record: dict[str, Any], subset: MMMUProSubset) -> list[Conten
         return [ContentImage(image=image_to_data_uri(record["image"]))]
 
     # Standard subsets: text with image placeholders
-    question_text = record["question"]
-    modified_text, image_order = replace_image_tokens(question_text)
+    modified_text, image_order = replace_image_tokens(record)
 
     content_list: list[Content] = [ContentText(text=modified_text)]
 
     # Add images in order of appearance in question text
-    if image_order:
-        for image in get_images_in_order(record, image_order):
-            content_list.append(ContentImage(image=image_to_data_uri(image)))
-    else:
-        raise ValueError("No image placeholders found in question text")
+    for image in get_images_in_order(record, image_order):
+        content_list.append(ContentImage(image=image_to_data_uri(image)))
 
     return content_list
 

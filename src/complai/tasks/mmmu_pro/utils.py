@@ -21,7 +21,7 @@ def image_to_data_uri(image_data: dict[str, Any]) -> str:
     return f"data:image/png;base64,{b64_data}"
 
 
-def replace_image_tokens(input_string: str) -> tuple[str, list[int]]:
+def replace_image_tokens(record: dict[str, Any]) -> tuple[str, list[int]]:
     """Replace image placeholders with generic <image> token and extract order.
 
     This matches the official MMMU-Pro implementation.
@@ -32,8 +32,17 @@ def replace_image_tokens(input_string: str) -> tuple[str, list[int]]:
     Returns:
         Tuple of (modified text with <image> placeholders, list of image indices in order).
     """
-    image_order = [int(num) for num in re.findall(r"<image\s+(\d+)>", input_string)]
-    modified_text = re.sub(r"<image\s+\d+>", "<image>", input_string)
+    question_text = record["question"]
+    modified_text = re.sub(r"<image\s+\d+>", "<image>", question_text)
+
+    image_order = [int(num) for num in re.findall(r"<image\s+(\d+)>", question_text)]
+    if not image_order:
+        # No placeholders found - add all available images
+        # 51 samples have no text placeholders but images as options
+        for i in range(1, 8):
+            image = record.get(f"image_{i}")
+            if image is not None:
+                image_order.append(i)
 
     return modified_text, image_order
 
