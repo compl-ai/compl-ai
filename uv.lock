@@ -1219,7 +1219,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1962,7 +1962,7 @@ wheels = [
 
 [[package]]
 name = "inspect-ai"
-version = "0.3.151"
+version = "0.3.160"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioboto3" },
@@ -1998,27 +1998,30 @@ dependencies = [
     { name = "sniffio" },
     { name = "tenacity" },
     { name = "textual" },
+    { name = "tiktoken" },
     { name = "typing-extensions" },
     { name = "universal-pathlib" },
     { name = "zipp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3e/6c/c6a1f93787e9e2267bd113a920ae9beafef5da20df0ec69e57172826421d/inspect_ai-0.3.151.tar.gz", hash = "sha256:87ac383d0f40c58c8e63d4f5f25a44ea0405371270f0c96b832eaddcbad92dfe", size = 43353606, upload-time = "2025-12-01T14:41:53.843Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/1a/c4a35fe9cd49983f511c1cd6b832547fb464b40176feba3a9df3be512a5e/inspect_ai-0.3.160.tar.gz", hash = "sha256:8aadaa65fb23730430388ee6ba1be4a5da697e78dab77075d7d2522a2ebd0cb6", size = 43312939, upload-time = "2026-01-09T14:38:30.833Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/37/8f2c29c812bc6f1e322a3706ad0fba1f86ce573bf86b769f0174836cf287/inspect_ai-0.3.151-py3-none-any.whl", hash = "sha256:9a41dde57e8412c21008e57cda1849f7d03a139db0c808cb6df4d3549bafadcf", size = 34656110, upload-time = "2025-12-01T14:41:38.278Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/40/29d4cdcb6a292877cb5283d9641f454866e74fc2ae83010f42eb19de3779/inspect_ai-0.3.160-py3-none-any.whl", hash = "sha256:46238194abc910f101963bb0938967c919ac71681edfab0ebee5403dd28c11e2", size = 34520873, upload-time = "2026-01-09T14:38:24.698Z" },
 ]
 
 [[package]]
 name = "inspect-evals"
-version = "0.3.103.dev98+gea7fe4f02"
-source = { git = "https://github.com/UKGovernmentBEIS/inspect_evals#ea7fe4f02547b11f9c15a32f5302773899aff241" }
+version = "0.3.106.dev23+g9434b30de"
+source = { git = "https://github.com/UKGovernmentBEIS/inspect_evals#9434b30deb090a5bd6128c18b9312c5673f3610b" }
 dependencies = [
     { name = "backoff" },
     { name = "datasets" },
+    { name = "hf-xet" },
     { name = "inspect-ai" },
     { name = "jinja2" },
     { name = "numpy" },
     { name = "pillow" },
     { name = "pydantic" },
+    { name = "pyyaml" },
     { name = "requests" },
     { name = "tiktoken" },
     { name = "toml" },
