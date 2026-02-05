@@ -21,7 +21,7 @@
 The COMPL-AI framework includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
 
 - Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
-- Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (23 and growing)
+- Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (28 and growing)
 - A public Hugging Face leaderboard of our [latest evaluation results](https://huggingface.co/spaces/latticeflow/compl-ai-board)   
 - Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
 - A custom eval CLI (run `complai --help` for usage)
@@ -145,7 +145,8 @@ You can see a list of all technical requirements and their respective benchmarks
 - Disclosure of AI
   - human_deception
 - Cyberattack Resilience
-  - instruction_goal_hijacking, llm_rules
+  - instruction_goal_hijacking, llm_rules, strong_reject
+
 - Societal Alignment
   - mask, simpleqa_verified, truthfulqa
 - Harmful Content and Toxicity

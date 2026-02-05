@@ -19,7 +19,7 @@ import random
 import re
 
 import nltk
-from complai.tasks.utils.constants import CACHE_DIR
+from complai.constants import CACHE_DIR
 
 
 WORD_LIST = [
