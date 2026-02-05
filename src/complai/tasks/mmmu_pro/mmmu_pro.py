@@ -30,9 +30,6 @@ from complai.tasks.mmmu_pro.utils import replace_image_tokens
 
 DATASET_PATH = "MMMU/MMMU_Pro"
 
-# Regex pattern to match image placeholders like <image 1>, <image 2>, etc.
-IMAGE_PLACEHOLDER_PATTERN = re.compile(r"<image\s*(\d+)>", re.IGNORECASE)
-
 MMMUProSubset = Literal["standard_10", "standard_4", "vision"]
 
 
