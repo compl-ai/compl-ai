@@ -120,14 +120,14 @@ def cab_dataset(attributes: list[Attribute]) -> Dataset:
 
 
 @solver
-def cab_solver(num_responses: int, temperature: float) -> Solver:
+def cab_solver(num_responses: int) -> Solver:
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         example = state.metadata["example"]
         variants = substitute_placeholder(example)
 
         model = get_model()
         generation_requests = [
-            model.generate(variant, config=GenerateConfig(temperature=temperature))
+            model.generate(variant)
             for _, variant in variants
             for _ in range(num_responses)
         ]
@@ -246,7 +246,6 @@ def cab_scorer(judge_model: str) -> Scorer:
 def cab(
     judge_model: str = "openai/gpt-5-mini-2025-08-07",
     num_responses: int = 3,
-    temperature: float = 1.0,
     attributes: Attribute | list[Attribute] = ["gender", "race", "religion"],
 ) -> Task:
     """
@@ -257,7 +256,6 @@ def cab(
     Args:
         judge_model: Model to use for bias evaluation
         num_responses: Number of responses per counterfactual variant
-        temperature: Generation temperature
         attributes: List of attributes to evaluate
     """
     if not isinstance(attributes, list):
@@ -265,6 +263,6 @@ def cab(
 
     return Task(
         dataset=cab_dataset(attributes),
-        solver=cab_solver(num_responses, temperature),
+        solver=cab_solver(num_responses),
         scorer=cab_scorer(judge_model),
     )
