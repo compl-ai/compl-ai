@@ -69,6 +69,10 @@ mmlu_pro_robustness:
   perturbations: null
   seed: 0
 
+mmmu_pro:
+  subset: standard_10
+  cot: false
+
 realtoxicityprompts:
   full: false
   use_gpu_scorer: true
