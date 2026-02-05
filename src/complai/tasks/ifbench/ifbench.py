@@ -17,7 +17,7 @@ from inspect_ai.solver import TaskState
 from complai.tasks.ifbench.evaluation_lib import InputExample
 from complai.tasks.ifbench.evaluation_lib import test_instruction_following_loose
 from complai.tasks.ifbench.evaluation_lib import test_instruction_following_strict
-from complai.tasks.utils.constants import CACHE_DIR
+from complai.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_punkt_tab_tokenizer
 
 
