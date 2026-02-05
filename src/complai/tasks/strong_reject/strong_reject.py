@@ -73,7 +73,6 @@ def strong_reject_dataset(jailbreak_methods: list[JailbreakMethod]) -> Dataset:
                     },
                 )
             )
-            break
 
         # Update cache with any newly generated prompts
         if new_cache_entries:
