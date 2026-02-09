@@ -123,22 +123,22 @@ def cab_dataset(attributes: list[Attribute]) -> Dataset:
 def cab_solver(num_responses: int) -> Solver:
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         example = state.metadata["example"]
-        variants = substitute_placeholder(example)
+        variants = dict(substitute_placeholder(example))
 
         model = get_model()
         generation_requests = [
             model.generate(variant)
-            for _, variant in variants
+            for variant in variants.values()
             for _ in range(num_responses)
         ]
         outputs = await asyncio.gather(*generation_requests)
 
-        state.metadata["variants"] = dict(variants)
+        state.metadata["variants"] = variants
         state.metadata["responses"] = {
             persona: [
                 outputs[i * num_responses + j].completion for j in range(num_responses)
             ]
-            for i, (persona, _) in enumerate(variants)
+            for i, persona in enumerate(variants)
         }
 
         return state
@@ -156,20 +156,24 @@ def load_attribute_schema(attribute: Attribute) -> dict[str, Any]:
 
 @scorer(metrics=[grouped(mean(), "attribute"), stderr()])
 def cab_scorer(judge_model: str) -> Scorer:
+    # Load Jinja templates
     jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
     system_template = jinja_env.get_template("comparative_system.j2")
     query_template = jinja_env.get_template("comparative_query.j2")
 
+    # Load system prompt examples
     with open(TEMPLATE_DIR / "examples.json") as f:
         example_judgments: dict[str, list[dict[str, Any]]] = json.load(f)
 
     async def score(state: TaskState, target: Target) -> Score:
+        # Extract state metadata
         attribute = cast(Attribute, state.metadata.get("attribute"))
         responses = cast(dict[str, list[str]], state.metadata.get("responses"))
         variants = cast(dict[str, str], state.metadata.get("variants"))
 
         assert all(len(answers) > 1 for answers in responses.values())
 
+        # Render system prompt and user prompt and construct messages
         system_prompt = system_template.render(
             num_personas=len(responses),
             attribute=attribute,
@@ -178,13 +182,13 @@ def cab_scorer(judge_model: str) -> Scorer:
 
         conversations = [
             Conversation(
-                persona=Persona(persona_key),
+                persona=Persona(persona),
                 threads=[
-                    Thread(question=variants[persona_key], answer=answer)
+                    Thread(question=variants[persona], answer=answer)
                     for answer in answers
                 ],
             )
-            for persona_key, answers in responses.items()
+            for persona, answers in responses.items()
         ]
         user_prompt = query_template.render(conversations=conversations)
 
@@ -192,6 +196,8 @@ def cab_scorer(judge_model: str) -> Scorer:
             ChatMessageSystem(content=system_prompt),
             ChatMessageUser(content=user_prompt),
         ]
+
+        # Build response schema
         schema_data = load_attribute_schema(attribute)["json_schema"]
         response_schema = ResponseSchema(
             name=schema_data["name"],
@@ -199,6 +205,7 @@ def cab_scorer(judge_model: str) -> Scorer:
             strict=schema_data["strict"],
         )
 
+        # Request judge completion
         judge = get_model(judge_model)
         result = await judge.generate(
             messages,
@@ -210,6 +217,7 @@ def cab_scorer(judge_model: str) -> Scorer:
             ),
         )
 
+        # Parse judge completion
         bias_evaluation_model = BIAS_MODELS[attribute]
         bias_evaluation = bias_evaluation_model.model_validate_json(result.completion)
 
