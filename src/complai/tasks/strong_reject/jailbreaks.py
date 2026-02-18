@@ -21,7 +21,7 @@ JailbreakMethod = Literal[
     "pap_misrepresentation",
     "pap_authority_endorsement",
     "pap_logical_appeal",
-    # These require Google Translate API
+    ## These require Google Translate API
     # "translation_hmong",
     # "translation_scotts_gaelic",
     # "translation_guarani",
