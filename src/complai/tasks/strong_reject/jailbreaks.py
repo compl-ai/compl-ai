@@ -64,12 +64,14 @@ def get_jailbreak_prompt(
     return jailbroken_prompt, True
 
 
-def get_method_cache_path(method: JailbreakMethod) -> Path:
-    return STRONG_REJECT_CACHE_DIR / f"{method}.json"
+def get_method_cache_path(method: JailbreakMethod, full: bool = False) -> Path:
+    return STRONG_REJECT_CACHE_DIR / f"{method}{'_small' if not full else ''}.json"
 
 
-def load_method_cache(method: JailbreakMethod) -> dict[str, str] | None:
-    cache_path = get_method_cache_path(method)
+def load_method_cache(
+    method: JailbreakMethod, full: bool = False
+) -> dict[str, str] | None:
+    cache_path = get_method_cache_path(method, full)
     try:
         with open(cache_path) as f:
             return json.load(f)
@@ -79,8 +81,10 @@ def load_method_cache(method: JailbreakMethod) -> dict[str, str] | None:
         return None
 
 
-def save_method_cache(method: JailbreakMethod, cache: dict[str, str]) -> None:
+def save_method_cache(
+    method: JailbreakMethod, cache: dict[str, str], full: bool = False
+) -> None:
     STRONG_REJECT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache_path = get_method_cache_path(method)
+    cache_path = get_method_cache_path(method, full)
     with open(cache_path, "w") as f:
         json.dump(cache, f)
