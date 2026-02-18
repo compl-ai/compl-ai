@@ -27,7 +27,6 @@ from inspect_ai.scorer import Target
 from inspect_ai.scorer import Value
 from inspect_ai.solver import generate
 from inspect_ai.solver import TaskState
-from inspect_evals.strong_reject.strong_reject import PATH_TO_STRONG_REJECT_CSV
 from tqdm import tqdm
 
 from complai.tasks.strong_reject.jailbreaks import get_jailbreak_prompt
@@ -36,6 +35,13 @@ from complai.tasks.strong_reject.jailbreaks import load_method_cache
 from complai.tasks.strong_reject.jailbreaks import save_method_cache
 from complai.tasks.strong_reject.prompts import STRONG_REJECT_EVAL_PROMPT
 from complai.tasks.strong_reject.prompts import STRONG_REJECT_SYSTEM_PROMPT
+
+
+PATH_TO_STRONG_REJECT_CSV = (
+    "https://raw.githubusercontent.com/alexandrasouly/strongreject/"
+    "3432b2d696b428f242bd507df96d80f686571d5e/strongreject_dataset/strongreject_dataset.csv"
+)
+PATH_TO_STRONG_REJECT_CSV_SMALL = "https://raw.githubusercontent.com/alexandrasouly/strongreject/f7cad6c17e624e21d8df2278e918ae1dddb4cb56/strongreject_dataset/strongreject_small_dataset.csv"
 
 
 def parse_jailbreak_methods(
@@ -49,15 +55,18 @@ def parse_jailbreak_methods(
     return jailbreak_methods
 
 
-def strong_reject_dataset(jailbreak_methods: list[JailbreakMethod]) -> Dataset:
-    with urllib.request.urlopen(PATH_TO_STRONG_REJECT_CSV) as response:
+def strong_reject_dataset(
+    jailbreak_methods: list[JailbreakMethod], full: bool = False
+) -> Dataset:
+    url = PATH_TO_STRONG_REJECT_CSV if full else PATH_TO_STRONG_REJECT_CSV_SMALL
+    with urllib.request.urlopen(url) as response:
         csv_content = response.read().decode("utf-8")
     reader = csv.DictReader(io.StringIO(csv_content))
     records = list(reader)
 
     samples: list[Sample] = []
     for jailbreak_method in tqdm(jailbreak_methods, desc="Loading jailbreak prompts"):
-        cache = load_method_cache(jailbreak_method)
+        cache = load_method_cache(jailbreak_method, full)
         new_cache_entries: dict[str, str] = {}
 
         for record in records:
@@ -84,7 +93,7 @@ def strong_reject_dataset(jailbreak_methods: list[JailbreakMethod]) -> Dataset:
         if new_cache_entries:
             updated_cache = cache if cache is not None else {}
             updated_cache.update(new_cache_entries)
-            save_method_cache(jailbreak_method, updated_cache)
+            save_method_cache(jailbreak_method, updated_cache, full)
 
     return MemoryDataset(samples)
 
@@ -165,6 +174,7 @@ def strong_reject_scorer(judge_name: str) -> Scorer:
 
 @task(technical_requirement="Cyberattack Resilience")
 def strong_reject(
+    full: bool = False,
     jailbreak_methods: JailbreakMethod | list[JailbreakMethod] | Literal["all"] = "all",
     judge: str = "openai/gpt-4o-mini",
     temperature: float = 0.75,
@@ -173,7 +183,7 @@ def strong_reject(
     jailbreak_methods = parse_jailbreak_methods(jailbreak_methods)
 
     return Task(
-        dataset=strong_reject_dataset(jailbreak_methods),
+        dataset=strong_reject_dataset(jailbreak_methods, full),
         solver=generate(),
         scorer=strong_reject_scorer(judge),
         config=GenerateConfig(temperature=temperature, max_tokens=max_tokens),
