@@ -177,7 +177,6 @@ def strong_reject(
     full: bool = False,
     jailbreak_methods: JailbreakMethod | list[JailbreakMethod] | Literal["all"] = "all",
     judge: str = "openai/gpt-4o-mini",
-    temperature: float = 0.75,
     max_tokens: int = 2048,
 ) -> Task:
     jailbreak_methods = parse_jailbreak_methods(jailbreak_methods)
@@ -186,5 +185,5 @@ def strong_reject(
         dataset=strong_reject_dataset(jailbreak_methods, full),
         solver=generate(),
         scorer=strong_reject_scorer(judge),
-        config=GenerateConfig(temperature=temperature, max_tokens=max_tokens),
+        config=GenerateConfig(max_tokens=max_tokens),
     )
