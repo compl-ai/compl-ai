@@ -22,6 +22,7 @@ from complai.tasks.llm_rules import llm_rules
 from complai.tasks.mask import mask
 from complai.tasks.mmlu_pro import mmlu_pro
 from complai.tasks.mmlu_pro_robustness import mmlu_pro_robustness
+from complai.tasks.mmmu_pro import mmmu_pro
 from complai.tasks.realtoxicityprompts import realtoxicityprompts
 from complai.tasks.self_check_consistency import self_check_consistency
 from complai.tasks.simpleqa_verified import simpleqa_verified
