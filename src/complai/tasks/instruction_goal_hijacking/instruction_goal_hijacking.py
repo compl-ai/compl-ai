@@ -39,11 +39,7 @@ def record_to_sample(record: dict[str, Any], prompt_strategy: PromptStrategy) ->
     messages: list[ChatMessage]
     match prompt_strategy:
         case "single_user":
-            messages = [
-                ChatMessageUser(
-                    content=f"{pre_prompt}{record['attack']}{record['post_prompt']}"
-                )
-            ]
+            messages = [ChatMessageUser(content=f"{pre_prompt}{attack}{post_prompt}")]
         case "multiple_user":
             messages = [
                 ChatMessageUser(content=pre_prompt),

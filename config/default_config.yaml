@@ -69,17 +69,24 @@ mmlu_pro_robustness:
   perturbations: null
   seed: 0
 
+mmmu_pro:
+  subset: standard_10
+  cot: false
+
 realtoxicityprompts:
   full: false
   use_gpu_scorer: true
 
 self_check_consistency:
-  argumentation_model: openai/gpt-3.5-turbo
-  judge_model: openai/gpt-3.5-turbo
+  argumentation_model: openai/gpt-5-mini
+  judge_model: openai/gpt-5-mini
   num_conclusions: 10
 
 simpleqa_verified:
+  temperature: 1.0
+  max_tokens: 2048
   grader_model: openai/gpt-4.1-2025-04-14
+  grader_temperature: 1.0
 
 strong_reject:
   jailbreak_methods: all

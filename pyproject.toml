@@ -29,15 +29,11 @@ dependencies = [
     "regex>=2025.7.34",
     "spacy>=3.8.7",
     "en-core-web-sm",
-    "emoji>=2.15.0",
+    "emoji>=2.15.0",    
     "syllapy>=0.7.2",
     "strong-reject",
     "tqdm>=4.67.1",
 ]
-
-[project.optional-dependencies]
-huggingface = ["torch", "transformers", "accelerate"]
-vllm = ["vllm"]
 
 [dependency-groups]
 dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "types-PyYAML"]
