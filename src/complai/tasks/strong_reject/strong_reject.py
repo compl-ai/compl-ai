@@ -1,11 +1,9 @@
-import csv
-import io
 import re
-import urllib.request
 from typing import cast
 from typing import get_args
 from typing import Literal
 
+import polars as pl
 from inspect_ai import Task
 from inspect_ai import task
 from inspect_ai.dataset import Dataset
@@ -48,7 +46,7 @@ def parse_jailbreak_methods(
     jailbreak_methods: JailbreakMethod | list[JailbreakMethod] | Literal["all"],
 ) -> list[JailbreakMethod]:
     if jailbreak_methods == "all":
-        return list[JailbreakMethod](get_args(JailbreakMethod))
+        return list(get_args(JailbreakMethod))
     if not isinstance(jailbreak_methods, list):
         return [jailbreak_methods]
 
@@ -58,38 +56,39 @@ def parse_jailbreak_methods(
 def strong_reject_dataset(
     jailbreak_methods: list[JailbreakMethod], full: bool = False
 ) -> Dataset:
+    # Load base dataset
     url = PATH_TO_STRONG_REJECT_CSV if full else PATH_TO_STRONG_REJECT_CSV_SMALL
-    with urllib.request.urlopen(url) as response:
-        csv_content = response.read().decode("utf-8")
-    reader = csv.DictReader(io.StringIO(csv_content))
-    records = list(reader)
+    records = pl.read_csv(url)
 
+    # Build prompts for each jailbreak method
     samples: list[Sample] = []
-    for jailbreak_method in tqdm(jailbreak_methods, desc="Loading jailbreak prompts"):
+    for jailbreak_method in tqdm(jailbreak_methods, desc="Building dataset"):
         cache = load_method_cache(jailbreak_method, full)
         new_cache_entries: dict[str, str] = {}
 
-        for record in records:
-            forbidden_prompt = record["forbidden_prompt"]
-            transformed_prompt, was_generated = get_jailbreak_prompt(
-                jailbreak_method, forbidden_prompt, cache
-            )
+        for record in records.iter_rows(named=True):
+            prompt = record["forbidden_prompt"]
 
-            if was_generated:
-                new_cache_entries[forbidden_prompt] = transformed_prompt
+            # Apply jailbreak method to prompt
+            transformed_prompt, was_generated = get_jailbreak_prompt(
+                jailbreak_method, prompt, cache
+            )
 
             samples.append(
                 Sample(
                     input=transformed_prompt,
                     metadata={
-                        "category": record.get("category"),
-                        "source": record.get("source"),
+                        "category": record["category"],
+                        "source": record["source"],
                         "jailbreak_method": jailbreak_method,
                     },
                 )
             )
 
-        # Update cache with any newly generated prompts
+            if was_generated:
+                new_cache_entries[prompt] = transformed_prompt
+
+        # Save updated cache
         if new_cache_entries:
             updated_cache = cache if cache is not None else {}
             updated_cache.update(new_cache_entries)
