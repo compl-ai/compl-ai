@@ -31,6 +31,8 @@ dependencies = [
     "en-core-web-sm",
     "emoji>=2.15.0",    
     "syllapy>=0.7.2",
+    "strong-reject",
+    "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
@@ -84,6 +86,7 @@ files.extend-exclude = [
 [tool.uv.sources]
 inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
+strong_reject = { git = "https://github.com/dsbowen/strong_reject" }
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.pytest.ini_options]

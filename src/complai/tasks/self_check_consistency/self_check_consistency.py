@@ -27,7 +27,7 @@ from inspect_ai.solver import solver
 from inspect_ai.solver import TaskState
 
 from complai.tasks.self_check_consistency.topics import TOPICS
-from complai.tasks.utils.constants import CACHE_DIR
+from complai.constants import CACHE_DIR
 from complai.tasks.utils.download import ensure_punkt_tab_tokenizer
 
 
