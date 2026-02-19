@@ -33,6 +33,8 @@ dependencies = [
     "syllapy>=0.7.2",
     "strong-reject",
     "tqdm>=4.67.1",
+    "jinja2>=3.1.6",
+    "pydantic>=2.12.5",
 ]
 
 [dependency-groups]

@@ -31,6 +31,11 @@ boolq_contrast:
   num_contrasts: 3
   contrast_seed: 0
 
+cab:
+  judge_model: openai/gpt-5-mini-2025-08-07
+  num_responses: 3
+  attributes: [gender, race, religion]
+
 fairllm:
   sample_size: 200
   num_recommendations: 20

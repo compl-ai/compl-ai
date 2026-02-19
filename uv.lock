@@ -534,12 +534,14 @@ dependencies = [
     { name = "gensim" },
     { name = "inspect-ai" },
     { name = "inspect-evals", extra = ["swe-bench"] },
+    { name = "jinja2" },
     { name = "llm-rules" },
     { name = "nltk" },
     { name = "numpy" },
     { name = "openai" },
     { name = "platformdirs" },
     { name = "polars" },
+    { name = "pydantic" },
     { name = "regex" },
     { name = "scipy" },
     { name = "spacy" },
@@ -569,12 +571,14 @@ requires-dist = [
     { name = "gensim", specifier = ">=4.3.3" },
     { name = "inspect-ai" },
     { name = "inspect-evals", extras = ["bbq", "livebench", "swe-bench"], git = "https://github.com/UKGovernmentBEIS/inspect_evals" },
+    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "llm-rules", git = "https://github.com/normster/llm_rules" },
     { name = "nltk", specifier = ">=3.9.1" },
     { name = "numpy", specifier = ">=1.26.4" },
     { name = "openai", specifier = ">=1.90.0" },
     { name = "platformdirs", specifier = ">=4.3.8" },
     { name = "polars", specifier = ">=1.32.2" },
+    { name = "pydantic", specifier = ">=2.12.5" },
     { name = "regex", specifier = ">=2025.7.34" },
     { name = "scipy", specifier = ">=1.13.1" },
     { name = "spacy", specifier = ">=3.8.7" },
@@ -1609,7 +1613,7 @@ wheels = [
 
 [[package]]
 name = "inspect-ai"
-version = "0.3.153"
+version = "0.3.154"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioboto3" },
@@ -1649,9 +1653,9 @@ dependencies = [
     { name = "universal-pathlib" },
     { name = "zipp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/24/17/a0e0fcac481b1b708534ed819aa102fcf67a4a7d5b737dfc3ed2a6a5fa13/inspect_ai-0.3.153.tar.gz", hash = "sha256:fbb0a94c6b8efe6e9d6e5b5be5f6d9fb7adc44caf29416132d18a623b4bc2eee", size = 43383964, upload-time = "2025-12-06T03:36:29.095Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/54/e990571372a34ebf376cff4825d8f8361bc9baf2bd2bc1ecde0c33f266df/inspect_ai-0.3.154.tar.gz", hash = "sha256:f2db72a131a1c9e145ab07fdd608cb2f17e8c5bc1875725fce529dc38b641ddd", size = 43417891, upload-time = "2025-12-14T13:40:43.275Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/71/88b1eb51fd4b94b5dedac8c78b7b253dd68d4ee732231d8a430a8e58c073/inspect_ai-0.3.153-py3-none-any.whl", hash = "sha256:ec734c89809ef7934f66730388523cca052252a866533e97e83ad680155e9094", size = 34678469, upload-time = "2025-12-06T03:36:14.125Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/a4/5942bd0a8e4f906e47ecdb904d61cd780ea63a3e383f9ebfcf38e02ef3ab/inspect_ai-0.3.154-py3-none-any.whl", hash = "sha256:cfd068e16380fd8e17c01efe82ab738efea8aa76b3d77ca021da4fa1b7ff1f8f", size = 34700764, upload-time = "2025-12-14T13:40:36.954Z" },
 ]
 
 [[package]]
