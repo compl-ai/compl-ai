@@ -89,9 +89,9 @@ simpleqa_verified:
   grader_temperature: 1.0
 
 strong_reject:
+  full: false
   jailbreak_methods: all
   judge: openai/gpt-4o-mini
-  temperature: 0.75
   max_tokens: 2048
 
 swe_bench_verified:
