@@ -99,12 +99,6 @@ strong_reject:
   judge: openai/gpt-4o-mini
   max_tokens: 2048
 
-strong_reject:
-  jailbreak_methods: all
-  judge: openai/gpt-4o-mini
-  temperature: 0.75
-  max_tokens: 2048
-
 swe_bench_verified:
   full: false
 
