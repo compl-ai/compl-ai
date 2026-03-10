@@ -1,11 +1,12 @@
 from inspect_ai import Task
 from inspect_ai import task
+from inspect_ai import task_with
 from inspect_evals.swe_bench import swe_bench
 from inspect_evals.swe_bench import swe_bench_verified_mini
 
 
 @task(technical_requirement="Capabilities, Performance, and Limitations")
-def swe_bench_verified(full: bool = False) -> Task:
+def swe_bench_verified(full: bool = False, message_limit: int = 200) -> Task:
     """
     SWE-bench-verified task.
 
@@ -16,5 +17,7 @@ def swe_bench_verified(full: bool = False) -> Task:
         Task: SWE-bench-verified task.
     """
     if full:
-        return swe_bench()
-    return swe_bench_verified_mini()
+        task = swe_bench()
+    task = swe_bench_verified_mini()
+
+    return task_with(task, message_limit=message_limit)
