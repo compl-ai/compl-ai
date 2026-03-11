@@ -101,6 +101,7 @@ strong_reject:
 
 swe_bench_verified:
   full: false
+  message_limit: 200
 
 triviaqa_calibration:
   triviaqa_subset: rc.wikipedia
