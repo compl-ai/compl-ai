@@ -1,5 +1,27 @@
 import numpy as np
 from inspect_ai.model import ChatCompletionChoice
+from inspect_ai.model import ContentReasoning
+from inspect_ai.solver import TaskState
+
+
+def strip_reasoning_logprobs(state: TaskState) -> None:
+    """Remove reasoning logprobs from model output.
+
+    We use len(text.encode("utf-8")) as an upper bound on the number of text
+    tokens (every token contributes at least one byte) in the non-reasoning
+    content.
+    """
+    for choice in state.output.choices:
+        if (
+            choice.logprobs is not None
+            and isinstance(choice.message.content, list)
+            and any(isinstance(c, ContentReasoning) for c in choice.message.content)
+        ):
+            text_token_bound = len(choice.message.text.encode("utf-8"))
+            if text_token_bound == 0:
+                choice.logprobs.content = []
+            elif text_token_bound < len(choice.logprobs.content):
+                choice.logprobs.content = choice.logprobs.content[-text_token_bound:]
 
 
 def num_nonzero_probs(logprobs: list[float]) -> int:
@@ -54,7 +76,7 @@ def get_logprobs_last_tokens(
     best_logprobs = get_logprobs(
         choice, tokens, strip_spaces=True, position=num_tokens - 1
     )
-    for position in reversed(range(num_tokens - last_k, num_tokens)):
+    for position in reversed(range(max(0, num_tokens - last_k), num_tokens)):
         # In case of ties, prefer extraction from the later tokens.
         logprobs = get_logprobs(choice, tokens, strip_spaces=True, position=position)
         if num_nonzero_probs(logprobs) > num_nonzero_probs(best_logprobs):
