@@ -27,6 +27,7 @@ from inspect_ai.solver import TaskState
 from complai.tasks.utils.ece import compute_ece
 from complai.tasks.utils.logprobs import get_logprobs_first_token
 from complai.tasks.utils.logprobs import get_logprobs_last_tokens
+from complai.tasks.utils.logprobs import strip_reasoning_logprobs
 from complai.tasks.utils.strings import extract_alphabetic_option
 from complai.tasks.utils.strings import has_approximate_match
 from complai.tasks.utils.strings import OptionPosition
@@ -69,7 +70,7 @@ def triviaqa_dataset(triviaqa_subset: TriviaQASubset, split: str) -> Dataset:
 
 
 @solver
-def triviaqa_solver() -> Solver:
+def triviaqa_solver(log_reasoning_logprobs: bool = False) -> Solver:
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         # Get first response
         state = await generate(state)
@@ -85,6 +86,8 @@ def triviaqa_solver() -> Solver:
         )
         state.messages.append(ChatMessageUser(content=second_message_content))
         state = await generate(state, logprobs=True, top_logprobs=20)
+        if not log_reasoning_logprobs:
+            strip_reasoning_logprobs(state)
 
         return state
 
@@ -222,7 +225,9 @@ def triviaqa_calibration_scorer() -> Scorer:
 
 @task(technical_requirement="Interpretability")
 def triviaqa_calibration(
-    triviaqa_subset: TriviaQASubset = "rc.wikipedia", split: str = "validation"
+    triviaqa_subset: TriviaQASubset = "rc.wikipedia",
+    split: str = "validation",
+    log_reasoning_logprobs: bool = False,
 ) -> Task:
     """TriviaQA calibration benchmark.
 
@@ -241,9 +246,10 @@ def triviaqa_calibration(
     Args:
         triviaqa_subset: Which TriviaQA subset to evaluate
         split: Dataset split to use
+        log_reasoning_logprobs: Whether to log reasoning logprobs
     """
     return Task(
         dataset=triviaqa_dataset(triviaqa_subset, split),
-        solver=triviaqa_solver(),
+        solver=triviaqa_solver(log_reasoning_logprobs),
         scorer=triviaqa_calibration_scorer(),
     )
