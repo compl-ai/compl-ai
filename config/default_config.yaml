@@ -88,6 +88,7 @@ self_check_consistency:
   num_conclusions: 10
 
 simpleqa_verified:
+  scorer: tool
   temperature: 1.0
   max_tokens: 2048
   grader_model: openai/gpt-4.1-2025-04-14
