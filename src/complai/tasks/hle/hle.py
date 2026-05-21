@@ -187,7 +187,7 @@ def extract_confidence_score(response: str, default: int = 100) -> int:
     return default
 
 
-@scorer(metrics=[accuracy(), stderr(), cerr()])
+@scorer(metrics=[{"score": [accuracy(), stderr()]}, cerr()])
 def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
     """HLE scorer using model grading.
 
@@ -236,14 +236,15 @@ def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
             model_confidence if judge_confidence == 100 else judge_confidence
         )
 
-        # Determine score value
+        # Keep correctness and confidence in Score.value so inspect-evals' CERR
+        # metric can aggregate calibration after epoch reduction.
         score_value = 1.0 if is_correct == "yes" else 0.0
 
         return Score(
-            value=score_value,
+            value={"score": score_value, "confidence": final_confidence},
             answer=model_response,
             explanation=reasoning,
-            metadata={"confidence": final_confidence, "judge_response": judge_response},
+            metadata={"judge_response": judge_response},
         )
 
     return score
