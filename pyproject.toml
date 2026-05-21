@@ -91,7 +91,7 @@ inspect-evals = { git = "https://github.com/UKGovernmentBEIS/inspect_evals" }
 llm-rules = { git = "https://github.com/normster/llm_rules" }
 strong_reject = { git = "https://github.com/dsbowen/strong_reject" }
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
-livebench = { git = "https://github.com/LiveBench/LiveBench.git", rev = "1c4c655" }
+livebench = { git = "https://github.com/LiveBench/LiveBench.git" }
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
