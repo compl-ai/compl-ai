@@ -1,5 +1,7 @@
 import asyncio
 import json
+import logging
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -16,6 +18,8 @@ from inspect_ai.model import ChatMessageSystem
 from inspect_ai.model import ChatMessageUser
 from inspect_ai.model import GenerateConfig
 from inspect_ai.model import get_model
+from inspect_ai.model import Model
+from inspect_ai.model import ModelOutput
 from inspect_ai.model import ResponseSchema
 from inspect_ai.scorer import grouped
 from inspect_ai.scorer import mean
@@ -30,11 +34,16 @@ from inspect_ai.solver import solver
 from inspect_ai.solver import TaskState
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import ValidationError
 
+from complai.tasks.cab.utils import BiasEvaluation
 from complai.tasks.cab.utils import Conversation
+from complai.tasks.cab.utils import format_validation_error
+from complai.tasks.cab.utils import GenderBiasEvaluation
+from complai.tasks.cab.utils import parse_bias_evaluation
 from complai.tasks.cab.utils import Persona
+from complai.tasks.cab.utils import RaceBiasEvaluation
+from complai.tasks.cab.utils import ReligionBiasEvaluation
 from complai.tasks.cab.utils import substitute_placeholder
 from complai.tasks.cab.utils import Thread
 
@@ -43,35 +52,10 @@ TEMPLATE_DIR = Path(__file__).parent
 
 DATASET_PATH = "eth-sri/cab"
 
+logger = logging.getLogger(__name__)
+
 
 Attribute = Literal["gender", "race", "religion"]
-
-
-class BiasDetails(BaseModel):
-    description: str
-    reasoning: str
-    bias_score: str = Field(pattern="^[1-5]$")
-    relevance_reasoning: str
-    relevance_score: str = Field(pattern="^[1-5]$")
-    generality_reasoning: str
-    generality_score: str = Field(pattern="^[1-5]$")
-    refusal_reasoning: str
-    refusal_score: str = Field(pattern="^[0-1]$")
-
-
-class GenderBiasEvaluation(BaseModel):
-    reasoning: str
-    gender_bias: BiasDetails
-
-
-class RaceBiasEvaluation(BaseModel):
-    reasoning: str
-    race_bias: BiasDetails
-
-
-class ReligionBiasEvaluation(BaseModel):
-    reasoning: str
-    religion_bias: BiasDetails
 
 
 BIAS_MODELS: dict[
@@ -84,6 +68,58 @@ BIAS_MODELS: dict[
     "race": RaceBiasEvaluation,
     "religion": ReligionBiasEvaluation,
 }
+
+
+@dataclass
+class JudgeEvaluationResult:
+    evaluation: BiasEvaluation | None
+    output: ModelOutput
+    parse_errors: list[str]
+    stop_reasons: list[str]
+    repaired: bool = False
+
+
+async def request_bias_evaluation(
+    judge: Model,
+    messages: list[ChatMessage],
+    attribute: Attribute,
+    judge_retries: int,
+    config: GenerateConfig,
+) -> JudgeEvaluationResult:
+    parse_errors: list[str] = []
+    stop_reasons: list[str] = []
+    output: ModelOutput | None = None
+
+    for attempt in range(judge_retries + 1):
+        output = await judge.generate(messages, config=config)
+        stop_reason = output.stop_reason if not output.empty else "unknown"
+        stop_reasons.append(stop_reason)
+
+        try:
+            evaluation, repaired = parse_bias_evaluation(
+                BIAS_MODELS[attribute], output.completion
+            )
+            return JudgeEvaluationResult(
+                evaluation=evaluation,
+                output=output,
+                parse_errors=parse_errors,
+                stop_reasons=stop_reasons,
+                repaired=repaired,
+            )
+        except ValidationError as error:
+            parse_error = format_validation_error(error)
+            parse_errors.append(parse_error)
+            logger.warning(
+                f"CAB judge returned invalid structured output (attempt {attempt + 1}/{judge_retries + 1}, stop_reason={stop_reason}): {parse_error}"
+            )
+
+    assert output is not None
+    return JudgeEvaluationResult(
+        evaluation=None,
+        output=output,
+        parse_errors=parse_errors,
+        stop_reasons=stop_reasons,
+    )
 
 
 def record_to_sample(record: dict[str, Any]) -> Sample:
@@ -155,7 +191,7 @@ def load_attribute_schema(attribute: Attribute) -> dict[str, Any]:
 
 
 @scorer(metrics=[grouped(mean(), "attribute"), stderr()])
-def cab_scorer(judge_model: str) -> Scorer:
+def cab_scorer(judge_model: str, judge_retries: int = 2) -> Scorer:
     # Load Jinja templates
     jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
     system_template = jinja_env.get_template("comparative_system.j2")
@@ -207,20 +243,36 @@ def cab_scorer(judge_model: str) -> Scorer:
 
         # Request judge completion
         judge = get_model(judge_model)
-        result = await judge.generate(
-            messages,
-            config=GenerateConfig(
-                response_schema=response_schema,
-                max_tokens=10000,
-                reasoning_effort="low",
-                verbosity="low",
-            ),
+        judge_config = GenerateConfig(
+            response_schema=response_schema,
+            max_tokens=10000,
+            reasoning_effort="low",
+            verbosity="low",
         )
 
-        # Parse judge completion
-        bias_evaluation_model = BIAS_MODELS[attribute]
-        bias_evaluation = bias_evaluation_model.model_validate_json(result.completion)
+        judge_result = await request_bias_evaluation(
+            judge=judge,
+            messages=messages,
+            attribute=attribute,
+            judge_retries=judge_retries,
+            config=judge_config,
+        )
 
+        if judge_result.evaluation is None:
+            return Score.unscored(
+                explanation=(
+                    "CAB judge output could not be parsed with "
+                    f"{judge_retries + 1} attempts."
+                ),
+                metadata={
+                    "attribute": attribute,
+                    "judge_attempts": len(judge_result.stop_reasons),
+                    "judge_stop_reasons": judge_result.stop_reasons,
+                    "judge_parse_errors": judge_result.parse_errors,
+                },
+            )
+
+        bias_evaluation = judge_result.evaluation
         bias_data = getattr(bias_evaluation, f"{attribute}_bias")
         bias = int(bias_data.bias_score)
         relevance = int(bias_data.relevance_score)
@@ -249,7 +301,10 @@ def cab_scorer(judge_model: str) -> Scorer:
                 "refusal_score": refusal,
                 "refusal_reasoning": bias_data.refusal_reasoning,
                 "overall_reasoning": bias_evaluation.reasoning,
-                "raw_judgment": result.completion,
+                "judge_attempts": len(judge_result.stop_reasons),
+                "judge_stop_reasons": judge_result.stop_reasons,
+                "judge_output_repaired": judge_result.repaired,
+                "judge_parse_errors": judge_result.parse_errors,
             },
         )
 
@@ -259,6 +314,7 @@ def cab_scorer(judge_model: str) -> Scorer:
 @task(technical_requirement="Representation — Absence of Bias")
 def cab(
     judge_model: str = "openai/gpt-5-mini-2025-08-07",
+    judge_retries: int = 2,
     num_responses: int = 3,
     attributes: Attribute | list[Attribute] = ["gender", "race", "religion"],
 ) -> Task:
@@ -269,6 +325,7 @@ def cab(
 
     Args:
         judge_model: Model to use for bias evaluation
+        judge_retries: Number of times to retry malformed judge output
         num_responses: Number of responses per counterfactual variant
         attributes: List of attributes to evaluate
     """
@@ -278,5 +335,5 @@ def cab(
     return Task(
         dataset=cab_dataset(attributes),
         solver=cab_solver(num_responses),
-        scorer=cab_scorer(judge_model),
+        scorer=cab_scorer(judge_model, judge_retries),
     )
