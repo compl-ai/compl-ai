@@ -189,9 +189,9 @@ def eval_command(
         ),
     ] = None,
     reasoning_effort: Annotated[
-        Literal["minimal", "low", "medium", "high"] | None,
+        Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"] | None,
         typer.Option(
-            help="Constrains effort on reasoning for reasoning models. Open AI o-series and gpt-5 models only.",
+            help="Constrains effort on reasoning. Defaults vary by provider and model and not all models support all values (please consult provider documentation for details).",
             envvar="COMPLAI_REASONING_EFFORT",
         ),
     ] = None,
