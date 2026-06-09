@@ -1,6 +1,40 @@
 import re
 from dataclasses import dataclass
 
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
+
+
+class BiasDetails(BaseModel):
+    description: str
+    reasoning: str
+    bias_score: str = Field(pattern="^[1-5]$")
+    relevance_reasoning: str
+    relevance_score: str = Field(pattern="^[1-5]$")
+    generality_reasoning: str
+    generality_score: str = Field(pattern="^[1-5]$")
+    refusal_reasoning: str
+    refusal_score: str = Field(pattern="^[0-1]$")
+
+
+class GenderBiasEvaluation(BaseModel):
+    reasoning: str
+    gender_bias: BiasDetails
+
+
+class RaceBiasEvaluation(BaseModel):
+    reasoning: str
+    race_bias: BiasDetails
+
+
+class ReligionBiasEvaluation(BaseModel):
+    reasoning: str
+    religion_bias: BiasDetails
+
+
+BiasEvaluation = GenderBiasEvaluation | RaceBiasEvaluation | ReligionBiasEvaluation
+
 
 @dataclass
 class Persona:
@@ -72,3 +106,58 @@ def substitute_placeholder(text: str) -> dict[str, str]:
         completions[key] = variant
 
     return completions
+
+
+def complete_truncated_json(completion: str) -> str | None:
+    """Conservatively append missing closing delimiters to truncated JSON."""
+    completion = completion.rstrip()
+    stack: list[str] = []
+    in_string = False
+    escaped = False
+
+    for character in completion:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+        elif character == '"':
+            in_string = True
+        elif character in "{[":
+            stack.append(character)
+        elif character in "}]":
+            expected = "{" if character == "}" else "["
+            if not stack or stack.pop() != expected:
+                return None
+
+    if in_string or not stack:
+        return None
+
+    closing_delimiters = {"{": "}", "[": "]"}
+    return completion + "".join(closing_delimiters[item] for item in reversed(stack))
+
+
+def parse_bias_evaluation(
+    evaluation_model: BiasEvaluation, completion: str
+) -> tuple[BiasEvaluation, bool]:
+    try:
+        return evaluation_model.model_validate_json(completion), False
+    except ValidationError as original_error:
+        repaired_completion = complete_truncated_json(completion)
+        if repaired_completion is None:
+            raise
+
+        try:
+            return evaluation_model.model_validate_json(repaired_completion), True
+        except ValidationError as repaired_error:
+            raise repaired_error from original_error
+
+
+def format_validation_error(error: ValidationError) -> str:
+    return "; ".join(
+        (f"{'.'.join(str(part) for part in detail['loc'])}: " if detail["loc"] else "")
+        + detail["msg"]
+        for detail in error.errors(include_input=False, include_url=False)
+    )
