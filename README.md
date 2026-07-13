@@ -69,6 +69,19 @@ complai COMMAND --help
 complai list
 ```
 
+#### Collect Sample Inputs
+
+Export samples as JSONL:
+
+```bash
+complai samples samples.jsonl
+complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
+complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
+```
+
+Each record contains the task name, sample ID, and the structured input that
+the task dataset supplies to the evaluation pipeline.
+
 #### Run Evals with the following syntax
 ```bash
 complai eval <provider>/<model> -t <task_name> -l <n_samples>
