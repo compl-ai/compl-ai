@@ -13,6 +13,14 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronDown, ChevronUp, ArrowUpDown, Flag, Search, GripVertical, CheckCircle, RotateCcw } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import {
   DndContext,
@@ -69,25 +77,38 @@ const getCategoryColors = (domain: string, isTwoTone: boolean, variant: "primary
   return { outlineClass: "bg-white text-slate-700 border-slate-200" };
 };
 
-const TwoToneBadge = ({ label, variant = "primary" }: { label: string, variant?: "primary" | "tag" }) => {
+const TwoToneBadge = ({ label, variant = "primary", description }: { label: string, variant?: "primary" | "tag", description?: string }) => {
   const isTwoTone = label && label.includes(':');
   
-  if (!isTwoTone) {
-    const colors = getCategoryColors(label, false, variant);
-    return <Badge variant="outline" className={`font-semibold uppercase tracking-wider text-[10px] ${colors.outlineClass}`}>{label}</Badge>;
-  }
+  const content = (() => {
+    if (!isTwoTone) {
+      const colors = getCategoryColors(label, false, variant);
+      return <Badge variant="outline" className={`font-semibold uppercase tracking-wider text-[10px] ${colors.outlineClass}`}>{label}</Badge>;
+    }
 
-  const parts = label.split(':');
-  const domain = parts.slice(0, -1).join(':');
-  const specific = parts[parts.length - 1];
-  
-  const colors = getCategoryColors(domain, true, variant);
-  
+    const parts = label.split(':');
+    const domain = parts.slice(0, -1).join(':');
+    const specific = parts[parts.length - 1];
+    
+    const colors = getCategoryColors(domain, true, variant);
+    
+    return (
+      <div className={`inline-flex items-center text-[10px] border rounded-md overflow-hidden font-semibold uppercase tracking-wider whitespace-nowrap ${colors.borderColor}`}>
+        <span className={`${colors.domainColor} px-2 py-0.5`}>{domain}</span>
+        <span className={`${colors.specificColor} px-2 py-0.5`}>{specific}</span>
+      </div>
+    );
+  })();
+
+  if (!description) return content;
+
   return (
-    <div className={`inline-flex items-center text-[10px] border rounded-md overflow-hidden font-semibold uppercase tracking-wider whitespace-nowrap ${colors.borderColor}`}>
-      <span className={`${colors.domainColor} px-2 py-0.5`}>{domain}</span>
-      <span className={`${colors.specificColor} px-2 py-0.5`}>{specific}</span>
-    </div>
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger render={content} />
+      <TooltipContent className="max-w-[250px] text-xs p-2">
+        {description}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -156,10 +177,14 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   
-  const [taxonomy, setTaxonomy] = useState<{primary_labels: string[], tags: string[]}>({ primary_labels: [], tags: [] });
+  const [taxonomy, setTaxonomy] = useState<{primary_labels: string[], secondary_labels: string[], tags: string[], details?: Record<string, {name: string, description: string}>}>({ primary_labels: [], secondary_labels: [], tags: [] });
 
   useEffect(() => {
-    fetch('/api/taxonomy').then(r => r.json()).then(setTaxonomy).catch(console.error);
+    fetch('/api/taxonomy').then(r => r.json()).then(data => {
+      console.log("Taxonomy API response:", data);
+      if (data.error) console.error("Taxonomy API Error:", data.error);
+      setTaxonomy(data);
+    }).catch(console.error);
   }, []);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -338,7 +363,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
       header: "Primary Label",
       cell: (info: any) => {
         const val = info.getValue();
-        return val && val !== "-" ? <TwoToneBadge label={String(val)} /> : <span className="text-slate-400 text-xs italic">none</span>;
+        return val && val !== "-" ? <TwoToneBadge label={String(val)} description={taxonomy.details?.[String(val)]?.description} /> : <span className="text-slate-400 text-xs italic">none</span>;
       },
       size: 120,
     },
@@ -351,7 +376,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
         if (!val || val.length === 0) return <span className="text-slate-400 text-xs italic">none</span>;
         return (
           <div className="flex gap-1 flex-wrap overflow-hidden">
-            {val.slice(0, 2).map((t: string, i: number) => <TwoToneBadge key={i} label={t} variant="tag" />)}
+            {val.slice(0, 2).map((t: string, i: number) => <TwoToneBadge key={i} label={t} variant="tag" description={taxonomy.details?.[t]?.description} />)}
             {val.length > 2 && <Badge variant="secondary" className="text-[10px] h-5 py-0 px-1.5 flex items-center shrink-0">+{val.length - 2}</Badge>}
           </div>
         );
@@ -368,7 +393,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
         if (!Array.isArray(val) || val.length === 0) return null;
         return (
           <div className="flex gap-1 flex-wrap overflow-hidden">
-            {val.slice(0, 2).map((t: string, i: number) => <TwoToneBadge key={i} label={t} variant="tag" />)}
+            {val.slice(0, 2).map((t: string, i: number) => <TwoToneBadge key={i} label={t} variant="tag" description={taxonomy.details?.[t]?.description} />)}
             {val.length > 2 && <Badge variant="secondary" className="text-[10px] h-5 py-0 px-1.5 flex items-center shrink-0">+{val.length - 2}</Badge>}
           </div>
         );
@@ -622,7 +647,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                           >
                             <option value="">Select a label...</option>
                             {taxonomy.primary_labels?.map((l: string) => (
-                              <option key={l} value={l}>{l}</option>
+                              <option key={l} value={l} title={taxonomy.details?.[l]?.description}>{l}</option>
                             ))}
                           </select>
                         </div>
@@ -632,19 +657,28 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                             {taxonomy.secondary_labels?.map((t: string) => {
                                const isSelected = editSecondaryLabels.split(',').map(s => s.trim()).includes(t);
                                return (
-                                 <label key={t} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded">
-                                   <input 
-                                     type="checkbox" 
-                                     checked={isSelected}
-                                     onChange={(e) => {
-                                        const tags = editSecondaryLabels.split(',').map(s => s.trim()).filter(Boolean);
-                                        if (e.target.checked) setEditSecondaryLabels([...tags, t].join(', '));
-                                        else setEditSecondaryLabels(tags.filter(x => x !== t).join(', '));
-                                     }}
-                                     className="rounded border-slate-300 text-sky-600 focus:ring-sky-600 w-4 h-4"
-                                   />
-                                   {t}
-                                 </label>
+                                 <Tooltip key={t} delayDuration={300}>
+                                   <TooltipTrigger render={
+                                     <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded">
+                                       <input 
+                                         type="checkbox" 
+                                         checked={isSelected}
+                                         onChange={(e) => {
+                                            const tags = editSecondaryLabels.split(',').map(s => s.trim()).filter(Boolean);
+                                            if (e.target.checked) setEditSecondaryLabels([...tags, t].join(', '));
+                                            else setEditSecondaryLabels(tags.filter(x => x !== t).join(', '));
+                                         }}
+                                         className="rounded border-slate-300 text-sky-600 focus:ring-sky-600 w-4 h-4"
+                                       />
+                                       {t}
+                                     </label>
+                                   } />
+                                   {taxonomy.details?.[t]?.description && (
+                                     <TooltipContent className="max-w-[250px] text-xs p-2" side="right">
+                                       {taxonomy.details[t].description}
+                                     </TooltipContent>
+                                   )}
+                                 </Tooltip>
                                )
                             })}
                           </div>
@@ -655,19 +689,28 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                             {taxonomy.tags?.map((t: string) => {
                                const isSelected = editTags.split(',').map(s => s.trim()).includes(t);
                                return (
-                                 <label key={t} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded">
-                                   <input 
-                                     type="checkbox" 
-                                     checked={isSelected}
-                                     onChange={(e) => {
-                                        const tags = editTags.split(',').map(s => s.trim()).filter(Boolean);
-                                        if (e.target.checked) setEditTags([...tags, t].join(', '));
-                                        else setEditTags(tags.filter(x => x !== t).join(', '));
-                                     }}
-                                     className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4"
-                                   />
-                                   {t}
-                                 </label>
+                                 <Tooltip key={t} delayDuration={300}>
+                                   <TooltipTrigger render={
+                                     <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded">
+                                       <input 
+                                         type="checkbox" 
+                                         checked={isSelected}
+                                         onChange={(e) => {
+                                            const tags = editTags.split(',').map(s => s.trim()).filter(Boolean);
+                                            if (e.target.checked) setEditTags([...tags, t].join(', '));
+                                            else setEditTags(tags.filter(x => x !== t).join(', '));
+                                         }}
+                                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4"
+                                       />
+                                       {t}
+                                     </label>
+                                   } />
+                                   {taxonomy.details?.[t]?.description && (
+                                     <TooltipContent className="max-w-[250px] text-xs p-2" side="right">
+                                       {taxonomy.details[t].description}
+                                     </TooltipContent>
+                                   )}
+                                 </Tooltip>
                                )
                             })}
                           </div>
@@ -689,7 +732,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <div className="text-xs text-slate-500 mb-1">Primary Label</div>
-                          <TwoToneBadge label={selectedRow.llm_assigned.primary_label} />
+                          <TwoToneBadge label={selectedRow.llm_assigned.primary_label} description={taxonomy.details?.[selectedRow.llm_assigned.primary_label]?.description} />
                         </div>
                         <div>
                           <div className="text-xs text-slate-500 mb-1">Confidence</div>
@@ -703,7 +746,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                           <div className="text-xs text-slate-500 mb-1">Tags</div>
                           <div className="flex flex-wrap gap-2">
                             {(selectedRow.llm_assigned.tags || []).map((t: string, i: number) => (
-                              <TwoToneBadge key={i} label={t} variant="tag" />
+                              <TwoToneBadge key={i} label={t} variant="tag" description={taxonomy.details?.[t]?.description} />
                             ))}
                           </div>
                         </div>

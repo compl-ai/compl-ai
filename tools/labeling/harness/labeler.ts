@@ -5,6 +5,7 @@ import { GoogleGenAI } from '@google/genai';
 import * as dotenv from 'dotenv';
 import { RateLimiter } from './rate-limiter';
 import { llmAssignedGeminiSchema } from './types';
+import { parse } from 'csv-parse/sync';
 
 // Load .env
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -54,9 +55,60 @@ if (!fs.existsSync(labeledDir)) {
     fs.mkdirSync(labeledDir, { recursive: true });
 }
 
+// Parse Taxonomy
+function generateTaxonomyMd(csvPath: string) {
+    console.log("Parsing taxonomy.csv...");
+    const csvData = fs.readFileSync(csvPath, 'utf8');
+    const records = parse(csvData, { columns: true, skip_empty_lines: true });
+
+    const coreIndices = records.filter((r: any) => r.label_type === 'core_index');
+    const itemsByCore: Record<string, any[]> = {};
+    const tags: any[] = [];
+
+    for (const row of records) {
+        if (row.label_type === 'core_index') continue;
+        if (row.label_id.startsWith('modality:') || row.label_id.startsWith('agent:')) {
+            tags.push(row);
+        } else {
+            const c_idx = row.core_index;
+            if (!itemsByCore[c_idx]) itemsByCore[c_idx] = [];
+            itemsByCore[c_idx].push(row);
+        }
+    }
+
+    const mdLines = ["# Taxonomy Labels", ""];
+
+    for (const core of coreIndices) {
+        mdLines.push(`## ${core.label_id} (${core.label_name})`);
+        mdLines.push(core.description);
+        mdLines.push("");
+
+        const children = itemsByCore[core.label_id] || [];
+        for (const child of children) {
+            mdLines.push(`- **${child.label_id}** (${child.label_name})`);
+            if (child.apply_when) mdLines.push(`  - *Apply when:* ${child.apply_when}`);
+            if (child.do_not_apply_when) mdLines.push(`  - *Do not apply when:* ${child.do_not_apply_when}`);
+        }
+        mdLines.push("");
+    }
+
+    mdLines.push("## Tags (Modality & Agentic)", "");
+    for (const tag of tags) {
+        mdLines.push(`- **${tag.label_id}** (${tag.label_name})`);
+        if (tag.apply_when) mdLines.push(`  - *Apply when:* ${tag.apply_when}`);
+        if (tag.do_not_apply_when) mdLines.push(`  - *Do not apply when:* ${tag.do_not_apply_when}`);
+        mdLines.push("");
+    }
+
+    const mdStr = mdLines.join('\n').trim() + '\n';
+    fs.writeFileSync(path.join(__dirname, 'instructions/taxonomy_optimized.md'), mdStr, 'utf8');
+    console.log("✅ Successfully parsed taxonomy.csv and generated taxonomy_optimized.md");
+    return mdStr;
+}
+
 // Prepare System Instruction
 const instructionsRaw = fs.readFileSync(path.join(__dirname, 'instructions/labeling_instructions.md'), 'utf8');
-const taxonomyMd = fs.readFileSync(path.join(__dirname, 'instructions/taxonomy_optimized.md'), 'utf8');
+const taxonomyMd = generateTaxonomyMd(path.join(__dirname, '../taxonomy.csv'));
 const systemInstruction = instructionsRaw.replace('{{INJECT_TAXONOMY_OPTIMIZED_MD_HERE}}', taxonomyMd);
 
 // Load existing sample_ids for Pause/Resume

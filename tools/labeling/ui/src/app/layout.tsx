@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "Inspect, evaluate, and manually review AI-generated labels",
 };
 
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,7 +24,9 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} font-sans h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }
