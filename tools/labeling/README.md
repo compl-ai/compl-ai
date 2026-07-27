@@ -1,22 +1,30 @@
-# Labeling Inspector UI
+# Compl-AI Labeling Pipeline
 
-## Purpose
-This directory will house a User Interface (UI) designed to inspect, visualize, and analyze the properties and metadata of the labeled datasets used in the `compl-ai` repository. 
+This directory contains the infrastructure for generating, reviewing, and managing metadata labels (e.g., safety, bias, capabilities) for the `compl-ai` benchmark datasets.
 
-Rather than relying on automated scripts to blindly process labeled data, this tool provides visual insights (e.g., heatmaps, plots, tag distributions) to ensure the integrity of the evaluation pipeline.
+## Architecture & Data Storage (Stand-off Annotations)
 
-## Primary Goals
-1. **Balance & Coverage Analysis (Iterative Improvement):**
-   - Visualize the distribution of taxonomy tags across the dataset.
-   - Identify categories or domains that are underrepresented so that additional benchmarks or datasets can be sourced to fill the gaps.
-   
-2. **Quality Assurance (Human Review):**
-   - Provide an interface for human reviewers to spot-check the labeled data.
-   - Verify that annotators applied the schemas correctly and maintained high labeling quality.
+To avoid polluting the original data and to prevent large git history issues, we use a **stand-off annotation** model:
 
-## Future Implementation
-*Implementation is currently on hold.* 
+1. **`datasets/`**: Contains the original, unmodified `.jsonl` benchmark datasets. These are **NOT** checked into git. You must generate them locally using `cd datasets && ./regenerate_datasets.sh`.
+2. **`labels/`**: Contains only the labels, metadata, and human review patches. These files (`.jsonl`) are tracked in Git. The UI and analysis scripts join them with the raw datasets at runtime using the `sample_id`.
 
-This directory will eventually be populated with:
-1. The formal metadata schema and labeling instructions.
-2. The UI application code (e.g., a dashboard for exploring the JSONL outputs).
+## Pipeline Components & Folders
+
+- **`datasets/`**: The un-labeled, raw evaluation datasets. Must be generated locally (see `regenerate_datasets.sh`).
+- **`labels/`**: The resulting `.jsonl` files containing taxonomy metadata and human patches. These are committed to Git.
+- **`ui/`**: A Next.js dashboard used by human annotators to review the labels. (See `ui/README.md` for startup instructions).
+- **`harness/`**: The automated LLM-based labeling scripts. 
+
+### Running the Labeler (`harness/`)
+
+To automatically label a dataset using an LLM, navigate to the `harness` directory and run the `labeler.ts` script.
+
+```bash
+cd harness
+npm install
+
+# Example: Run the labeler on the HLE dataset using Gemini
+npx tsx labeler.ts --dataset hle --model gemini-3.5-flash
+```
+*(See `harness/run_evals.sh` for batch-running examples).*
