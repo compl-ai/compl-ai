@@ -29,15 +29,22 @@ def collect_task_samples(
     task_name: str, task: Task, limit: int | tuple[int, int] | None = None
 ) -> list[dict[str, Any]]:
     start, stop = (0, limit) if isinstance(limit, int) else limit or (0, None)
-    return [
-        {
-            "task": task_name,
-            "sample_id": sample.id if sample.id is not None else index + 1,
-            "input": _input_json(sample.input),
-        }
-        for index, sample in enumerate(task.dataset.samples)
-        if index >= start and (stop is None or index < stop)
-    ]
+    samples = []
+    for index, sample in enumerate(task.dataset.samples):
+        if index >= start and (stop is None or index < stop):
+            record = {
+                "task": task_name,
+                "sample_id": sample.id if sample.id is not None else index + 1,
+                "input": _input_json(sample.input),
+            }
+            if sample.target is not None:
+                record["target"] = sample.target
+            if sample.choices is not None:
+                record["choices"] = sample.choices
+            if sample.metadata is not None and len(sample.metadata) > 0:
+                record["metadata"] = sample.metadata
+            samples.append(record)
+    return samples
 
 
 def instantiate_task_specs(

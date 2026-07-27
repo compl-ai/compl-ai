@@ -155,3 +155,10 @@ dist_py_*
 
 # AI Inspect
 /logs
+/results/
+
+# Node
+node_modules/
+
+# Datasets
+tools/labeling/datasets/*.jsonl

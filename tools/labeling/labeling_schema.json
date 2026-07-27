@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "COMPL-AI Core sample labeling output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id",
+    "source_benchmark",
+    "input",
+    "deterministic_labels",
+    "llm_assigned",
+    "label_confidence",
+    "needs_human_review",
+    "label_rationale"
+  ],
+  "properties": {
+    "sample_id": { "type": "string" },
+    "source_benchmark": { "type": "string" },
+    "source_item_id": { "type": ["string", "null"] },
+    "input": {},
+    "target": {},
+    "metadata": { "type": "object" },
+    "deterministic_labels": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "llm_assigned": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_label", "secondary_labels"],
+      "properties": {
+        "primary_label": {
+          "type": "string",
+          "enum": [
+            "safety", "security-privacy", "fairness-bias",
+            "reliability", "capability"
+          ]
+        },
+        "secondary_labels": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "grounding_labels": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "label_confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "needs_human_review": { "type": "boolean" },
+    "ambiguity_reason": { "type": ["string", "null"] },
+    "label_rationale": { "type": "string" }
+  }
+}
