@@ -12,6 +12,8 @@ function AppContent() {
   const [datasets, setDatasets] = useState<{id: string, count: number}[]>([]);
   
   const currentTab = searchParams.get('tab') || 'overview';
+  const filterType = searchParams.get('filterType');
+  const filterValue = searchParams.get('filterValue');
 
   useEffect(() => {
     fetch('/api/datasets')
@@ -25,6 +27,8 @@ function AppContent() {
   const handleTabChange = (tab: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
+    params.delete('filterType'); // Clear filter when changing tabs
+    params.delete('filterValue');
     router.push(`?${params.toString()}`);
   };
 
@@ -72,6 +76,24 @@ function AppContent() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </div>
             </div>
+            
+            {filterValue && (
+              <Badge variant="outline" className="ml-2 flex items-center gap-1.5 bg-white border-slate-300 shadow-sm py-1">
+                <span className="text-slate-500 font-normal uppercase tracking-wider text-[9px]">{filterType === 'primary_label' ? 'Primary' : filterType === 'secondary_labels' ? 'Secondary' : filterType === 'human_review' ? 'Status' : 'Tag'}:</span>
+                <span className="font-semibold">{filterValue === 'needs_review' ? 'Needs Review' : filterValue}</span>
+                <button 
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.delete('filterType');
+                    params.delete('filterValue');
+                    router.push(`?${params.toString()}`);
+                  }} 
+                  className="ml-1 -mr-1 text-slate-400 hover:text-rose-500 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </Badge>
+            )}
           </div>
         </div>
       </header>
@@ -80,15 +102,15 @@ function AppContent() {
 
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {currentTab === 'overview' ? (
-            <div className="flex-1 overflow-y-auto pt-2">
-               <DashboardStats />
-               <div className="mt-8 text-center text-slate-400 text-sm">
+            <div className="flex-1 overflow-y-auto pt-2 flex flex-col">
+               <DashboardStats isExpanded />
+               <div className="mt-4 pb-8 text-center text-slate-400 text-sm">
                  Select a dataset tab above to view individual samples.
                </div>
             </div>
           ) : (
             <div className="flex-1 flex flex-col min-h-0">
-              <DatasetViewer datasetName={currentTab} />
+              <DatasetViewer datasetName={currentTab} filterType={filterType} filterValue={filterValue} />
             </div>
           )}
         </div>

@@ -8,6 +8,8 @@ import {
   useReactTable,
   getSortedRowModel,
   SortingState,
+  ColumnFiltersState,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +42,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { parseMultimodalInput } from '@/lib/multimodal';
+import { useRouter } from "next/navigation";
 
 const getCategoryColors = (domain: string, isTwoTone: boolean, variant: "primary" | "tag") => {
   if (domain === "safety") {
@@ -197,10 +200,20 @@ function MultimodalRenderer({ input }: { input: any }) {
   );
 }
 
-export function DatasetViewer({ datasetName }: { datasetName: string }) {
+export function DatasetViewer({ datasetName, filterType, filterValue }: { datasetName: string, filterType?: string | null, filterValue?: string | null }) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (filterType && filterValue) {
+      setColumnFilters([{ id: filterType, value: filterValue }]);
+    } else {
+      setColumnFilters([]);
+    }
+  }, [filterType, filterValue]);
 
   const handleRowClick = async (rowObj: any) => {
     setSelectedRow(rowObj);
@@ -403,6 +416,10 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
     {
       id: "primary_label",
       accessorFn: (row: any) => row.llm_assigned?.primary_label || "-",
+      filterFn: (row: any, columnId: string, filterValue: string) => {
+        const val = row.getValue(columnId);
+        return typeof val === 'string' && val.toLowerCase() === filterValue.toLowerCase();
+      },
       header: "Primary Label",
       cell: (info: any) => {
         const val = info.getValue();
@@ -413,6 +430,13 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
     {
       id: "secondary_labels",
       accessorFn: (row: any) => row.llm_assigned?.secondary_labels || [],
+      filterFn: (row: any, columnId: string, filterValue: string) => {
+        const val = row.getValue(columnId);
+        if (Array.isArray(val)) {
+          return val.some((v: string) => String(v).toLowerCase() === String(filterValue).toLowerCase());
+        }
+        return false;
+      },
       header: "Secondary Labels",
       cell: (info: any) => {
         const val = info.getValue();
@@ -429,6 +453,13 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
     {
       id: "tags",
       accessorKey: "llm_assigned.tags",
+      filterFn: (row: any, columnId: string, filterValue: string) => {
+        const val = row.getValue(columnId);
+        if (Array.isArray(val)) {
+          return val.some((v: string) => String(v).toLowerCase() === String(filterValue).toLowerCase());
+        }
+        return false;
+      },
       header: "Tags",
       enableSorting: false,
       cell: (info: any) => {
@@ -468,7 +499,9 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
       accessorFn: (row: any) => {
         if (row._human_patch?.human_approved) return 'approved';
         const llm = row.llm_assigned;
-        return (!llm || !llm.primary_label || llm.label_confidence === 'low') ? 'needs_review' : 'ok';
+        const hasLLMData = llm && Object.keys(llm).length > 0;
+        if (!hasLLMData) return 'pending';
+        return (!llm.primary_label || llm.label_confidence === 'low' || llm.primary_label === 'failed') ? 'needs_review' : 'ok';
       },
       cell: (info: any) => {
         const status = info.getValue();
@@ -485,11 +518,13 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnOrder },
+    state: { sorting, columnOrder, columnFilters },
     onSortingChange: setSorting,
     onColumnOrderChange: setColumnOrder,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   const { rows } = table.getRowModel();
@@ -529,7 +564,12 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
     <div className="flex flex-col h-full overflow-hidden gap-4">
       {data.length > 0 && (
         <div className="shrink-0">
-          <DashboardStats datasetData={data} />
+          <DashboardStats datasetData={data} onFilterClick={(type, value) => {
+            const params = new URLSearchParams(window.location.search);
+            params.set('filterType', type);
+            params.set('filterValue', value);
+            router.push(`?${params.toString()}`);
+          }} />
         </div>
       )}
       
@@ -784,6 +824,14 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                         <div className="col-span-2">
                           <div className="text-xs text-slate-500 mb-1">Rationale</div>
                           <div className="text-sm text-slate-700">{selectedRow.llm_assigned.label_rationale}</div>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="text-xs text-slate-500 mb-1">Secondary Labels</div>
+                          <div className="flex flex-wrap gap-2">
+                            {(selectedRow.llm_assigned.secondary_labels || []).map((t: string, i: number) => (
+                              <TwoToneBadge key={i} label={t} variant="tag" description={taxonomy.details?.[t]?.description} />
+                            ))}
+                          </div>
                         </div>
                         <div className="col-span-2">
                           <div className="text-xs text-slate-500 mb-1">Tags</div>

@@ -29,7 +29,7 @@ export async function GET() {
         labelsContent.split('\n').filter(l => l.trim()).forEach(l => {
           try {
             const p = JSON.parse(l);
-            labelsMap.set(p.sample_id, p);
+            if (p.sample_id !== undefined) labelsMap.set(String(p.sample_id), p);
           } catch(e) {}
         });
       }
@@ -40,7 +40,7 @@ export async function GET() {
         patchContent.split('\n').filter(l => l.trim()).forEach(l => {
           try {
             const p = JSON.parse(l);
-            patchMap.set(p.sample_id, p);
+            if (p.sample_id !== undefined) patchMap.set(String(p.sample_id), p);
           } catch(e) {}
         });
       }
@@ -56,10 +56,10 @@ export async function GET() {
         if (!line.trim()) continue;
         try {
           // Extract sample_id without parsing the entire (potentially huge) JSON line
-          const match = line.match(/"sample_id"\s*:\s*"([^"]+)"/);
+          const match = line.match(/"sample_id"\s*:\s*(?:"([^"]+)"|(\d+))/);
           if (!match) continue;
           
-          const sample_id = match[1];
+          const sample_id = match[1] || match[2];
           stats.totalSamples++;
           
           let llm = {};
@@ -70,17 +70,21 @@ export async function GET() {
           
           const patch = patchMap.get(sample_id);
           
-          let isReviewNeeded = !llm || !llm.primary_label || llm.label_confidence === 'low' || llm.primary_label === 'failed';
+          let isReviewNeeded = false;
+          if (labelObj) { // only count if LLM actually processed it
+            const isApproved = patch?.human_approved;
+            if (!isApproved && (!llm.primary_label || llm.label_confidence === 'low' || llm.primary_label === 'failed')) {
+              isReviewNeeded = true;
+            }
+          }
           
           if (patch) {
             if (patch.human_primary_label) llm.primary_label = patch.human_primary_label;
             if (patch.human_secondary_labels) llm.secondary_labels = patch.human_secondary_labels;
             if (patch.human_tags) llm.tags = patch.human_tags;
-            isReviewNeeded = false; // Human reviewed it
           }
 
-          if (isReviewNeeded && labelObj) { 
-              // only count as needing review if it was actually labeled/processed, otherwise it's just unlabeled
+          if (isReviewNeeded) { 
               stats.needsReview++;
           }
 
@@ -103,9 +107,7 @@ export async function GET() {
 
             if (Array.isArray(llm.tags)) {
               for (const tag of llm.tags) {
-                if (tag.startsWith('MODALITY:') || tag.startsWith('AGENT:')) {
-                  stats.tags[tag] = (stats.tags[tag] || 0) + 1;
-                }
+                stats.tags[tag] = (stats.tags[tag] || 0) + 1;
               }
             }
           }

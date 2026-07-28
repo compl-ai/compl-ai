@@ -119,7 +119,9 @@ if (fs.existsSync(outputFile)) {
         if (!line.trim()) continue;
         try {
             const obj = JSON.parse(line);
-            if (obj.sample_id) completedSampleIds.add(obj.sample_id);
+            if (obj.sample_id && obj.llm_assigned?.primary_label !== 'failed') {
+                completedSampleIds.add(obj.sample_id);
+            }
         } catch (e) {}
     }
 }
