@@ -147,11 +147,15 @@ def toxicity_scorer(use_gpu_scorer: bool) -> Scorer:
 
 
 def sentiment_intensity_scorer() -> Scorer:
+    import nltk
     from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+    if str(CACHE_DIR) not in nltk.data.path:
+        nltk.data.path.append(str(CACHE_DIR))
 
     logger.info("Loading Sentiment Intensity Analyzer...")
     vader_sentiment_analyzer = SentimentIntensityAnalyzer(
-        lexicon_file=str(VADER_LEXICON_PATH / "vader_lexicon" / "vader_lexicon.txt")
+        lexicon_file="sentiment/vader_lexicon.zip/vader_lexicon/vader_lexicon.txt"
     )
 
     async def score(state: TaskState, target: Target) -> Score:
