@@ -17,8 +17,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -155,3 +155,10 @@ dist_py_*
 
 # AI Inspect
 /logs
+/results/
+
+# Node
+node_modules/
+
+# Datasets
+tools/labeling/datasets/*.jsonl

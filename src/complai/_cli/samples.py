@@ -29,15 +29,27 @@ def collect_task_samples(
     task_name: str, task: Task, limit: int | tuple[int, int] | None = None
 ) -> list[dict[str, Any]]:
     start, stop = (0, limit) if isinstance(limit, int) else limit or (0, None)
-    return [
-        {
-            "task": task_name,
-            "sample_id": sample.id if sample.id is not None else index + 1,
-            "input": _input_json(sample.input),
-        }
-        for index, sample in enumerate(task.dataset.samples)
-        if index >= start and (stop is None or index < stop)
-    ]
+    samples = []
+    for index, sample in enumerate(task.dataset.samples):
+        if index >= start and (stop is None or index < stop):
+            sample_json = sample.model_dump(mode="json")
+            metadata = sample_json["metadata"] or {}
+            record = {
+                "task": task_name,
+                "sample_id": sample.id if sample.id is not None else index + 1,
+                "input": metadata.pop("_model_inputs", _input_json(sample.input)),
+            }
+            if task_name == "livebench_coding":
+                metadata.pop("coding", None)
+                metadata.pop("instruction_following", None)
+            if sample.target is not None:
+                record["target"] = sample_json["target"]
+            if sample.choices is not None:
+                record["choices"] = sample_json["choices"]
+            if metadata:
+                record["metadata"] = metadata
+            samples.append(record)
+    return samples
 
 
 def instantiate_task_specs(
@@ -111,9 +123,11 @@ def samples_command(
         named_tasks = list(zip((info.name for info in task_infos), loaded_tasks))
         named_tasks += instantiate_task_specs(task_spec, parsed_task_args)
         parsed_limit = parse_samples_limit(limit)
-        with output.open("w") as file:
+        with output.open("w", encoding="utf-8") as file:
             for task_name, task in named_tasks:
                 for record in collect_task_samples(task_name, task, parsed_limit):
-                    file.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    file.write(
+                        json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n"
+                    )
 
     print(f"Wrote {output}")
