@@ -1,5 +1,7 @@
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
+import readline from 'readline';
 import { NextResponse } from 'next/server';
 
 const DATASETS_DIR = path.join(process.cwd(), '..', 'datasets');
@@ -12,8 +14,18 @@ export async function GET() {
     for (const file of files) {
       if (file.endsWith('.jsonl')) {
         const filePath = path.join(DATASETS_DIR, file);
-        const text = await fs.readFile(filePath, 'utf-8');
-        const count = text.split('\n').filter(line => line.trim().length > 0).length;
+        
+        let count = 0;
+        const fileStream = createReadStream(filePath);
+        const rl = readline.createInterface({
+          input: fileStream,
+          crlfDelay: Infinity
+        });
+        
+        for await (const line of rl) {
+          if (line.trim().length > 0) count++;
+        }
+        
         datasets.push({
           id: file.replace('.jsonl', ''),
           count

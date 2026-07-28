@@ -126,6 +126,8 @@ if (fs.existsSync(outputFile)) {
 console.log(`✅ Loaded ${completedSampleIds.size} existing samples from ${outputFile}`);
 console.log(`🤖 Using model: ${modelName}`);
 
+import { formatGeminiParts } from '../ui/src/lib/multimodal';
+
 async function processSample(lineObj: any): Promise<any> {
     const promptData = {
         input: lineObj.input,
@@ -140,8 +142,9 @@ async function processSample(lineObj: any): Promise<any> {
         promptData.deterministic_labels.push(benchmarkLabel);
     }
     lineObj.deterministic_labels = promptData.deterministic_labels; // mutate original to save it later
-
-    if (mock) {
+    
+    // Dry run mock (skip LLM)
+    if (modelName === 'mock' || mock) {
         return new Promise(resolve => setTimeout(() => resolve({
             primary_label: "safety",
             secondary_labels: ["safety:harmful-instruction-refusal"],
@@ -153,7 +156,17 @@ async function processSample(lineObj: any): Promise<any> {
         }), 500));
     }
 
-    const promptText = JSON.stringify(promptData, null, 2);
+    const inputParts = formatGeminiParts(promptData.input);
+    const contextJson = JSON.stringify({
+        target: promptData.target,
+        metadata: promptData.metadata,
+        deterministic_labels: promptData.deterministic_labels
+    }, null, 2);
+
+    const geminiContents = [
+        { text: "Here is the JSON sample. The `input` field is provided separately below, including any images:\n```json\n" + contextJson + "\n```\n\n### Input Prompt:\n" },
+        ...inputParts
+    ];
 
     return limiter.run(async () => {
         const response = await Promise.race([
@@ -171,7 +184,7 @@ async function processSample(lineObj: any): Promise<any> {
                         { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
                     ]
                 },
-                contents: promptText
+                contents: [{ role: 'user', parts: geminiContents }]
             }),
             new Promise<any>((_, reject) => setTimeout(() => reject(new Error("API timeout after 30s")), 30000))
         ]);
@@ -250,7 +263,7 @@ async function main() {
                 console.log(`✅ Labeled sample_id: ${obj.sample_id} -> ${llmResult.primary_label}`);
             })
             .catch(error => {
-                console.error(`❌ Failed sample_id: ${obj.sample_id} - ${error.message}`);
+                console.error(`❌ Failed sample_id: ${obj.sample_id} -`, error);
                 obj.llm_assigned = {
                     primary_label: "failed",
                     secondary_labels: [],

@@ -1,0 +1,9 @@
+{
+  "datasets": {
+    "bbq": {
+      "primary_label": "fairness-bias",
+      "secondary_labels": ["fairness-bias:stereotype-bias"],
+      "tags": ["modality:static-mcq"]
+    }
+  }
+}

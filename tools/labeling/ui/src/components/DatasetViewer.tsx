@@ -39,6 +39,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { parseMultimodalInput } from '@/lib/multimodal';
 
 const getCategoryColors = (domain: string, isTwoTone: boolean, variant: "primary" | "tag") => {
   if (domain === "safety") {
@@ -169,10 +170,52 @@ const DraggableTableHeader = ({ header }: { header: any }) => {
   );
 };
 
+function MultimodalRenderer({ input }: { input: any }) {
+  const messages = parseMultimodalInput(input);
+  return (
+    <div className="flex flex-col gap-4">
+      {messages.map((msg, i) => (
+        <div key={i} className="flex flex-col gap-2 border-b border-slate-700 pb-2 last:border-0 last:pb-0">
+          <div className="text-xs text-slate-400 font-semibold uppercase">{msg.role}</div>
+          {typeof msg.content === 'string' ? (
+            <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+          ) : Array.isArray(msg.content) ? (
+            <div className="flex flex-col gap-2">
+              {msg.content.map((block, j) => {
+                if (block.type === 'text' && block.text) {
+                  return <div key={j} className="text-sm whitespace-pre-wrap">{block.text}</div>;
+                } else if (block.type === 'image' && block.image) {
+                  return <img key={j} src={block.image} alt="Multimodal" className="max-w-md rounded-md border border-slate-700" />;
+                }
+                return null;
+              })}
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DatasetViewer({ datasetName }: { datasetName: string }) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
+
+  const handleRowClick = async (rowObj: any) => {
+    setSelectedRow(rowObj);
+    if (JSON.stringify(rowObj.input).includes('[IMAGE_STRIPPED]')) {
+      try {
+        const res = await fetch(`/api/datasets/${datasetName}/row/${rowObj.sample_id}`);
+        if (res.ok) {
+          const fullRow = await res.json();
+          setSelectedRow((current: any) => current?.sample_id === fullRow.sample_id ? fullRow : current);
+        }
+      } catch (e) {
+        console.error("Failed to load full row");
+      }
+    }
+  };
   const [sorting, setSorting] = useState<SortingState>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -534,7 +577,7 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                         ref={rowVirtualizer.measureElement}
                         data-index={virtualRow.index}
                         className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                        onClick={() => setSelectedRow(row.original)}
+                        onClick={() => handleRowClick(row.original)}
                       >
                         {row.getVisibleCells().map(cell => (
                           <TableCell 
@@ -570,11 +613,11 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
           onKeyDown={(e) => {
             if (e.key === 'ArrowLeft') {
               if (selectedIndex > 0) {
-                setSelectedRow(rows[selectedIndex - 1].original);
+                handleRowClick(rows[selectedIndex - 1].original);
               }
             } else if (e.key === 'ArrowRight') {
               if (selectedIndex >= 0 && selectedIndex < rows.length - 1) {
-                setSelectedRow(rows[selectedIndex + 1].original);
+                handleRowClick(rows[selectedIndex + 1].original);
               }
             }
           }}
@@ -757,10 +800,8 @@ export function DatasetViewer({ datasetName }: { datasetName: string }) {
                 
                 <div className="flex flex-col gap-2">
                   <h3 className="font-semibold text-sm text-slate-900 uppercase tracking-wider">Input Prompt</h3>
-                  <div className="bg-slate-900 text-slate-50 rounded-lg p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed shadow-inner">
-                    {typeof selectedRow.input === 'object' && selectedRow.input !== null 
-                      ? JSON.stringify(selectedRow.input, null, 2) 
-                      : String(selectedRow.input || '')}
+                  <div className="bg-slate-900 text-slate-50 rounded-lg p-4 font-mono overflow-x-auto shadow-inner">
+                    <MultimodalRenderer input={selectedRow.input} />
                   </div>
                 </div>
 

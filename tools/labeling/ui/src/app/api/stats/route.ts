@@ -55,16 +55,20 @@ export async function GET() {
       for await (const line of rl) {
         if (!line.trim()) continue;
         try {
-          const row = JSON.parse(line);
+          // Extract sample_id without parsing the entire (potentially huge) JSON line
+          const match = line.match(/"sample_id"\s*:\s*"([^"]+)"/);
+          if (!match) continue;
+          
+          const sample_id = match[1];
           stats.totalSamples++;
           
           let llm = {};
-          const labelObj = labelsMap.get(row.sample_id);
+          const labelObj = labelsMap.get(sample_id);
           if (labelObj && labelObj.llm_assigned) {
             llm = labelObj.llm_assigned;
           }
           
-          const patch = patchMap.get(row.sample_id);
+          const patch = patchMap.get(sample_id);
           
           let isReviewNeeded = !llm || !llm.primary_label || llm.label_confidence === 'low' || llm.primary_label === 'failed';
           
