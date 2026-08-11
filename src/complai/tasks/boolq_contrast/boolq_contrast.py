@@ -145,7 +145,14 @@ def stderr() -> Metric:
         # quantity accuracy() reports. Questions are the independent units;
         # the contrast samples within a question share its paragraph and are
         # aggregated before the SE is taken.
-        return sem(grouped_accuracies(scores), ddof=1)
+        accuracies = grouped_accuracies(scores)
+        # A spread needs two independent units. A single question — reachable
+        # with --limit 1 — leaves ddof=1 dividing by zero, which scipy answers
+        # with nan behind a SmallSampleWarning that an eval run will not show.
+        # Report the nan directly, so the number is absent rather than invented.
+        if len(accuracies) < 2:
+            return float("nan")
+        return float(sem(accuracies, ddof=1))
 
     return metric
 
