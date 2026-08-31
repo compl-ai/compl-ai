@@ -82,6 +82,59 @@ complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
 Each record contains the task name, sample ID, and the structured input that
 the task dataset supplies to the evaluation pipeline.
 
+#### Build a reduced evaluation set
+
+The `core fit` command selects a smaller set of evaluation items with the
+GP-IRT 2PL method. Pass one or more Inspect `.eval` or `.eval.gz` files, or pass
+directories to search recursively.
+
+```bash
+complai core fit logs/ --budget 1000 --output minify/
+```
+
+The command writes two files:
+
+- `minify/artifact.json` contains the fitted parameters, diagnostics, and log inventory.
+- `minify/subset.jsonl` contains the selected items in selection order.
+
+The budget is the total number of items selected across all tasks. The command
+uses the bundled task to scorer mapping by default. You can provide another
+mapping as YAML or JSON.
+
+```yaml
+tasks:
+  aime_2025: aime_scorer
+  arc_challenge: choice
+```
+
+```bash
+complai core fit logs/ \
+  --budget 1000 \
+  --config scorers.yaml \
+  --output minify/
+```
+
+Parsed logs are stored in a local cache. Each run checks the current files
+against the cached inventory and only parses new or changed logs. Pass
+`--reindex` to hash and parse every input log again. Pass `--duplicates mean`
+or `--duplicates latest` when the same model and item appear in more than one
+successful evaluation. The default duplicate policy reports an error.
+
+#### Infer scores from the reduced evaluation set
+
+First, evaluate a model on the exact items listed in `minify/subset.jsonl` and
+save the resulting Inspect logs. Then use `core infer` to estimate scores on
+the fitted full task scale.
+
+```bash
+complai core infer subset_logs/ \
+  --artifact minify/artifact.json \
+  --subset minify/subset.jsonl \
+  --output inferred.json
+```
+
+Run `complai core fit --help` or `complai core infer --help` to see all options.
+
 #### Run Evals with the following syntax
 ```bash
 complai eval <provider>/<model> -t <task_name> -l <n_samples>
