@@ -1,10 +1,10 @@
 import typer
 from inspect_ai._util.dotenv import init_dotenv
 
+from complai._cli.core import fit_command
+from complai._cli.core import predict_command
 from complai._cli.eval import eval_command
 from complai._cli.list import list_command
-from complai._cli.core import fit_command
-from complai._cli.core import infer_command
 from complai._cli.samples import samples_command
 
 
@@ -16,7 +16,7 @@ app.command("list")(list_command)
 app.command("samples")(samples_command)
 app.add_typer(core_app, name="core")
 core_app.command("fit")(fit_command)
-core_app.command("infer")(infer_command)
+core_app.command("predict")(predict_command)
 
 
 def main() -> None:

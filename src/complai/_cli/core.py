@@ -11,8 +11,8 @@ from complai.core.fit import check_output_available
 from complai.core.fit import minify
 from complai.core.fit import write_outputs
 from complai.core.index import InventorySummary
-from complai.core.inference import infer_scores
-from complai.core.inference import write_inference
+from complai.core.prediction import predict_scores
+from complai.core.prediction import write_prediction
 
 
 def fit_command(
@@ -73,7 +73,7 @@ def fit_command(
         )
 
 
-def infer_command(
+def predict_command(
     log_paths: Annotated[
         list[Path],
         typer.Argument(
@@ -85,7 +85,7 @@ def infer_command(
     ],
     subset: Annotated[Path, typer.Option("--subset", help="Subset JSONL.")],
     output: Annotated[
-        Path, typer.Option("--output", help="Output path for the inferred scores.")
+        Path, typer.Option("--output", help="Output path for the predicted scores.")
     ],
     duplicates: Annotated[
         Literal["error", "latest", "mean"],
@@ -104,9 +104,9 @@ def infer_command(
         bool, typer.Option("--debug", help="Enable full stack traces.")
     ] = False,
 ) -> None:
-    """Infer full-task scores from results on a selected GP-IRT subset."""
+    """Predict full-task scores from results on a selected GP-IRT subset."""
     with error_handler(debug):
-        result = infer_scores(
+        result = predict_scores(
             log_paths,
             artifact,
             subset,
@@ -114,7 +114,7 @@ def infer_command(
             cache_dir=cache_dir,
             reindex=reindex,
         )
-        output_path = write_inference(result, output)
+        output_path = write_prediction(result, output)
         print(f"Wrote {output_path} ({len(result['models'])} model(s))")
 
 

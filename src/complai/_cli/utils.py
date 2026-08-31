@@ -19,8 +19,8 @@ from inspect_ai._util.config import resolve_args
 from inspect_ai.dataset import MemoryDataset
 from rich import print
 
-from complai.minify.index import _content_hash
-from complai.minify.index import _logical_sample_id
+from complai.core.index import _content_hash
+from complai.core.index import _logical_sample_id
 
 
 def get_complai_tasks(

@@ -22,9 +22,9 @@ from complai._cli import app
 from complai.core import apply_eval_subset
 from complai.core import dispersion23_allocation
 from complai.core import fit_2pl
-from complai.core import infer_scores
 from complai.core import load_scorers
 from complai.core import minify
+from complai.core import predict_scores
 from complai.core import read_eval_subset
 from complai.core import write_outputs
 from complai.core.index import _content_hash
@@ -607,7 +607,7 @@ def test_epochs_are_averaged_within_an_eval(tmp_path: Path) -> None:
     assert result.artifact["items"][0]["source_mean"] == pytest.approx(0.5)
 
 
-def test_infer_new_model_scores_from_artifact_and_subset(tmp_path: Path) -> None:
+def test_predict_new_model_scores_from_artifact_and_subset(tmp_path: Path) -> None:
     source_logs = tmp_path / "source"
     source_logs.mkdir()
     for model_index in range(3):
@@ -631,18 +631,18 @@ def test_infer_new_model_scores_from_artifact_and_subset(tmp_path: Path) -> None
         values=[1.0] * 12,
     )
 
-    result = infer_scores(
+    result = predict_scores(
         [new_logs], artifact_path, subset_path, cache_dir=tmp_path / "cache"
     )
 
     model = result["models"]["new-model"]
-    assert model["inferred_score"] > 0.5
+    assert model["predicted_score"] > 0.5
     assert model["tasks"]["toy"]["observations"] == 6
     assert model["tasks"]["toy"]["coverage"] == 1.0
     assert model["tasks"]["toy"]["ability"] > 0.0
 
 
-def test_minify_infer_cli(tmp_path: Path) -> None:
+def test_minify_predict_cli(tmp_path: Path) -> None:
     source_logs = tmp_path / "source"
     source_logs.mkdir()
     for model_index in range(3):
@@ -664,13 +664,13 @@ def test_minify_infer_cli(tmp_path: Path) -> None:
         created="2026-10-10T00:00:00+00:00",
         values=[1.0] * 12,
     )
-    output = tmp_path / "inferred.json"
+    output = tmp_path / "predicted.json"
 
     result = CliRunner().invoke(
         app,
         [
             "core",
-            "infer",
+            "predict",
             str(new_logs),
             "--artifact",
             str(artifact_path),
@@ -684,7 +684,9 @@ def test_minify_infer_cli(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert json.loads(output.read_text())["models"]["new-model"]["inferred_score"] > 0.0
+    assert (
+        json.loads(output.read_text())["models"]["new-model"]["predicted_score"] > 0.0
+    )
 
 
 def test_eval_subset_filters_and_orders_exact_items(tmp_path: Path) -> None:

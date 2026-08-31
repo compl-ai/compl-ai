@@ -17,10 +17,10 @@ from complai.core.fit import sigmoid
 from complai.core.index import index_logs
 
 
-INFERENCE_SCHEMA = "complai-minify-inference-v1"
+PREDICTION_SCHEMA = "complai-minify-prediction-v1"
 
 
-def infer_scores(
+def predict_scores(
     log_paths: list[Path],
     artifact_path: Path,
     subset_path: Path,
@@ -29,7 +29,7 @@ def infer_scores(
     cache_dir: Path | None = None,
     reindex: bool = False,
 ) -> dict[str, Any]:
-    """Infer full-task scores for new models evaluated on a minified subset."""
+    """Predict full-task scores for new models evaluated on a minified subset."""
     if duplicate_policy not in {"error", "mean", "latest"}:
         raise ValueError("duplicate_policy must be error, mean, or latest")
     artifact, subset = read_inputs(artifact_path, subset_path)
@@ -46,10 +46,7 @@ def infer_scores(
     iterations = int(hyperparameters.get("iterations", 10))
     cache_root = (cache_dir or DEFAULT_CACHE_DIR).expanduser()
     indexed = index_logs(
-        log_paths,
-        cache_root / "index-v1.sqlite3",
-        reindex=reindex,
-        tasks=task_scorers,
+        log_paths, cache_root / "index-v1.sqlite3", reindex=reindex, tasks=task_scorers
     )
     tasks = prepare_tasks(indexed, task_scorers, duplicate_policy, _min_models=1)
     artifact_items = {str(row["item_id"]): row for row in artifact["items"]}
@@ -114,7 +111,7 @@ def infer_scores(
             )
             task_results[task_name] = {
                 "status": "ok" if len(responses) == len(selected) else "partial",
-                "inferred_score": population_score,
+                "predicted_score": population_score,
                 "observed_subset_score": float(np.mean(responses)),
                 "ability": ability,
                 "ability_standard_error": standard_error,
@@ -131,17 +128,17 @@ def infer_scores(
                 f"Model {model!r} has no responses matching the selected subset"
             )
         model_results[model] = {
-            "inferred_score": sum(score * count for score, count in weighted_scores)
+            "predicted_score": sum(score * count for score, count in weighted_scores)
             / sum(count for _, count in weighted_scores),
             "task_macro_score": float(np.mean([score for score, _ in weighted_scores])),
-            "inferred_tasks": len(weighted_scores),
+            "predicted_tasks": len(weighted_scores),
             "artifact_tasks": len(selected_by_task),
             "tasks": task_results,
         }
 
     result = {
-        "schema_version": INFERENCE_SCHEMA,
-        "inference_id": digest_json(
+        "schema_version": PREDICTION_SCHEMA,
+        "prediction_id": digest_json(
             {
                 "artifact_id": artifact["artifact_id"],
                 "subset_id": artifact["subset_id"],
@@ -155,7 +152,7 @@ def infer_scores(
         "ability_scale": artifact.get("ability_scale"),
         "score_interpretation": (
             "Per-task scores are the mean fixed-item 2PL probability over all "
-            "artifact items. Model inferred_score is population-item-weighted."
+            "artifact items. Model predicted_score is population-item-weighted."
         ),
         "input_digest": indexed.digest,
         "duplicate_policy": duplicate_policy,
@@ -165,8 +162,8 @@ def infer_scores(
     return json_safe(result)
 
 
-def write_inference(result: dict[str, Any], output_path: Path) -> Path:
-    """Write inferred scores atomically as JSON."""
+def write_prediction(result: dict[str, Any], output_path: Path) -> Path:
+    """Write predicted scores atomically as JSON."""
     output_path = output_path.expanduser().resolve()
     if output_path.exists():
         raise FileExistsError(f"Refusing to replace existing output: {output_path}")
@@ -296,7 +293,7 @@ def missing_task_result(subset_items: int) -> dict[str, Any]:
     """Return the result recorded when a task has no responses."""
     return {
         "status": "missing",
-        "inferred_score": None,
+        "predicted_score": None,
         "observations": 0,
         "subset_items": subset_items,
         "coverage": 0.0,

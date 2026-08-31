@@ -120,7 +120,7 @@ against the cached inventory and only parses new or changed logs. Pass
 or `--duplicates latest` when the same model and item appear in more than one
 successful evaluation. The default duplicate policy reports an error.
 
-#### Infer scores from the reduced evaluation set
+#### Predict scores from the reduced evaluation set
 
 First, evaluate a model on the exact items listed in `minify/subset.jsonl`
 
@@ -130,16 +130,16 @@ complai eval openai/gpt-5-nano \
   --log-dir new-model-logs/
 ````
 
-Then use `core infer` to estimate full scores.
+Then use `core predict` to estimate full scores.
 
 ```bash
-complai core infer subset_logs/ \
+complai core predict subset_logs/ \
   --artifact minify/artifact.json \
   --subset minify/subset.jsonl \
-  --output inferred.json
+  --output predicted.json
 ```
 
-Run `complai core fit --help` or `complai core infer --help` to see all options.
+Run `complai core fit --help` or `complai core predict --help` to see all options.
 
 #### Run Evals with the following syntax
 ```bash
