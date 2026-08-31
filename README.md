@@ -122,9 +122,15 @@ successful evaluation. The default duplicate policy reports an error.
 
 #### Infer scores from the reduced evaluation set
 
-First, evaluate a model on the exact items listed in `minify/subset.jsonl` and
-save the resulting Inspect logs. Then use `core infer` to estimate scores on
-the fitted full task scale.
+First, evaluate a model on the exact items listed in `minify/subset.jsonl`
+
+```bash
+complai eval openai/gpt-5-nano \
+  --subset reduced-eval/subset.jsonl \
+  --log-dir new-model-logs/
+````
+
+Then use `core infer` to estimate full scores.
 
 ```bash
 complai core infer subset_logs/ \

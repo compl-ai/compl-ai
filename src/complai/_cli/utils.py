@@ -1,21 +1,26 @@
+import json
 import re
 import sys
+from collections.abc import Callable
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any
-from typing import Callable
 
 import typer
 import yaml
 from inspect_ai import list_tasks
+from inspect_ai import Task
 from inspect_ai import TaskInfo
 from inspect_ai._eval.loader import load_task_spec
-from inspect_ai._eval.task import Task
 from inspect_ai._util.config import resolve_args
+from inspect_ai.dataset import MemoryDataset
 from rich import print
+
+from complai.minify.index import _content_hash
+from complai.minify.index import _logical_sample_id
 
 
 def get_complai_tasks(
@@ -354,3 +359,106 @@ def error_handler(debug: bool) -> Iterator:
             )
             print(error_msg, file=sys.stderr)
             sys.exit(1)
+
+
+SubsetItems = dict[str, list[tuple[str, str]]]
+
+
+def read_eval_subset(path: Path) -> SubsetItems:
+    selected: SubsetItems = {}
+    item_ids: set[str] = set()
+    sample_keys: set[tuple[str, str]] = set()
+    try:
+        with path.expanduser().open(encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                row: Any = json.loads(line)
+                if not isinstance(row, dict):
+                    raise TypeError(f"{path}:{line_number}: expected a JSON object")
+                task = row.get("task")
+                sample_id = row.get("sample_id")
+                item_id = row.get("item_id")
+                content_hash = row.get("content_hash")
+                if (
+                    not isinstance(task, str)
+                    or not task
+                    or not isinstance(sample_id, (str, int))
+                    or not str(sample_id)
+                    or not isinstance(item_id, str)
+                    or not item_id
+                    or not isinstance(content_hash, str)
+                    or not content_hash
+                ):
+                    raise ValueError(
+                        f"{path}:{line_number}: task, sample_id, item_id, and "
+                        "content_hash are required"
+                    )
+                if str(item_id) in item_ids:
+                    raise ValueError(
+                        f"{path}:{line_number}: duplicate item_id {item_id!r}"
+                    )
+                sample_key = (task, str(sample_id))
+                if sample_key in sample_keys:
+                    raise ValueError(
+                        f"{path}:{line_number}: duplicate task/sample ID {sample_key!r}"
+                    )
+                item_ids.add(str(item_id))
+                sample_keys.add(sample_key)
+                selected.setdefault(str(task), []).append(
+                    (str(sample_id), str(content_hash))
+                )
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Cannot read subset JSONL: {path}") from exc
+    if not selected:
+        raise ValueError("Subset JSONL is empty")
+    return selected
+
+
+def apply_eval_subset(
+    task_names: list[str], tasks: list[Task], selected: SubsetItems
+) -> None:
+    for task_name, task in zip(task_names, tasks, strict=True):
+        expected = dict(selected[task_name])
+        matched: dict[str, Any] = {}
+        for index, sample in enumerate(task.dataset, start=1):
+            sample_id = _logical_sample_id(
+                task_name,
+                sample.id if sample.id is not None else index,
+                sample.metadata,
+                sample.input,
+            )
+            if sample_id not in expected:
+                continue
+            content_hash = _content_hash(
+                sample.input,
+                sample.target,
+                sample.metadata,
+                sample.choices,
+                task=task_name,
+            )
+            if content_hash != expected[sample_id]:
+                raise ValueError(
+                    f"Selected item {task_name}::{sample_id} no longer matches "
+                    "the task dataset"
+                )
+            if sample_id in matched:
+                raise ValueError(
+                    f"Task {task_name!r} contains duplicate sample ID {sample_id!r}"
+                )
+            matched[sample_id] = sample
+        missing = [
+            sample_id
+            for sample_id, _ in selected[task_name]
+            if sample_id not in matched
+        ]
+        if missing:
+            preview = ", ".join(repr(value) for value in missing[:5])
+            raise ValueError(
+                f"Task {task_name!r} is missing selected sample IDs: {preview}"
+            )
+        task.dataset = MemoryDataset(
+            [matched[sample_id] for sample_id, _ in selected[task_name]],
+            name=task.dataset.name,
+            location=task.dataset.location,
+        )
