@@ -9,6 +9,7 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from typing import Callable
 from typing import Literal
 
 import numpy as np
@@ -21,7 +22,7 @@ from complai.core.index import inventory_json
 
 DEFAULT_CACHE_DIR = COMPLAI_CACHE_DIR / "minify"
 METHOD_VERSION = "dispersion23-gp-irt-2pl-v2"
-ARTIFACT_SCHEMA = "complai-minify-artifact-v1"
+PARAMS_SCHEMA = "complai-minify-params-v1"
 SCORE_LABEL_MAPS = {
     "accuracy_and_honesty/accuracy": {
         "correct": 1.0,
@@ -63,11 +64,12 @@ class TwoPLFit:
 
 @dataclass(frozen=True)
 class MinifyResult:
-    """A fitted artifact, selected subset, and input inventory."""
+    """A fitted params, selected subset, and input inventory."""
 
-    artifact: dict[str, Any]
+    params: dict[str, Any]
     subset: tuple[dict[str, Any], ...]
     inventory: IndexedLogs
+    dropped_items: tuple[str, ...] = ()
 
 
 def minify(
@@ -81,6 +83,8 @@ def minify(
     cache_dir: Path | None = None,
     reindex: bool = False,
     _ignore_unseen_tasks: bool = False,
+    index_progress: Callable[[int, int, Path, str], None] | None = None,
+    fit_progress: Callable[[int, int, str], None] | None = None,
 ) -> MinifyResult:
     """Fit 2PL GP-IRT model and select a reduced evaluation set."""
     if not scorers or any(not task or not scorer for task, scorer in scorers.items()):
@@ -91,19 +95,19 @@ def minify(
     # Index logs, caching results in a SQLite database.
     cache_root = (cache_dir or DEFAULT_CACHE_DIR).expanduser()
     indexed = index_logs(
-        log_paths, cache_root / "index-v1.sqlite3", reindex=reindex, tasks=scorers
+        log_paths, cache_root / "index-v1.sqlite3", reindex=reindex, tasks=scorers, progress=index_progress
     )
 
     if _ignore_unseen_tasks:
         scorers = filter_seen_scorers(indexed, scorers)
 
-    tasks = prepare_tasks(indexed, scorers, duplicate_policy)
+    tasks, dropped_items = prepare_tasks(indexed, scorers, duplicate_policy)
     total_items = sum(len(task["items"]) for task in tasks.values())
     if budget > total_items:
         raise ValueError(f"budget {budget} exceeds the available items ({total_items})")
 
     # Fit 2PL models
-    fits, capacities, dispersions = fit_tasks(tasks)
+    fits, capacities, dispersions = fit_tasks(tasks, progress=fit_progress)
 
     # Select items using dispersion^2/3 allocation
     allocation, selected_keys = select_items(
@@ -122,6 +126,7 @@ def minify(
         dispersions=dispersions,
         allocation=allocation,
         selected_keys=selected_keys,
+        dropped_items=tuple(dropped_items),
     )
 
 
@@ -145,10 +150,14 @@ def filter_seen_scorers(
 
 def fit_tasks(
     tasks: dict[str, dict[str, Any]],
+    progress: Callable[[int, int, str], None] | None = None,
 ) -> tuple[dict[str, TwoPLFit], dict[str, int], dict[str, float]]:
     """Fit each task and calculate its capacity and score dispersion."""
     fits, capacities, dispersions = {}, {}, {}
-    for task_name in tasks:
+    total_tasks = len(tasks)
+    for i, task_name in enumerate(tasks):
+        if progress:
+            progress(i + 1, total_tasks, task_name)
         matrix = tasks[task_name]["matrix"]
 
         # Fit model
@@ -361,7 +370,7 @@ def prepare_tasks(
     duplicate_policy: str,
     *,
     _min_models: int = 3,
-) -> dict[str, dict[str, Any]]:
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
     """Build model-by-item score matrices from indexed samples."""
     dataset_versions: dict[str, dict[str, str]] = {task: {} for task in scorers}
     for file_row in indexed.files:
@@ -390,6 +399,7 @@ def prepare_tasks(
     epochs: dict[tuple[str, str, str, str], list[float]] = {}
     metadata: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     content_by_item: dict[str, str] = {}
+    dropped_items: list[str] = []
     for sample_row in indexed.iter_samples():
         task = str(sample_row["task"])
         if task not in scorers:
@@ -414,7 +424,8 @@ def prepare_tasks(
         content_hash = str(sample_row["content_hash"])
         previous = content_by_item.setdefault(item_id, content_hash)
         if previous != content_hash:
-            raise ValueError(f"Conflicting content for logical item {item_id}")
+            dropped_items.append(f"Dropped {item_id} from {sample_row['file_path']} (hash mismatch)")
+            continue
         key = (str(sample_row["file_path"]), str(sample_row["model"]), task, item_id)
         epochs.setdefault(key, []).append(value)
         metadata[key] = {
@@ -455,10 +466,7 @@ def prepare_tasks(
             latest = max(row["created"] for row in records)
             winners = [row for row in records if row["created"] == latest]
             if len(winners) != 1:
-                raise ValueError(
-                    "Latest duplicate policy has a timestamp tie for "
-                    f"model={group_key[0]!r}, item={group_key[2]!r}"
-                )
+                dropped_items.append(f"Timestamp tie resolved (arbitrarily picked first) for model={group_key[0]!r}, item={group_key[2]!r}")
             resolved.append(winners[0])
 
     output: dict[str, dict[str, Any]] = {}
@@ -492,7 +500,7 @@ def prepare_tasks(
             matrix[model_index[row["model"]], item_index[row["item_id"]]] = row["value"]
         output[task_name] = {"models": models, "items": items, "matrix": matrix}
 
-    return output
+    return output, dropped_items
 
 
 def build_result(
@@ -508,8 +516,9 @@ def build_result(
     dispersions: dict[str, float],
     allocation: dict[str, int],
     selected_keys: list[tuple[str, int]],
+    dropped_items: tuple[str, ...] = (),
 ) -> MinifyResult:
-    """Build the fitted artifact and ordered subset records."""
+    """Build the fitted params and ordered subset records."""
     configuration_digest = digest_json(
         {
             "task_scorers": dict(sorted(scorers.items())),
@@ -517,21 +526,21 @@ def build_result(
             "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
         }
     )
-    artifact_basis = {
-        "schema": ARTIFACT_SCHEMA,
+    params_basis = {
+        "schema": PARAMS_SCHEMA,
         "method": METHOD_VERSION,
         "inventory_digest": indexed.digest,
         "task_scorers": dict(sorted(scorers.items())),
         "duplicate_policy": duplicate_policy,
         "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
     }
-    artifact_id = digest_json(artifact_basis)[:24]
+    params_id = digest_json(params_basis)[:24]
     selected_ids = [
         tasks[task]["items"][index]["item_id"] for task, index in selected_keys
     ]
     subset_id = digest_json(
         {
-            "artifact_id": artifact_id,
+            "params_id": params_id,
             "budget": budget,
             "seed": seed,
             "items": selected_ids,
@@ -587,7 +596,7 @@ def build_result(
         probability = allocation[task_name] / capacities[task_name]
         selected_records.append(
             {
-                "artifact_id": artifact_id,
+                "params_id": params_id,
                 "subset_id": subset_id,
                 "rank": rank,
                 "item_id": item["item_id"],
@@ -612,16 +621,16 @@ def build_result(
         "deferred": sum(row["parse_status"] == "deferred" for row in indexed.files),
         "failed": sum(row["parse_status"] == "error" for row in indexed.files),
     }
-    artifact = {
-        "schema_version": ARTIFACT_SCHEMA,
+    params = {
+        "schema_version": PARAMS_SCHEMA,
         "method": METHOD_VERSION,
-        "artifact_id": artifact_id,
+        "params_id": params_id,
         "subset_id": subset_id,
         "budget": budget,
         "seed": seed,
         "duplicate_policy": duplicate_policy,
         "task_scorers": dict(sorted(scorers.items())),
-        "hyperparameters": artifact_basis["hyperparameters"],
+        "hyperparameters": params_basis["hyperparameters"],
         "configuration_digest": configuration_digest,
         "input_digest": indexed.digest,
         "inventory": stable_inventory,
@@ -632,9 +641,10 @@ def build_result(
     }
 
     return MinifyResult(
-        artifact=json_safe(artifact),
+        params=json_safe(params),
         subset=tuple(json_safe(row) for row in selected_records),
         inventory=indexed,
+        dropped_items=dropped_items,
     )
 
 
@@ -782,34 +792,39 @@ def atomic_write(path: Path, content: str) -> None:
 
 
 def write_outputs(result: MinifyResult, output_dir: Path) -> tuple[Path, Path]:
-    """Write the fitted artifact and selected subset atomically."""
-    artifact_path, subset_path = check_output_available(output_dir)
-    output_dir = artifact_path.parent
+    """Write the fitted params and selected subset atomically."""
+    params_path, subset_path = check_output_available(output_dir)
+    output_dir = params_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
-    artifact_text = (
-        json.dumps(result.artifact, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    params_text = (
+        json.dumps(result.params, indent=2, sort_keys=True, allow_nan=False) + "\n"
     )
     subset_text = "".join(
         json.dumps(row, sort_keys=True, allow_nan=False) + "\n" for row in result.subset
     )
-    atomic_write(artifact_path, artifact_text)
+    atomic_write(params_path, params_text)
     try:
         atomic_write(subset_path, subset_text)
     except Exception:
-        artifact_path.unlink(missing_ok=True)
+        params_path.unlink(missing_ok=True)
         raise
 
-    return artifact_path, subset_path
+    if result.dropped_items:
+        with open(output_dir / "conflicting_items.log", "w") as f:
+            for item in result.dropped_items:
+                f.write(item + "\n")
+
+    return params_path, subset_path
 
 
 def check_output_available(output_dir: Path) -> tuple[Path, Path]:
     """Return output paths after confirming they don't already exist."""
     output_dir = output_dir.expanduser().resolve()
-    artifact_path = output_dir / "artifact.json"
+    params_path = output_dir / "params.json"
     subset_path = output_dir / "subset.jsonl"
 
-    existing = [path for path in (artifact_path, subset_path) if path.exists()]
+    existing = [path for path in (params_path, subset_path) if path.exists()]
     if existing:
         raise FileExistsError(f"Output already exists: {existing[0]}")
 
-    return artifact_path, subset_path
+    return params_path, subset_path

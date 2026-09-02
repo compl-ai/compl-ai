@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from complai.core.fit import ARTIFACT_SCHEMA
+from complai.core.fit import PARAMS_SCHEMA
 from complai.core.fit import atomic_write
 from complai.core.fit import DEFAULT_CACHE_DIR
 from complai.core.fit import digest_json
@@ -22,7 +22,7 @@ PREDICTION_SCHEMA = "complai-minify-prediction-v1"
 
 def predict_scores(
     log_paths: list[Path],
-    artifact_path: Path,
+    params_path: Path,
     subset_path: Path,
     *,
     duplicate_policy: str = "error",
@@ -32,16 +32,16 @@ def predict_scores(
     """Predict full-task scores for new models evaluated on a minified subset."""
     if duplicate_policy not in {"error", "mean", "latest"}:
         raise ValueError("duplicate_policy must be error, mean, or latest")
-    artifact, subset = read_inputs(artifact_path, subset_path)
+    params, subset = read_inputs(params_path, subset_path)
     selected_tasks = {str(row["task"]) for row in subset}
     task_scorers = {
         task: scorer
-        for task, scorer in artifact["task_scorers"].items()
+        for task, scorer in params["task_scorers"].items()
         if task in selected_tasks
     }
     if set(task_scorers) != selected_tasks:
-        raise ValueError("Artifact is missing a scorer for a selected task")
-    hyperparameters = artifact.get("hyperparameters", {})
+        raise ValueError("Params is missing a scorer for a selected task")
+    hyperparameters = params.get("hyperparameters", {})
     ridge = float(hyperparameters.get("ridge", 0.01))
     iterations = int(hyperparameters.get("iterations", 10))
     cache_root = (cache_dir or DEFAULT_CACHE_DIR).expanduser()
@@ -49,7 +49,7 @@ def predict_scores(
         log_paths, cache_root / "index-v1.sqlite3", reindex=reindex, tasks=task_scorers
     )
     tasks = prepare_tasks(indexed, task_scorers, duplicate_policy, _min_models=1)
-    artifact_items = {str(row["item_id"]): row for row in artifact["items"]}
+    params_items = {str(row["item_id"]): row for row in params["items"]}
     selected_by_task: dict[str, list[dict[str, Any]]] = {}
     for row in subset:
         selected_by_task.setdefault(str(row["task"]), []).append(row)
@@ -79,7 +79,7 @@ def predict_scores(
                 if observed_item["content_hash"] != selected_item["content_hash"]:
                     raise ValueError(f"Content mismatch for selected item {item_id}")
                 responses.append(float(task["matrix"][model_index, index]))
-                selected_parameters.append(artifact_items[item_id])
+                selected_parameters.append(params_items[item_id])
             if not responses:
                 task_results[task_name] = missing_task_result(len(selected))
                 continue
@@ -98,7 +98,7 @@ def predict_scores(
                 iterations=iterations,
             )
             population = [
-                row for row in artifact["items"] if str(row["task"]) == task_name
+                row for row in params["items"] if str(row["task"]) == task_name
             ]
             population_score = float(
                 np.mean(
@@ -132,7 +132,7 @@ def predict_scores(
             / sum(count for _, count in weighted_scores),
             "task_macro_score": float(np.mean([score for score, _ in weighted_scores])),
             "predicted_tasks": len(weighted_scores),
-            "artifact_tasks": len(selected_by_task),
+            "params_tasks": len(selected_by_task),
             "tasks": task_results,
         }
 
@@ -140,19 +140,19 @@ def predict_scores(
         "schema_version": PREDICTION_SCHEMA,
         "prediction_id": digest_json(
             {
-                "artifact_id": artifact["artifact_id"],
-                "subset_id": artifact["subset_id"],
+                "params_id": params["params_id"],
+                "subset_id": params["subset_id"],
                 "input_digest": indexed.digest,
                 "duplicate_policy": duplicate_policy,
             }
         )[:24],
-        "artifact_id": artifact["artifact_id"],
-        "subset_id": artifact["subset_id"],
-        "method": artifact["method"],
-        "ability_scale": artifact.get("ability_scale"),
+        "params_id": params["params_id"],
+        "subset_id": params["subset_id"],
+        "method": params["method"],
+        "ability_scale": params.get("ability_scale"),
         "score_interpretation": (
             "Per-task scores are the mean fixed-item 2PL probability over all "
-            "artifact items. Model predicted_score is population-item-weighted."
+            "params items. Model predicted_score is population-item-weighted."
         ),
         "input_digest": indexed.digest,
         "duplicate_policy": duplicate_policy,
@@ -174,32 +174,32 @@ def write_prediction(result: dict[str, Any], output_path: Path) -> Path:
 
 
 def read_inputs(
-    artifact_path: Path, subset_path: Path
+    params_path: Path, subset_path: Path
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Read and validate a fitted artifact and matching subset."""
+    """Read and validate a fitted params and matching subset."""
     try:
-        artifact = json.loads(artifact_path.expanduser().read_text(encoding="utf-8"))
+        params = json.loads(params_path.expanduser().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"Cannot read artifact JSON: {artifact_path}") from exc
-    if not isinstance(artifact, dict) or not isinstance(
-        artifact.get("task_scorers"), dict
+        raise ValueError(f"Cannot read params JSON: {params_path}") from exc
+    if not isinstance(params, dict) or not isinstance(
+        params.get("task_scorers"), dict
     ):
-        raise TypeError("Artifact is missing its task_scorers mapping")
+        raise TypeError("Params is missing its task_scorers mapping")
     if (
-        artifact.get("schema_version") != ARTIFACT_SCHEMA
-        or artifact.get("method") != METHOD_VERSION
+        params.get("schema_version") != PARAMS_SCHEMA
+        or params.get("method") != METHOD_VERSION
     ):
-        raise ValueError("Artifact is not a supported GP-IRT 2PL artifact")
-    if not artifact["task_scorers"] or any(
+        raise ValueError("Params is not a supported GP-IRT 2PL params")
+    if not params["task_scorers"] or any(
         not isinstance(task, str) or not isinstance(scorer, str)
-        for task, scorer in artifact["task_scorers"].items()
+        for task, scorer in params["task_scorers"].items()
     ):
-        raise ValueError("Artifact has an invalid task_scorers mapping")
-    if not isinstance(artifact.get("items"), list) or not artifact["items"]:
-        raise ValueError("Artifact has no fitted items")
-    required = {"artifact_id", "subset_id", "method"}
-    if not required.issubset(artifact):
-        raise ValueError("Artifact is missing identity or method fields")
+        raise ValueError("Params has an invalid task_scorers mapping")
+    if not isinstance(params.get("items"), list) or not params["items"]:
+        raise ValueError("Params has no fitted items")
+    required = {"params_id", "subset_id", "method"}
+    if not required.issubset(params):
+        raise ValueError("Params is missing identity or method fields")
 
     subset: list[dict[str, Any]] = []
     try:
@@ -218,7 +218,7 @@ def read_inputs(
     if not subset:
         raise ValueError("Subset JSONL is empty")
 
-    artifact_items = {str(row.get("item_id")): row for row in artifact["items"]}
+    params_items = {str(row.get("item_id")): row for row in params["items"]}
     item_ids: set[str] = set()
     for row in subset:
         item_id = str(row.get("item_id", ""))
@@ -229,33 +229,33 @@ def read_inputs(
                 f"Selected item {item_id!r} is missing task or content_hash"
             )
         if (
-            row.get("artifact_id") != artifact["artifact_id"]
-            or row.get("subset_id") != artifact["subset_id"]
+            row.get("params_id") != params["params_id"]
+            or row.get("subset_id") != params["subset_id"]
         ):
             raise ValueError(
-                f"Subset identity does not match artifact for item {item_id!r}"
+                f"Subset identity does not match params for item {item_id!r}"
             )
         if item_id in item_ids:
             raise ValueError(f"Duplicate selected item {item_id!r}")
-        if item_id not in artifact_items or not artifact_items[item_id].get("selected"):
+        if item_id not in params_items or not params_items[item_id].get("selected"):
             raise ValueError(f"Unknown or unselected item {item_id!r}")
-        if row["task"] != artifact_items[item_id].get("task"):
+        if row["task"] != params_items[item_id].get("task"):
             raise ValueError(
-                f"Subset task does not match artifact for item {item_id!r}"
+                f"Subset task does not match params for item {item_id!r}"
             )
-        if row.get("content_hash") != artifact_items[item_id].get("content_hash"):
+        if row.get("content_hash") != params_items[item_id].get("content_hash"):
             raise ValueError(
-                f"Subset content does not match artifact for item {item_id!r}"
+                f"Subset content does not match params for item {item_id!r}"
             )
         item_ids.add(item_id)
     expected = {
-        str(row["item_id"]) for row in artifact["items"] if bool(row.get("selected"))
+        str(row["item_id"]) for row in params["items"] if bool(row.get("selected"))
     }
     if item_ids != expected:
         raise ValueError(
-            "Subset JSONL is not the exact subset recorded by the artifact"
+            "Subset JSONL is not the exact subset recorded by the params"
         )
-    return artifact, subset
+    return params, subset
 
 
 def estimate_ability(

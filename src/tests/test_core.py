@@ -126,11 +126,11 @@ def test_minify_indexes_reuses_cache_and_writes_deterministic_outputs(
 
     assert first.inventory.summary.new == 3
     assert second.inventory.summary.cache_hits == 3
-    assert first.artifact == second.artifact
+    assert first.params == second.params
     assert first.subset == second.subset
     assert len(first.subset) == 5
-    artifact_path, subset_path = write_outputs(first, tmp_path / "output")
-    assert json.loads(artifact_path.read_text())["budget"] == 5
+    params_path, subset_path = write_outputs(first, tmp_path / "output")
+    assert json.loads(params_path.read_text())["budget"] == 5
     assert len(subset_path.read_text().splitlines()) == 5
     with pytest.raises(FileExistsError):
         write_outputs(first, tmp_path / "output")
@@ -171,7 +171,7 @@ def test_duplicate_eval_policies(tmp_path: Path) -> None:
         duplicate_policy="latest",
         cache_dir=tmp_path / "cache",
     )
-    assert averaged.artifact["artifact_id"] != latest.artifact["artifact_id"]
+    assert averaged.params["params_id"] != latest.params["params_id"]
 
 
 def test_only_latest_dataset_version_is_fitted(tmp_path: Path) -> None:
@@ -197,8 +197,8 @@ def test_only_latest_dataset_version_is_fitted(tmp_path: Path) -> None:
 
     result = minify([logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
 
-    assert result.artifact["tasks"]["toy"]["capacity"] == 12
-    assert {item["dataset"] for item in result.artifact["items"]} == {"toy-v2"}
+    assert result.params["tasks"]["toy"]["capacity"] == 12
+    assert {item["dataset"] for item in result.params["items"]} == {"toy-v2"}
 
 
 def test_index_detects_changes_removals_and_forced_reindex(tmp_path: Path) -> None:
@@ -423,15 +423,15 @@ def test_minify_cli_end_to_end(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "Inventory: 3 discovered" in result.output
-    assert (output / "artifact.json").is_file()
+    assert (output / "params.json").is_file()
     assert len((output / "subset.jsonl").read_text().splitlines()) == 5
 
 
 def test_minify_cli_rejects_existing_output_before_reading_logs(tmp_path: Path) -> None:
     output = tmp_path / "output"
     output.mkdir()
-    artifact = output / "artifact.json"
-    artifact.write_text("existing")
+    params = output / "params.json"
+    params.write_text("existing")
 
     result = CliRunner().invoke(
         app,
@@ -448,7 +448,7 @@ def test_minify_cli_rejects_existing_output_before_reading_logs(tmp_path: Path) 
 
     assert result.exit_code != 0
     assert "Output already exists:" in result.output
-    assert artifact.name in result.output
+    assert params.name in result.output
     assert "Inspect log path does not exist" not in result.output
 
 
@@ -512,8 +512,8 @@ def test_default_config_uses_present_tasks_and_nested_scorers(tmp_path: Path) ->
     )
 
     assert result.exit_code == 0, result.output
-    artifact = json.loads((output / "artifact.json").read_text())
-    assert artifact["task_scorers"] == {"mask": "accuracy_and_honesty/honesty"}
+    params = json.loads((output / "params.json").read_text())
+    assert params["task_scorers"] == {"mask": "accuracy_and_honesty/honesty"}
     assert len((output / "subset.jsonl").read_text().splitlines()) == 5
     accuracy = minify(
         [logs],
@@ -521,7 +521,7 @@ def test_default_config_uses_present_tasks_and_nested_scorers(tmp_path: Path) ->
         5,
         cache_dir=tmp_path / "cache",
     )
-    assert accuracy.artifact["items"][0]["source_mean"] == pytest.approx(1 / 3)
+    assert accuracy.params["items"][0]["source_mean"] == pytest.approx(1 / 3)
 
 
 def test_hle_contract_accepts_scalar_and_structured_scores(tmp_path: Path) -> None:
@@ -603,11 +603,11 @@ def test_epochs_are_averaged_within_an_eval(tmp_path: Path) -> None:
 
     result = minify([logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
 
-    assert result.artifact["items"][0]["observation_count"] == 3
-    assert result.artifact["items"][0]["source_mean"] == pytest.approx(0.5)
+    assert result.params["items"][0]["observation_count"] == 3
+    assert result.params["items"][0]["source_mean"] == pytest.approx(0.5)
 
 
-def test_predict_new_model_scores_from_artifact_and_subset(tmp_path: Path) -> None:
+def test_predict_new_model_scores_from_params_and_subset(tmp_path: Path) -> None:
     source_logs = tmp_path / "source"
     source_logs.mkdir()
     for model_index in range(3):
@@ -619,7 +619,7 @@ def test_predict_new_model_scores_from_artifact_and_subset(tmp_path: Path) -> No
             values=[float(item <= model_index * 3) for item in range(12)],
         )
     fitted = minify([source_logs], {"toy": "choice"}, 6, cache_dir=tmp_path / "cache")
-    artifact_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
+    params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
 
     new_logs = tmp_path / "new"
     new_logs.mkdir()
@@ -632,7 +632,7 @@ def test_predict_new_model_scores_from_artifact_and_subset(tmp_path: Path) -> No
     )
 
     result = predict_scores(
-        [new_logs], artifact_path, subset_path, cache_dir=tmp_path / "cache"
+        [new_logs], params_path, subset_path, cache_dir=tmp_path / "cache"
     )
 
     model = result["models"]["new-model"]
@@ -654,7 +654,7 @@ def test_minify_predict_cli(tmp_path: Path) -> None:
             values=[float((item + model_index) % 2) for item in range(12)],
         )
     fitted = minify([source_logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
-    artifact_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
+    params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
     new_logs = tmp_path / "new"
     new_logs.mkdir()
     _write_eval(
@@ -672,8 +672,8 @@ def test_minify_predict_cli(tmp_path: Path) -> None:
             "core",
             "predict",
             str(new_logs),
-            "--artifact",
-            str(artifact_path),
+            "--params",
+            str(params_path),
             "--subset",
             str(subset_path),
             "--output",
