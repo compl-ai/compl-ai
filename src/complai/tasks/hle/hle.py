@@ -274,7 +274,6 @@ def hle(
         solver=[system_message(HLE_SYSTEM_PROMPT), generate()],
         scorer=hle_scorer(model=grader_model),
         config=GenerateConfig(
-            temperature=0.0,  # Use deterministic generation as per HLE
-            max_tokens=max_tokens,  # HLE recommends at least 8192 for reasoning models
+            max_tokens=max_tokens  # HLE recommends at least 8192 for reasoning models
         ),
     )
