@@ -82,20 +82,32 @@ complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
 Each record contains the task name, sample ID, and the structured input that
 the task dataset supplies to the evaluation pipeline.
 
-#### Build a reduced evaluation set
+#### COMPL-AI Core
+
+COMPL-AI Core allows cheaper running of COMPL-AI. It consists of a small subset of samples and a method to estimate full scores based on an evaluation run on the subset. 
+
+To use our recommended subset consisting of 2'000 samples, run
+```bash
+complai eval openai/gpt-5-nano \
+  --subset complai-core/subset.jsonl \
+  --log-dir logs/
+
+complai core predict logs/<provider>_<model-id>_<timestamp> \
+  --params complai-core/params.json \
+  --subset complai-core/subset.jsonl \
+  --output predicted.json
+```
+
+You can also build your own subset if you have a dataset of full evaluation results.
 
 The `core fit` command selects a smaller set of evaluation items with the
-GP-IRT 2PL method. Pass one or more Inspect `.eval` or `.eval.gz` files, or pass
-directories to search recursively.
-
-```bash
-complai core fit logs/ --budget 1000 --output minify/
-```
+GP-IRT 2PL method from preprocessed response records.
 
 The command writes two files:
 
-- `minify/artifact.json` contains the fitted parameters, diagnostics, and log inventory.
-- `minify/subset.jsonl` contains the selected items in selection order.
+- `complai-core/params.json` contains the fitted parameters, diagnostics, and
+  preprocessing provenance.
+- `complai-core/subset.jsonl` contains the selected items in selection order.
 
 The budget is the total number of items selected across all tasks. The command
 uses the bundled task to scorer mapping by default. You can provide another
@@ -107,22 +119,25 @@ tasks:
   arc_challenge: choice
 ```
 
+Preprocess the Inspect logs, then fit the compact JSONL:
+
 ```bash
-complai core fit logs/ \
-  --budget 1000 \
-  --config scorers.yaml \
-  --output minify/
+complai core preprocess logs/ --output responses.jsonl
+complai core fit responses.jsonl --budget 1000 --output complai-core/
 ```
 
-Parsed logs are stored in a local cache. Each run checks the current files
-against the cached inventory and only parses new or changed logs. Pass
-`--reindex` to hash and parse every input log again. Pass `--duplicates mean`
-or `--duplicates latest` when the same model and item appear in more than one
-successful evaluation. The default duplicate policy reports an error.
+Preprocessing writes `responses.jsonl` and `responses.manifest.json`. It reads
+only successful, complete evaluations for configured tasks and stores all
+sample scores with the fitting provenance. Rerun preprocessing when source logs change or
+when adding tasks that were not in the preprocessing scorer mapping.
+
+Pass `--duplicates mean` or `--duplicates latest` when the same model and item
+appear in more than one successful evaluation. The default duplicate policy
+reports an error.
 
 #### Predict scores from the reduced evaluation set
 
-First, evaluate a model on the exact items listed in `minify/subset.jsonl`
+First, evaluate a model on the exact items listed in `complai-core/subset.jsonl`
 
 ```bash
 complai eval openai/gpt-5-nano \
@@ -130,12 +145,13 @@ complai eval openai/gpt-5-nano \
   --log-dir new-model-logs/
 ````
 
-Then use `core predict` to estimate full scores.
+Preprocess those results, then use `core predict` to estimate full scores.
 
 ```bash
-complai core predict subset_logs/ \
-  --artifact minify/artifact.json \
-  --subset minify/subset.jsonl \
+complai core preprocess new-model-logs/ --output subset-responses.jsonl
+complai core predict subset-responses.jsonl \
+  --params complai-core/params.json \
+  --subset complai-core/subset.jsonl \
   --output predicted.json
 ```
 

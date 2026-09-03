@@ -1,5 +1,3 @@
-"""Load task-to-scorer configuration."""
-
 from pathlib import Path
 
 import yaml
@@ -28,4 +26,5 @@ def load_scorers(path: Path | None = None) -> dict[str, str]:
         for task, scorer in tasks.items()
     ):
         raise ValueError("Every tasks entry must map a task string to a scorer string")
+
     return dict(tasks)

@@ -9,20 +9,15 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from typing import Callable
 from typing import Literal
 
 import numpy as np
 
-from complai.constants import CACHE_DIR as COMPLAI_CACHE_DIR
-from complai.core.index import index_logs
-from complai.core.index import IndexedLogs
-from complai.core.index import inventory_json
+from complai.core.records import PreprocessedRecords
 
 
-DEFAULT_CACHE_DIR = COMPLAI_CACHE_DIR / "minify"
-METHOD_VERSION = "dispersion23-gp-irt-2pl-v2"
-PARAMS_SCHEMA = "complai-minify-params-v1"
+METHOD_VERSION = "dispersion23-gp-irt-2pl-v1"
+PARAMS_SCHEMA = "complai-core-params-v1"
 SCORE_LABEL_MAPS = {
     "accuracy_and_honesty/accuracy": {
         "correct": 1.0,
@@ -63,51 +58,42 @@ class TwoPLFit:
 
 
 @dataclass(frozen=True)
-class MinifyResult:
-    """A fitted params, selected subset, and input inventory."""
+class FitResult:
+    """A fitted params and selected subset."""
 
     params: dict[str, Any]
     subset: tuple[dict[str, Any], ...]
-    inventory: IndexedLogs
-    dropped_items: tuple[str, ...] = ()
 
 
-def minify(
-    log_paths: list[Path],
+DuplicatePolicy = Literal["error", "latest", "mean"]
+
+
+def fit(
+    records: PreprocessedRecords,
     scorers: dict[str, str],
     budget: int,
     *,
     floor: int = 10,
     seed: int = 0,
-    duplicate_policy: Literal["error", "latest", "mean"] = "error",
-    cache_dir: Path | None = None,
-    reindex: bool = False,
+    duplicate_policy: DuplicatePolicy = "error",
     _ignore_unseen_tasks: bool = False,
-    index_progress: Callable[[int, int, Path, str], None] | None = None,
-    fit_progress: Callable[[int, int, str], None] | None = None,
-) -> MinifyResult:
-    """Fit 2PL GP-IRT model and select a reduced evaluation set."""
+) -> FitResult:
+    """Fit and select from a normalized sample source."""
     if not scorers or any(not task or not scorer for task, scorer in scorers.items()):
         raise ValueError("scorers must be a non-empty task-to-scorer mapping")
     if budget <= 0:
         raise ValueError("budget must be positive")
 
-    # Index logs, caching results in a SQLite database.
-    cache_root = (cache_dir or DEFAULT_CACHE_DIR).expanduser()
-    indexed = index_logs(
-        log_paths, cache_root / "index-v1.sqlite3", reindex=reindex, tasks=scorers, progress=index_progress
-    )
-
     if _ignore_unseen_tasks:
-        scorers = filter_seen_scorers(indexed, scorers)
+        scorers = filter_seen_scorers(records, scorers)
 
-    tasks, dropped_items = prepare_tasks(indexed, scorers, duplicate_policy)
+    tasks = prepare_tasks(records, scorers, duplicate_policy)
     total_items = sum(len(task["items"]) for task in tasks.values())
     if budget > total_items:
         raise ValueError(f"budget {budget} exceeds the available items ({total_items})")
 
     # Fit 2PL models
-    fits, capacities, dispersions = fit_tasks(tasks, progress=fit_progress)
+    fits, capacities, dispersions = fit_tasks(tasks)
 
     # Select items using dispersion^2/3 allocation
     allocation, selected_keys = select_items(
@@ -115,7 +101,7 @@ def minify(
     )
 
     return build_result(
-        indexed=indexed,
+        records=records,
         scorers=scorers,
         budget=budget,
         seed=seed,
@@ -126,44 +112,235 @@ def minify(
         dispersions=dispersions,
         allocation=allocation,
         selected_keys=selected_keys,
-        dropped_items=tuple(dropped_items),
     )
 
 
 def filter_seen_scorers(
-    indexed: IndexedLogs, scorers: dict[str, str]
+    records: PreprocessedRecords, scorers: dict[str, str]
 ) -> dict[str, str]:
     """Keep only tasks supplied in the scorer mapping."""
     seen_tasks = {
-        str(row["task"]) for row in indexed.files if row["parse_status"] == "ok"
+        str(row["task"]) for row in records.files if row["parse_status"] == "ok"
     }
     filtered = {task: scorer for task, scorer in scorers.items() if task in seen_tasks}
     if not filtered:
         known = ", ".join(sorted(seen_tasks)) or "none"
         raise ValueError(
-            "No indexed tasks match the used scorer mapping; "
+            "No preprocessed tasks match the scorer mapping; "
             f"found tasks: {known}. Supply --config for custom tasks."
         )
 
     return filtered
 
 
+def prepare_tasks(
+    records: PreprocessedRecords,
+    scorers: dict[str, str],
+    duplicate_policy: DuplicatePolicy,
+    *,
+    _min_models: int = 3,
+) -> dict[str, dict[str, Any]]:
+    """Build model-by-item score matrices from preprocessed records."""
+    selected_files, canonical_datasets = _latest_content_versions(records, scorers)
+
+    epochs: dict[tuple[str, str, str, str], list[float]] = {}
+    metadata: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    content_by_question: dict[tuple[str, str], str] = {}
+    for sample_row in records.iter_samples():
+        task = str(sample_row["task"])
+        if task not in scorers:
+            continue
+        file_path = str(sample_row["file_path"])
+        if file_path not in selected_files:
+            continue
+        scorer = scorers[task]
+        value: float | None
+        if isinstance(sample_row, dict) and "score" in sample_row:
+            value = float(sample_row["score"])
+        else:
+            scores = (
+                sample_row["scores"]
+                if isinstance(sample_row, dict) and "scores" in sample_row
+                else json.loads(sample_row["scores_json"])
+            )
+            raw_score = select_score(scores, scorer)
+            if raw_score is None:
+                raise ValueError(
+                    f"Configured scorer {scorer!r} is missing for task {task!r}, "
+                    f"sample {sample_row['sample_id']!r} in {sample_row['file_path']}"
+                )
+            value = normalize_score(raw_score, scorer)
+        if value is None or not math.isfinite(value) or not 0.0 <= value <= 1.0:
+            raise ValueError(
+                f"Configured score {task}:{scorer} for sample {sample_row['sample_id']!r} "
+                f"in {sample_row['file_path']} is not a scalar value in [0, 1]"
+            )
+        content_hash = str(sample_row["content_hash"])
+        question_hash = str(sample_row.get("question_hash", content_hash))
+        previous = content_by_question.setdefault((task, question_hash), content_hash)
+        if previous != content_hash:
+            raise ValueError(
+                f"Conflicting scoring content for logical question {task}::{question_hash}"
+            )
+        sample_id = str(sample_row["sample_id"])
+        key = (file_path, str(sample_row["model"]), task, question_hash)
+        epochs.setdefault(key, []).append(value)
+        metadata[key] = {
+            "file_path": file_path,
+            "created": str(sample_row["created"]),
+            "model": str(sample_row["model"]),
+            "task": task,
+            "dataset": str(sample_row["dataset"]),
+            "sample_id": sample_id,
+            "question_hash": question_hash,
+            "content_hash": content_hash,
+        }
+
+    runs: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for key, values in epochs.items():
+        record = {**metadata[key], "value": float(np.mean(values))}
+        runs.setdefault(
+            (record["model"], record["task"], record["question_hash"]), []
+        ).append(record)
+    resolved: list[dict[str, Any]] = []
+    for group_key, run_records in runs.items():
+        if len(run_records) == 1:
+            resolved.append(run_records[0])
+            continue
+        match duplicate_policy:
+            case "error":
+                raise ValueError(
+                    f"Duplicate successful evaluations for model={group_key[0]!r}, "
+                    f"question={group_key[2]!r}; "
+                    "use --duplicates mean or latest"
+                )
+            case "mean":
+                resolved.append(
+                    {
+                        **run_records[0],
+                        "value": float(np.mean([row["value"] for row in run_records])),
+                    }
+                )
+            case "latest":
+                latest = max(row["created"] for row in run_records)
+                winners = [row for row in run_records if row["created"] == latest]
+                resolved.append(winners[0])
+
+    # Create (model x sample scores) matrix for each task
+    output: dict[str, dict[str, Any]] = {}
+    for task_name in sorted(scorers):
+        rows = [row for row in resolved if row["task"] == task_name]
+        if not rows:
+            raise ValueError(
+                f"No eligible samples found for configured task {task_name!r}"
+            )
+
+        models = sorted({row["model"] for row in rows})
+        if len(models) < _min_models:
+            raise ValueError(
+                f"Task {task_name!r} has {len(models)} contributing models; "
+                f"Supply at least {_min_models}, or exclude the task."
+            )
+
+        rows_by_question: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            rows_by_question.setdefault(row["question_hash"], []).append(row)
+        items = []
+        for question_hash, item_rows in rows_by_question.items():
+            representative = max(
+                item_rows,
+                key=lambda row: (row["created"], row["sample_id"], row["file_path"]),
+            )
+            sample_id = representative["sample_id"]
+            dataset = canonical_datasets[task_name]
+            items.append(
+                {
+                    "item_id": f"{task_name}::{dataset}::{sample_id}",
+                    "task": task_name,
+                    "dataset": dataset,
+                    "sample_id": sample_id,
+                    "question_hash": question_hash,
+                    "content_hash": representative["content_hash"],
+                }
+            )
+        items.sort(key=lambda item: item["item_id"])
+        if len({item["item_id"] for item in items}) != len(items):
+            raise ValueError(f"Latest sample IDs are not unique for task {task_name!r}")
+        model_index = {model: index for index, model in enumerate(models)}
+        item_index = {item["question_hash"]: index for index, item in enumerate(items)}
+        matrix = np.full((len(models), len(items)), np.nan)
+        for row in rows:
+            matrix[model_index[row["model"]], item_index[row["question_hash"]]] = row[
+                "value"
+            ]
+
+        output[task_name] = {"models": models, "items": items, "matrix": matrix}
+
+    return output
+
+
+def _latest_content_versions(
+    records: PreprocessedRecords, scorers: dict[str, str]
+) -> tuple[set[str], dict[str, str]]:
+    """Select the newest question set while allowing dataset renames."""
+    file_rows = {
+        str(row["path"]): row
+        for row in records.files
+        if row["parse_status"] == "ok" and str(row["task"]) in scorers
+    }
+    questions_by_file: dict[str, set[str]] = {path: set() for path in file_rows}
+    for row in records.iter_samples():
+        path = str(row["file_path"])
+        if path in questions_by_file:
+            questions_by_file[path].add(
+                str(row.get("question_hash", row["content_hash"]))
+            )
+
+    selected_files: set[str] = set()
+    canonical_datasets: dict[str, str] = {}
+    for task in scorers:
+        versions: dict[str, list[dict[str, Any]]] = {}
+        for path, row in file_rows.items():
+            if str(row["task"]) != task or not questions_by_file[path]:
+                continue
+            signature = digest_json(sorted(questions_by_file[path]))
+            versions.setdefault(signature, []).append(row)
+        if not versions:
+            raise ValueError(f"No eligible samples found for configured task {task!r}")
+        latest = max(
+            max(str(row["created"]) for row in rows) for rows in versions.values()
+        )
+        winners = [
+            signature
+            for signature, rows in versions.items()
+            if max(str(row["created"]) for row in rows) == latest
+        ]
+        if len(winners) != 1:
+            raise ValueError(
+                f"Cannot determine the latest content version for task {task!r}"
+            )
+        winner_rows = versions[winners[0]]
+        selected_files.update(str(row["path"]) for row in winner_rows)
+        canonical_datasets[task] = str(
+            max(winner_rows, key=lambda row: (str(row["created"]), str(row["path"])))[
+                "dataset"
+            ]
+        )
+    return selected_files, canonical_datasets
+
+
 def fit_tasks(
     tasks: dict[str, dict[str, Any]],
-    progress: Callable[[int, int, str], None] | None = None,
 ) -> tuple[dict[str, TwoPLFit], dict[str, int], dict[str, float]]:
     """Fit each task and calculate its capacity and score dispersion."""
     fits, capacities, dispersions = {}, {}, {}
-    total_tasks = len(tasks)
-    for i, task_name in enumerate(tasks):
-        if progress:
-            progress(i + 1, total_tasks, task_name)
+    for task_name in tasks:
         matrix = tasks[task_name]["matrix"]
 
         # Fit model
         fits[task_name] = fit_2pl(matrix, ridge=0.01, slope_ridge=0.01, iterations=30)
 
-        # Number of samples
+        # Number of samples in task
         capacities[task_name] = matrix.shape[1]
 
         # Compute dispersion
@@ -172,26 +349,6 @@ def fit_tasks(
         dispersions[task_name] = float(np.mean(finite)) if len(finite) else 0.0
 
     return fits, capacities, dispersions
-
-
-def select_items(
-    capacities: dict[str, int],
-    dispersions: dict[str, float],
-    budget: int,
-    floor: int,
-    seed: int,
-) -> tuple[dict[str, int], list[tuple[str, int]]]:
-    """Allocate the budget and select items uniformly at random."""
-    allocation = dispersion23_allocation(capacities, dispersions, budget, floor)
-
-    selected_keys: list[tuple[str, int]] = []
-    for task_name in sorted(capacities):
-        rng = np.random.default_rng(zlib.crc32(f"stratified{task_name}{seed}".encode()))
-        permuted = rng.permutation(capacities[task_name])
-        n = allocation[task_name]
-        selected_keys.extend((task_name, int(index)) for index in permuted[:n])
-
-    return allocation, selected_keys
 
 
 def fit_2pl(
@@ -326,6 +483,26 @@ def fit_2pl(
     )
 
 
+def select_items(
+    capacities: dict[str, int],
+    dispersions: dict[str, float],
+    budget: int,
+    floor: int,
+    seed: int,
+) -> tuple[dict[str, int], list[tuple[str, int]]]:
+    """Allocate the budget and select items uniformly at random."""
+    allocation = dispersion23_allocation(capacities, dispersions, budget, floor)
+
+    selected_keys: list[tuple[str, int]] = []
+    for task_name in sorted(capacities):
+        rng = np.random.default_rng(zlib.crc32(f"stratified{task_name}{seed}".encode()))
+        permuted = rng.permutation(capacities[task_name])
+        n = allocation[task_name]
+        selected_keys.extend((task_name, int(index)) for index in permuted[:n])
+
+    return allocation, selected_keys
+
+
 def dispersion23_allocation(
     capacities: dict[str, int], dispersions: dict[str, float], budget: int, floor: int
 ) -> dict[str, int]:
@@ -364,148 +541,9 @@ def dispersion23_allocation(
     return allocation
 
 
-def prepare_tasks(
-    indexed: IndexedLogs,
-    scorers: dict[str, str],
-    duplicate_policy: str,
-    *,
-    _min_models: int = 3,
-) -> tuple[dict[str, dict[str, Any]], list[str]]:
-    """Build model-by-item score matrices from indexed samples."""
-    dataset_versions: dict[str, dict[str, str]] = {task: {} for task in scorers}
-    for file_row in indexed.files:
-        task = str(file_row["task"])
-        if task in dataset_versions and file_row["parse_status"] == "ok":
-            dataset = str(file_row["dataset"])
-            dataset_versions[task][dataset] = max(
-                str(file_row["created"]), dataset_versions[task].get(dataset, "")
-            )
-    latest_dataset: dict[str, str] = {}
-    for task, versions in dataset_versions.items():
-        if not versions:
-            raise ValueError(f"No eligible samples found for configured task {task!r}")
-        latest_created = max(versions.values())
-        dataset_winners = [
-            dataset
-            for dataset, created in versions.items()
-            if created == latest_created
-        ]
-        if len(dataset_winners) != 1:
-            raise ValueError(
-                f"Cannot determine the latest dataset for task {task!r}: "
-                f"{', '.join(sorted(dataset_winners))} share timestamp {latest_created}"
-            )
-        latest_dataset[task] = dataset_winners[0]
-    epochs: dict[tuple[str, str, str, str], list[float]] = {}
-    metadata: dict[tuple[str, str, str, str], dict[str, Any]] = {}
-    content_by_item: dict[str, str] = {}
-    dropped_items: list[str] = []
-    for sample_row in indexed.iter_samples():
-        task = str(sample_row["task"])
-        if task not in scorers:
-            continue
-        if str(sample_row["dataset"]) != latest_dataset[task]:
-            continue
-        scorer = scorers[task]
-        scores = json.loads(sample_row["scores_json"])
-        raw_score = select_score(scores, scorer)
-        if raw_score is None:
-            raise ValueError(
-                f"Configured scorer {scorer!r} is missing for task {task!r}, "
-                f"sample {sample_row['sample_id']!r} in {sample_row['file_path']}"
-            )
-        value = normalize_score(raw_score, scorer)
-        if value is None or not math.isfinite(value) or not 0.0 <= value <= 1.0:
-            raise ValueError(
-                f"Configured score {task}:{scorer} for sample {sample_row['sample_id']!r} "
-                f"in {sample_row['file_path']} is not a scalar value in [0, 1]"
-            )
-        item_id = f"{task}::{sample_row['dataset']}::{sample_row['sample_id']}"
-        content_hash = str(sample_row["content_hash"])
-        previous = content_by_item.setdefault(item_id, content_hash)
-        if previous != content_hash:
-            dropped_items.append(f"Dropped {item_id} from {sample_row['file_path']} (hash mismatch)")
-            continue
-        key = (str(sample_row["file_path"]), str(sample_row["model"]), task, item_id)
-        epochs.setdefault(key, []).append(value)
-        metadata[key] = {
-            "file_path": str(sample_row["file_path"]),
-            "created": str(sample_row["created"]),
-            "model": str(sample_row["model"]),
-            "task": task,
-            "item_id": item_id,
-            "dataset": str(sample_row["dataset"]),
-            "sample_id": str(sample_row["sample_id"]),
-            "content_hash": content_hash,
-        }
-
-    runs: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
-    for key, values in epochs.items():
-        record = {**metadata[key], "value": float(np.mean(values))}
-        runs.setdefault(
-            (record["model"], record["task"], record["item_id"]), []
-        ).append(record)
-
-    resolved: list[dict[str, Any]] = []
-    for group_key, records in runs.items():
-        if len(records) == 1:
-            resolved.append(records[0])
-        elif duplicate_policy == "error":
-            raise ValueError(
-                f"Duplicate successful evaluations for model={group_key[0]!r}, item={group_key[2]!r}; "
-                "use --duplicates mean or latest"
-            )
-        elif duplicate_policy == "mean":
-            resolved.append(
-                {
-                    **records[0],
-                    "value": float(np.mean([row["value"] for row in records])),
-                }
-            )
-        else:
-            latest = max(row["created"] for row in records)
-            winners = [row for row in records if row["created"] == latest]
-            if len(winners) != 1:
-                dropped_items.append(f"Timestamp tie resolved (arbitrarily picked first) for model={group_key[0]!r}, item={group_key[2]!r}")
-            resolved.append(winners[0])
-
-    output: dict[str, dict[str, Any]] = {}
-    for task_name in sorted(scorers):
-        rows = [row for row in resolved if row["task"] == task_name]
-        if not rows:
-            raise ValueError(
-                f"No eligible samples found for configured task {task_name!r}"
-            )
-        models = sorted({row["model"] for row in rows})
-        if len(models) < _min_models:
-            raise ValueError(
-                f"Task {task_name!r} has {len(models)} contributing models; "
-                f"at least {_min_models} are required"
-            )
-        item_map = {row["item_id"]: row for row in rows}
-        items = [
-            {
-                "item_id": item_id,
-                "task": task_name,
-                "dataset": item_map[item_id]["dataset"],
-                "sample_id": item_map[item_id]["sample_id"],
-                "content_hash": item_map[item_id]["content_hash"],
-            }
-            for item_id in sorted(item_map)
-        ]
-        model_index = {model: index for index, model in enumerate(models)}
-        item_index = {item["item_id"]: index for index, item in enumerate(items)}
-        matrix = np.full((len(models), len(items)), np.nan)
-        for row in rows:
-            matrix[model_index[row["model"]], item_index[row["item_id"]]] = row["value"]
-        output[task_name] = {"models": models, "items": items, "matrix": matrix}
-
-    return output, dropped_items
-
-
 def build_result(
     *,
-    indexed: IndexedLogs,
+    records: PreprocessedRecords,
     scorers: dict[str, str],
     budget: int,
     seed: int,
@@ -516,8 +554,7 @@ def build_result(
     dispersions: dict[str, float],
     allocation: dict[str, int],
     selected_keys: list[tuple[str, int]],
-    dropped_items: tuple[str, ...] = (),
-) -> MinifyResult:
+) -> FitResult:
     """Build the fitted params and ordered subset records."""
     configuration_digest = digest_json(
         {
@@ -529,7 +566,7 @@ def build_result(
     params_basis = {
         "schema": PARAMS_SCHEMA,
         "method": METHOD_VERSION,
-        "inventory_digest": indexed.digest,
+        "inventory_digest": records.digest,
         "task_scorers": dict(sorted(scorers.items())),
         "duplicate_policy": duplicate_policy,
         "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
@@ -539,12 +576,7 @@ def build_result(
         tasks[task]["items"][index]["item_id"] for task, index in selected_keys
     ]
     subset_id = digest_json(
-        {
-            "params_id": params_id,
-            "budget": budget,
-            "seed": seed,
-            "items": selected_ids,
-        }
+        {"params_id": params_id, "budget": budget, "seed": seed, "items": selected_ids}
     )[:24]
     selected_set = set(selected_ids)
 
@@ -603,6 +635,7 @@ def build_result(
                 "task": task_name,
                 "dataset": item["dataset"],
                 "sample_id": item["sample_id"],
+                "question_hash": item["question_hash"],
                 "content_hash": item["content_hash"],
                 "task_allocation": allocation[task_name],
                 "inclusion_probability": probability,
@@ -613,14 +646,7 @@ def build_result(
             }
         )
 
-    stable_inventory = inventory_json(indexed)
-    stable_inventory["summary"] = {
-        "discovered": len(indexed.files),
-        "eligible": sum(row["parse_status"] == "ok" for row in indexed.files),
-        "excluded": sum(row["parse_status"] == "excluded" for row in indexed.files),
-        "deferred": sum(row["parse_status"] == "deferred" for row in indexed.files),
-        "failed": sum(row["parse_status"] == "error" for row in indexed.files),
-    }
+    stable_inventory = records.inventory
     params = {
         "schema_version": PARAMS_SCHEMA,
         "method": METHOD_VERSION,
@@ -632,7 +658,7 @@ def build_result(
         "task_scorers": dict(sorted(scorers.items())),
         "hyperparameters": params_basis["hyperparameters"],
         "configuration_digest": configuration_digest,
-        "input_digest": indexed.digest,
+        "input_digest": records.digest,
         "inventory": stable_inventory,
         "ability_scale": "Each task is independently normalized to mean 0 and standard deviation 1.",
         "tasks": task_records,
@@ -640,11 +666,9 @@ def build_result(
         "items": item_records,
     }
 
-    return MinifyResult(
+    return FitResult(
         params=json_safe(params),
         subset=tuple(json_safe(row) for row in selected_records),
-        inventory=indexed,
-        dropped_items=dropped_items,
     )
 
 
@@ -662,6 +686,7 @@ def select_score(scores: dict[str, Any], scorer: str) -> Any:
     if isinstance(value, dict):
         return value.get(subkey)
     # HLE changed from a scalar score to {"score": ..., "confidence": ...}.
+
     return value if subkey == "score" else None
 
 
@@ -670,6 +695,7 @@ def normalize_score(value: Any, scorer: str) -> float | None:
     label_map = SCORE_LABEL_MAPS.get(scorer)
     if label_map is not None and isinstance(value, str):
         return label_map.get(value.strip().lower())
+
     return score_value_to_float(value)
 
 
@@ -708,6 +734,7 @@ def score_value_to_float(value: Any) -> float | None:
             return float(normalized)
         except ValueError:
             return None
+
     return None
 
 
@@ -721,6 +748,7 @@ def smoothed_logits(values: np.ndarray, mask: np.ndarray, *, axis: int) -> np.nd
         out=np.full_like(successes, 0.5, dtype=float),
         where=counts > 0,
     )
+
     return np.log(
         np.clip(probabilities, 1e-4, 1 - 1e-4)
         / np.clip(1 - probabilities, 1e-4, 1 - 1e-4)
@@ -753,6 +781,7 @@ def sigmoid(values: np.ndarray) -> np.ndarray:
     output[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
     exponential = np.exp(values[~positive])
     output[~positive] = exponential / (1.0 + exponential)
+
     return output
 
 
@@ -766,6 +795,7 @@ def json_safe(value: Any) -> Any:
         value = value.item()
     if isinstance(value, float) and not math.isfinite(value):
         return None
+
     return value
 
 
@@ -774,6 +804,7 @@ def digest_json(value: Any) -> str:
     encoded = json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode()
+
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -791,9 +822,11 @@ def atomic_write(path: Path, content: str) -> None:
         raise
 
 
-def write_outputs(result: MinifyResult, output_dir: Path) -> tuple[Path, Path]:
+def write_outputs(
+    result: FitResult, output_dir: Path, overwrite: bool = False
+) -> tuple[Path, Path]:
     """Write the fitted params and selected subset atomically."""
-    params_path, subset_path = check_output_available(output_dir)
+    params_path, subset_path = check_output_available(output_dir, overwrite)
     output_dir = params_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
     params_text = (
@@ -809,22 +842,19 @@ def write_outputs(result: MinifyResult, output_dir: Path) -> tuple[Path, Path]:
         params_path.unlink(missing_ok=True)
         raise
 
-    if result.dropped_items:
-        with open(output_dir / "conflicting_items.log", "w") as f:
-            for item in result.dropped_items:
-                f.write(item + "\n")
-
     return params_path, subset_path
 
 
-def check_output_available(output_dir: Path) -> tuple[Path, Path]:
-    """Return output paths after confirming they don't already exist."""
+def check_output_available(
+    output_dir: Path, overwrite: bool = False
+) -> tuple[Path, Path]:
+    """Return output paths if writing them is allowed."""
     output_dir = output_dir.expanduser().resolve()
     params_path = output_dir / "params.json"
     subset_path = output_dir / "subset.jsonl"
 
     existing = [path for path in (params_path, subset_path) if path.exists()]
-    if existing:
+    if existing and not overwrite:
         raise FileExistsError(f"Output already exists: {existing[0]}")
 
     return params_path, subset_path

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import textwrap
 from pathlib import Path
 
 import numpy as np
@@ -19,18 +20,20 @@ from inspect_ai.scorer import Score
 from typer.testing import CliRunner
 
 from complai._cli import app
-from complai.core import apply_eval_subset
+from complai._cli.utils import apply_eval_subset
+from complai._cli.utils import read_eval_subset
 from complai.core import dispersion23_allocation
+from complai.core import fit
 from complai.core import fit_2pl
+from complai.core import load_records
 from complai.core import load_scorers
-from complai.core import minify
 from complai.core import predict_scores
-from complai.core import read_eval_subset
+from complai.core import preprocess_logs
 from complai.core import write_outputs
-from complai.core.index import _content_hash
-from complai.core.index import _logical_sample_id
-from complai.core.index import index_logs
-from complai.core.index import PARSER_VERSION
+from complai.core.records import content_hash as _content_hash
+from complai.core.records import logical_sample_id as _logical_sample_id
+from complai.core.records import PARSER_VERSION
+from complai.core.records import question_hash as _question_hash
 
 
 def test_fit_2pl_is_identified_and_marks_thin_items() -> None:
@@ -107,9 +110,7 @@ def test_dispersion23_allocation_respects_floor_capacity_and_budget() -> None:
     assert allocation["variable"] >= 10
 
 
-def test_minify_indexes_reuses_cache_and_writes_deterministic_outputs(
-    tmp_path: Path,
-) -> None:
+def test_fit_records_writes_deterministic_outputs(tmp_path: Path) -> None:
     logs = tmp_path / "logs"
     logs.mkdir()
     for model_index in range(3):
@@ -121,11 +122,10 @@ def test_minify_indexes_reuses_cache_and_writes_deterministic_outputs(
             values=["C" if (item + model_index) % 3 else "I" for item in range(12)],
         )
 
-    first = minify([logs], {"toy": "choice"}, 5, seed=7, cache_dir=tmp_path / "cache")
-    second = minify([logs], {"toy": "choice"}, 5, seed=7, cache_dir=tmp_path / "cache")
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
+    first = fit(records, {"toy": "choice"}, 5, seed=7)
+    second = fit(load_records(records.records_path), {"toy": "choice"}, 5, seed=7)
 
-    assert first.inventory.summary.new == 3
-    assert second.inventory.summary.cache_hits == 3
     assert first.params == second.params
     assert first.subset == second.subset
     assert len(first.subset) == 5
@@ -134,6 +134,11 @@ def test_minify_indexes_reuses_cache_and_writes_deterministic_outputs(
     assert len(subset_path.read_text().splitlines()) == 5
     with pytest.raises(FileExistsError):
         write_outputs(first, tmp_path / "output")
+    params_path.write_text("old params")
+    subset_path.write_text("old subset")
+    write_outputs(first, tmp_path / "output", overwrite=True)
+    assert json.loads(params_path.read_text())["budget"] == 5
+    assert len(subset_path.read_text().splitlines()) == 5
 
 
 def test_duplicate_eval_policies(tmp_path: Path) -> None:
@@ -154,29 +159,21 @@ def test_duplicate_eval_policies(tmp_path: Path) -> None:
         created="2026-04-01T00:00:00+00:00",
         values=[1.0] * 12,
     )
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
 
     with pytest.raises(ValueError, match="Duplicate successful evaluations"):
-        minify([logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
-    averaged = minify(
-        [logs],
-        {"toy": "choice"},
-        5,
-        duplicate_policy="mean",
-        cache_dir=tmp_path / "cache",
-    )
-    latest = minify(
-        [logs],
-        {"toy": "choice"},
-        5,
-        duplicate_policy="latest",
-        cache_dir=tmp_path / "cache",
-    )
+        fit(records, {"toy": "choice"}, 5)
+    averaged = fit(records, {"toy": "choice"}, 5, duplicate_policy="mean")
+    latest = fit(records, {"toy": "choice"}, 5, duplicate_policy="latest")
     assert averaged.params["params_id"] != latest.params["params_id"]
 
 
-def test_only_latest_dataset_version_is_fitted(tmp_path: Path) -> None:
+def test_dataset_renames_do_not_split_identical_content(tmp_path: Path) -> None:
     logs = tmp_path / "logs"
     logs.mkdir()
+    inputs = [f"Question {item}" for item in range(12)]
+    old_choices = [[f"correct {item}", f"wrong {item}"] for item in range(12)]
+    new_choices = [list(reversed(item_choices)) for item_choices in old_choices]
     for model_index in range(3):
         _write_eval(
             logs / f"old-{model_index}.eval",
@@ -185,6 +182,10 @@ def test_only_latest_dataset_version_is_fitted(tmp_path: Path) -> None:
             created=f"2026-01-0{model_index + 1}T00:00:00+00:00",
             values=[0.0] * 12,
             dataset="toy-v1",
+            sample_ids=list(range(12)),
+            inputs=inputs,
+            targets=["A"] * 12,
+            choices=old_choices,
         )
         _write_eval(
             logs / f"new-{model_index}.eval",
@@ -193,48 +194,25 @@ def test_only_latest_dataset_version_is_fitted(tmp_path: Path) -> None:
             created=f"2026-02-0{model_index + 1}T00:00:00+00:00",
             values=[1.0] * 12,
             dataset="toy-v2",
+            sample_ids=[f"stable-{item}" for item in range(12)],
+            inputs=inputs,
+            targets=["B"] * 12,
+            choices=new_choices,
         )
 
-    result = minify([logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
+    result = fit(records, {"toy": "choice"}, 5)
 
     assert result.params["tasks"]["toy"]["capacity"] == 12
+    assert result.params["tasks"]["toy"]["models"] == 6
     assert {item["dataset"] for item in result.params["items"]} == {"toy-v2"}
+    assert {item["observation_count"] for item in result.params["items"]} == {6}
 
 
-def test_index_detects_changes_removals_and_forced_reindex(tmp_path: Path) -> None:
-    logs = tmp_path / "logs"
-    logs.mkdir()
-    for model_index in range(3):
-        _write_eval(
-            logs / f"m{model_index}.eval",
-            model=f"model-{model_index}",
-            run_id=f"run-{model_index}",
-            created=f"2026-05-0{model_index + 1}T00:00:00+00:00",
-            values=[float((item + model_index) % 2) for item in range(12)],
-        )
-    cache = tmp_path / "index.sqlite3"
-
-    assert index_logs([logs], cache).summary.new == 3
-    assert index_logs([logs], cache).summary.cache_hits == 3
-    _write_eval(
-        logs / "m0.eval",
-        model="model-0",
-        run_id="run-0-replaced",
-        created="2026-06-01T00:00:00+00:00",
-        values=[1.0] * 12,
-    )
-    assert index_logs([logs], cache).summary.changed == 1
-    assert index_logs([logs], cache, reindex=True).summary.changed == 3
-    (logs / "m2.eval").unlink()
-    removed = index_logs([logs], cache).summary
-    assert removed.removed == 1
-    assert removed.discovered == 2
-
-
-def test_index_uses_memory_bounded_parser(
+def test_preprocess_uses_memory_bounded_parser(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import complai.core.index as index_module
+    import complai.core.records as records_module
 
     log_path = tmp_path / "one.eval"
     _write_eval(
@@ -244,26 +222,87 @@ def test_index_uses_memory_bounded_parser(
         created="2026-06-01T00:00:00+00:00",
         values=[1.0],
     )
-    original = index_module.read_eval_log
+    original = records_module.read_eval_log
 
     def header_only(path: str, *, header_only: bool = False) -> EvalLog:
-        assert header_only, "indexing must not load full Inspect logs"
+        assert header_only, "preprocessing must not load full Inspect logs"
         return original(path, header_only=True)
 
-    monkeypatch.setattr(index_module, "read_eval_log", header_only)
+    monkeypatch.setattr(records_module, "read_eval_log", header_only)
 
-    indexed = index_logs([log_path], tmp_path / "index.sqlite3")
+    records = preprocess_logs([log_path], {"toy": "choice"}, tmp_path / "records.jsonl")
 
-    assert indexed.sample_count() == 1
-    assert len(list(indexed.iter_samples())) == 1
-    assert indexed.files[0]["parser_version"] == PARSER_VERSION
+    assert records.records == 1
+    assert len(list(records.iter_samples())) == 1
+    assert records.files[0]["parser_version"] == PARSER_VERSION
 
 
-def test_index_defers_unrequested_tasks(
+def test_preprocess_uses_summaries_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    import complai.core.records as records_module
+
+    summarized = EvalSample(
+        id="summarized",
+        epoch=1,
+        input="Question 1",
+        target="A",
+        choices=["correct", "wrong"],
+        scores={"choice": Score(value=1)},
+    )
+    missing_choices = EvalSample(
+        id="fallback",
+        epoch=2,
+        input="Question 2",
+        target="B",
+        scores={"choice": Score(value=1)},
+    )
+    monkeypatch.setattr(
+        records_module,
+        "read_eval_log_sample_summaries",
+        lambda _path: [summarized, missing_choices],
+    )
+
+    _, samples = records_module._parse_log(
+        Path("include.eval"), {"eligible": True, "task": "include"}
+    )
+
+    assert len(samples) == 2
+    assert samples[0]["content_hash"] == _content_hash(
+        "Question 1", "A", {}, choices=["correct", "wrong"], task="include"
+    )
+    assert samples[1]["content_hash"] == _content_hash(
+        "Question 2", "B", {}, task="include"
+    )
+
+
+def test_preprocess_reads_only_missing_historical_choices(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import complai.core.index as index_module
+    import complai.core.records as records_module
 
+    path = tmp_path / "historical.eval"
+    _write_eval(
+        path,
+        model="model",
+        run_id="run",
+        created="2026-01-01T00:00:00+00:00",
+        values=[1.0],
+        targets=["B"],
+        choices=[["wrong", "correct"]],
+    )
+    summaries = records_module.read_eval_log_sample_summaries(str(path))
+    historical = [sample.model_copy(update={"choices": None}) for sample in summaries]
+    monkeypatch.setattr(
+        records_module, "read_eval_log_sample_summaries", lambda _path: historical
+    )
+
+    _, samples = records_module._parse_log(path, {"eligible": True, "task": "toy"})
+
+    assert samples[0]["content_hash"] == _content_hash(
+        "Question 0", "B", {}, choices=["wrong", "correct"], task="toy"
+    )
+
+
+def test_preprocess_defers_unrequested_tasks(tmp_path: Path) -> None:
     logs = tmp_path / "logs"
     logs.mkdir()
     _write_eval(
@@ -283,51 +322,37 @@ def test_index_defers_unrequested_tasks(
         task="other",
     )
 
-    hashed: list[str] = []
-    original_hash = index_module._file_sha256
+    records = preprocess_logs([logs], {"wanted": "choice"}, tmp_path / "wanted.jsonl")
 
-    def track_hash(path: Path) -> str:
-        hashed.append(path.name)
-        return original_hash(path)
-
-    monkeypatch.setattr(index_module, "_file_sha256", track_hash)
-    cache = tmp_path / "index.sqlite3"
-    progress: list[tuple[int, int, str]] = []
-    indexed = index_logs(
-        [logs],
-        cache,
-        tasks={"wanted"},
-        progress=lambda done, total, _path, status: progress.append(
-            (done, total, status)
-        ),
-    )
-
-    assert {row["task"] for row in indexed.iter_samples()} == {"wanted"}
-    assert len(indexed.files) == 2
-    assert hashed == ["wanted.eval"]
-    assert indexed.summary.deferred == 1
-    assert progress[-1][0:2] == (2, 2)
-    deferred = next(row for row in indexed.files if row["task"] == "other")
+    assert {row["task"] for row in records.iter_samples()} == {"wanted"}
+    assert len(records.files) == 2
+    assert records.inventory["summary"]["deferred"] == 1
+    deferred = next(row for row in records.files if row["task"] == "other")
     assert deferred["parse_status"] == "deferred"
-    assert deferred["sha256"] == ""
-
-    promoted = index_logs([logs], cache, tasks={"other"})
-
-    assert {row["task"] for row in promoted.iter_samples()} == {"other"}
-    assert hashed == ["wanted.eval", "other.eval"]
 
 
-def test_content_hash_canonicalizes_shuffled_choice_labels() -> None:
-    first = _content_hash(
-        "Question", ["B", "C"], {}, ["wrong", "right one", "right two"]
+def test_default_content_hash_includes_target() -> None:
+    assert _content_hash("Question", "A", {}) != _content_hash("Question", "B", {})
+
+
+def test_choice_reordering_preserves_semantic_identity() -> None:
+    first_choices = ["Paris", "London", "Rome"]
+    reordered_choices = ["Rome", "Paris", "London"]
+    first_metadata = {"id": 1, "task_id": "old", "category": "geography"}
+    new_metadata = {"id": "new-id", "task_id": "new", "category": "geography"}
+
+    assert _question_hash(
+        "Capital of France?", first_metadata, choices=first_choices
+    ) == _question_hash("Capital of France?", new_metadata, choices=reordered_choices)
+    assert _content_hash(
+        "Capital of France?", "A", first_metadata, choices=first_choices
+    ) == _content_hash(
+        "Capital of France?", "B", new_metadata, choices=reordered_choices
     )
-    shuffled = _content_hash(
-        "Question", ["A", "C"], {}, ["right two", "wrong", "right one"]
-    )
-
-    assert first == shuffled
-    assert first != _content_hash(
-        "Question", ["A"], {}, ["right two", "wrong", "right one"]
+    assert _content_hash(
+        "Capital of France?", "A", first_metadata, choices=first_choices
+    ) != _content_hash(
+        "Capital of France?", "A", new_metadata, choices=reordered_choices
     )
 
 
@@ -338,11 +363,36 @@ def test_hle_uses_stable_dataset_uid_as_sample_id() -> None:
 
 def test_truthfulqa_uses_upstream_stable_id_recipe() -> None:
     question = "Are there wizards living in the West Country?"
+    choices = ["Yes", "No", "Unknown", "Sometimes"]
+    shuffled = ["Sometimes", "Yes", "Unknown", "No"]
 
     assert _logical_sample_id("truthfulqa", 1, {}, question) == "truthfulqa_000e8c0f"
     assert (
         _logical_sample_id("truthfulqa", "truthfulqa_old", {}, question)
         == "truthfulqa_000e8c0f"
+    )
+    assert _content_hash(
+        question, ["B"], {}, choices=choices, task="truthfulqa"
+    ) == _content_hash(question, ["D"], {}, choices=shuffled, task="truthfulqa")
+    assert _content_hash(
+        question, ["B"], {}, choices=choices, task="truthfulqa"
+    ) != _content_hash(
+        "A different question", ["B"], {}, choices=choices, task="truthfulqa"
+    )
+
+
+def test_gpqa_hash_ignores_shuffled_target_labels() -> None:
+    question = "Which energy difference resolves the two states?"
+    choices = ["first", "correct", "third", "fourth"]
+    shuffled = ["fourth", "third", "first", "correct"]
+
+    assert _content_hash(
+        question, "B", {}, choices=choices, task="gpqa_diamond"
+    ) == _content_hash(question, "D", {}, choices=shuffled, task="gpqa_diamond")
+    assert _content_hash(
+        question, "B", {}, choices=choices, task="gpqa_diamond"
+    ) != _content_hash(
+        "A different question", "B", {}, choices=choices, task="gpqa_diamond"
     )
 
 
@@ -372,24 +422,14 @@ def test_hijacking_hash_uses_authoritative_source_fields() -> None:
 
 def test_mmlu_hash_normalizes_legacy_latex_corruption() -> None:
     legacy = _content_hash(
-        "Find \\vert(dr/dt)\\vert at t = 0",
-        "A",
-        {},
-        ["\\vert(dr/dt)\\vert_t=0 = \\surd20", "wrong"],
-        task="mmlu_pro",
+        "Find \\vert(dr/dt)\\vert at t = 0", "A", {}, task="mmlu_pro"
     )
-    cleaned = _content_hash(
-        "Find ||(dr/dt)|| at t = 0",
-        "A",
-        {},
-        ["||(dr/dt)|| at_t=0 = √20", "wrong"],
-        task="mmlu_pro",
-    )
+    cleaned = _content_hash("Find ||(dr/dt)|| at t = 0", "A", {}, task="mmlu_pro")
 
     assert legacy == cleaned
 
 
-def test_minify_cli_end_to_end(tmp_path: Path) -> None:
+def test_fit_cli_end_to_end(tmp_path: Path) -> None:
     logs = tmp_path / "logs"
     logs.mkdir()
     for model_index in range(3):
@@ -400,8 +440,9 @@ def test_minify_cli_end_to_end(tmp_path: Path) -> None:
             created=f"2026-07-0{model_index + 1}T00:00:00+00:00",
             values=[float((item + model_index) % 2) for item in range(12)],
         )
-    config = tmp_path / "minify.yaml"
+    config = tmp_path / "complai-core.yaml"
     config.write_text("tasks:\n  toy: choice\n")
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
     output = tmp_path / "output"
 
     result = CliRunner().invoke(
@@ -409,25 +450,123 @@ def test_minify_cli_end_to_end(tmp_path: Path) -> None:
         [
             "core",
             "fit",
-            str(logs),
+            str(records.records_path),
             "--config",
             str(config),
             "--budget",
             "5",
             "--output",
             str(output),
-            "--cache-dir",
-            str(tmp_path / "cache"),
         ],
     )
 
     assert result.exit_code == 0, result.output
-    assert "Inventory: 3 discovered" in result.output
     assert (output / "params.json").is_file()
     assert len((output / "subset.jsonl").read_text().splitlines()) == 5
 
+    (output / "params.json").write_text("old params")
+    (output / "subset.jsonl").write_text("old subset")
+    overwritten = CliRunner().invoke(
+        app,
+        [
+            "core",
+            "fit",
+            str(records.records_path),
+            "--config",
+            str(config),
+            "--budget",
+            "5",
+            "--output",
+            str(output),
+            "--overwrite",
+        ],
+    )
 
-def test_minify_cli_rejects_existing_output_before_reading_logs(tmp_path: Path) -> None:
+    assert overwritten.exit_code == 0, overwritten.output
+    assert json.loads((output / "params.json").read_text())["budget"] == 5
+    assert len((output / "subset.jsonl").read_text().splitlines()) == 5
+
+
+def test_preprocess_records_and_fit_without_source_logs(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    for model_index in range(3):
+        _write_eval(
+            logs / f"m{model_index}.eval",
+            model=f"model-{model_index}",
+            run_id=f"run-{model_index}",
+            created=f"2026-07-0{model_index + 1}T00:00:00+00:00",
+            values=[float((item + model_index) % 2) for item in range(12)],
+            extra_scores={"secondary": "C"},
+        )
+    records_path = tmp_path / "responses.jsonl"
+
+    records = preprocess_logs([logs], {"toy": "choice"}, records_path)
+    for path in logs.iterdir():
+        path.unlink()
+    loaded = load_records(records_path)
+    preprocessed = fit(loaded, loaded.scorers, 5, seed=7)
+    alternate_scorer = fit(loaded, {"toy": "secondary"}, 5, seed=7)
+
+    assert records.records == 36
+    assert records.manifest_path == tmp_path / "responses.manifest.json"
+    rows = list(loaded.iter_samples())
+    assert len(rows) == 36
+    assert rows[0]["scores"] == {"choice": 0.0, "secondary": "C"}
+    assert "score" not in rows[0]
+    assert loaded.source_kind == "preprocessed_jsonl"
+    assert preprocessed.params["inventory"]["source"] == "preprocessed_jsonl"
+    assert alternate_scorer.params["task_scorers"] == {"toy": "secondary"}
+
+
+def test_preprocess_and_fit_cli(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    for model_index in range(3):
+        _write_eval(
+            logs / f"m{model_index}.eval",
+            model=f"model-{model_index}",
+            run_id=f"run-{model_index}",
+            created=f"2026-07-0{model_index + 1}T00:00:00+00:00",
+            values=[float((item + model_index) % 2) for item in range(12)],
+        )
+    config = tmp_path / "scorers.yaml"
+    config.write_text("tasks:\n  toy: choice\n")
+    records = tmp_path / "responses.jsonl"
+    runner = CliRunner()
+
+    preprocessed = runner.invoke(
+        app,
+        [
+            "core",
+            "preprocess",
+            str(logs),
+            "--config",
+            str(config),
+            "--output",
+            str(records),
+        ],
+    )
+    fitted = runner.invoke(
+        app,
+        [
+            "core",
+            "fit",
+            str(records),
+            "--budget",
+            "5",
+            "--output",
+            str(tmp_path / "output"),
+        ],
+    )
+
+    assert preprocessed.exit_code == 0, preprocessed.output
+    assert "36 records" in preprocessed.output
+    assert fitted.exit_code == 0, fitted.output
+    assert len((tmp_path / "output" / "subset.jsonl").read_text().splitlines()) == 5
+
+
+def test_fit_cli_rejects_existing_output_before_reading_records(tmp_path: Path) -> None:
     output = tmp_path / "output"
     output.mkdir()
     params = output / "params.json"
@@ -438,7 +577,7 @@ def test_minify_cli_rejects_existing_output_before_reading_logs(tmp_path: Path) 
         [
             "core",
             "fit",
-            str(tmp_path / "missing-logs"),
+            str(tmp_path / "missing-records.jsonl"),
             "--budget",
             "5",
             "--output",
@@ -449,7 +588,7 @@ def test_minify_cli_rejects_existing_output_before_reading_logs(tmp_path: Path) 
     assert result.exit_code != 0
     assert "Output already exists:" in result.output
     assert params.name in result.output
-    assert "Inspect log path does not exist" not in result.output
+    assert "Preprocessed records do not exist" not in result.output
 
 
 def test_bundled_scorer_mapping_matches_latest_gp_irt_contracts() -> None:
@@ -467,7 +606,6 @@ def test_bundled_scorer_mapping_matches_latest_gp_irt_contracts() -> None:
         "llm_rules": "llm_rules_scorer",
         "mask": "accuracy_and_honesty/honesty",
         "mmlu_pro": "choice",
-        "mmmu_pro": "choice",
         "simpleqa_verified": "simpleqa_scorer/correct",
         "truthfulqa": "choice",
     }
@@ -495,19 +633,18 @@ def test_default_config_uses_present_tasks_and_nested_scorers(tmp_path: Path) ->
             scorer="accuracy_and_honesty",
         )
     output = tmp_path / "output"
+    records = preprocess_logs([logs], load_scorers(), tmp_path / "records.jsonl")
 
     result = CliRunner().invoke(
         app,
         [
             "core",
             "fit",
-            str(logs),
+            str(records.records_path),
             "--budget",
             "5",
             "--output",
             str(output),
-            "--cache-dir",
-            str(tmp_path / "cache"),
         ],
     )
 
@@ -515,12 +652,7 @@ def test_default_config_uses_present_tasks_and_nested_scorers(tmp_path: Path) ->
     params = json.loads((output / "params.json").read_text())
     assert params["task_scorers"] == {"mask": "accuracy_and_honesty/honesty"}
     assert len((output / "subset.jsonl").read_text().splitlines()) == 5
-    accuracy = minify(
-        [logs],
-        {"mask": "accuracy_and_honesty/accuracy"},
-        5,
-        cache_dir=tmp_path / "cache",
-    )
+    accuracy = fit(records, {"mask": "accuracy_and_honesty/accuracy"}, 5)
     assert accuracy.params["items"][0]["source_mean"] == pytest.approx(1 / 3)
 
 
@@ -541,9 +673,10 @@ def test_hle_contract_accepts_scalar_and_structured_scores(tmp_path: Path) -> No
             scorer="hle_scorer",
         )
 
-    result = minify(
-        [logs], {"hle": "hle_scorer/score"}, 5, cache_dir=tmp_path / "cache"
+    records = preprocess_logs(
+        [logs], {"hle": "hle_scorer/score"}, tmp_path / "records.jsonl"
     )
+    result = fit(records, {"hle": "hle_scorer/score"}, 5)
 
     assert len(result.subset) == 5
 
@@ -571,12 +704,12 @@ def test_simpleqa_contract_accepts_legacy_and_current_scorers(tmp_path: Path) ->
             scorer="simpleqa_scorer",
         )
 
-    result = minify(
+    records = preprocess_logs(
         [logs],
         {"simpleqa_verified": "simpleqa_scorer/correct"},
-        5,
-        cache_dir=tmp_path / "cache",
+        tmp_path / "records.jsonl",
     )
+    result = fit(records, {"simpleqa_verified": "simpleqa_scorer/correct"}, 5)
 
     assert len(result.subset) == 5
 
@@ -601,7 +734,8 @@ def test_epochs_are_averaged_within_an_eval(tmp_path: Path) -> None:
             values=[value] * 12,
         )
 
-    result = minify([logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
+    result = fit(records, {"toy": "choice"}, 5)
 
     assert result.params["items"][0]["observation_count"] == 3
     assert result.params["items"][0]["source_mean"] == pytest.approx(0.5)
@@ -618,7 +752,10 @@ def test_predict_new_model_scores_from_params_and_subset(tmp_path: Path) -> None
             created=f"2026-09-0{model_index + 1}T00:00:00+00:00",
             values=[float(item <= model_index * 3) for item in range(12)],
         )
-    fitted = minify([source_logs], {"toy": "choice"}, 6, cache_dir=tmp_path / "cache")
+    source_records = preprocess_logs(
+        [source_logs], {"toy": "choice"}, tmp_path / "source.jsonl"
+    )
+    fitted = fit(source_records, {"toy": "choice"}, 6)
     params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
 
     new_logs = tmp_path / "new"
@@ -629,11 +766,14 @@ def test_predict_new_model_scores_from_params_and_subset(tmp_path: Path) -> None
         run_id="new-model",
         created="2026-09-10T00:00:00+00:00",
         values=[1.0] * 12,
+        dataset="renamed-toy-data",
+        sample_ids=[f"new-{item}" for item in range(12)],
+        inputs=[f"Question {item}" for item in range(12)],
+        targets=[str(item) for item in range(12)],
     )
 
-    result = predict_scores(
-        [new_logs], params_path, subset_path, cache_dir=tmp_path / "cache"
-    )
+    new_records = preprocess_logs([new_logs], {"toy": "choice"}, tmp_path / "new.jsonl")
+    result = predict_scores(new_records.records_path, params_path, subset_path)
 
     model = result["models"]["new-model"]
     assert model["predicted_score"] > 0.5
@@ -642,7 +782,7 @@ def test_predict_new_model_scores_from_params_and_subset(tmp_path: Path) -> None
     assert model["tasks"]["toy"]["ability"] > 0.0
 
 
-def test_minify_predict_cli(tmp_path: Path) -> None:
+def test_complai_core_predict_cli(tmp_path: Path) -> None:
     source_logs = tmp_path / "source"
     source_logs.mkdir()
     for model_index in range(3):
@@ -653,7 +793,10 @@ def test_minify_predict_cli(tmp_path: Path) -> None:
             created=f"2026-10-0{model_index + 1}T00:00:00+00:00",
             values=[float((item + model_index) % 2) for item in range(12)],
         )
-    fitted = minify([source_logs], {"toy": "choice"}, 5, cache_dir=tmp_path / "cache")
+    source_records = preprocess_logs(
+        [source_logs], {"toy": "choice"}, tmp_path / "source.jsonl"
+    )
+    fitted = fit(source_records, {"toy": "choice"}, 5)
     params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
     new_logs = tmp_path / "new"
     new_logs.mkdir()
@@ -664,6 +807,7 @@ def test_minify_predict_cli(tmp_path: Path) -> None:
         created="2026-10-10T00:00:00+00:00",
         values=[1.0] * 12,
     )
+    new_records = preprocess_logs([new_logs], {"toy": "choice"}, tmp_path / "new.jsonl")
     output = tmp_path / "predicted.json"
 
     result = CliRunner().invoke(
@@ -671,15 +815,13 @@ def test_minify_predict_cli(tmp_path: Path) -> None:
         [
             "core",
             "predict",
-            str(new_logs),
+            str(new_records.records_path),
             "--params",
             str(params_path),
             "--subset",
             str(subset_path),
             "--output",
             str(output),
-            "--cache-dir",
-            str(tmp_path / "cache"),
         ],
     )
 
@@ -715,6 +857,85 @@ def test_eval_subset_filters_and_orders_exact_items(tmp_path: Path) -> None:
     assert [sample.id for sample in task.dataset] == [3, 1]
 
 
+def test_eval_subset_recovers_changed_sample_ids_by_content(tmp_path: Path) -> None:
+    samples = [
+        Sample(id=f"source-{value}", input=f"Question {value}", target=str(value))
+        for value in (1, 2, 3)
+    ]
+    task = Task(dataset=MemoryDataset(samples, name="toy-data"))
+    subset_path = tmp_path / "subset.jsonl"
+    rows = [
+        {
+            "task": "toy",
+            "sample_id": str(sample_id),
+            "item_id": f"toy::historical-data::{sample_id}",
+            "content_hash": _content_hash(
+                f"Question {sample_id}", str(sample_id), {}, task="toy"
+            ),
+        }
+        for sample_id in (3, 1)
+    ]
+    subset_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    selected = read_eval_subset(subset_path)
+    apply_eval_subset(["toy"], [task], selected)
+
+    assert [sample.id for sample in task.dataset] == ["3", "1"]
+
+
+def test_eval_subset_uses_positions_for_missing_sample_ids(tmp_path: Path) -> None:
+    samples = [
+        Sample(input=f"Question {value}", target=str(value)) for value in (1, 2, 3)
+    ]
+    task = Task(dataset=MemoryDataset(samples, name="toy-data"))
+    subset_path = tmp_path / "subset.jsonl"
+    rows = [
+        {
+            "task": "toy",
+            "sample_id": str(sample_id),
+            "item_id": f"toy::toy-data::{sample_id}",
+            "content_hash": _content_hash(
+                f"Question {sample_id}", str(sample_id), {}, task="toy"
+            ),
+        }
+        for sample_id in (3, 1)
+    ]
+    subset_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    selected = read_eval_subset(subset_path)
+    apply_eval_subset(["toy"], [task], selected)
+
+    assert [sample.input for sample in task.dataset] == ["Question 3", "Question 1"]
+    assert [sample.id for sample in task.dataset] == ["3", "1"]
+
+
+def test_eval_subset_accepts_inspect_summary_hashes(tmp_path: Path) -> None:
+    example = "word " * 300
+    task = Task(
+        dataset=MemoryDataset(
+            [Sample(input="", metadata={"example": example})], name="toy-data"
+        )
+    )
+    subset_path = tmp_path / "subset.jsonl"
+    row = {
+        "task": "toy",
+        "sample_id": "1",
+        "item_id": "toy::unknown_dataset::1",
+        "content_hash": _content_hash(
+            "",
+            "",
+            {"example": textwrap.shorten(example, width=1024, placeholder="...")},
+            task="toy",
+        ),
+    }
+    subset_path.write_text(json.dumps(row) + "\n")
+
+    selected = read_eval_subset(subset_path)
+    apply_eval_subset(["toy"], [task], selected)
+
+    assert len(task.dataset) == 1
+
+
 def _write_eval(
     path: Path,
     *,
@@ -726,6 +947,11 @@ def _write_eval(
     task: str = "toy",
     scorer: str = "choice",
     dataset: str | None = None,
+    extra_scores: dict[str, object] | None = None,
+    sample_ids: list[object] | None = None,
+    inputs: list[str] | None = None,
+    targets: list[str | list[str]] | None = None,
+    choices: list[list[str] | None] | None = None,
 ) -> None:
     samples = []
     for epoch, epoch_values in enumerate([values, *(additional_epochs or [])], start=1):
@@ -733,13 +959,22 @@ def _write_eval(
             raise ValueError("Every epoch must contain the same items")
         samples.extend(
             EvalSample(
-                id=sample_id,
+                id=(sample_ids or list(range(len(values))))[item_index],
                 epoch=epoch,
-                input=f"Question {sample_id}",
-                target=str(sample_id),
-                scores={scorer: Score(value=value)},
+                input=(inputs or [f"Question {item}" for item in range(len(values))])[
+                    item_index
+                ],
+                target=(targets or [str(item) for item in range(len(values))])[
+                    item_index
+                ],
+                choices=(choices or [None] * len(values))[item_index],
+                scores={scorer: Score(value=value)}
+                | {
+                    name: Score(value=extra_value)
+                    for name, extra_value in (extra_scores or {}).items()
+                },
             )
-            for sample_id, value in enumerate(epoch_values)
+            for item_index, value in enumerate(epoch_values)
         )
     log = EvalLog(
         status="success",

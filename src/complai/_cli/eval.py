@@ -390,6 +390,8 @@ def eval_command(
 
     # Parse args
     parsed_task_args = parse_task_args(task_args, task_config)
+    if selected is not None and "hle" in selected:
+        parsed_task_args.setdefault("hle", {})["text_only"] = False
     parsed_model_args = parse_cli_config(model_args, model_config)
     parsed_generate_args = parse_cli_config(generate_args, generate_config)
     parsed_limit = parse_samples_limit(limit)

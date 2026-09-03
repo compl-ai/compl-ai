@@ -1,35 +1,32 @@
 import json
 import math
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from complai.core.fit import PARAMS_SCHEMA
 from complai.core.fit import atomic_write
-from complai.core.fit import DEFAULT_CACHE_DIR
 from complai.core.fit import digest_json
+from complai.core.fit import DuplicatePolicy
 from complai.core.fit import json_safe
 from complai.core.fit import METHOD_VERSION
+from complai.core.fit import PARAMS_SCHEMA
 from complai.core.fit import prepare_tasks
 from complai.core.fit import sigmoid
-from complai.core.index import index_logs
+from complai.core.records import load_records
 
 
-PREDICTION_SCHEMA = "complai-minify-prediction-v1"
+PREDICTION_SCHEMA = "complai-core-prediction-v1"
 
 
 def predict_scores(
-    log_paths: list[Path],
+    records_path: Path,
     params_path: Path,
     subset_path: Path,
     *,
-    duplicate_policy: str = "error",
-    cache_dir: Path | None = None,
-    reindex: bool = False,
+    duplicate_policy: DuplicatePolicy = "error",
 ) -> dict[str, Any]:
-    """Predict full-task scores for new models evaluated on a minified subset."""
+    """Predict full-task scores from preprocessed subset responses."""
     if duplicate_policy not in {"error", "mean", "latest"}:
         raise ValueError("duplicate_policy must be error, mean, or latest")
     params, subset = read_inputs(params_path, subset_path)
@@ -40,15 +37,13 @@ def predict_scores(
         if task in selected_tasks
     }
     if set(task_scorers) != selected_tasks:
-        raise ValueError("Params is missing a scorer for a selected task")
+        raise ValueError("params is missing a scorer for a selected task")
+
     hyperparameters = params.get("hyperparameters", {})
     ridge = float(hyperparameters.get("ridge", 0.01))
     iterations = int(hyperparameters.get("iterations", 10))
-    cache_root = (cache_dir or DEFAULT_CACHE_DIR).expanduser()
-    indexed = index_logs(
-        log_paths, cache_root / "index-v1.sqlite3", reindex=reindex, tasks=task_scorers
-    )
-    tasks = prepare_tasks(indexed, task_scorers, duplicate_policy, _min_models=1)
+    records = load_records(records_path)
+    tasks = prepare_tasks(records, task_scorers, duplicate_policy, _min_models=1)
     params_items = {str(row["item_id"]): row for row in params["items"]}
     selected_by_task: dict[str, list[dict[str, Any]]] = {}
     for row in subset:
@@ -65,20 +60,24 @@ def predict_scores(
                 task_results[task_name] = missing_task_result(len(selected))
                 continue
             model_index = task["models"].index(model)
-            item_index = {
-                row["item_id"]: index for index, row in enumerate(task["items"])
-            }
+            item_index = {}
+            for item_position, row in enumerate(task["items"]):
+                item_index[row["item_id"]] = item_position
+                item_index[row.get("question_hash", row["item_id"])] = item_position
             responses: list[float] = []
             selected_parameters: list[dict[str, Any]] = []
             for selected_item in selected:
                 item_id = str(selected_item["item_id"])
-                index = item_index.get(item_id)
-                if index is None or not np.isfinite(task["matrix"][model_index, index]):
+                identity = selected_item.get("question_hash", item_id)
+                selected_index = item_index.get(identity)
+                if selected_index is None or not np.isfinite(
+                    task["matrix"][model_index, selected_index]
+                ):
                     continue
-                observed_item = task["items"][index]
+                observed_item = task["items"][selected_index]
                 if observed_item["content_hash"] != selected_item["content_hash"]:
                     raise ValueError(f"Content mismatch for selected item {item_id}")
-                responses.append(float(task["matrix"][model_index, index]))
+                responses.append(float(task["matrix"][model_index, selected_index]))
                 selected_parameters.append(params_items[item_id])
             if not responses:
                 task_results[task_name] = missing_task_result(len(selected))
@@ -142,7 +141,7 @@ def predict_scores(
             {
                 "params_id": params["params_id"],
                 "subset_id": params["subset_id"],
-                "input_digest": indexed.digest,
+                "input_digest": records.digest,
                 "duplicate_policy": duplicate_policy,
             }
         )[:24],
@@ -154,9 +153,9 @@ def predict_scores(
             "Per-task scores are the mean fixed-item 2PL probability over all "
             "params items. Model predicted_score is population-item-weighted."
         ),
-        "input_digest": indexed.digest,
+        "input_digest": records.digest,
         "duplicate_policy": duplicate_policy,
-        "inventory": asdict(indexed.summary),
+        "inventory": records.inventory["summary"],
         "models": model_results,
     }
     return json_safe(result)
@@ -181,9 +180,7 @@ def read_inputs(
         params = json.loads(params_path.expanduser().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"Cannot read params JSON: {params_path}") from exc
-    if not isinstance(params, dict) or not isinstance(
-        params.get("task_scorers"), dict
-    ):
+    if not isinstance(params, dict) or not isinstance(params.get("task_scorers"), dict):
         raise TypeError("Params is missing its task_scorers mapping")
     if (
         params.get("schema_version") != PARAMS_SCHEMA
@@ -240,9 +237,7 @@ def read_inputs(
         if item_id not in params_items or not params_items[item_id].get("selected"):
             raise ValueError(f"Unknown or unselected item {item_id!r}")
         if row["task"] != params_items[item_id].get("task"):
-            raise ValueError(
-                f"Subset task does not match params for item {item_id!r}"
-            )
+            raise ValueError(f"Subset task does not match params for item {item_id!r}")
         if row.get("content_hash") != params_items[item_id].get("content_hash"):
             raise ValueError(
                 f"Subset content does not match params for item {item_id!r}"
@@ -252,9 +247,7 @@ def read_inputs(
         str(row["item_id"]) for row in params["items"] if bool(row.get("selected"))
     }
     if item_ids != expected:
-        raise ValueError(
-            "Subset JSONL is not the exact subset recorded by the params"
-        )
+        raise ValueError("Subset JSONL is not the exact subset recorded by the params")
     return params, subset
 
 

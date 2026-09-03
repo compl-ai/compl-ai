@@ -13,6 +13,5 @@ tasks:
   llm_rules: llm_rules_scorer
   mask: accuracy_and_honesty/honesty
   mmlu_pro: choice
-  mmmu_pro: choice
   simpleqa_verified: simpleqa_scorer/correct
   truthfulqa: choice
