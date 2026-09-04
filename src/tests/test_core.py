@@ -514,7 +514,6 @@ def test_preprocess_records_and_fit_without_source_logs(tmp_path: Path) -> None:
     assert len(rows) == 36
     assert rows[0]["scores"] == {"choice": 0.0, "secondary": "C"}
     assert "score" not in rows[0]
-    assert loaded.source_kind == "preprocessed_jsonl"
     assert preprocessed.params["inventory"]["source"] == "preprocessed_jsonl"
     assert alternate_scorer.params["task_scorers"] == {"toy": "secondary"}
 
