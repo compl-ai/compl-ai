@@ -69,18 +69,6 @@ complai COMMAND --help
 complai list
 ```
 
-#### Collect Sample Inputs
-
-Export samples as JSONL:
-
-```bash
-complai samples samples.jsonl
-complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
-complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
-```
-
-Each record contains the task name, sample ID, and the structured input that
-the task dataset supplies to the evaluation pipeline.
 
 #### Run Evals with the following syntax
 ```bash
@@ -119,6 +107,70 @@ See the [Providers](providers/README.md) section for more information on differe
 #### Environment Variables
 COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
 
+
+#### COMPL-AI Core
+
+COMPL-AI Core allows cheaper COMPL-AI evaluation. It consists of a subset of samples and a method to estimate full scores based on subset results. 
+
+To use our bundled subset consisting of 2'000 samples, run
+```bash
+complai eval openai/gpt-5-nano \
+  --subset complai-core/subset.jsonl \
+  --log-dir logs/
+
+complai core predict logs/<folder_name> \
+  --params complai-core/params.json \
+  --subset complai-core/subset.jsonl \
+  --output predicted.json
+```
+
+##### Selecting a Subset of Samples
+
+You can also build your own subset if you have a dataset of full evaluation results:
+
+```bash
+complai core preprocess logs/ --output samples.jsonl
+complai core fit samples.jsonl --budget 1000 --output complai-core/
+```
+
+The first command preprocesses the Inspect logs into a simple JSONL collection. Then `core fit` selects a set of samples items with our GP-IRT 2PL method. The `core fit` command writes two files:
+
+- `params.json` contains the fitted parameters, diagnostics, and
+  preprocessing provenance.
+- `subset.jsonl` contains the selected samples.
+
+The budget is the total number of items selected across all tasks. The command
+uses the bundled task-to-scorer mapping by default. You can provide another
+mapping as YAML or JSON.
+
+```yaml
+tasks:
+  aime_2025: aime_scorer
+  arc_challenge: choice
+  ...
+```
+
+Preprocessing writes `samples.jsonl` and `samples.manifest.json`. It reads
+only successful, complete evaluations for configured tasks and stores all
+sample scores with the fitting provenance. Rerun preprocessing when source logs change or
+when adding tasks that were not in the preprocessing scorer mapping.
+
+Pass `--duplicates mean` or `--duplicates latest` when the same model and item
+appear in more than one successful evaluation. The default duplicate policy
+reports an error.
+
+#### Collect Sample Inputs
+
+Export samples as JSONL:
+
+```bash
+complai samples samples.jsonl
+complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
+complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
+```
+
+Each record contains the task name, sample ID, and the structured input that
+the task dataset supplies to the evaluation pipeline.
 
 ## 🧪 Framework
 

@@ -1,21 +1,30 @@
+import json
 import re
 import sys
+from collections.abc import Callable
 from collections.abc import Iterator
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any
-from typing import Callable
 
 import typer
 import yaml
 from inspect_ai import list_tasks
+from inspect_ai import Task
 from inspect_ai import TaskInfo
 from inspect_ai._eval.loader import load_task_spec
-from inspect_ai._eval.task import Task
 from inspect_ai._util.config import resolve_args
+from inspect_ai.dataset import MemoryDataset
+from inspect_ai.log._util import thin_input
+from inspect_ai.log._util import thin_metadata
+from inspect_ai.log._util import thin_target
 from rich import print
+
+from complai.core.records import content_hash as _content_hash
+from complai.core.records import logical_sample_id as _logical_sample_id
 
 
 def get_complai_tasks(
@@ -354,3 +363,127 @@ def error_handler(debug: bool) -> Iterator:
             )
             print(error_msg, file=sys.stderr)
             sys.exit(1)
+
+
+def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
+    """Read a subset JSONL file grouped by task."""
+    selected: dict[str, list[dict[str, Any]]] = {}
+    item_ids: set[str] = set()
+    with path.expanduser().open(encoding="utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{path}:{line_number}: invalid JSON") from exc
+            required = ("task", "sample_id", "item_id", "content_hash")
+            if not isinstance(row, dict) or any(
+                not isinstance(row.get(field), str) or not row[field]
+                for field in required
+            ):
+                raise ValueError(
+                    f"{path}:{line_number}: expected string fields "
+                    + ", ".join(required)
+                )
+            parts = row["item_id"].split("::", 2)
+            if len(parts) != 3 or not all(parts):
+                raise ValueError(f"{path}:{line_number}: invalid item_id")
+            task, dataset, sample_id = parts
+            if row["task"] != task or row["sample_id"] != sample_id:
+                raise ValueError(f"{path}:{line_number}: item identity does not match")
+            if "dataset" in row and row["dataset"] != dataset:
+                raise ValueError(
+                    f"{path}:{line_number}: dataset does not match item_id"
+                )
+            row["dataset"] = dataset
+            if row["item_id"] in item_ids:
+                raise ValueError(
+                    f"{path}:{line_number}: duplicate item_id {row['item_id']!r}"
+                )
+            item_ids.add(row["item_id"])
+            selected.setdefault(task, []).append(row)
+    if not selected:
+        raise ValueError(f"Subset is empty: {path}")
+    return selected
+
+
+def apply_eval_subset(
+    task_names: list[str], tasks: list[Task], selected: dict[str, list[dict[str, Any]]]
+) -> None:
+    """Filter and order task datasets to match a subset."""
+    if len(task_names) != len(tasks) or set(task_names) != set(selected):
+        raise ValueError("Requested tasks do not match the subset tasks")
+
+    for task_name, task in zip(task_names, tasks, strict=True):
+        dataset = task.dataset
+        if dataset is None:
+            raise ValueError(f"Task {task_name!r} has no dataset")
+        samples = {}
+        samples_by_hash: dict[str, list[Any]] = {}
+        hashes: dict[str, set[str]] = {}
+        for index, sample in enumerate(dataset, start=1):
+            sample_id = _logical_sample_id(
+                task_name,
+                sample.id if sample.id is not None else index,
+                sample.metadata,
+                sample.input,
+            )
+            if sample_id in samples:
+                raise ValueError(
+                    f"Task {task_name!r} contains duplicate sample ID {sample_id!r}"
+                )
+            sample_hashes = {
+                _content_hash(
+                    sample.input,
+                    sample.target,
+                    sample.metadata,
+                    choices=sample.choices,
+                    task=task_name,
+                ),
+                _content_hash(
+                    thin_input(deepcopy(sample.input)),
+                    thin_target(deepcopy(sample.target)),
+                    thin_metadata(sample.metadata or {}),
+                    choices=sample.choices,
+                    task=task_name,
+                ),
+            }
+            samples[sample_id] = sample
+            hashes[sample_id] = sample_hashes
+            for sample_hash in sample_hashes:
+                samples_by_hash.setdefault(sample_hash, []).append(sample)
+        rows = selected[task_name]
+        ordered = []
+        for row in rows:
+            selected_sample = samples.get(row["sample_id"])
+            if (
+                selected_sample is None
+                or row["content_hash"] not in hashes[row["sample_id"]]
+            ):
+                matches = samples_by_hash.get(row["content_hash"], [])
+                if not matches:
+                    raise ValueError(
+                        f"Task {task_name!r} is missing selected item "
+                        f"{row['item_id']!r}: no sample ID or content hash matches"
+                    )
+                if len(matches) > 1:
+                    raise ValueError(
+                        f"Selected item {row['item_id']!r} matches multiple samples by "
+                        "content hash"
+                    )
+                selected_sample = matches[0]
+            if (
+                selected_sample.id is None
+                or str(selected_sample.id) != row["sample_id"]
+            ):
+                selected_sample = selected_sample.model_copy(
+                    update={"id": row["sample_id"]}
+                )
+            ordered.append(selected_sample)
+        task.dataset = MemoryDataset(
+            ordered,
+            name=dataset.name,
+            location=dataset.location,
+            shuffled=dataset.shuffled,
+        )

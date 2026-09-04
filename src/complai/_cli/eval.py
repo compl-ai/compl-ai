@@ -1,3 +1,5 @@
+from pathlib import Path
+from typing import Annotated
 from typing import cast
 from typing import Literal
 
@@ -7,8 +9,8 @@ from inspect_ai import TaskInfo
 from inspect_ai._cli.util import parse_cli_config
 from inspect_ai.model import CachePolicy
 from rich import print
-from typing_extensions import Annotated
 
+from complai._cli.utils import apply_eval_subset
 from complai._cli.utils import bool_or_float
 from complai._cli.utils import error_handler
 from complai._cli.utils import get_log_dir
@@ -18,6 +20,7 @@ from complai._cli.utils import parse_sample_id
 from complai._cli.utils import parse_samples_limit
 from complai._cli.utils import parse_task_args
 from complai._cli.utils import patch_display_results
+from complai._cli.utils import read_eval_subset
 from complai._cli.utils import validate_model_args
 
 
@@ -145,6 +148,12 @@ def eval_command(
         typer.Option(
             help="Evaluate a specific sample (e.g. 44) or list of samples (e.g. 44,63,91).",
             envvar="COMPLAI_SAMPLE_ID",
+        ),
+    ] = None,
+    subset: Annotated[
+        Path | None,
+        typer.Option(
+            "--subset", help="Evaluate only the items in a subset.jsonl file."
         ),
     ] = None,
     sample_shuffle: Annotated[
@@ -350,6 +359,26 @@ def eval_command(
     ] = False,
 ) -> None:
     """Run tasks."""
+    selected = None
+    if subset is not None:
+        conflicts = {
+            "--tasks": tasks,
+            "--tasks-to-skip": tasks_to_skip,
+            "--task-filter": task_filter,
+            "--limit": limit,
+            "--sample-id": sample_id,
+        }
+        used = [name for name, value in conflicts.items() if value is not None]
+        if used:
+            raise typer.BadParameter(
+                f"--subset cannot be combined with {', '.join(used)}"
+            )
+        try:
+            selected = read_eval_subset(subset)
+        except (TypeError, ValueError) as exc:
+            raise typer.BadParameter(str(exc)) from exc
+        tasks = ",".join(selected)
+
     # Get TaskInfo objects from task names
     parsed_task_filters = parse_cli_config(task_filter, None)
     task_infos: list[TaskInfo] = get_task_infos(
@@ -361,6 +390,8 @@ def eval_command(
 
     # Parse args
     parsed_task_args = parse_task_args(task_args, task_config)
+    if selected is not None and "hle" in selected:
+        parsed_task_args.setdefault("hle", {})["text_only"] = False
     parsed_model_args = parse_cli_config(model_args, model_config)
     parsed_generate_args = parse_cli_config(generate_args, generate_config)
     parsed_limit = parse_samples_limit(limit)
@@ -381,6 +412,12 @@ def eval_command(
     # Instantiate tasks with task-specific args
     with error_handler(debug):
         instantiated_tasks = instantiate_tasks_from_infos(task_infos, parsed_task_args)
+        if selected is not None:
+            apply_eval_subset(
+                [task_info.name for task_info in task_infos],
+                instantiated_tasks,
+                selected,
+            )
 
         print("\nStarting evals...")
         eval_set(

@@ -1,0 +1,17 @@
+
+tasks:
+  aime_2025: aime_scorer
+  arc_challenge: choice
+  bbq: choice
+  cab: cab_scorer
+  gpqa_diamond: choice
+  hle: hle_scorer/score
+  human_deception: match
+  imdb_contrast: imdb_sentiment_scorer
+  include: choice
+  instruction_goal_hijacking: Hijacking Score
+  llm_rules: llm_rules_scorer
+  mask: accuracy_and_honesty/honesty
+  mmlu_pro: choice
+  simpleqa_verified: simpleqa_scorer/correct
+  truthfulqa: choice
