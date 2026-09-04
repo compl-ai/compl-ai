@@ -499,7 +499,7 @@ def test_preprocess_records_and_fit_without_source_logs(tmp_path: Path) -> None:
             values=[float((item + model_index) % 2) for item in range(12)],
             extra_scores={"secondary": "C"},
         )
-    records_path = tmp_path / "responses.jsonl"
+    records_path = tmp_path / "samples.jsonl"
 
     records = preprocess_logs([logs], {"toy": "choice"}, records_path)
     for path in logs.iterdir():
@@ -509,7 +509,7 @@ def test_preprocess_records_and_fit_without_source_logs(tmp_path: Path) -> None:
     alternate_scorer = fit(loaded, {"toy": "secondary"}, 5, seed=7)
 
     assert records.records == 36
-    assert records.manifest_path == tmp_path / "responses.manifest.json"
+    assert records.manifest_path == tmp_path / "samples.manifest.json"
     rows = list(loaded.iter_samples())
     assert len(rows) == 36
     assert rows[0]["scores"] == {"choice": 0.0, "secondary": "C"}
@@ -531,7 +531,7 @@ def test_preprocess_and_fit_cli(tmp_path: Path) -> None:
         )
     config = tmp_path / "scorers.yaml"
     config.write_text("tasks:\n  toy: choice\n")
-    records = tmp_path / "responses.jsonl"
+    records = tmp_path / "samples.jsonl"
     runner = CliRunner()
 
     preprocessed = runner.invoke(

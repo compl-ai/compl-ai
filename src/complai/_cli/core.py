@@ -74,7 +74,7 @@ def preprocess_command(
     ],
     output: Annotated[
         Path, typer.Option("--output", help="Compact response JSONL to write.")
-    ] = Path("responses.jsonl"),
+    ] = Path("samples.jsonl"),
     scorers: Annotated[
         Path | None,
         typer.Option(
@@ -138,7 +138,7 @@ def predict_command(
                 records = preprocess_logs(
                     [input_path],
                     fitted["task_scorers"],
-                    Path(temporary_dir) / "responses.jsonl",
+                    Path(temporary_dir) / "samples.jsonl",
                 )
                 result = predict_scores(
                     records.records_path, params, subset, duplicate_policy=duplicates

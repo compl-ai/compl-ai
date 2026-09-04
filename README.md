@@ -110,9 +110,9 @@ COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), an
 
 #### COMPL-AI Core
 
-COMPL-AI Core allows cheaper running of COMPL-AI. It consists of a small subset of samples and a method to estimate full scores based on an evaluation run on the subset. 
+COMPL-AI Core allows cheaper COMPL-AI evaluation. It consists of a subset of samples and a method to estimate full scores based on subset results. 
 
-To use our recommended subset consisting of 2'000 samples, run
+To use our bundled subset consisting of 2'000 samples, run
 ```bash
 complai eval openai/gpt-5-nano \
   --subset complai-core/subset.jsonl \
@@ -124,35 +124,33 @@ complai core predict logs/<folder_name> \
   --output predicted.json
 ```
 
-You can also build your own subset if you have a dataset of full evaluation results.
+##### Selecting a Subset of Samples
 
-The `core fit` command selects a smaller set of evaluation items with the
-GP-IRT 2PL method from preprocessed response records.
+You can also build your own subset if you have a dataset of full evaluation results:
 
-The command writes two files:
+```bash
+complai core preprocess logs/ --output samples.jsonl
+complai core fit samples.jsonl --budget 1000 --output complai-core/
+```
 
-- `complai-core/params.json` contains the fitted parameters, diagnostics, and
+The first command preprocesses the Inspect logs into a simple JSONL collection. Then `core fit` selects a set of samples items with our GP-IRT 2PL method. The `core fit` command writes two files:
+
+- `params.json` contains the fitted parameters, diagnostics, and
   preprocessing provenance.
-- `complai-core/subset.jsonl` contains the selected items in selection order.
+- `subset.jsonl` contains the selected samples.
 
 The budget is the total number of items selected across all tasks. The command
-uses the bundled task to scorer mapping by default. You can provide another
+uses the bundled task-to-scorer mapping by default. You can provide another
 mapping as YAML or JSON.
 
 ```yaml
 tasks:
   aime_2025: aime_scorer
   arc_challenge: choice
+  ...
 ```
 
-Preprocess the Inspect logs, then fit the compact JSONL:
-
-```bash
-complai core preprocess logs/ --output responses.jsonl
-complai core fit responses.jsonl --budget 1000 --output complai-core/
-```
-
-Preprocessing writes `responses.jsonl` and `responses.manifest.json`. It reads
+Preprocessing writes `samples.jsonl` and `samples.manifest.json`. It reads
 only successful, complete evaluations for configured tasks and stores all
 sample scores with the fitting provenance. Rerun preprocessing when source logs change or
 when adding tasks that were not in the preprocessing scorer mapping.
