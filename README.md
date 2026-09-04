@@ -69,18 +69,44 @@ complai COMMAND --help
 complai list
 ```
 
-#### Collect Sample Inputs
 
-Export samples as JSONL:
-
+#### Run Evals with the following syntax
 ```bash
-complai samples samples.jsonl
-complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
-complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
+complai eval <provider>/<model> -t <task_name> -l <n_samples>
 ```
 
-Each record contains the task name, sample ID, and the structured input that
-the task dataset supplies to the evaluation pipeline.
+#### Command Examples
+```bash
+# Remote API
+complai eval openai/gpt-4o-mini
+complai eval anthropic/claude-sonnet-4-0
+
+# Locally with HF backend, set cuda device (use mps for macOS)
+complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
+
+# Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
+complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
+
+# Use task configuration file or CLI task args (CLI args take precedence)
+complai eval openai/gpt-5-nano --task-config default_config.yaml -T mmlu_pro:num_fewshot=5
+
+# Retry (if eval failed) with existing log directory or specify custom log directory (supports S3 URLs)
+complai eval openai/gpt-5-nano --log-dir path/to/logdir
+```
+
+#### Task Configuration
+COMPL-AI supports task-specific configuration via YAML or JSON files. See `default_config.yaml` for a reference of all configurable parameters. You can:
+
+- Use the default config as a template: `cp default_config.yaml my_config.yaml`
+- Modify the tasks and parameters you want
+- Pass it to any eval: `complai eval <model> --task-config my_config.yaml`
+
+#### Providers
+See the [Providers](providers/README.md) section for more information on different providers.
+
+#### Environment Variables
+COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
+
 
 #### COMPL-AI Core
 
@@ -92,7 +118,7 @@ complai eval openai/gpt-5-nano \
   --subset complai-core/subset.jsonl \
   --log-dir logs/
 
-complai core predict logs/<provider>_<model-id>_<timestamp> \
+complai core predict logs/<folder_name> \
   --params complai-core/params.json \
   --subset complai-core/subset.jsonl \
   --output predicted.json
@@ -135,65 +161,18 @@ Pass `--duplicates mean` or `--duplicates latest` when the same model and item
 appear in more than one successful evaluation. The default duplicate policy
 reports an error.
 
-#### Predict scores from the reduced evaluation set
+#### Collect Sample Inputs
 
-First, evaluate a model on the exact items listed in `complai-core/subset.jsonl`
-
-```bash
-complai eval openai/gpt-5-nano \
-  --subset reduced-eval/subset.jsonl \
-  --log-dir new-model-logs/
-````
-
-Preprocess those results, then use `core predict` to estimate full scores.
+Export samples as JSONL:
 
 ```bash
-complai core preprocess new-model-logs/ --output subset-responses.jsonl
-complai core predict subset-responses.jsonl \
-  --params complai-core/params.json \
-  --subset complai-core/subset.jsonl \
-  --output predicted.json
+complai samples samples.jsonl
+complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
+complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
 ```
 
-Run `complai core fit --help` or `complai core predict --help` to see all options.
-
-#### Run Evals with the following syntax
-```bash
-complai eval <provider>/<model> -t <task_name> -l <n_samples>
-```
-
-#### Command Examples
-```bash
-# Remote API
-complai eval openai/gpt-4o-mini
-complai eval anthropic/claude-sonnet-4-0
-
-# Locally with HF backend, set cuda device (use mps for macOS)
-complai eval hf/Qwen/Qwen3-8B -t mmlu_pro -M device=cuda:0
-
-# Using vLLM backend, evaluate specific sample and cap number of sandboxes for agentic benchmarks
-complai eval vllm/Qwen/Qwen3-8B -t swe_bench_verified --sample-id django__django-11848 --max-sandboxes 1 
-
-# Use task configuration file or CLI task args (CLI args take precedence)
-complai eval openai/gpt-5-nano --task-config default_config.yaml -T mmlu_pro:num_fewshot=5
-
-# Retry (if eval failed) with existing log directory or specify custom log directory (supports S3 URLs)
-complai eval openai/gpt-5-nano --log-dir path/to/logdir
-```
-
-#### Task Configuration
-COMPL-AI supports task-specific configuration via YAML or JSON files. See `default_config.yaml` for a reference of all configurable parameters. You can:
-
-- Use the default config as a template: `cp default_config.yaml my_config.yaml`
-- Modify the tasks and parameters you want
-- Pass it to any eval: `complai eval <model> --task-config my_config.yaml`
-
-#### Providers
-See the [Providers](providers/README.md) section for more information on different providers.
-
-#### Environment Variables
-COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
-
+Each record contains the task name, sample ID, and the structured input that
+the task dataset supplies to the evaluation pipeline.
 
 ## 🧪 Framework
 

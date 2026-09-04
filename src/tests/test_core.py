@@ -830,6 +830,25 @@ def test_complai_core_predict_cli(tmp_path: Path) -> None:
         json.loads(output.read_text())["models"]["new-model"]["predicted_score"] > 0.0
     )
 
+    logs_output = tmp_path / "predicted-from-logs.json"
+    result = CliRunner().invoke(
+        app,
+        [
+            "core",
+            "predict",
+            str(new_logs),
+            "--params",
+            str(params_path),
+            "--subset",
+            str(subset_path),
+            "--output",
+            str(logs_output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(logs_output.read_text()) == json.loads(output.read_text())
+
 
 def test_eval_subset_filters_and_orders_exact_items(tmp_path: Path) -> None:
     samples = [

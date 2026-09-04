@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Annotated
 from typing import Literal
 
@@ -11,6 +12,7 @@ from complai.core.fit import check_output_available
 from complai.core.fit import fit
 from complai.core.fit import write_outputs
 from complai.core.predict import predict_scores
+from complai.core.predict import read_inputs
 from complai.core.predict import write_prediction
 from complai.core.records import load_records
 from complai.core.records import preprocess_logs
@@ -101,8 +103,11 @@ def preprocess_command(
 
 
 def predict_command(
-    records_path: Annotated[
-        Path, typer.Argument(help="Preprocessed responses for the selected subset.")
+    input_path: Annotated[
+        Path,
+        typer.Argument(
+            help="Inspect log files directory, or preprocessed response JSONL."
+        ),
     ],
     params: Annotated[
         Path, typer.Option("--params", help="Fitted COMPL-AI Core params.json.")
@@ -123,8 +128,20 @@ def predict_command(
 ) -> None:
     """Predict full-task scores from results on a selected GP-IRT subset."""
     with error_handler(debug):
-        result = predict_scores(
-            records_path, params, subset, duplicate_policy=duplicates
-        )
+        if input_path.suffix == ".jsonl":
+            result = predict_scores(
+                input_path, params, subset, duplicate_policy=duplicates
+            )
+        else:
+            fitted, _ = read_inputs(params, subset)
+            with TemporaryDirectory(prefix="complai-core-") as temporary_dir:
+                records = preprocess_logs(
+                    [input_path],
+                    fitted["task_scorers"],
+                    Path(temporary_dir) / "responses.jsonl",
+                )
+                result = predict_scores(
+                    records.records_path, params, subset, duplicate_policy=duplicates
+                )
         output_path = write_prediction(result, output)
         print(f"Wrote {output_path} ({len(result['models'])} model(s))")
