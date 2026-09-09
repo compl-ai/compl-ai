@@ -232,17 +232,19 @@ def mmlu_pro_robustness_solver(
 @metric
 def robustness() -> MetricProtocol:
     def metric(scores: list[SampleScore]) -> float:
-        mean_perturbed_score: float = np.mean(
-            [score.score.value["perturbed_score"] for score in scores]  # type: ignore
-        )
-        mean_unperturbed_score: float = np.mean(
-            [score.score.value["unperturbed_score"] for score in scores]  # type: ignore
-        )
-
-        if mean_unperturbed_score == 0:
-            return 1
-        else:
-            return min(1, mean_perturbed_score / mean_unperturbed_score)
+        valid_scores = []
+        for score in scores:
+            val = score.score.value
+            if isinstance(val, dict):
+                p = val.get("perturbed_score")
+                u = val.get("unperturbed_score")
+                if p is not None and u is not None and float(u) == 1.0:
+                    valid_scores.append(float(p))
+                    
+        if not valid_scores:
+            return 1.0
+            
+        return float(np.mean(valid_scores))
 
     return metric
 
