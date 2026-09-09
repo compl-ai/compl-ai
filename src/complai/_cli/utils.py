@@ -23,8 +23,8 @@ from inspect_ai.log._util import thin_metadata
 from inspect_ai.log._util import thin_target
 from rich import print
 
-from complai.core.records import content_hash as _content_hash
-from complai.core.records import logical_sample_id as _logical_sample_id
+from complai.utils.log_parser import content_hash as _content_hash
+from complai.utils.log_parser import logical_sample_id as _logical_sample_id
 
 
 def get_complai_tasks(

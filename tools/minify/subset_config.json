@@ -1,0 +1,229 @@
+{
+  "tasks": {
+    "aime_2025": {
+      "scorer": "aime_scorer",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "arc_challenge": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "bbq": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "bigbench_calibration": {
+      "scorer": "bigbench_calibration_scorer",
+      "allocation": "full",
+      "primary_metric": [
+        "ece"
+      ]
+    },
+    "boolq_contrast": {
+      "scorer": "match",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "cab": {
+      "scorer": "cab_scorer",
+      "allocation": "default",
+      "primary_metric": [
+        "all"
+      ]
+    },
+    "decoding_trust": {
+      "scorer": "decoding_trust_scorer",
+      "allocation": "full",
+      "primary_metric": [
+        "fairness"
+      ]
+    },
+    "fairllm": {
+      "scorer": "fairllm_scorer",
+      "allocation": "full",
+      "primary_metric": [
+        "jaccard"
+      ]
+    },
+    "gpqa_diamond": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "hle": {
+      "scorer": "hle_scorer/score",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "human_deception": {
+      "scorer": "match",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "ifbench": {
+      "scorer": "ifbench_scorer",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "imdb_contrast": {
+      "scorer": "imdb_sentiment_scorer",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "include": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "instruction_goal_hijacking": {
+      "scorer": "Hijacking Score",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "livebench_coding": {
+      "scorer": "decide_scorer",
+      "allocation": "default",
+      "primary_metric": [
+        "livebench"
+      ]
+    },
+    "llm_rules": {
+      "scorer": "llm_rules_scorer",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "mask": {
+      "scorer": "accuracy_and_honesty/honesty",
+      "allocation": "default",
+      "primary_metric": [
+        "overall_honesty"
+      ]
+    },
+    "mmlu_pro": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "mmlu_pro_robustness": {
+      "scorer": "mmlu_pro_robustness_scorer",
+      "allocation": "full",
+      "primary_metric": [
+        "robustness"
+      ]
+    },
+    "mmmu_pro": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "self_check_consistency": {
+      "scorer": "Non-Contradictory",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    },
+    "simpleqa_verified": {
+      "scorer": "simpleqa_scorer/correct",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "correct"
+      ]
+    },
+    "strong_reject": {
+      "scorer": "strong_reject_scorer",
+      "allocation": "full",
+      "primary_metric": [
+        "all",
+        "auto_payload_splitting"
+      ]
+    },
+    "truthfulqa": {
+      "scorer": "choice",
+      "allocation": "default",
+      "primary_metric": [
+        "accuracy",
+        "overall_accuracy",
+        "correct",
+        "f_score"
+      ]
+    }
+  }
+}
