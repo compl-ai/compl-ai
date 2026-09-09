@@ -1,4 +1,3 @@
-
 tasks:
   aime_2025: aime_scorer
   arc_challenge: choice
@@ -7,9 +6,11 @@ tasks:
   gpqa_diamond: choice
   hle: hle_scorer/score
   human_deception: match
+  ifbench: ifbench_scorer/strict
   imdb_contrast: imdb_sentiment_scorer
   include: choice
   instruction_goal_hijacking: Hijacking Score
+  livebench_coding: decide_scorer
   llm_rules: llm_rules_scorer
   mask: accuracy_and_honesty/honesty
   mmlu_pro: choice
