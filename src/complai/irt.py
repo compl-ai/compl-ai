@@ -3,8 +3,6 @@
 import hashlib
 import json
 import math
-import os
-import tempfile
 import zlib
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +11,7 @@ from typing import Literal
 
 import numpy as np
 
+from complai.utils.io import atomic_write, check_output_available, write_outputs
 from complai.utils.log_parser import PreprocessedRecords
 
 
@@ -751,7 +750,8 @@ def build_result(
         task = tasks[task_name]
         fit = fits[task_name]
         abilities[task_name] = {
-            model: float(value) for model, value in zip(task["models"], fit.abilities)
+            (model.split("/")[-1] if "/" in model else model): float(value) 
+            for model, value in zip(task["models"], fit.abilities)
         }
         task_records[task_name] = {
             "scorer": scorers[task_name],
@@ -770,20 +770,29 @@ def build_result(
         }
         for index, item in enumerate(task["items"]):
             item_id = item["item_id"]
-            item_records.append(
-                {
-                    **item,
-                    "observation_count": int(
-                        np.sum(np.isfinite(task["matrix"][:, index]))
-                    ),
-                    "source_mean": float(np.nanmean(task["matrix"][:, index])),
-                    "slope_identified": bool(fit.slope_identified[index]),
-                    "difficulty": float(fit.difficulties[index]),
-                    "discrimination": float(fit.discriminations[index]),
-                    "intercept": float(fit.intercepts[index]),
-                    "selected": item_id in selected_set,
-                }
-            )
+            is_selected = item_id in selected_set
+            
+            base_item = {
+                "item_id": item_id,
+                "task": item["task"],
+                "discrimination": float(fit.discriminations[index]),
+                "intercept": float(fit.intercepts[index]),
+                "difficulty": float(fit.difficulties[index]),
+                "source_mean": float(np.nanmean(task["matrix"][:, index])),
+                "selected": is_selected,
+            }
+            
+            if is_selected:
+                # Keep fields required for downstream dataset loaders and predict.py
+                item_records.append({
+                    **base_item,
+                    "dataset": item["dataset"],
+                    "sample_id": item["sample_id"],
+                    "content_hash": item["content_hash"],
+                })
+            else:
+                # Prune to just the math requirements for the 89k unselected items
+                item_records.append(base_item)
 
     by_id = {item["item_id"]: item for item in item_records}
     selected_records = []
@@ -799,7 +808,6 @@ def build_result(
                 "task": task_name,
                 "dataset": item["dataset"],
                 "sample_id": item["sample_id"],
-                "question_hash": item["question_hash"],
                 "content_hash": item["content_hash"],
                 "task_allocation": allocation[task_name],
                 "inclusion_probability": probability,
@@ -810,7 +818,13 @@ def build_result(
             }
         )
 
-    stable_inventory = records.inventory
+
+    columns = ["item_id", "task", "discrimination", "intercept", "difficulty", "source_mean", "selected", "dataset", "sample_id", "content_hash"]
+    columnar_items = {
+        "columns": columns,
+        "data": [[row.get(col) for col in columns] for row in item_records]
+    }
+
     params = {
         "schema_version": PARAMS_SCHEMA,
         "method": METHOD_VERSION,
@@ -823,11 +837,10 @@ def build_result(
         "hyperparameters": params_basis["hyperparameters"],
         "configuration_digest": configuration_digest,
         "input_digest": records.digest,
-        "inventory": stable_inventory,
         "ability_scale": "Each task is independently normalized to mean 0 and standard deviation 1.",
         "tasks": task_records,
         "model_abilities": abilities,
-        "items": item_records,
+        "items": columnar_items,
     }
 
     return FitResult(
@@ -1007,57 +1020,3 @@ def digest_json(value: Any) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def atomic_write(path: Path, content: str) -> None:
-    """Write text through a temporary file and atomic replacement."""
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    except Exception:
-        Path(temporary).unlink(missing_ok=True)
-        raise
-
-
-def write_outputs(
-    result: FitResult, output_dir: Path
-) -> tuple[Path, Path]:
-    """Write the fitted params and selected subset atomically."""
-    params_path, subset_path = check_output_available(output_dir)
-    output_dir = params_path.parent
-    output_dir.mkdir(parents=True, exist_ok=True)
-    params_text = (
-        json.dumps(result.params, indent=2, sort_keys=True, allow_nan=False) + "\n"
-    )
-    subset_text = "".join(
-        json.dumps(row, sort_keys=True, allow_nan=False) + "\n" for row in result.subset
-    )
-    atomic_write(params_path, params_text)
-    try:
-        atomic_write(subset_path, subset_text)
-    except Exception:
-        params_path.unlink(missing_ok=True)
-        raise
-
-
-
-    return params_path, subset_path
-
-
-def check_output_available(
-    output_dir: Path
-) -> tuple[Path, Path]:
-    """Return output paths if writing them is allowed."""
-    output_dir = output_dir.expanduser().resolve()
-    params_path = output_dir / "params.json"
-    subset_path = output_dir / "subset.jsonl"
-
-    existing = [path for path in (params_path, subset_path) if path.exists()]
-    if existing:
-        raise FileExistsError(f"Output already exists: {existing[0]}")
-
-
-
-    return params_path, subset_path

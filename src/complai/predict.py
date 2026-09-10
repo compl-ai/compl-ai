@@ -200,8 +200,15 @@ def read_inputs(
         for task, scorer in params["task_scorers"].items()
     ):
         raise ValueError("Params has an invalid task_scorers mapping")
-    if not isinstance(params.get("items"), list) or not params["items"]:
-        raise ValueError("Params has no fitted items")
+    items_data = params.get("items")
+    if not isinstance(items_data, dict) or "columns" not in items_data or "data" not in items_data:
+        raise ValueError("Params items must be in columnar format (dict with 'columns' and 'data')")
+    
+    columns = items_data["columns"]
+    params["items"] = [
+        {k: v for k, v in zip(columns, row) if v is not None}
+        for row in items_data["data"]
+    ]
     required = {"params_id", "subset_id", "method"}
     if not required.issubset(params):
         raise ValueError("Params is missing identity or method fields")

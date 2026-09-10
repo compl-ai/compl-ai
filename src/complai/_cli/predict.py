@@ -28,7 +28,7 @@ def predict_command(
         typer.Option(
             "--duplicates", help="How to handle samples with multiple results."
         ),
-    ] = "error",
+    ] = "latest",
     debug: Annotated[
         bool, typer.Option("--debug", help="Enable full stack traces.")
     ] = False,
