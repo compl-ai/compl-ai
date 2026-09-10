@@ -208,7 +208,18 @@ def evaluate_stats(
         if params_file.exists():
             with open(params_file) as f:
                 params_data = json.load(f)
-                for item in params_data.get("items", []):
+                
+                items_data = params_data.get("items", [])
+                if isinstance(items_data, dict) and "columns" in items_data:
+                    columns = items_data["columns"]
+                    items_list = [
+                        {k: v for k, v in zip(columns, row) if v is not None}
+                        for row in items_data.get("data", [])
+                    ]
+                else:
+                    items_list = items_data
+                    
+                for item in items_list:
                     full_params_map[str(item.get("item_id"))] = item
             
         domain_counts = collections.defaultdict(int)
