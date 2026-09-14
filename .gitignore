@@ -161,4 +161,7 @@ dist_py_*
 node_modules/
 
 # Datasets
-tools/labeling/datasets/*.jsonl
+tools/label/datasets/*.jsonl
+
+# Minify pipeline local data
+tools/minify/data/
