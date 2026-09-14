@@ -22,18 +22,18 @@ from typer.testing import CliRunner
 from complai._cli import app
 from complai._cli.utils import apply_eval_subset
 from complai._cli.utils import read_eval_subset
-from complai.core import dispersion23_allocation
-from complai.core import fit
-from complai.core import fit_2pl
-from complai.core import load_records
-from complai.core import load_scorers
-from complai.core import predict_scores
-from complai.core import preprocess_logs
-from complai.core import write_outputs
-from complai.core.records import content_hash as _content_hash
-from complai.core.records import logical_sample_id as _logical_sample_id
-from complai.core.records import PARSER_VERSION
-from complai.core.records import question_hash as _question_hash
+from complai.irt import dispersion23_allocation
+from complai.irt import fit
+from complai.irt import fit_2pl
+from complai.utils.log_parser import load_records
+from tools.minify.config import load_scorers
+from complai.predict import predict_scores
+from complai.utils.log_parser import preprocess_logs
+from complai.utils.io import write_outputs
+from complai.utils.log_parser import content_hash as _content_hash
+from complai.utils.log_parser import logical_sample_id as _logical_sample_id
+from complai.utils.log_parser import PARSER_VERSION
+from complai.utils.log_parser import question_hash as _question_hash
 
 
 def test_fit_2pl_is_identified_and_marks_thin_items() -> None:
@@ -212,7 +212,7 @@ def test_dataset_renames_do_not_split_identical_content(tmp_path: Path) -> None:
 def test_preprocess_uses_memory_bounded_parser(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import complai.core.records as records_module
+    import complai.utils.log_parser as records_module
 
     log_path = tmp_path / "one.eval"
     _write_eval(
@@ -238,7 +238,7 @@ def test_preprocess_uses_memory_bounded_parser(
 
 
 def test_preprocess_uses_summaries_only(monkeypatch: pytest.MonkeyPatch) -> None:
-    import complai.core.records as records_module
+    import complai.utils.log_parser as records_module
 
     summarized = EvalSample(
         id="summarized",
@@ -277,7 +277,7 @@ def test_preprocess_uses_summaries_only(monkeypatch: pytest.MonkeyPatch) -> None
 def test_preprocess_reads_only_missing_historical_choices(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import complai.core.records as records_module
+    import complai.utils.log_parser as records_module
 
     path = tmp_path / "historical.eval"
     _write_eval(
