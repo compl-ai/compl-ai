@@ -40,3 +40,32 @@ If you generated multiple subsets (like the baselines above), this command will 
 ```bash
 complai minify stats
 ```
+
+## Optional Minibench gp_irt estimator
+
+`--estimator gp_irt` enables the Minibench `gp_irt_2pl_auto` implementation:
+10 fitting sweeps, weighted target-ability inference, and a blend of the observed
+subset mean with the full-population IRT mean. Three source-model folds choose
+the blend weight per task; fewer than four source models use weight 0.5.
+
+```bash
+complai minify fit --budget 2500 --name core.gp-irt \
+  --item-selection random --duplicates latest --estimator gp_irt
+complai minify stats --data-dir src/complai/data/core.gp-irt --estimator gp_irt
+complai eval MODEL --subset src/complai/data/core.gp-irt/subset.jsonl --log-dir logs/
+complai predict logs/MODEL_RUN \
+  --params src/complai/data/core.gp-irt/params.json \
+  --subset src/complai/data/core.gp-irt/subset.jsonl --estimator gp_irt
+```
+
+Fitting defaults to `irt`. Prediction and stats default to the estimator saved
+in the artifact; `--estimator irt` also permits a pure-IRT comparison on a GP
+bank. Existing artifacts remain IRT and must be regenerated to supply GP's
+source-calibrated blend weights. Prediction never needs the training records.
+
+GP predictions include `blend_weight` and `irt_predicted_score` per task.
+`predicted_score_error` is null because uncertainty for the combined estimator
+is not implemented. Stats retain their model-only domain head and source-replay
+protocol; the blend's inner calibration folds are not an outer evaluation holdout.
+This ports the existing Minibench solver, including its known possible Newton
+oscillation. Native/nonlinear scoring and other existing stats limitations remain.

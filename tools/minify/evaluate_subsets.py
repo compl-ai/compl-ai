@@ -17,6 +17,7 @@ import scipy.optimize as opt
 import scipy.stats
 from complai.utils.log_parser import load_records, preprocess_logs
 from complai.irt import prepare_tasks
+from complai.gp_irt import Estimator, predict_task, resolve_estimator, task_blend
 from complai.constants import CACHE_DIR
 from tools.minify.config import load_scorers, get_task_allocations, get_primary_metrics
 
@@ -42,7 +43,8 @@ def optimize_theta(a, c, y):
 def evaluate_stats(
     data_dir: Path = Path("src/complai/data"),
     logs_dir: Path = Path("logs/"),
-    labels_dir: Path = Path("tools/label/labels")
+    labels_dir: Path = Path("tools/label/labels"),
+    estimator: Estimator | None = None,
 ):
     print("Loading Domain Labels...")
     datasets_dir = Path("tools/label/datasets")
@@ -204,6 +206,7 @@ def evaluate_stats(
         items_path = target_dir / "subset.jsonl"
         
         full_params_map = {}
+        params_data = {}
         params_file = target_dir / "params.json"
         if params_file.exists():
             with open(params_file) as f:
@@ -221,6 +224,14 @@ def evaluate_stats(
                     
                 for item in items_list:
                     full_params_map[str(item.get("item_id"))] = item
+        selected_estimator = resolve_estimator(params_data, estimator)
+        gp_populations = collections.defaultdict(list)
+        if selected_estimator == "gp_irt":
+            from complai.predict import read_inputs
+            read_inputs(params_file, items_path)
+            for item in full_params_map.values():
+                gp_populations[str(item["task"])].append(item)
+        print(f"  Estimator: {selected_estimator}")
             
         domain_counts = collections.defaultdict(int)
         subset_items_by_task = collections.defaultdict(list)
@@ -287,6 +298,11 @@ def evaluate_stats(
             models = t_data["models"]
             full_a = np.array([full_params_map.get(str(i.get("item_id")), {}).get("discrimination", 0.0) for i in t_data["items"]])
             full_c = np.array([full_params_map.get(str(i.get("item_id")), {}).get("intercept", 0.0) for i in t_data["items"]])
+            if selected_estimator == "gp_irt":
+                blend = task_blend(params_data, t_name)
+                population_a = np.array([item["discrimination"] for item in gp_populations[t_name]])
+                population_c = np.array([item["intercept"] for item in gp_populations[t_name]])
+                design_weights = np.array([item.get("design_weight", 1.0) for item in sub_items])
             
             task_pred_scores = []
             task_true_scores_for_rank = []
@@ -294,7 +310,15 @@ def evaluate_stats(
             for i, m_name in enumerate(models):
                 y_m = np.array([matrix[i, j] if j != -1 else np.nan for j in sub_j_indices])
                 
-                theta_hat = optimize_theta(sub_a, sub_c, y_m)
+                if selected_estimator == "gp_irt":
+                    gp_prediction = predict_task(
+                        y_m, sub_a, sub_c, population_a, population_c,
+                        blend=blend, weights=design_weights,
+                        ridge=float(params_data.get("hyperparameters", {}).get("ridge", 0.01)),
+                    )
+                    theta_hat = gp_prediction["ability"]
+                else:
+                    theta_hat = optimize_theta(sub_a, sub_c, y_m)
                 
                 # Check for top saturation (ceiling) or bottom saturation (floor)
                 if theta_hat >= 9.9:
@@ -311,7 +335,9 @@ def evaluate_stats(
                 # For mmlu_pro_robustness, this correctly masks out the failed unperturbed items!
                 full_y_m = matrix[i, :]
                 valid_mask = ~np.isnan(full_y_m)
-                if np.any(valid_mask):
+                if selected_estimator == "gp_irt":
+                    pred_score = gp_prediction["predicted_score"]
+                elif np.any(valid_mask):
                     pred_score = np.mean(probs[valid_mask])
                 else:
                     pred_score = np.mean(probs)

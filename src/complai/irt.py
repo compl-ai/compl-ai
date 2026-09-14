@@ -77,6 +77,7 @@ def fit(
     duplicate_policy: DuplicatePolicy = "error",
     item_selection: str = "random",
     domain_labels_dir: Path | None = None,
+    estimator: Literal["irt", "gp_irt"] = "irt",
     _ignore_unseen_tasks: bool = False,
 ) -> FitResult:
     """Fit and select from a normalized sample source."""
@@ -84,6 +85,8 @@ def fit(
         raise ValueError("scorers must be a non-empty task-to-scorer mapping")
     if budget <= 0:
         raise ValueError("budget must be positive")
+    if estimator not in {"irt", "gp_irt"}:
+        raise ValueError("estimator must be irt or gp_irt")
 
     if _ignore_unseen_tasks:
         scorers = filter_seen_scorers(records, scorers)
@@ -94,7 +97,7 @@ def fit(
         raise ValueError(f"budget {budget} exceeds the available items ({total_items})")
 
     # Fit 2PL models
-    fits, capacities, dispersions = fit_tasks(tasks)
+    fits, capacities, dispersions = fit_tasks(tasks, estimator=estimator)
 
     # Select items using the chosen strategy
     if item_selection == "joint":
@@ -114,6 +117,11 @@ def fit(
             capacities, dispersions, fits, budget, floor, seed, item_selection
         )
 
+    calibration = None
+    if estimator == "gp_irt":
+        from complai.gp_irt import calibrate_tasks
+        calibration = calibrate_tasks(tasks, selected_keys)
+
     return build_result(
         records=records,
         scorers=scorers,
@@ -126,6 +134,7 @@ def fit(
         dispersions=dispersions,
         allocation=allocation,
         selected_keys=selected_keys,
+        gp_irt=calibration,
     )
 
 
@@ -343,6 +352,7 @@ def _latest_content_versions(
 
 def fit_tasks(
     tasks: dict[str, dict[str, Any]],
+    *, estimator: Literal["irt", "gp_irt"] = "irt",
 ) -> tuple[dict[str, TwoPLFit], dict[str, int], dict[str, float]]:
     """Fit each task and calculate its capacity and score dispersion."""
     fits, capacities, dispersions = {}, {}, {}
@@ -350,7 +360,11 @@ def fit_tasks(
         matrix = tasks[task_name]["matrix"]
 
         # Fit model
-        fits[task_name] = fit_2pl(matrix, ridge=0.01, slope_ridge=0.01, iterations=30)
+        if estimator == "gp_irt":
+            from complai.gp_irt import fit_model
+            fits[task_name] = fit_model(matrix)
+        else:
+            fits[task_name] = fit_2pl(matrix, ridge=0.01, slope_ridge=0.01, iterations=30)
 
         # Number of samples in task
         capacities[task_name] = matrix.shape[1]
@@ -369,6 +383,7 @@ def fit_2pl(
     ridge: float = 0.01,
     slope_ridge: float = 0.01,
     iterations: int = 30,
+    _reset_unidentified_slopes: bool = True,
 ) -> TwoPLFit:
     """Fit a positive-discrimination two-parameter logistic model."""
     values = np.asarray(scores, dtype=float)
@@ -479,7 +494,9 @@ def fit_2pl(
         values[mask] * np.log(predicted[mask])
         + (1.0 - values[mask]) * np.log1p(-predicted[mask])
     )
-    discriminations = np.where(slope_identified, discriminations, 1.0)
+    # Minibench retains the last identification rescaling on constant/thin items.
+    if _reset_unidentified_slopes:
+        discriminations = np.where(slope_identified, discriminations, 1.0)
     difficulties = np.divide(
         -intercepts, discriminations, out=np.zeros(n_items), where=discriminations > 0
     )
@@ -717,6 +734,7 @@ def build_result(
     dispersions: dict[str, float],
     allocation: dict[str, int],
     selected_keys: list[tuple[str, int]],
+    gp_irt: dict[str, Any] | None = None,
 ) -> FitResult:
     """Build the fitted params and ordered subset records."""
     configuration_digest = digest_json(
@@ -734,6 +752,10 @@ def build_result(
         "duplicate_policy": duplicate_policy,
         "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
     }
+    if gp_irt is not None:
+        from complai.gp_irt import METHOD_VERSION as GP_IRT_METHOD_VERSION
+        params_basis.update(method=GP_IRT_METHOD_VERSION, gp_irt=gp_irt)
+        configuration_digest = digest_json({"base": configuration_digest, "gp_irt": gp_irt})
     params_id = digest_json(params_basis)[:24]
     selected_ids = [
         tasks[task]["items"][index]["item_id"] for task, index in selected_keys
@@ -827,7 +849,7 @@ def build_result(
 
     params = {
         "schema_version": PARAMS_SCHEMA,
-        "method": METHOD_VERSION,
+        "method": params_basis["method"],
         "params_id": params_id,
         "subset_id": subset_id,
         "budget": budget,
@@ -842,6 +864,8 @@ def build_result(
         "model_abilities": abilities,
         "items": columnar_items,
     }
+    if gp_irt is not None:
+        params.update(estimator="gp_irt", gp_irt=gp_irt)
 
     return FitResult(
         params=json_safe(params),

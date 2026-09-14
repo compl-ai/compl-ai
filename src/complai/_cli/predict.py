@@ -29,6 +29,10 @@ def predict_command(
             "--duplicates", help="How to handle samples with multiple results."
         ),
     ] = "latest",
+    estimator: Annotated[
+        Literal["irt", "gp_irt"] | None,
+        typer.Option("--estimator", help="Score estimator; defaults to the fitted artifact (legacy artifacts use irt)."),
+    ] = None,
     debug: Annotated[
         bool, typer.Option("--debug", help="Enable full stack traces.")
     ] = False,
@@ -58,7 +62,7 @@ def predict_command(
 
         if input_path.suffix == ".jsonl":
             result = predict_scores(
-                input_path, params, subset, duplicate_policy=duplicates
+                input_path, params, subset, duplicate_policy=duplicates, estimator=estimator
             )
         else:
             fitted, _ = read_inputs(params, subset)
@@ -69,7 +73,7 @@ def predict_command(
                     Path(temporary_dir) / "samples.jsonl",
                 )
                 result = predict_scores(
-                    records.records_path, params, subset, duplicate_policy=duplicates
+                    records.records_path, params, subset, duplicate_policy=duplicates, estimator=estimator
                 )
         output_path = write_prediction(result, output)
         print(f"Wrote {output_path} ({len(result['models'])} model(s))")

@@ -27,11 +27,15 @@ app = typer.Typer(help="Maintainer tools for generating COMPL-AI Core subsets.")
 def stats_command(
     data_dir: Annotated[Path, typer.Option("--data-dir", help="Path to subset directory.")] = Path("src/complai/data"),
     logs_dir: Annotated[Path, typer.Option("--logs-dir", help="Path to logs.")] = Path("logs/"),
-    labels_dir: Annotated[Path, typer.Option("--labels-dir", help="Path to domain labels.")] = Path("tools/label/labels")
+    labels_dir: Annotated[Path, typer.Option("--labels-dir", help="Path to domain labels.")] = Path("tools/label/labels"),
+    estimator: Annotated[
+        Literal["irt", "gp_irt"] | None,
+        typer.Option("--estimator", help="Score estimator; defaults to each fitted artifact."),
+    ] = None,
 ) -> None:
     """Evaluate a subset's discriminative power and mean absolute error."""
     from tools.minify.evaluate_subsets import evaluate_stats
-    evaluate_stats(data_dir=data_dir, logs_dir=logs_dir, labels_dir=labels_dir)
+    evaluate_stats(data_dir=data_dir, logs_dir=logs_dir, labels_dir=labels_dir, estimator=estimator)
 
 
 @app.command("preprocess")
@@ -110,6 +114,10 @@ def fit_command(
             help="Strategy for selecting items within a benchmark.",
         ),
     ] = "random",
+    estimator: Annotated[
+        Literal["irt", "gp_irt"],
+        typer.Option("--estimator", help="irt or Minibench gp_irt with source-calibrated direct/IRT blending."),
+    ] = "irt",
     domain_labels: Annotated[
         Path | None,
         typer.Option(
@@ -140,6 +148,7 @@ def fit_command(
             duplicate_policy=duplicates,
             item_selection=item_selection,
             domain_labels_dir=domain_labels,
+            estimator=estimator,
             _ignore_unseen_tasks=scorers is None,
         )
         params_path, subset_path = write_outputs(result, output)

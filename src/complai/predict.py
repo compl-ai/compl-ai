@@ -13,6 +13,8 @@ DuplicatePolicy = Literal["error", "latest", "mean"]
 from complai.utils.file_ops import json_safe
 from complai.constants import METHOD_VERSION, PARAMS_SCHEMA
 from complai.irt import prepare_tasks
+from complai.gp_irt import METHOD_VERSION as GP_IRT_METHOD_VERSION
+from complai.gp_irt import Estimator, predict_task, resolve_estimator, task_blend
 from complai.utils.log_parser import load_records
 
 
@@ -25,11 +27,13 @@ def predict_scores(
     subset_path: Path,
     *,
     duplicate_policy: DuplicatePolicy = "error",
+    estimator: Estimator | None = None,
 ) -> dict[str, Any]:
     """Predict full-task scores from preprocessed subset responses."""
     if duplicate_policy not in {"error", "mean", "latest"}:
         raise ValueError("duplicate_policy must be error, mean, or latest")
     params, subset = read_inputs(params_path, subset_path)
+    estimator = resolve_estimator(params, estimator)
     selected_tasks = {str(row["task"]) for row in subset}
     task_scorers = {
         task: scorer
@@ -38,6 +42,7 @@ def predict_scores(
     }
     if set(task_scorers) != selected_tasks:
         raise ValueError("params is missing a scorer for a selected task")
+    blends = {task: task_blend(params, task) for task in selected_tasks} if estimator == "gp_irt" else {}
 
     hyperparameters = params.get("hyperparameters", {})
     ridge = float(hyperparameters.get("ridge", 0.01))
@@ -53,7 +58,7 @@ def predict_scores(
     model_results: dict[str, Any] = {}
     for model in models:
         task_results: dict[str, Any] = {}
-        weighted_scores: list[tuple[float, int]] = []
+        weighted_scores: list[tuple[float, float | None, int]] = []
         for task_name, selected in sorted(selected_by_task.items()):
             task = tasks.get(task_name)
             if task is None or model not in task["models"]:
@@ -66,6 +71,7 @@ def predict_scores(
                 item_index[row.get("question_hash", row["item_id"])] = item_position
             responses: list[float] = []
             selected_parameters: list[dict[str, Any]] = []
+            selected_weights: list[float] = []
             for selected_item in selected:
                 item_id = str(selected_item["item_id"])
                 identity = selected_item.get("question_hash", item_id)
@@ -79,6 +85,8 @@ def predict_scores(
                     raise ValueError(f"Content mismatch for selected item {item_id}")
                 responses.append(float(task["matrix"][model_index, selected_index]))
                 selected_parameters.append(params_items[item_id])
+                if estimator == "gp_irt":
+                    selected_weights.append(float(selected_item.get("design_weight", 1.0)))
             if not responses:
                 task_results[task_name] = missing_task_result(len(selected))
                 continue
@@ -89,45 +97,40 @@ def predict_scores(
             intercept = np.asarray(
                 [float(row["intercept"]) for row in selected_parameters]
             )
-            ability, standard_error, ability_iterations = estimate_ability(
-                np.asarray(responses),
-                discrimination,
-                intercept,
-                ridge=ridge,
-                iterations=iterations,
-            )
             population = [
                 row for row in params["items"] if str(row["task"]) == task_name
             ]
+            population_a = np.asarray([float(row["discrimination"]) for row in population])
+            population_c = np.asarray([float(row["intercept"]) for row in population])
             def _compute_score(theta: float) -> float:
-                return float(
-                    np.mean(
-                        sigmoid(
-                            np.asarray([float(row["discrimination"]) for row in population])
-                            * theta
-                            + np.asarray([float(row["intercept"]) for row in population])
-                        )
-                    )
-                )
+                return float(np.mean(sigmoid(population_a * theta + population_c)))
 
-            population_score = _compute_score(ability)
-            score_upper = _compute_score(ability + standard_error)
-            score_lower = _compute_score(ability - standard_error)
-            predicted_score_error = (score_upper - score_lower) / 2.0
+            if estimator == "gp_irt":
+                prediction = predict_task(
+                    np.asarray(responses), discrimination, intercept, population_a, population_c,
+                    blend=blends[task_name], weights=np.asarray(selected_weights), ridge=ridge,
+                )
+            else:
+                ability, standard_error, ability_iterations = estimate_ability(
+                    np.asarray(responses), discrimination, intercept, ridge=ridge, iterations=iterations,
+                )
+                prediction = {
+                    "predicted_score": _compute_score(ability),
+                    "predicted_score_error": (_compute_score(ability + standard_error) - _compute_score(ability - standard_error)) / 2.0,
+                    "observed_subset_score": float(np.mean(responses)),
+                    "ability": ability,
+                    "ability_standard_error": standard_error,
+                    "ability_iterations": ability_iterations,
+                }
             task_results[task_name] = {
+                **prediction,
                 "status": "ok" if len(responses) == len(selected) else "partial",
-                "predicted_score": population_score,
-                "predicted_score_error": predicted_score_error,
-                "observed_subset_score": float(np.mean(responses)),
-                "ability": ability,
-                "ability_standard_error": standard_error,
-                "ability_iterations": ability_iterations,
                 "observations": len(responses),
                 "subset_items": len(selected),
                 "coverage": len(responses) / len(selected),
                 "population_items": len(population),
             }
-            weighted_scores.append((population_score, predicted_score_error, len(population)))
+            weighted_scores.append((prediction["predicted_score"], prediction["predicted_score_error"], len(population)))
 
         if not weighted_scores:
             raise ValueError(
@@ -136,7 +139,10 @@ def predict_scores(
         total_population = sum(count for _, _, count in weighted_scores)
         model_results[model] = {
             "predicted_score": sum(score * count for score, _, count in weighted_scores) / total_population,
-            "predicted_score_error": sum(error * count for _, error, count in weighted_scores) / total_population,
+            "predicted_score_error": (
+                sum(error * count for _, error, count in weighted_scores if error is not None) / total_population
+                if all(error is not None for _, error, _ in weighted_scores) else None
+            ),
             "task_macro_score": float(np.mean([score for score, _, _ in weighted_scores])),
             "predicted_tasks": len(weighted_scores),
             "params_tasks": len(selected_by_task),
@@ -151,6 +157,7 @@ def predict_scores(
                 "subset_id": params["subset_id"],
                 "input_digest": records.digest,
                 "duplicate_policy": duplicate_policy,
+                **({"estimator": estimator} if params["method"] == GP_IRT_METHOD_VERSION else {}),
             }
         )[:24],
         "params_id": params["params_id"],
@@ -166,6 +173,15 @@ def predict_scores(
         "inventory": records.inventory["summary"],
         "models": model_results,
     }
+    if params["method"] == GP_IRT_METHOD_VERSION:
+        result["estimator"] = estimator
+    if estimator == "gp_irt":
+        result["score_interpretation"] = (
+            "Per-task scores blend the weighted observed subset mean with the "
+            "full-population 2PL mean using frozen source-calibrated weights. "
+            "Model predicted_score is population-item-weighted. "
+            "predicted_score_error is null because blend uncertainty is not estimated."
+        )
     return json_safe(result)
 
 
@@ -192,7 +208,7 @@ def read_inputs(
         raise TypeError("Params is missing its task_scorers mapping")
     if (
         params.get("schema_version") != PARAMS_SCHEMA
-        or params.get("method") != METHOD_VERSION
+        or params.get("method") not in {METHOD_VERSION, GP_IRT_METHOD_VERSION}
     ):
         raise ValueError("Params is not a supported GP-IRT 2PL params")
     if not params["task_scorers"] or any(
