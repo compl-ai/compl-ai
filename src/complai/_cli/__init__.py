@@ -30,6 +30,19 @@ if (_repo_root / "tools" / "minify").exists():
     except ImportError:
         pass
 
+
+if (_repo_root / "tools" / "export_web").exists():
+    try:
+        if str(_repo_root) not in sys.path:
+            sys.path.insert(0, str(_repo_root))
+        from tools.export_web.export import export as export_web_cmd
+        app.command("export-web", help="Export predictions to static JSON for the frontend.")(export_web_cmd)
+    except ImportError as e:
+        print("Import error for export-web:", e)
+
+
+
+
 def main() -> None:
     init_dotenv()
     app()
