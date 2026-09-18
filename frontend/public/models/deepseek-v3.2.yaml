@@ -1,0 +1,67 @@
+name: "DeepSeek-V3.2"
+release_date: "2025-12-01"
+open_weights: true
+organization: "DeepSeek"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  DeepSeek-V3.2 is a large decoder-only transformer language model developed by DeepSeek, built using a Mixture-of-Experts (MoE) architecture. It is designed for text-only input and output and supports long-context processing. The model is part of the DeepSeek-V3 series and is made available through hosted services and APIs, with open-weight releases for research and development use.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 685_000_000_000
+  active_params: 37_000_000_000
+  context: 128_000
+  max_output_tokens: 64_000
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "DeepSeek-V3.2 Release"
+    url: "https://api-docs.deepseek.com/news/news251201"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V3.2"
+    type: "model-weights"
+  - title: "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models"
+    url: "https://arxiv.org/abs/2512.02556"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "from large-scale agentic task synthesis pipeline"
+  base_model: "DeepSeek-V3.2-Exp-Base"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 29
+  latency_ms_per_token: 1_360
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”

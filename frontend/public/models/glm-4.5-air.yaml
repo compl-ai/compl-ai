@@ -1,0 +1,68 @@
+name: "GLM-4.5-Air"
+release_date: "2025-07-28"
+open_weights: true
+organization: "Zhipu AI"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  GLM-4.5-Air is a more compact, efficient variant of the GLM-4.5 model family from Z.ai. This variant is built to deliver strong reasoning, coding, and agent-capable performance while using fewer compute resources. It supports a “thinking mode” for complex reasoning, planning, and tool orchestration, and a “non-thinking mode” for faster, simpler responses, which lets users trade off speed for reasoning depth as needed.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 106_000_000_000
+  active_params: 12_000_000_000
+  context: 128_000
+  max_output_tokens: 96_000
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "GLM-4.5"
+    url: "https://docs.z.ai/guides/llm/glm-4.5"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/zai-org/GLM-4.5-Air"
+    type: "model-weights"
+  - title: "GLM-4.5: Agentic, Reasoning, and Coding (ARC) Foundation Models"          
+    url: "https://arxiv.org/abs/2508.06471"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
+
+training:
+  tokens: 23_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "publicly available web text + books + articles + papers + publications"
+  base_model: "GLM-4.5"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 77
+  latency_ms_per_token: 1_770
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”

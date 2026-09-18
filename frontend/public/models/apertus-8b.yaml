@@ -1,0 +1,68 @@
+name: "Apertus-8B-2509"
+release_date: "2025-09-02"
+open_weights: true
+organization: "Swiss AI Initiative"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Apertus‑8B‑2509 is an open-source, multilingual, 8-billion parameter language model developed by the Swiss AI Initiative. It is a decoder-only transformer trained on approximately 15 trillion tokens across over 1,800 languages, including web, code, and mathematical content. The model supports long contexts up to 65,536 tokens and excels in reasoning, coding, mathematical tasks, multilingual text generation, and tool usage.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2024-03"
+  total_params: 8_000_000_000
+  active_params: 8_000_000_000
+  context: 65_536
+  max_output_tokens: 32_768
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Apertus"
+    url: "https://www.swiss-ai.org/apertus"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/swiss-ai/Apertus-8B-2509"
+    type: "model-weights"
+  - title: "Apertus: Democratizing Open and Compliant LLMs for Global Language Environments"
+    url: "https://arxiv.org/abs/2509.14233"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: 15_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "highly multilingual"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CH”

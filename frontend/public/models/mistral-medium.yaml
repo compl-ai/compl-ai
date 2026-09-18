@@ -1,0 +1,62 @@
+name: "Mistral Medium 3.1"
+release_date: "2025-08-12"
+open_weights: false
+organization: "Mistral AI"
+license: "Mistral AI API"
+
+availability:
+  - "saas-chat"
+  - "api"
+
+description: |
+  Mistral Medium 3.1 is a proprietary large language model developed by Mistral AI as part of its commercial model lineup. It provides strong general-purpose reasoning, multilingual understanding and coding capabilities. It also supports large context windows for extended tasks. The model is available through Mistral’s API and third-party model providers, but detailed training data, architecture specifications, and compute information have not been publicly disclosed.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: null
+  active_params: null
+  context: 128_000
+  max_output_tokens: 128_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Mistral Medium 3.1"
+    url: "https://docs.mistral.ai/models/mistral-medium-3-1-25-08"
+    type: "model-homepage"
+  - title: "Legal Center"
+    url: "https://legal.mistral.ai/terms"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 83
+  latency_ms_per_token: 460
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “FR”

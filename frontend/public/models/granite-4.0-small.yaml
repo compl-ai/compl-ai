@@ -1,0 +1,68 @@
+name: "Granite-4.0-H-Small"
+release_date: "2025-10-02"
+open_weights: true
+organization: "IBM Granite"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Granite‑4.0‑H‑Small is a hybrid decoder‑only large language model developed by IBM as part of the Granite 4.0 family. It combines transformer blocks with Mamba‑2 state‑space layers and a Mixture‑of‑Experts (MoE) architecture to achieve high performance with computational efficiency. The model is instruction‑tuned for text‑based tasks, supports very long context lengths (up to 128,000 tokens in practice), and is designed for applications such as conversational AI, text generation, summarization, and structured text outputs.
+
+specs:
+  architecture: "decoder-only Mixture-of-Experts transformer"
+  knowledge_cutoff: null
+  total_params: 32_000_000_000
+  active_params: 9_000_000_000
+  context: 128_000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Granite 4.0"
+    url: "https://www.ibm.com/granite/docs/models/granite"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/ibm-granite/granite-4.0-h-small"
+    type: "model-weights"
+  - title: "Granite Foundation Models"
+    url: "https://www.ibm.com/downloads/documents/us-en/10a99803c92fdb35"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: 23_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "publicly available dataset + internal synthetic data + human-curated data"
+  base_model: "Granite-4.0-H-Small-Base"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “US”

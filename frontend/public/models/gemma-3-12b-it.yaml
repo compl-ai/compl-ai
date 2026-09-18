@@ -1,0 +1,68 @@
+name: "Gemma 3 12B Instruct"
+release_date: "2025-03-10"
+open_weights: true
+organization: "Google"
+license: "gemma"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Gemma 3 12B Instruct is a 12‑billion‑parameter instruction‑tuned large language model from Google’s Gemma 3 family. It is built to follow natural language instructions and generate text responses across a wide range of tasks, such as question answering, summarization, reasoning, and conversation. The model supports multimodal input (text and images), a very long context window (up to approximately 128,000 tokens), and multilingual understanding across more than 140 languages. Its weights are openly available, making it suitable for deployment in research and development environments with moderate compute resources.
+
+specs:
+  architecture: "decoder-only transformer"
+  knowledge_cutoff: "2024-08"
+  total_params: 12_000_000_000
+  active_params: 12_000_000_000
+  context: 128_000
+  max_output_tokens: 128_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Gemma 3 Model Card"
+    url: "https://ai.google.dev/gemma/docs/core/model_card_3"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/google/gemma-3-12b-it"
+    type: "model-weights"
+  - title: "Gemma 3 Technical Report"
+    url: "https://storage.googleapis.com/deepmind-media/gemma/Gemma3Report.pdf"
+    type: "paper-url"
+  - title: "Gemma Terms of Use"
+    url: "https://ai.google.dev/gemma/terms"
+    type: "licence-url"
+
+
+training:
+  tokens: 12_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "web documents + code + math + images"
+  base_model: "Gemma 3 PT 12B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 33
+  latency_ms_per_token: 200
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “GB-ENG”

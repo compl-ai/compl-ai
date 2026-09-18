@@ -1,0 +1,68 @@
+name: "gpt-oss-120b"
+release_date: "2025-08-05"
+open_weights: true
+organization: "OpenAI"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+
+description: |
+  gpt-oss-120b is a fully open-weights, 120-billion-parameter large language model released as part of the gpt-oss family. It is architecturally similar to modern GPT-style dense transformer models and is trained on a broad mixture of public web, code, academic, and multilingual text sources. The model is designed to provide high-quality reasoning, instruction following, and general-purpose generative capability while remaining fully transparent and reproducible for research and development.
+
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2024-06-01"
+  total_params: 117_000_000_000
+  active_params: 5_100_000_000
+  context: 131_072
+  max_output_tokens: 131_072
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "gpt-oss-120b"
+    url: "https://platform.openai.com/docs/models/gpt-oss-120b"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: "model-weights"
+  - title: "gpt-oss-120b & gpt-oss-20b Model Card"          
+    url: "https://arxiv.org/abs/2508.10925"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "STEM + coding + general knowledge"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “US”

@@ -1,0 +1,67 @@
+name: "Qwen3-32B"
+release_date: "2025-04-29"
+open_weights: true
+organization: "Alibaba Cloud"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Qwen3-32B is a dense, decoder-only Transformer language model with approximately 32.8 billion parameters, developed as part of Alibaba’s Qwen3 model family. It is a text-only model designed for general-purpose language understanding and generation, supporting tasks such as reasoning, coding, mathematics, and multilingual text processing.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2024-07"
+  total_params: 32_800_000_000
+  active_params: 32_800_000_000
+  context: 32_768
+  max_output_tokens: 32_768
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Qwen-3: Explore the Next-Generation Open Source Large Model"
+    url: "https://qwen-3.com/en"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/Qwen/Qwen3-32B"
+    type: "model-weights"
+  - title: "Qwen3 Technical Report"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE"
+    type: "licence-url"
+
+
+training:
+  tokens: 36_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "multilingual knowledge-intensive web content + PDF documents + synthetic data"
+  base_model: "Qwen3-32B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 241
+  latency_ms_per_token: 4
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”

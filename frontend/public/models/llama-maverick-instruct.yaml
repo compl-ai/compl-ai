@@ -1,0 +1,69 @@
+name: "Llama-4-Maverick-17B-128E-Instruct"
+release_date: "2025-04-05"
+open_weights: true
+organization: "Meta"
+license: "llama4"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Llama-4-Maverick-17B-128E-Instruct is a 17-billion parameter, Mixture-of-Experts (MoE) multimodal language model developed by Meta. It is designed for instruction-following tasks and supports text, code, and image inputs, with capabilities in reasoning, coding, math, and multilingual understanding.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2024-08"
+  total_params: 400_000_000_000
+  active_params: 17_000_000_000
+  context: 1_000_000
+  max_output_tokens: 8_192
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Llama 4"
+    url: "https://www.llama.com/docs/model-cards-and-prompt-formats/llama4/"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    type: "model-weights"
+  - title: "The Carbon Footprint of Machine Learning Training Will Plateau, Then Shrink"
+    url: "https://arxiv.org/abs/2204.05149"
+    type: "paper-url"
+  - title: "Llama 4 Community License Agreement"
+    url: "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE"
+    type: "licence-url"
+
+
+training:
+  tokens: 22_000_000_000_000
+  compute_flops: null
+  energy_kwh: 1_666_000
+  emissions_co2: 645_000
+  training_dataset: "publicly available licensed data and information from Meta's products and services"
+  base_model: "Llama-4-Maverick-17B-128E"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “US”

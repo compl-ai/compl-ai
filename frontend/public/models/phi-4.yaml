@@ -1,0 +1,66 @@
+name: "Phi-4"
+release_date: "2024-12-12"
+open_weights: true
+organization: "Microsoft"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Phi-4 is a 14-billion-parameter dense, decoder-only language model developed by Microsoft. It is trained on a mix of curated high-quality text, code, and large amounts of synthetic data, with a context window of up to 16,000 tokens. Phi-4 is designed to provide strong general-purpose performance across tasks such as reasoning, coding, and text generation, while remaining relatively efficient compared to larger models.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2024-06"
+  total_params: 14_000_000_000
+  active_params: 14_000_000_000
+  context: 16_384
+  max_output_tokens: 16_384
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "math"
+
+sources:
+  - title: "Phi-4"
+    url: "https://ai.azure.com/catalog/models/Phi-4"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/microsoft/phi-4"
+    type: "model-weights"
+  - title: "Phi-4 Technical Report"
+    url: "https://arxiv.org/abs/2412.08905"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/microsoft/phi-4/resolve/main/LICENSE"
+    type: "licence-url"
+
+
+training:
+  tokens: 9_800_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "publicly available documents + educational data + code + newly created synthetic data"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “US”

@@ -1,0 +1,66 @@
+name: "Mistral Small 3.2"
+release_date: "2025-06-20"
+open_weights: true
+organization: "Mistral AI"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Mistral Small 3.2 is a 24‑billion parameter dense transformer language model developed by Mistral AI. It is designed for instruction‑following tasks and supports reasoning, coding, multilingual understanding, math, and structured output, with optional multimodal (text + image) inputs.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: 24_000_000_000
+  active_params: 24_000_000_000
+  context: 128_000
+  max_output_tokens: 128_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Mistral Small 3.2"
+    url: "https://docs.mistral.ai/models/mistral-small-3-2-25-06"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+    type: "model-weights"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: "Mistral-Small-3.1-24B-Base-2503"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 165
+  latency_ms_per_token: 210
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “FR”

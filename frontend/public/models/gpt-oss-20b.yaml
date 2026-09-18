@@ -1,0 +1,67 @@
+name: "gpt-oss-20b"
+release_date: "2025-08-05"
+open_weights: true
+organization: "OpenAI"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+
+description: |
+  gpt-oss-20B is an open-source large language model with roughly 21 billion parameters. It’s designed as a general-purpose text generator and reasoning model, suitable for research, experimentation, and downstream fine-tuning. The model was trained entirely on publicly available datasets, and its open licensing makes it accessible for academic and community projects. While performance varies depending on the implementation and hardware setup, the model is intended to provide a balance between capability and compute requirements, sitting between lightweight models and very large frontier systems.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2024-06-01"
+  total_params: 21_000_000_000
+  active_params: 3_600_000_000
+  context: 131_072
+  max_output_tokens: 131_072
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "gpt-oss-20b"
+    url: "https://platform.openai.com/docs/models/gpt-oss-20b"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/openai/gpt-oss-20b"
+    type: "model-weights"
+  - title: "gpt-oss-120b & gpt-oss-20b Model Card"          
+    url: "https://arxiv.org/abs/2508.10925"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "STEM + coding + general knowledge"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “US”

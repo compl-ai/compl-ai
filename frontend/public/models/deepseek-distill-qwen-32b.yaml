@@ -1,0 +1,66 @@
+name: "DeepSeek-R1-Distill-Qwen-32B"
+release_date: "2025-01-19"
+open_weights: true
+organization: "DeepSeek"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  DeepSeek-R1-Distill-Qwen-32B is a 32-billion-parameter, text-only large language model obtained by distilling the DeepSeek-R1 reasoning model into a Qwen-32B base through supervised fine-tuning. It is designed to produce step-by-step reasoning and instruction-following outputs, and supports general language tasks such as reasoning, coding, mathematics, and multilingual text generation.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2024-07-23"
+  total_params: 32_000_000_000
+  active_params: 32_000_000_000
+  context: 128_000
+  max_output_tokens: 128_000
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "math"
+
+sources:
+  - title: "DeepSeek-R1 Release"
+    url: "https://api-docs.deepseek.com/news/news250120"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+    type: "model-weights"
+  - title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+    url: "https://arxiv.org/abs/2501.12948"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
+
+training:
+  tokens: 14_800_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "synthetic outputs and fine-tuning samples from DeepSeek-R1"
+  base_model: "Qwen2.5-32B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 37
+  latency_ms_per_token: 650
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”

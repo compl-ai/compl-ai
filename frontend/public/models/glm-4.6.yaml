@@ -1,0 +1,68 @@
+name: "GLM-4.6"
+release_date: "2025-09-30"
+open_weights: true
+organization: "Zhipu AI"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  GLM-4.6 is a large-scale Mixture-of-Experts (MoE) language model developed by Zhipu AI. The model was trained on a 15-trillion-token corpus covering general text, multilingual data, code, and reasoning-oriented content. GLM-4.6 is designed for broad language understanding and generation tasks, offering capabilities in reasoning, multilingual dialogue, and coding assistance. It is available for direct download, research, and commercial deployment.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2025-06"
+  total_params: 357_000_000_000
+  active_params: 32_000_000_000
+  context: 200_000
+  max_output_tokens: 128_000
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "GLM-4.6"
+    url: "https://docs.z.ai/guides/llm/glm-4.6"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/zai-org/GLM-4.6"
+    type: "model-weights"
+  - title: "GLM-4.5: Agentic, Reasoning, and Coding (ARC) Foundation Models"          
+    url: "https://arxiv.org/abs/2508.06471"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
+
+training:
+  tokens: 23_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "diverse public text"
+  base_model: "GLM-4.5"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 69
+  latency_ms_per_token: 2_130
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”
