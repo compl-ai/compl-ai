@@ -69,18 +69,6 @@ complai COMMAND --help
 complai list
 ```
 
-#### Collect Sample Inputs
-
-Export samples as JSONL:
-
-```bash
-complai samples samples.jsonl
-complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
-complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
-```
-
-Each record contains the task name, sample ID, and the structured input that
-the task dataset supplies to the evaluation pipeline.
 
 #### Run Evals with the following syntax
 ```bash
@@ -119,6 +107,34 @@ See the [Providers](providers/README.md) section for more information on differe
 #### Environment Variables
 COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
 
+
+#### COMPL-AI Core (Subset Evaluation)
+
+COMPL-AI Core is our flagship 5,000-item highly-discriminative benchmark. By running only 5% of the total dataset, you can reliably estimate your model's capabilities across the full 95,000 item pool.
+
+Our CLI is pre-configured to use the bundled CORE subset by default:
+
+```bash
+# 1. Run the evaluation on the 5,000 items
+complai eval openai/gpt-5-nano --log-dir logs/
+
+# 2. Predict your full-benchmark scores using GP-IRT
+complai predict logs/<folder_name> --output predicted.json
+```
+*(Maintainers: See `tools/minify/README.md` for instructions on regenerating the Core subset).*
+
+#### Collect Sample Inputs
+
+Export samples as JSONL:
+
+```bash
+complai samples samples.jsonl
+complai samples samples.jsonl --tasks mmlu_pro,human_deception --limit 10
+complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
+```
+
+Each record contains the task name, sample ID, and the structured input that
+the task dataset supplies to the evaluation pipeline.
 
 ## 🧪 Framework
 
