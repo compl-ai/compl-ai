@@ -114,22 +114,45 @@ def boolq_contrastset_dataset(num_contrasts: int, contrast_seed: int) -> Dataset
     )
 
 
+def grouped_accuracies(scores: list[SampleScore]) -> list[float]:
+    # Aggregate samples with the same original question (group by id)
+    correct: dict[int, int] = defaultdict(int)
+    total: dict[int, int] = defaultdict(int)
+    for score in scores:
+        id = cast(dict, score.sample_metadata)["id"]
+        if score.score.as_bool():
+            correct[id] += 1
+        total[id] += 1
+
+    # Calculate accuracy for each original question
+    return [correct[id] / total[id] for id in total]
+
+
 @metric
 def accuracy() -> Metric:
     def metric(scores: list[SampleScore]) -> float:
-        # Aggregate samples with the same original question (group by id)
-        correct: dict[int, int] = defaultdict(int)
-        total: dict[int, int] = defaultdict(int)
-        for score in scores:
-            id = cast(dict, score.sample_metadata)["id"]
-            if score.score.as_bool():
-                correct[id] += 1
-            total[id] += 1
+        return np.mean(grouped_accuracies(scores), dtype=float)
 
-        # Calculate accuracy for each original question
-        accuracies = [correct[id] / total[id] for id in total]
+    return metric
 
-        return np.mean(accuracies, dtype=float)
+
+@metric
+def stderr() -> Metric:
+    from scipy.stats import sem
+
+    def metric(scores: list[SampleScore]) -> float:
+        # Standard error over the per-question accuracies, i.e. of the exact
+        # quantity accuracy() reports. Questions are the independent units;
+        # the contrast samples within a question share its paragraph and are
+        # aggregated before the SE is taken.
+        accuracies = grouped_accuracies(scores)
+        # A spread needs two independent units. A single question — reachable
+        # with --limit 1 — leaves ddof=1 dividing by zero, which scipy answers
+        # with nan behind a SmallSampleWarning that an eval run will not show.
+        # Report the nan directly, so the number is absent rather than invented.
+        if len(accuracies) < 2:
+            return float("nan")
+        return float(sem(accuracies, ddof=1))
 
     return metric
 
@@ -147,5 +170,5 @@ def boolq_contrast(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
         dataset=boolq_contrastset_dataset(num_contrasts, contrast_seed),
         solver=[system_message(BOOLQ_SYSTEM_PROMPT), generate()],
         scorer=match(location="begin", ignore_case=True),
-        metrics=[accuracy()],
+        metrics=[accuracy(), stderr()],
     )
