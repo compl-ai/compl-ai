@@ -1,3 +1,4 @@
+
 name: "Olmo 3 32B Think"
 release_date: "2025-11-20"
 open_weights: true
@@ -15,10 +16,10 @@ description: |
 specs:
   architecture: "dense decoder-only transformer"
   knowledge_cutoff: "2024-12"
-  total_params: 32_000_000_000
-  active_params: 32_000_000_000
-  context: 65_536
-  max_output_tokens: 65_536
+  total_params: 32000000000
+  active_params: 32000000000
+  context: 65536
+  max_output_tokens: 65536
 
   modalities:
     input:
@@ -46,10 +47,9 @@ sources:
     url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
     type: "licence-url"
 
-
 training:
-  tokens: 5_800_000_000_000
-  compute_flops: 4e23
+  tokens: 5800000000000
+  compute_flops: "4e23"
   energy_kwh: null
   emissions_co2: null
   training_dataset: "web content + code + books + scientific text"
@@ -64,4 +64,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “US”
+    - "US"
+
+evals:
+  - "openai-api/vllm/allenai/Olmo-3-32B-Think"

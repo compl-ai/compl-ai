@@ -1,0 +1,61 @@
+
+name: "Qwen3.6-35B-A3B"
+release_date: "2026-04-16"
+open_weights: true
+organization: "Alibaba Cloud"
+license: null
+
+availability:
+  - "open-weights"
+  - "api"
+  - "saas-chat"
+
+description: |
+  Alibaba Cloud's Qwen3.6-35B-A3B is a powerful foundation model.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 35000000000
+  active_params: 3000000000
+  context: 128000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/Qwen/Qwen3.6-35B-A3B"
+    type: "model-weights"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - null
+
+evals:
+  - "openai-api/vllm/Qwen/Qwen3.6-35B-A3B"

@@ -1,3 +1,4 @@
+
 name: "Granite-4.0-H-Small"
 release_date: "2025-10-02"
 open_weights: true
@@ -15,9 +16,9 @@ description: |
 specs:
   architecture: "decoder-only Mixture-of-Experts transformer"
   knowledge_cutoff: null
-  total_params: 32_000_000_000
-  active_params: 9_000_000_000
-  context: 128_000
+  total_params: 32000000000
+  active_params: 9000000000
+  context: 128000
   max_output_tokens: null
 
   modalities:
@@ -47,9 +48,8 @@ sources:
     url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
     type: "licence-url"
 
-
 training:
-  tokens: 23_000_000_000_000
+  tokens: 23000000000000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
@@ -65,4 +65,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “US”
+    - "US"
+
+evals:
+  - "openai-api/vllm/ibm-granite/granite-4.0-h-small"

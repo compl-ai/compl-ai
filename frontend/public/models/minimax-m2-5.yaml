@@ -1,4 +1,5 @@
-name: "MiniMax-M2"
+
+name: "MiniMax-M2.5"
 release_date: "2025-10-27"
 open_weights: true
 organization: "MiniMax"
@@ -15,10 +16,10 @@ description: |
 specs:
   architecture: "Mixture-of-Experts (MoE)"
   knowledge_cutoff: "2025-04-28"
-  total_params: 230_000_000_000
-  active_params: 10_000_000_000
-  context: 204_800
-  max_output_tokens: 128_000
+  total_params: 230000000000
+  active_params: 10000000000
+  context: 204800
+  max_output_tokens: 128000
 
   modalities:
     input:
@@ -37,12 +38,11 @@ sources:
     url: "https://www.minimax.io/news/minimax-m2"
     type: "model-homepage"
   - title: "Hugging Face Model Card"
-    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.5"
     type: "model-weights"
   - title: "MIT License"
     url: "https://github.com/MiniMax-AI/MiniMax-M2/blob/main/LICENSE"
     type: "licence-url"
-
 
 training:
   tokens: null
@@ -61,4 +61,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “CN”
+    - "CN"
+
+evals:
+  - "openai-api/vllm/MiniMaxAI/MiniMax-M2.5"

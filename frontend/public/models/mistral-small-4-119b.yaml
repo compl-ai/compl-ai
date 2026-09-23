@@ -1,3 +1,4 @@
+
 name: "Mistral Small 3.2"
 release_date: "2025-06-20"
 open_weights: true
@@ -15,10 +16,10 @@ description: |
 specs:
   architecture: "dense decoder-only transformer"
   knowledge_cutoff: null
-  total_params: 24_000_000_000
-  active_params: 24_000_000_000
-  context: 128_000
-  max_output_tokens: 128_000
+  total_params: 24000000000
+  active_params: 24000000000
+  context: 128000
+  max_output_tokens: 128000
 
   modalities:
     input:
@@ -45,7 +46,6 @@ sources:
     url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
     type: "licence-url"
 
-
 training:
   tokens: null
   compute_flops: null
@@ -63,4 +63,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “FR”
+    - "FR"
+
+evals:
+  - "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603"

@@ -46,7 +46,6 @@ sources:
     url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
     type: "licence-url"
 
-
 training:
   tokens: null
   compute_flops: null
@@ -65,3 +64,6 @@ region:
     - null
   region_developed:
     - “CN”
+
+evals:
+  - "openai-api/vllm/deepseek-ai/DeepSeek-V3.2"

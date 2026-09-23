@@ -1,3 +1,4 @@
+
 name: "Mistral Medium 3.1"
 release_date: "2025-08-12"
 open_weights: false
@@ -16,8 +17,8 @@ specs:
   knowledge_cutoff: null
   total_params: null
   active_params: null
-  context: 128_000
-  max_output_tokens: 128_000
+  context: 128000
+  max_output_tokens: 128000
 
   modalities:
     input:
@@ -41,7 +42,6 @@ sources:
     url: "https://legal.mistral.ai/terms"
     type: "licence-url"
 
-
 training:
   tokens: null
   compute_flops: null
@@ -59,4 +59,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “FR”
+    - "FR"
+
+evals:
+  - "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B"

@@ -1,5 +1,6 @@
+
 name: "Apertus-8B-Instruct-2509"
-release_date: null
+release_date: "2025-09-02"
 open_weights: true
 organization: "Swiss AI Initiative"
 license: "apache-2.0"
@@ -15,10 +16,10 @@ description: |
 specs:
   architecture: "dense decoder-only transformer"
   knowledge_cutoff: "2024-03"
-  total_params: 8_000_000_000
-  active_params: 8_000_000_000
-  context: 65_536
-  max_output_tokens: 32_768
+  total_params: 8000000000
+  active_params: 8000000000
+  context: 65536
+  max_output_tokens: 32768
 
   modalities:
     input:
@@ -47,9 +48,8 @@ sources:
     url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
     type: "licence-url"
 
-
 training:
-  tokens: 15_000_000_000_000
+  tokens: 15000000000000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
@@ -65,4 +65,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “CH”
+    - "CH"
+
+evals:
+  - "openai-api/vllm/swiss-ai/Apertus-8B-Instruct-2509"

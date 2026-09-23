@@ -1,3 +1,4 @@
+
 name: "gpt-oss-20b"
 release_date: "2025-08-05"
 open_weights: true
@@ -14,10 +15,10 @@ description: |
 specs:
   architecture: "Mixture-of-Experts (MoE)"
   knowledge_cutoff: "2024-06-01"
-  total_params: 21_000_000_000
-  active_params: 3_600_000_000
-  context: 131_072
-  max_output_tokens: 131_072
+  total_params: 21000000000
+  active_params: 3600000000
+  context: 131072
+  max_output_tokens: 131072
 
   modalities:
     input:
@@ -39,13 +40,12 @@ sources:
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/openai/gpt-oss-20b"
     type: "model-weights"
-  - title: "gpt-oss-120b & gpt-oss-20b Model Card"          
+  - title: "gpt-oss-120b & gpt-oss-20b Model Card"
     url: "https://arxiv.org/abs/2508.10925"
     type: "paper-url"
   - title: "Apache License Version 2.0"
     url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
     type: "licence-url"
-
 
 training:
   tokens: null
@@ -64,4 +64,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “US”
+    - "US"
+
+evals:
+  - "openai-api/vllm/openai/gpt-oss-20b"

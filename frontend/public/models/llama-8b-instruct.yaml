@@ -1,3 +1,4 @@
+
 name: "Llama-3.1-8B-Instruct"
 release_date: "2024-07-23"
 open_weights: true
@@ -15,10 +16,10 @@ description: |
 specs:
   architecture: "dense decoder-only transformer"
   knowledge_cutoff: "2023-12"
-  total_params: 8_000_000_000
-  active_params: 8_000_000_000
-  context: 128_000
-  max_output_tokens: 8_000
+  total_params: 8000000000
+  active_params: 8000000000
+  context: 128000
+  max_output_tokens: 8000
 
   modalities:
     input:
@@ -47,12 +48,11 @@ sources:
     url: "https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct/blob/main/LICENSE"
     type: "licence-url"
 
-
 training:
-  tokens: 15_000_000_000_000
+  tokens: 15000000000000
   compute_flops: null
-  energy_kwh: 1_022_000
-  emissions_co2: 420_000
+  energy_kwh: 1022000
+  emissions_co2: 420000
   training_dataset: "publicly available online data + synthetically generated examples"
   base_model: "Llama-3.1-8B"
 
@@ -65,4 +65,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - “US”
+    - "US"
+
+evals:
+  - "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct"
