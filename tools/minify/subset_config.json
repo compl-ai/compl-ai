@@ -30,13 +30,6 @@
         "f_score"
       ]
     },
-    "bigbench_calibration": {
-      "scorer": "bigbench_calibration_scorer",
-      "allocation": "full",
-      "primary_metric": [
-        "ece"
-      ]
-    },
     "boolq_contrast": {
       "scorer": "match",
       "allocation": "default",
