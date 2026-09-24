@@ -169,13 +169,20 @@ def evaluate_stats(
     for t_name, t_data in tasks.items():
         matrix = t_data["matrix"]
         models = t_data["models"]
+        is_full = allocations.get(t_name, "default") == "full"
             
         for j, item in enumerate(t_data["items"]):
             sid = str(item.get("sample_id", ""))
             dom = domain_map.get((t_name, sid), "unknown")
             for i, m_name in enumerate(models):
-                val = matrix[i, j]
-                if not np.isnan(val):
+                if is_full:
+                    # Full-allocation: spread the global true score
+                    val = true_bench_scores.get(t_name, {}).get(m_name)
+                else:
+                    # IRT: use item-level correctness
+                    val = matrix[i, j]
+                    
+                if val is not None and not np.isnan(val):
                     true_domain_scores_raw[dom][m_name].append(val)
 
     true_domain_scores = {}
@@ -248,11 +255,8 @@ def evaluate_stats(
                 total_items += 1
                 
         percent_str = f"{total_items/pool_size*100:.1f}%" if pool_size > 0 else "0%"
-        print(f"1. Domain Coverage (Total: {total_items:,} items - {percent_str} of {pool_size:,} available items):")
-        for dom, count in sorted(domain_counts.items(), key=lambda x: -x[1]):
-            print(f"  {dom:<20} | {count:>4}")
-            
-        print("2. Re-estimating theta and calculating MAE...")
+        print(f"  Coverage: {total_items:,} items ({percent_str} of {pool_size:,} available items)")
+        print("  Re-estimating theta and calculating MAE...")
         bench_errs = []
         all_taus = []
         all_true_mads = []
@@ -270,14 +274,23 @@ def evaluate_stats(
         
         for t_name, t_data in tasks.items():
             if t_name not in subset_items_by_task:
-                # PENALTY: The subset completely dropped this benchmark.
+                is_full = allocations.get(t_name, "default") == "full"
+                
+                if is_full and t_name in true_bench_scores:
+                    # FULL-ALLOCATION: The "predicted" score is just the true score. Spread it to domains.
+                    for j, full_item in enumerate(t_data["items"]):
+                        sid = str(full_item.get("sample_id", ""))
+                        dom = domain_map.get((t_name, sid), "unknown")
+                        for m_name, true_score in true_bench_scores[t_name].items():
+                            domain_pred_sum[dom][m_name].append(true_score)
+                    continue
+
+                # PENALTY: The subset completely dropped this benchmark (and it's not full-allocation).
                 # The prediction defaults to random guessing (0.5) against the true scores.
                 if t_name in true_bench_scores:
-                    is_full = allocations.get(t_name, "default") == "full"
                     for m_name, true_score in true_bench_scores[t_name].items():
                         penalty = abs(0.5 - true_score)
-                        if not is_full:
-                            bench_errs.append(penalty)
+                        bench_errs.append(penalty)
                         per_bench_errs[t_name].append(penalty)
                 continue
                 
@@ -380,28 +393,33 @@ def evaluate_stats(
                 if pred_diffs:
                     all_pred_mads.append(np.mean(pred_diffs))
                     
-        print("\n  --- Per-Benchmark Breakdown ---")
-        for t, errs in sorted(per_bench_errs.items(), key=lambda x: np.mean(x[1]) if x[1] else 0, reverse=True):
-            n_items = len(subset_items_by_task[t])
-            mean_err = np.mean(errs) if errs else 0.0
-            print(f"    {t:<25} | {n_items:>4} items | {mean_err*100:>5.2f}% MAE")
-        print("  -------------------------------")
-        print(f"  Avg Benchmark MAE: {np.mean(bench_errs):.4f}")
-        
         domain_maes = []
+        per_domain_errs = collections.defaultdict(list)
         for dom, m_dict in domain_pred_sum.items():
             if dom not in true_domain_scores: continue
             for m_name, probs in m_dict.items():
                 if m_name in true_domain_scores[dom]:
                     pred_score = np.mean(probs)
                     true_score = true_domain_scores[dom][m_name]
-                    domain_maes.append(abs(pred_score - true_score))
-                    
-        if domain_maes:
-            print(f"  Avg Domain MAE:    {np.mean(domain_maes):.4f}")
-        else:
-            print("  Avg Domain MAE:    N/A")
-            
+                    err = abs(pred_score - true_score)
+                    domain_maes.append(err)
+                    per_domain_errs[dom].append(err)
+
+        print("\n  --- Per-Domain Breakdown ---")
+        for dom, errs in sorted(per_domain_errs.items(), key=lambda x: np.mean(x[1]) if x[1] else 0, reverse=True):
+            n_items = domain_counts.get(dom, 0)
+            mean_err = np.mean(errs) if errs else 0.0
+            print(f"    {dom:<25} | {n_items:>4} items | {mean_err*100:>5.2f}% MAE")
+        print("  ----------------------------")
+        print(f"  Avg Domain MAE:    {(np.mean(domain_maes) if domain_maes else 0.0) * 100:.2f}%")
+
+        print("\n  --- Per-Benchmark Breakdown ---")
+        for t, errs in sorted(per_bench_errs.items(), key=lambda x: np.mean(x[1]) if x[1] else 0, reverse=True):
+            n_items = len(subset_items_by_task[t])
+            mean_err = np.mean(errs) if errs else 0.0
+            print(f"    {t:<25} | {n_items:>4} items | {mean_err*100:>5.2f}% MAE")
+        print("  -------------------------------")
+        print(f"  Avg Benchmark MAE: {np.mean(bench_errs) * 100:.2f}%\n")
         print(f"  Avg Pred. Score Spread: {np.mean(pred_score_stds):.4f} (Standard Deviation)")
         if all_taus:
             avg_tau = np.mean(all_taus)
