@@ -2,20 +2,62 @@ import fs from 'fs';
 import path from 'path';
 import * as yaml from 'js-yaml';
 
-export interface ModelParams {
-  name: string;
-  release_date?: string;
-  open_weights?: boolean;
-  organization?: string;
-  license?: string;
-  specs?: {
-    total_params?: number;
-    active_params?: number;
-    architecture?: string;
-    context?: number;
-  };
-  [key: string]: any;
-}
+import { z } from 'zod';
+
+export const ModelSchema = z.object({
+  name: z.string(),
+  release_date: z.string().nullable().optional(),
+  open_weights: z.boolean().nullable().optional(),
+  organization: z.string().nullable().optional(),
+  license: z.string().nullable().optional(),
+  
+  availability: z.array(z.enum(["open-weights", "saas-chat", "api"])).nullable().optional(),
+  description: z.string().nullable().optional(),
+  
+  specs: z.object({
+    architecture: z.string().nullable().optional(),
+    knowledge_cutoff: z.string().nullable().optional(),
+    total_params: z.number().nullable().optional(),
+    active_params: z.number().nullable().optional(),
+    context: z.number().nullable().optional(),
+    max_output_tokens: z.number().nullable().optional(),
+    modalities: z.object({
+      input: z.array(z.enum(["text", "image", "video"])).nullable().optional(),
+      output: z.array(z.enum(["text", "image", "video"])).nullable().optional()
+    }).nullable().optional(),
+    capabilities: z.array(z.enum(["reasoning", "coding", "multilingual", "math", "tools"])).nullable().optional()
+  }).nullable().optional(),
+  
+  sources: z.array(z.object({
+    title: z.string().nullable().optional(),
+    url: z.string(),
+    type: z.string().nullable().optional()
+  })).nullable().optional(),
+  
+  training: z.object({
+    tokens: z.number().nullable().optional(),
+    compute_flops: z.number().nullable().optional(),
+    energy_kwh: z.number().nullable().optional(),
+    emissions_co2: z.number().nullable().optional(),
+    training_dataset: z.string().nullable().optional(),
+    base_model: z.string().nullable().optional()
+  }).nullable().optional(),
+  
+  stats: z.object({
+    inference_efficiency_tokens_per_kwh: z.number().nullable().optional(),
+    throughput_tokens_per_second: z.number().nullable().optional(),
+    latency_ms_per_token: z.number().nullable().optional()
+  }).nullable().optional(),
+  
+  region: z.object({
+    region_deployable: z.array(z.string().nullable()).nullable().optional(),
+    region_developed: z.array(z.string().nullable()).nullable().optional()
+  }).nullable().optional(),
+  
+  evals: z.array(z.string()).nullable().optional()
+}).catchall(z.any());
+
+export type ModelParams = z.infer<typeof ModelSchema>;
 
 export interface ModelPrediction {
   predicted_score: number;
@@ -23,6 +65,12 @@ export interface ModelPrediction {
   task_macro_score?: number;
   domains: {
     [domain: string]: number;
+  };
+  coverage?: {
+    tasks_completed: number;
+    tasks_total: number;
+    samples_completed: number;
+    samples_total: number;
   };
   tasks: {
     [task: string]: {
@@ -38,6 +86,7 @@ export interface JoinedModelData {
   yamlId: string; // The inferred yaml key based on the name or ID
   prediction: ModelPrediction;
   metadata: ModelParams | null;
+  groundTruth?: Record<string, number> | null;
 }
 
 export function getPredictions() {
@@ -55,7 +104,20 @@ export function getLabels() {
 export function getModelMetadata(filename: string): ModelParams {
   const dataPath = path.join(process.cwd(), 'public', 'models', filename);
   const fileContents = fs.readFileSync(dataPath, 'utf8');
-  return yaml.load(fileContents) as ModelParams;
+  const rawYaml = yaml.load(fileContents);
+  
+  try {
+    return ModelSchema.parse(rawYaml);
+  } catch (error) {
+    console.error(`\n❌ Zod Validation Error in ${filename}:`);
+    if (error instanceof z.ZodError) {
+      error.issues.forEach(issue => {
+        console.error(`   - [${issue.path.join('.')}] ${issue.message}`);
+      });
+    }
+    // Return the raw data anyway so we don't hard-crash the site, just warn
+    return rawYaml as ModelParams;
+  }
 }
 
 export function getAllModelMetadata(): Record<string, ModelParams> {
@@ -76,36 +138,42 @@ export function getAllModelMetadata(): Record<string, ModelParams> {
 export function getJoinedModels(): JoinedModelData[] {
   const predictions = getPredictions();
   const metadataMap = getAllModelMetadata();
+  const groundTruth = getGroundTruth();
   const joined: JoinedModelData[] = [];
-  
-  const normalizedMetadata = new Map<string, string>();
-  for (const [yamlId, meta] of Object.entries(metadataMap)) {
-    const normId = yamlId.toLowerCase().replace(/[^a-z0-9]/g, '');
-    normalizedMetadata.set(normId, yamlId);
-  }
 
   if (!predictions.models) return [];
 
   for (const [predId, predData] of Object.entries(predictions.models)) {
-    const lastPart = predId.split('/').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
-    let matchedYamlId = normalizedMetadata.get(lastPart);
+    let matchedYamlId: string | null = null;
     
-    if (!matchedYamlId) {
-      for (const [normId, yamlId] of normalizedMetadata.entries()) {
-        if (lastPart.includes(normId) || normId.includes(lastPart)) {
-          matchedYamlId = yamlId;
-          break;
-        }
+    // Exact mapping lookup: Find the YAML file whose `evals` array contains this predId
+    for (const [yamlId, meta] of Object.entries(metadataMap)) {
+      if (meta.evals && Array.isArray(meta.evals) && meta.evals.includes(predId)) {
+        matchedYamlId = yamlId;
+        break;
       }
     }
 
     joined.push({
       id: predId,
-      yamlId: matchedYamlId || lastPart,
+      yamlId: matchedYamlId || predId.split('/').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || '',
       prediction: predData as ModelPrediction,
-      metadata: matchedYamlId ? metadataMap[matchedYamlId] : null
+      metadata: matchedYamlId ? metadataMap[matchedYamlId] : null,
+      groundTruth: groundTruth ? groundTruth[predId] : null
     });
   }
   
   return joined;
+}
+
+export function getGroundTruth(): Record<string, Record<string, number>> | null {
+  try {
+    const p = path.join(process.cwd(), 'public', 'data', 'ground_truth.json');
+    if (fs.existsSync(p)) {
+      return JSON.parse(fs.readFileSync(p, 'utf8'));
+    }
+  } catch (e) {
+    console.warn("Could not load ground truth data", e);
+  }
+  return null;
 }

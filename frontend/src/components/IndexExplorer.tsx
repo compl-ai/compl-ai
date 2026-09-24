@@ -1,18 +1,19 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { JoinedModelData } from '@/lib/data';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ZAxis, Cell } from 'recharts';
 import { ShieldCheck, MessageSquareWarning, Target, Users, Gauge } from 'lucide-react';
 import { ModelDataTable } from '@/components/ModelDataTable';
+import { CoverageWafflePlot } from '@/components/CoverageWafflePlot';
 
 const DOMAINS = [
-  { id: 'overall', label: 'Overall', icon: null },
-  { id: 'security-privacy', label: 'Security & Privacy', icon: ShieldCheck },
-  { id: 'safety', label: 'Safety', icon: MessageSquareWarning },
-  { id: 'reliability', label: 'Reliability', icon: Target },
-  { id: 'fairness-bias', label: 'Fairness & Bias', icon: Users },
-  { id: 'capability', label: 'Capability', icon: Gauge },
+  { id: 'overall', label: 'Overall', icon: null, badge: '' },
+  { id: 'security-privacy', label: 'Security & Privacy', icon: ShieldCheck, badge: '' },
+  { id: 'safety', label: 'Safety', icon: MessageSquareWarning, badge: '' },
+  { id: 'reliability', label: 'Reliability', icon: Target, badge: '' },
+  { id: 'fairness-bias', label: 'Fairness & Bias', icon: Users, badge: '' },
+  { id: 'capability', label: 'Capability', icon: Gauge, badge: '' },
 ];
 
 const ORG_COLORS: Record<string, string> = {
@@ -22,11 +23,26 @@ const ORG_COLORS: Record<string, string> = {
   'Meta': '#F97316',
   'xAI': '#0284C7',
   'Mistral AI': '#F43F5E',
+  'Alibaba': '#3B82F6',
+  'DeepSeek': '#06B6D4',
+  'NVIDIA': '#84CC16',
+  'Zhipu AI': '#6366F1',
+  'Microsoft': '#0EA5E9',
+  'Tencent': '#14B8A6',
+  'ByteDance': '#EAB308',
+  'Moonshot AI': '#A855F7',
+  'Mimo AI': '#F472B6',
+  'MiniMax': '#FB923C',
+  'StepFun': '#4ADE80',
+  'Swiss AI': '#EF4444',
+  'IBM': '#1D4ED8',
+  'Allen AI': '#0D9488',
+  'Ai2': '#0D9488',
   'Qwen': '#3B82F6',
   'Default': '#9CA3AF'
 };
 
-export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
+export function IndexExplorer({ models, schema }: { models: JoinedModelData[], schema?: any }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -35,6 +51,17 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
   const [activeDomain, setActiveDomain] = useState(domainParam || 'overall');
   const [xAxisMode, setXAxisMode] = useState<'date' | 'params'>('date');
   const [isMounted, setIsMounted] = useState(false);
+
+  const dynamicDomains = DOMAINS.map(d => {
+    if (d.id === 'overall') {
+      return { ...d, badge: schema?.total_subset_items?.toString() || d.badge };
+    }
+    const domInfo = schema?.domains?.[d.id];
+    if (domInfo && domInfo.subset_weight_pct) {
+      return { ...d, badge: domInfo.subset_weight_pct };
+    }
+    return d;
+  });
 
   useEffect(() => {
     setIsMounted(true);
@@ -92,12 +119,29 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
         fill: ORG_COLORS[orgKey],
         x: xVal,
         y: getScore(m) * 100,
-        label: (getScore(m) > 0.6 || orgKey !== 'Default') ? (m.metadata?.name || m.yamlId) : ''
+        label: (getScore(m) > 0.6 || orgKey !== 'Default') ? (m.metadata?.name || m.yamlId) : '',
+        date: m.metadata?.release_date ? new Date(m.metadata.release_date).getTime() : 0,
+        params: parseParams(m.metadata?.specs?.total_params) || guessParams(m.yamlId)
       };
     });
 
+  const dynamicDateTicks = useMemo(() => {
+    if (xAxisMode !== 'date' || chartData.length === 0) return undefined;
+    const min = Math.min(...chartData.map(d => d.x));
+    const max = Math.max(...chartData.map(d => d.x));
+    if (min === max) return [min];
+    
+    // Create 6 evenly spaced explicit tick marks across the timeline
+    const ticks = [];
+    const step = (max - min) / 5;
+    for (let i = 0; i <= 5; i++) {
+      ticks.push(min + i * step);
+    }
+    return ticks;
+  }, [chartData, xAxisMode]);
+
   const dateFormatter = (tick: number) => {
-    return new Date(tick).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+    return new Date(tick).toLocaleDateString(undefined, { timeZone: 'UTC', month: 'short', year: 'numeric' });
   };
   
   const paramsFormatter = (tick: number) => {
@@ -110,16 +154,26 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white border shadow-sm p-3 text-xs z-50 rounded-xl">
+        <div className="bg-white border shadow-sm p-3 text-xs z-50 rounded-xl min-w-[150px]">
           <div className="font-bold mb-1" style={{ color: data.fill }}>{data.name}</div>
-          <div className="text-gray-500 mb-2">{data.org}</div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-            <span className="text-gray-500">Score:</span>
-            <span className="font-mono text-right">{data.y.toFixed(1)}</span>
-            <span className="text-gray-500">{xAxisMode === 'date' ? 'Date:' : 'Params:'}</span>
-            <span className="text-right">
-              {xAxisMode === 'date' ? new Date(data.x).toLocaleDateString() : paramsFormatter(data.x)}
-            </span>
+          <div className="text-gray-500 mb-3">{data.org}</div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">Score:</span>
+              <span className="font-mono font-medium">{data.y.toFixed(1)}</span>
+            </div>
+            {data.date > 0 && (
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">Date:</span>
+                <span className="font-mono">{new Date(data.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</span>
+              </div>
+            )}
+            {data.params > 0 && (
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">Params:</span>
+                <span className="font-mono">{paramsFormatter(data.params)}</span>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -151,7 +205,14 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
                   }`}
                 >
                   {Icon && <Icon className={`w-4 h-4 ${isActive ? 'text-gray-300' : 'text-gray-400'}`} />}
-                  {d.label}
+                  <div className="flex items-center gap-1.5">
+                    {d.label}
+                    {d.badge ? (
+                      <span className={`text-[10px] font-mono ${isActive ? 'text-gray-400' : 'text-gray-400'}`}>
+                        ({d.badge})
+                      </span>
+                    ) : null}
+                  </div>
                 </button>
               );
             })}
@@ -173,13 +234,16 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
                     <XAxis 
                       dataKey="x" 
                       type="number" 
-                      domain={['auto', 'auto']}
+                      domain={xAxisMode === 'params' ? [1e9, 2e12] : ['dataMin - 2592000000', 'dataMax + 2592000000']} 
                       scale={xAxisMode === 'params' ? 'log' : 'time'}
+                      ticks={xAxisMode === 'params' ? [1e9, 3e9, 10e9, 30e9, 100e9, 300e9, 1e12] : dynamicDateTicks}
+                      tickCount={xAxisMode === 'date' ? 8 : undefined}
                       tickFormatter={xAxisMode === 'date' ? dateFormatter : paramsFormatter}
                       tick={{ fill: '#6B7280', fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
                       tickMargin={12}
+                      minTickGap={30}
                     />
                     <YAxis 
                       dataKey="y" 
@@ -246,7 +310,7 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
                   Y-Axis <span className="text-gray-400 font-normal">Evaluation Domain</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {DOMAINS.map(d => (
+                  {dynamicDomains.map(d => (
                     <button
                       key={d.id}
                       onClick={() => handleDomainChange(d.id)}
@@ -257,7 +321,14 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
                       }`}
                     >
                       <div className={`w-2 h-2 rounded-full ${activeDomain === d.id ? 'bg-blue-500' : 'bg-gray-300'}`} />
-                      {d.label}
+                      <div className="flex items-center gap-1.5">
+                        {d.label}
+                        {d.badge ? (
+                          <span className="text-[10px] font-mono opacity-50">
+                            ({d.badge})
+                          </span>
+                        ) : null}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -265,11 +336,23 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
             </div>
 
             <h3 className="text-sm font-bold text-gray-900 mb-4">Organization</h3>
-            <div className="space-y-3 text-xs font-medium">
-              {Object.entries(ORG_COLORS).map(([org, color]) => (
-                <div key={org} className="flex items-center gap-3">
-                  <div className="w-3.5 h-3.5 rounded-[4px]" style={{ backgroundColor: color }}></div>
-                  <span className="text-gray-600">{org}</span>
+            <div className="space-y-2 text-xs font-medium max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+              {Object.entries(ORG_COLORS)
+                .map(([org, color]) => {
+                  const count = chartData.filter(d => (Object.keys(ORG_COLORS).find(k => d.org.includes(k)) || 'Default') === org).length;
+                  return { org, color, count };
+                })
+                .filter(item => item.count > 0)
+                .sort((a, b) => b.count - a.count)
+                .map(({ org, color, count }) => (
+                <div key={org} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 truncate">
+                    <div className="w-3 h-3 rounded-[3px] shrink-0" style={{ backgroundColor: color }}></div>
+                    <span className="text-gray-600 truncate" title={org}>{org === 'Default' ? 'Other' : org}</span>
+                  </div>
+                  <span className="text-gray-400 text-[10px] font-mono bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">
+                    {count}
+                  </span>
                 </div>
               ))}
             </div>
@@ -279,6 +362,9 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
                <p className="text-xs text-gray-500 leading-relaxed mb-2">
                  Displaying <strong>{chartData.length}</strong> of <strong>{models.length}</strong> evaluated models.
                </p>
+               <p className="text-xs text-gray-500 leading-relaxed mb-2">
+                 Based on <strong>{models.reduce((acc, m) => acc + (m.prediction?.coverage?.samples_completed || 0), 0).toLocaleString()}</strong> total evaluation data points.
+               </p>
                <p className="text-xs text-gray-400 leading-relaxed">
                  {models.length - chartData.length} models are hidden because they lack {xAxisMode === 'date' ? 'a known release date' : 'a known parameter count'}.
                </p>
@@ -287,11 +373,12 @@ export function IndexExplorer({ models }: { models: JoinedModelData[] }) {
         </div>
       </div>
       
-      <div className="w-full max-w-[1600px] px-4 pb-32">
+      <div className="w-full max-w-[1600px] px-4 pb-32 space-y-8">
         <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <h3 className="text-xl font-bold text-gray-900 mb-6">Detailed Results</h3>
           <ModelDataTable initialModels={models} />
         </div>
+        <CoverageWafflePlot models={models} />
       </div>
     </div>
   );
