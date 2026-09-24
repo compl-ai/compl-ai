@@ -30,6 +30,19 @@ def predict_scores(
     estimator: Estimator | None = None,
 ) -> dict[str, Any]:
     """Predict full-task scores from preprocessed subset responses."""
+    import sys
+    project_root = Path(__file__).resolve().parent.parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    
+    try:
+        from tools.minify.config import get_task_allocations, get_primary_metrics
+        task_allocations = get_task_allocations()
+        primary_metrics = get_primary_metrics()
+    except ImportError:
+        task_allocations = {}
+        primary_metrics = {}
+
     if duplicate_policy not in {"error", "mean", "latest"}:
         raise ValueError("duplicate_policy must be error, mean, or latest")
     params, subset = read_inputs(params_path, subset_path)
@@ -91,15 +104,59 @@ def predict_scores(
                 task_results[task_name] = missing_task_result(len(selected))
                 continue
 
+            population = [
+                row for row in params["items"] if str(row["task"]) == task_name
+            ]
+
+            if task_allocations.get(task_name, "default") == "full":
+                file_record = next((f for f in records.files if f["task"] == task_name and f["model"] == model), None)
+                if not file_record:
+                    task_results[task_name] = missing_task_result(len(selected))
+                    continue
+                
+                scorer_name = params["task_scorers"][task_name]
+                scorer_metrics = file_record.get("metrics", {}).get(scorer_name, {})
+                
+                primary_metric = primary_metrics.get(task_name, ["accuracy"])
+                if isinstance(primary_metric, str):
+                    primary_metric = [primary_metric]
+                
+                dataset_score = 0.0
+                for pm in primary_metric:
+                    if pm in scorer_metrics and scorer_metrics[pm] is not None:
+                        dataset_score = float(scorer_metrics[pm])
+                        break
+                else:
+                    if scorer_metrics:
+                        val = next((v for v in scorer_metrics.values() if v is not None), 0.0)
+                        dataset_score = float(val)
+                
+                prediction = {
+                    "predicted_score": dataset_score,
+                    "predicted_score_error": None,
+                    "observed_subset_score": float(np.mean(responses)),
+                    "ability": None,
+                    "ability_standard_error": None,
+                    "ability_iterations": 0,
+                }
+                
+                task_results[task_name] = {
+                    **prediction,
+                    "status": "ok" if len(responses) == len(selected) else "partial",
+                    "observations": len(responses),
+                    "subset_items": len(selected),
+                    "coverage": len(responses) / len(selected),
+                    "population_items": len(population),
+                }
+                weighted_scores.append((prediction["predicted_score"], prediction["predicted_score_error"], len(population)))
+                continue
+
             discrimination = np.asarray(
                 [float(row["discrimination"]) for row in selected_parameters]
             )
             intercept = np.asarray(
                 [float(row["intercept"]) for row in selected_parameters]
             )
-            population = [
-                row for row in params["items"] if str(row["task"]) == task_name
-            ]
             population_a = np.asarray([float(row["discrimination"]) for row in population])
             population_c = np.asarray([float(row["intercept"]) for row in population])
             def _compute_score(theta: float) -> float:

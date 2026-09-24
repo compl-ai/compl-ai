@@ -349,9 +349,11 @@ def _preprocess_file(
             "model": metadata["model"],
             "task": task,
             "dataset": metadata["dataset"],
-                        "created": metadata["created"],
+            "created": metadata["created"],
             "sample_count": metadata["sample_count"],
             "metrics": metadata.get("metrics", {}),
+            "model_config": metadata.get("model_config", {}),
+            "task_config": metadata.get("task_config", {}),
         }
         return file_row, records
     except Exception as exc:
@@ -429,6 +431,31 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
     )
     status = str(log.status)
     dataset_spec = getattr(spec, "dataset", None)
+    
+    model_config = {}
+    task_config = {}
+    try:
+        from zipfile import ZipFile
+        with ZipFile(path, 'r') as z:
+            if 'header.json' in z.namelist():
+                header = json.loads(z.read('header.json'))
+                eval_data = header.get('eval', {})
+                plan_data = header.get('plan', {})
+                
+                # Model level
+                if 'model_generate_config' in eval_data:
+                    model_config.update(eval_data['model_generate_config'])
+                    
+                # Task level
+                if 'task_args' in eval_data:
+                    task_config.update(eval_data['task_args'])
+                if 'steps' in plan_data and len(plan_data['steps']) > 0:
+                    params = plan_data['steps'][0].get('params_passed', {})
+                    if isinstance(params, dict):
+                        task_config.update(params)
+    except Exception:
+        pass
+
     return {
         "run_id": str(getattr(spec, "eval_id", "") or getattr(spec, "run_id", "")),
         "created": str(getattr(spec, "created", "")),
@@ -440,11 +467,13 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
             or getattr(dataset_spec, "location", None)
             or "unknown_dataset"
         ),
-                "sample_count": int(completed or 0),
+        "sample_count": int(completed or 0),
         "eligible": (
             status.lower() == "success" and total is not None and total == completed
         ),
         "metrics": _extract_metrics(results),
+        "model_config": model_config,
+        "task_config": task_config,
     }
 
 
