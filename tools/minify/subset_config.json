@@ -56,7 +56,7 @@
     },
     "fairllm": {
       "scorer": "fairllm_scorer",
-      "allocation": "full",
+      "allocation": "default",
       "primary_metric": [
         "jaccard"
       ]
@@ -167,7 +167,7 @@
     },
     "mmlu_pro_robustness": {
       "scorer": "mmlu_pro_robustness_scorer",
-      "allocation": "full",
+      "allocation": "default",
       "primary_metric": [
         "robustness"
       ]

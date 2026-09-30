@@ -238,8 +238,13 @@ def robustness() -> MetricProtocol:
             if isinstance(val, dict):
                 p = val.get("perturbed_score")
                 u = val.get("unperturbed_score")
-                if p is not None and u is not None and float(u) == 1.0:
-                    valid_scores.append(float(p))
+            else:
+                meta = score.score.metadata or {}
+                p = meta.get("perturbed_score")
+                u = meta.get("unperturbed_score")
+                
+            if p is not None and u is not None and float(u) == 1.0:
+                valid_scores.append(float(p))
                     
         if not valid_scores:
             return 1.0
@@ -254,15 +259,20 @@ def mmlu_pro_robustness_scorer() -> Scorer:
     mc_scorer = choice()
 
     async def score(state: TaskState, target: Target) -> Score:
-        unperturbed_score = cast(Score, await mc_scorer(state, target))
-
         perturbed_answers = state.metadata["perturbed_answers"]
         perturbed_scores = [target.text == answer for answer in perturbed_answers]
 
+        unperturbed_answer = state.metadata.get("unperturbed_answer", [])
+        if isinstance(unperturbed_answer, set):
+            unperturbed_answer = list(unperturbed_answer)
+            
+        perturbed_score = np.mean(perturbed_scores)
+        unperturbed_score_val = int(target.text in unperturbed_answer)
+        
         return Score(
             value={
-                "perturbed_score": np.mean(perturbed_scores),
-                "unperturbed_score": int(unperturbed_score.value == CORRECT),
+                "perturbed_score": float(perturbed_score),
+                "unperturbed_score": unperturbed_score_val,
             }
         )
 
@@ -311,3 +321,4 @@ def mmlu_pro_robustness(
         solver=mmlu_pro_robustness_solver(num_fewshot, initialized_perturbations),
         scorer=mmlu_pro_robustness_scorer(),
     )
+
