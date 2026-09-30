@@ -1,24 +1,24 @@
-
-name: "Mistral Medium 3.1"
-release_date: "2025-08-12"
-open_weights: false
+name: "Mistral Medium 3.5"
+release_date: "2026-04-28"
+open_weights: true
 organization: "Mistral AI"
-license: "Mistral AI API"
+license: "mit-modified"
 
 availability:
+  - "open-weights"
   - "saas-chat"
   - "api"
 
 description: |
-  Mistral Medium 3.1 is a proprietary large language model developed by Mistral AI as part of its commercial model lineup. It provides strong general-purpose reasoning, multilingual understanding and coding capabilities. It also supports large context windows for extended tasks. The model is available through Mistral’s API and third-party model providers, but detailed training data, architecture specifications, and compute information have not been publicly disclosed.
+  Mistral Medium 3.5 is a 128-billion-parameter multimodal language model developed by Mistral AI. It accepts text and image inputs and generates text, with capabilities spanning reasoning, coding, multilingual tasks, mathematics, and tool use. It was released as an open-weight model under a modified MIT license.
 
 specs:
-  architecture: "dense decoder-only transformer"
+  architecture: "dense multimodal transformer"
   knowledge_cutoff: null
-  total_params: null
-  active_params: null
-  context: 128000
-  max_output_tokens: 128000
+  total_params: 128_000_000_000
+  active_params: 128_000_000_000
+  context: 256_000
+  max_output_tokens: 209_715
 
   modalities:
     input:
@@ -35,31 +35,34 @@ specs:
     - "tools"
 
 sources:
-  - title: "Mistral Medium 3.1"
-    url: "https://docs.mistral.ai/models/mistral-medium-3-1-25-08"
+  - title: "Mistral Medium 3.5"
+    url: "https://docs.mistral.ai/models/mistral-medium-3-5-26-04"
     type: "model-homepage"
-  - title: "Legal Center"
-    url: "https://legal.mistral.ai/terms"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/mistralai/Mistral-Medium-3.5-128B"
+    type: "model-weights"
+  - title: "Modified MIT License"
+    url: "https://huggingface.co/mistralai/Mistral-Medium-3.5-128B/blob/main/LICENSE"
     type: "licence-url"
+
 
 training:
   tokens: null
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
+  training_dataset: "text + image"
   base_model: null
 
 stats:
-  inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: 83
-  latency_ms_per_token: 460
+  inference_efficiency_tokens_per_kwh: 1_970_000
+  throughput_tokens_per_second: 89
+  latency_ms_per_token: 280
 
 region:
   region_deployable:
     - null
   region_developed:
-    - "FR"
-
+    - “FR”
 evals:
   - "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B"

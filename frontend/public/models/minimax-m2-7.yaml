@@ -1,9 +1,8 @@
-
 name: "MiniMax-M2.7"
-release_date: "2025-10-27"
+release_date: "2026-03-18"
 open_weights: true
 organization: "MiniMax"
-license: "mit-modified"
+license: "non-commercial"
 
 availability:
   - "open-weights"
@@ -11,15 +10,15 @@ availability:
   - "api"
 
 description: |
-  MiniMax M2 is a large, open-weight text-only large language model developed by MiniMax, based on a Mixture-of-Experts (MoE) architecture with roughly 230 billion total parameters and  10 billion active parameters. It supports a long context window (approximately 200,000 tokens) and is designed for general-purpose language tasks, with strengths in reasoning, coding, and long-context processing.
+  MiniMax-M2.7 is a sparse Mixture-of-Experts language model developed by MiniMax, with approximately 230 billion total parameters and 10 billion active parameters. It is designed for reasoning, coding, mathematical tasks, multilingual use, and tool-enabled agentic workflows, and supports a context length of approximately 205 thousand tokens.
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
-  knowledge_cutoff: "2025-04-28"
-  total_params: 230000000000
-  active_params: 10000000000
-  context: 204800
-  max_output_tokens: 128000
+  architecture: "Transformer / Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 229_000_000_000
+  active_params: 10_000_000_000
+  context: 204_800
+  max_output_tokens: 196_608
 
   modalities:
     input:
@@ -30,38 +29,42 @@ specs:
   capabilities:
     - "reasoning"
     - "coding"
+    - "multilingual"
     - "math"
     - "tools"
 
 sources:
-  - title: "MiniMax M2 & Agent: Ingenious in Simplicity"
-    url: "https://www.minimax.io/news/minimax-m2"
+  - title: "MiniMax M2.7"
+    url: "https://www.minimax.io/models/text/m27"
     type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.7"
     type: "model-weights"
-  - title: "MIT License"
-    url: "https://github.com/MiniMax-AI/MiniMax-M2/blob/main/LICENSE"
+  - title: "The MiniMax-M2 Series: Mini Activations Unleashing Max Real-World Intelligence"
+    url: "https://arxiv.org/abs/2605.26494v2"
+    type: "paper-url"
+  - title: "Non-Commercial License"
+    url: "https://github.com/MiniMax-AI/MiniMax-M2.7/blob/main/LICENSE"
     type: "licence-url"
+
 
 training:
   tokens: null
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: "text + code"
+  training_dataset: "model iteration system"
   base_model: null
 
 stats:
-  inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: 100
-  latency_ms_per_token: 10
+  inference_efficiency_tokens_per_kwh: 20_100_000
+  throughput_tokens_per_second: 11_606
+  latency_ms_per_token: 20
 
 region:
   region_deployable:
     - null
   region_developed:
-    - "CN"
-
+    - “CN”
 evals:
   - "openai-api/vllm/MiniMaxAI/MiniMax-M2.7"
