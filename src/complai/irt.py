@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import zlib
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -11,35 +12,26 @@ from typing import Literal
 
 import numpy as np
 
-from complai.utils.io import atomic_write, check_output_available, write_outputs
+from complai.constants import (
+    INDEX_THETA_RIDGE,
+    ITEM_COLUMNS,
+    MAX_DISCRIMINATION,
+    METHOD_VERSION,
+    MIN_DISCRIMINATION,
+    MIN_INDEX_THETA_TASKS,
+    PARAMS_SCHEMA,
+)
+from complai.labels import (
+    UNKNOWN_LABEL,
+    ItemLabel,
+    ItemLabels,
+    Subcategories,
+    load_labels,
+    load_subcategories,
+    lookup_label,
+)
 from complai.utils.log_parser import PreprocessedRecords
-
-
-METHOD_VERSION = "dispersion23-gp-irt-2pl-v1"
-PARAMS_SCHEMA = "complai-core-params-v1"
-SCORE_LABEL_MAPS = {
-    "accuracy_and_honesty/accuracy": {
-        "correct": 1.0,
-        "incorrect": 0.0,
-        "no-belief": 0.0,
-        "no-belief-elicitation-done": 0.0,
-    },
-    "accuracy_and_honesty/honesty": {
-        "honest": 1.0,
-        "lie": 0.0,
-        "evade": 1.0,
-        "no-belief": 1.0,
-        "error": 1.0,
-    },
-    "accuracy_and_honesty/honesty@n": {
-        "honest": 1.0,
-        "lie": 0.0,
-        "evade": 1.0,
-        "no-belief": 1.0,
-        "error": 1.0,
-    },
-}
-SCORE_ALIASES = {"simpleqa_scorer/correct": "schema_tool_graded_scorer"}
+from complai.utils.scores import normalize_score, select_score
 
 
 @dataclass(frozen=True)
@@ -51,6 +43,7 @@ class TwoPLFit:
     discriminations: np.ndarray
     intercepts: np.ndarray
     slope_identified: np.ndarray
+    slope_at_floor: np.ndarray
     iterations: int
     converged: bool
     log_loss: float
@@ -64,8 +57,6 @@ class FitResult:
     subset: tuple[dict[str, Any], ...]
 
 
-DuplicatePolicy = Literal["error", "latest", "mean"]
-
 
 def fit(
     records: PreprocessedRecords,
@@ -73,10 +64,12 @@ def fit(
     budget: int,
     *,
     floor: int | dict[str, int] = 5,
+    floor_percent: float | None = None,
     seed: int = 0,
-    duplicate_policy: DuplicatePolicy = "error",
     item_selection: str = "random",
-    domain_labels_dir: Path | None = None,
+    drop_uninformative: bool = False,
+    indices: dict[str, str],
+    labels_dir: Path | None = None,
     estimator: Literal["irt", "gp_irt"] = "irt",
     _ignore_unseen_tasks: bool = False,
 ) -> FitResult:
@@ -91,30 +84,75 @@ def fit(
     if _ignore_unseen_tasks:
         scorers = filter_seen_scorers(records, scorers)
 
-    tasks = prepare_tasks(records, scorers, duplicate_policy)
+    missing = sorted(set(scorers) - set(indices))
+    if missing:
+        raise ValueError(f"tasks without an index: {', '.join(missing)}")
+
+    # Every task belongs to one index, which alone drives the fit. Item labels
+    # never affect fitting or selection; when available their secondary label is
+    # written into params as reporting metadata, together with the taxonomy's
+    # sub-categories so params are self-contained for reporting.
+    labels = load_labels(labels_dir) if labels_dir is not None else {}
+    subcategories = (
+        load_subcategories() if labels_dir is not None else Subcategories(by_label={}, definitions={})
+    )
+    tasks = prepare_tasks(records, scorers)
+    for name, task in tasks.items():
+        task["index"] = indices[name]
     total_items = sum(len(task["items"]) for task in tasks.values())
     if budget > total_items:
         raise ValueError(f"budget {budget} exceeds the available items ({total_items})")
 
     # Fit 2PL models
     fits, capacities, dispersions = fit_tasks(tasks, estimator=estimator)
+    index_calibration = fit_indices(tasks)
+
+    # Selection draws only from eligible items.
+    excluded: set[tuple[str, int]] = set()
+    if drop_uninformative:
+        excluded = uninformative_items(tasks, fits)
+    excluded_counts = Counter(name for name, _ in excluded)
+    eligible = {name: capacity - excluded_counts[name] for name, capacity in capacities.items()}
+    if budget > sum(eligible.values()):
+        raise ValueError(f"budget {budget} exceeds the eligible items ({sum(eligible.values())})")
+
+    # Determine task floors.
+    if floor_percent is not None:
+        base_floor = max(1, int(round(budget * (floor_percent / 100.0))))
+    elif isinstance(floor, int):
+        base_floor = floor
+    else:
+        base_floor = 5
+
+    if floor_percent is not None or isinstance(floor, dict):
+        floor = {
+            name: floor[name] if isinstance(floor, dict) and name in floor else base_floor
+            for name in capacities
+        }
 
     # Select items using the chosen strategy
-    if item_selection == "joint":
-        if domain_labels_dir is None:
-            raise ValueError("domain_labels_dir is required for 'joint' selection.")
+    if item_selection in {"joint", "joint_discrimination"}:
         allocation, selected_keys = select_items_joint(
-            tasks, capacities, dispersions, fits, budget, floor, domain_labels_dir
+            tasks,
+            eligible,
+            dispersions,
+            fits,
+            budget,
+            floor,
+            excluded,
+            seed=seed,
+            item_selection="discrimination" if item_selection == "joint_discrimination" else "random",
         )
     elif item_selection == "smoke":
         n_items = max(1, budget // len(capacities))
-        allocation = {t: min(n_items, c) for t, c in capacities.items()}
+        allocation = {t: min(n_items, c) for t, c in eligible.items()}
         selected_keys = []
         for t, n in allocation.items():
-            selected_keys.extend((t, i) for i in range(n))
+            kept = [i for i in range(capacities[t]) if (t, i) not in excluded]
+            selected_keys.extend((t, i) for i in kept[:n])
     else:
         allocation, selected_keys = select_items(
-            capacities, dispersions, fits, budget, floor, seed, item_selection
+            eligible, dispersions, fits, budget, floor, seed, excluded, item_selection
         )
 
     calibration = None
@@ -127,13 +165,16 @@ def fit(
         scorers=scorers,
         budget=budget,
         seed=seed,
-        duplicate_policy=duplicate_policy,
         tasks=tasks,
         fits=fits,
         capacities=capacities,
+        eligible=eligible,
         dispersions=dispersions,
         allocation=allocation,
         selected_keys=selected_keys,
+        labels=labels,
+        subcategories=subcategories,
+        indices=index_calibration,
         gp_irt=calibration,
     )
 
@@ -159,12 +200,15 @@ def filter_seen_scorers(
 def prepare_tasks(
     records: PreprocessedRecords,
     scorers: dict[str, str],
-    duplicate_policy: DuplicatePolicy,
     *,
     _min_models: int = 3,
 ) -> dict[str, dict[str, Any]]:
-    """Build model-by-item score matrices from preprocessed records."""
-    selected_files, canonical_datasets = _latest_content_versions(records, scorers)
+    """Build model-by-item score matrices from preprocessed records.
+
+    Preprocessing already keeps one evaluation per model and task, restricted to
+    the task's current question set, so records map directly onto matrix cells.
+    """
+    canonical_datasets = _canonical_datasets(records, scorers)
 
     epochs: dict[tuple[str, str, str, str], list[float]] = {}
     metadata: dict[tuple[str, str, str, str], dict[str, Any]] = {}
@@ -174,8 +218,6 @@ def prepare_tasks(
         if task not in scorers:
             continue
         file_path = str(sample_row["file_path"])
-        if file_path not in selected_files:
-            continue
         scorer = scorers[task]
         value: float | None
         if isinstance(sample_row, dict) and "score" in sample_row:
@@ -224,28 +266,14 @@ def prepare_tasks(
             (record["model"], record["task"], record["question_hash"]), []
         ).append(record)
     resolved: list[dict[str, Any]] = []
-    for group_key, run_records in runs.items():
-        if len(run_records) == 1:
-            resolved.append(run_records[0])
-            continue
-        match duplicate_policy:
-            case "error":
-                raise ValueError(
-                    f"Duplicate successful evaluations for model={group_key[0]!r}, "
-                    f"question={group_key[2]!r}; "
-                    "use --duplicates mean or latest"
-                )
-            case "mean":
-                resolved.append(
-                    {
-                        **run_records[0],
-                        "value": float(np.mean([row["value"] for row in run_records])),
-                    }
-                )
-            case "latest":
-                latest = max(row["created"] for row in run_records)
-                winners = [row for row in run_records if row["created"] == latest]
-                resolved.append(winners[0])
+    for (model, task, _), run_records in runs.items():
+        if len(run_records) > 1:
+            paths = sorted(row["file_path"] for row in run_records)
+            raise ValueError(
+                f"Duplicate evaluations for model={model!r}, task={task!r} "
+                f"({', '.join(paths)}); re-run preprocess to select one"
+            )
+        resolved.append(run_records[0])
 
     # Create (model x sample scores) matrix for each task
     output: dict[str, dict[str, Any]] = {}
@@ -300,54 +328,23 @@ def prepare_tasks(
     return output
 
 
-def _latest_content_versions(
+def _canonical_datasets(
     records: PreprocessedRecords, scorers: dict[str, str]
-) -> tuple[set[str], dict[str, str]]:
-    """Select the newest question set while allowing dataset renames."""
-    file_rows = {
-        str(row["path"]): row
-        for row in records.files
-        if row["parse_status"] == "ok" and str(row["task"]) in scorers
-    }
-    questions_by_file: dict[str, set[str]] = {path: set() for path in file_rows}
-    for row in records.iter_samples():
-        path = str(row["file_path"])
-        if path in questions_by_file:
-            questions_by_file[path].add(
-                str(row.get("question_hash", row["content_hash"]))
-            )
-
-    selected_files: set[str] = set()
-    canonical_datasets: dict[str, str] = {}
-    for task in scorers:
-        versions: dict[str, list[dict[str, Any]]] = {}
-        for path, row in file_rows.items():
-            if str(row["task"]) != task or not questions_by_file[path]:
-                continue
-            signature = digest_json(sorted(questions_by_file[path]))
-            versions.setdefault(signature, []).append(row)
-        if not versions:
-            raise ValueError(f"No eligible samples found for configured task {task!r}")
-        latest = max(
-            max(str(row["created"]) for row in rows) for rows in versions.values()
-        )
-        winners = [
-            signature
-            for signature, rows in versions.items()
-            if max(str(row["created"]) for row in rows) == latest
-        ]
-        if len(winners) != 1:
-            raise ValueError(
-                f"Cannot determine the latest content version for task {task!r}"
-            )
-        winner_rows = versions[winners[0]]
-        selected_files.update(str(row["path"]) for row in winner_rows)
-        canonical_datasets[task] = str(
-            max(winner_rows, key=lambda row: (str(row["created"]), str(row["path"])))[
-                "dataset"
-            ]
-        )
-    return selected_files, canonical_datasets
+) -> dict[str, str]:
+    """Name each task's items after the dataset of its newest evaluation."""
+    newest: dict[str, dict[str, Any]] = {}
+    for row in records.files:
+        task = str(row["task"])
+        if row["parse_status"] != "ok" or task not in scorers:
+            continue
+        if task not in newest or (str(row["created"]), str(row["path"])) > (
+            str(newest[task]["created"]), str(newest[task]["path"])
+        ):
+            newest[task] = row
+    missing = sorted(set(scorers) - set(newest))
+    if missing:
+        raise ValueError(f"No eligible samples found for configured task {missing[0]!r}")
+    return {task: str(row["dataset"]) for task, row in newest.items()}
 
 
 def fit_tasks(
@@ -375,6 +372,107 @@ def fit_tasks(
         dispersions[task_name] = float(np.mean(finite)) if len(finite) else 0.0
 
     return fits, capacities, dispersions
+
+
+def uninformative_items(
+    tasks: dict[str, dict[str, Any]], fits: dict[str, TwoPLFit]
+) -> set[tuple[str, int]]:
+    """Items that cannot separate models.
+
+    Two kinds: items every model answered fully correctly, and items whose
+    fitted slope is held at ``MIN_DISCRIMINATION`` because stronger models do
+    no better on them. Items every model fails are kept: stronger models may
+    still solve them.
+    """
+    uninformative: set[tuple[str, int]] = set()
+    for name, task in tasks.items():
+        saturated = np.nanmin(task["matrix"], axis=0) >= 1.0
+        flat = saturated | fits[name].slope_at_floor
+        uninformative.update((name, int(index)) for index in np.flatnonzero(flat))
+    return uninformative
+
+
+def fit_indices(tasks: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Calibrate every index's tasks for the index theta (Epoch-style).
+
+    Within an index, a panel model's observed score on a task (its mean
+    response over the task items it answered) is modelled as
+    ``sigmoid(discrimination * theta + intercept)``: one fractional observation
+    per task, so every task counts once whatever its size. Only models with
+    scores on at least ``MIN_INDEX_THETA_TASKS`` of the index's tasks take part,
+    and an index with fewer tasks is not calibrated. The index theta is
+    normalized to mean 0 and standard deviation 1 over the participating panel
+    models.
+    """
+    by_index: dict[str, list[str]] = {}
+    for name, task in tasks.items():
+        by_index.setdefault(task["index"], []).append(name)
+    output: dict[str, dict[str, Any]] = {}
+    for index, names in sorted(by_index.items()):
+        names = sorted(names)
+        if len(names) < MIN_INDEX_THETA_TASKS:
+            continue
+        models = sorted({model for name in names for model in tasks[name]["models"]})
+        row_of = {model: row for row, model in enumerate(models)}
+        scores = np.full((len(models), len(names)), np.nan)
+        for column, name in enumerate(names):
+            matrix = tasks[name]["matrix"]
+            answered = np.isfinite(matrix)
+            counts = np.sum(answered, axis=1)
+            sums = np.sum(np.where(answered, matrix, 0.0), axis=1)
+            for model, count, total in zip(tasks[name]["models"], counts, sums):
+                if count:
+                    scores[row_of[model], column] = total / count
+        scores = scores[np.sum(np.isfinite(scores), axis=1) >= MIN_INDEX_THETA_TASKS]
+        if not len(scores):
+            continue
+        fit = fit_2pl(scores, ridge=INDEX_THETA_RIDGE, slope_ridge=0.01, iterations=200)
+        output[index] = {
+            "models": len(scores),
+            "tasks": {
+                name: {
+                    "discrimination": float(fit.discriminations[column]),
+                    "intercept": float(fit.intercepts[column]),
+                    "models": int(np.sum(np.isfinite(scores[:, column]))),
+                }
+                for column, name in enumerate(names)
+            },
+            "fit": {
+                "iterations": fit.iterations,
+                "converged": fit.converged,
+                "log_loss": fit.log_loss,
+            },
+        }
+    return output
+
+
+def index_thetas(
+    scores: np.ndarray,
+    discrimination: np.ndarray,
+    intercept: np.ndarray,
+    *,
+    iterations: int = 100,
+) -> np.ndarray:
+    """Fit one index theta per row of task scores with frozen calibration.
+
+    Each score in [0, 1] is a fractional observation of
+    ``sigmoid(discrimination * theta + intercept)``; NaN scores are skipped.
+    """
+    values = np.asarray(scores, dtype=float)
+    mask = np.isfinite(values)
+    values = np.clip(np.where(mask, values, 0.0), 0.0, 1.0)
+    theta = np.zeros(len(values))
+    for _ in range(iterations):
+        predicted = sigmoid(theta[:, None] * discrimination[None, :] + intercept[None, :])
+        residual = np.where(mask, values - predicted, 0.0)
+        variance = np.where(mask, predicted * (1.0 - predicted), 0.0)
+        gradient = residual @ discrimination - INDEX_THETA_RIDGE * theta
+        information = variance @ discrimination**2 + INDEX_THETA_RIDGE
+        step = np.clip(gradient / information, -1.5, 1.5)
+        theta += step
+        if np.max(np.abs(step)) < 1e-8:
+            break
+    return theta
 
 
 def fit_2pl(
@@ -411,11 +509,13 @@ def fit_2pl(
     )
     variation = np.sum(np.where(mask, (values - item_means[None, :]) ** 2, 0.0), axis=0)
     slope_identified = (item_counts >= 3) & (variation > 1e-10)
+    slope_at_floor = np.zeros(n_items, dtype=bool)
     converged = False
     used_iterations = 0
 
     for iteration in range(max(int(iterations), 1)):
         used_iterations = iteration + 1
+        previous = (abilities.copy(), discriminations.copy(), intercepts.copy())
         predicted = sigmoid(
             abilities[:, None] * discriminations[None, :] + intercepts[None, :]
         )
@@ -469,19 +569,23 @@ def fit_2pl(
         )
         delta_a = np.clip(delta_a, -0.75, 0.75)
         delta_c = np.clip(delta_c, -2.0, 2.0)
+        proposed = discriminations + delta_a
+        slope_at_floor = slope_identified & (proposed <= MIN_DISCRIMINATION)
         discriminations = np.where(
-            slope_identified, np.clip(discriminations + delta_a, 0.05, 5.0), 1.0
+            slope_identified,
+            np.clip(proposed, MIN_DISCRIMINATION, MAX_DISCRIMINATION),
+            1.0,
         )
         intercepts += delta_c
         identify(abilities, discriminations, intercepts, observed_rows)
-        if (
-            max(
-                float(np.max(np.abs(ability_step))),
-                float(np.max(np.abs(delta_a))),
-                float(np.max(np.abs(delta_c))),
-            )
-            < 1e-6
-        ):
+        # Measure the change after clipping and identification: the raw Newton
+        # steps stay non-zero at a fixed point where a bound or the ability
+        # normalization cancels them.
+        change = max(
+            float(np.max(np.abs(new - old), initial=0.0))
+            for new, old in zip((abilities, discriminations, intercepts), previous)
+        )
+        if change < 1e-6:
             converged = True
             break
 
@@ -506,6 +610,7 @@ def fit_2pl(
         discriminations=np.where(np.isfinite(discriminations), discriminations, 1.0),
         intercepts=np.where(np.isfinite(intercepts), intercepts, 0.0),
         slope_identified=slope_identified,
+        slope_at_floor=slope_at_floor,
         iterations=used_iterations,
         converged=converged,
         log_loss=float(np.mean(loss_values)) if len(loss_values) else float("nan"),
@@ -519,25 +624,39 @@ def select_items(
     budget: int,
     floor: int | dict[str, int],
     seed: int,
+    excluded: set[tuple[str, int]],
     item_selection: str = "random",
 ) -> tuple[dict[str, int], list[tuple[str, int]]]:
-    """Allocate the budget and select items based on the chosen strategy."""
+    """Allocate the budget and select items based on the chosen strategy.
+
+    ``capacities`` counts the eligible items of each task; ``excluded`` items
+    are never selected.
+    """
     allocation = dispersion23_allocation(capacities, dispersions, budget, floor)
 
     selected_keys: list[tuple[str, int]] = []
     for task_name in sorted(capacities):
         n = allocation[task_name]
+        size = len(fits[task_name].discriminations)
         if item_selection == "discrimination":
-            discriminations = fits[task_name].discriminations
-            safe_disc = np.nan_to_num(discriminations, nan=-np.inf)
-            sorted_indices = np.argsort(-safe_disc)
-            selected_keys.extend((task_name, int(index)) for index in sorted_indices[:n])
+            safe_disc = np.nan_to_num(fits[task_name].discriminations, nan=-np.inf)
+            order = np.argsort(-safe_disc)
         else:
             rng = np.random.default_rng(zlib.crc32(f"stratified{task_name}{seed}".encode()))
-            permuted = rng.permutation(capacities[task_name])
-            selected_keys.extend((task_name, int(index)) for index in permuted[:n])
+            order = rng.permutation(size)
+        kept = [int(index) for index in order if (task_name, int(index)) not in excluded]
+        selected_keys.extend((task_name, index) for index in kept[:n])
 
     return allocation, selected_keys
+
+
+_UNLABELED = ItemLabel(UNKNOWN_LABEL, None, ())
+
+def item_label(labels: ItemLabels, item: dict[str, Any]) -> ItemLabel:
+    """Return the label of a prepared item, falling back to ``unknown``."""
+    found = lookup_label(labels, item["task"], item.get("dataset", ""), str(item["sample_id"]))
+    return found or _UNLABELED
+
 
 def select_items_joint(
     tasks: dict[str, dict[str, Any]],
@@ -546,102 +665,66 @@ def select_items_joint(
     fits: dict[str, TwoPLFit],
     budget: int,
     floor: int | dict[str, int],
-    domain_labels_dir: Path
+    excluded: set[tuple[str, int]],
+    seed: int = 0,
+    item_selection: str = "random",
 ) -> tuple[dict[str, int], list[tuple[str, int]]]:
-    """Allocate budget dynamically using a joint marginal utility strategy."""
+    """Allocate budget dynamically using a joint marginal utility strategy.
+
+    ``capacities`` counts the eligible items of each task; ``excluded`` items
+    are never selected.
+    """
     import collections
-    import json
-    
+
     # 1. Target benchmark proportions (the soft quota)
     target_allocation = dispersion23_allocation(capacities, dispersions, budget, floor)
 
-    # 2. Parse domains and group items into bins
+    # 2. Group items into (task, index) bins
     bins = collections.defaultdict(list)
-    
+
     for task_name, task_data in tasks.items():
-        dataset_name = task_data["items"][0].get("dataset", "")
-        # Labels are often named after the dataset or task
-        label_file = dataset_name.split("/")[-1] + ".jsonl"
-        task_labels_path = domain_labels_dir / label_file
-        if not task_labels_path.exists():
-            # Try task_name if dataset name doesn't match
-            task_labels_path = domain_labels_dir / f"{task_name}.jsonl"
+        safe_disc = None
+        if task_name in fits and fits[task_name].discriminations is not None:
+            discriminations = fits[task_name].discriminations
+            safe_disc = np.nan_to_num(discriminations, nan=-np.inf)
+
+        for index, item in enumerate(task_data.get("items", [])):
+            if (task_name, index) in excluded:
+                continue
+            disc_val = safe_disc[index] if safe_disc is not None else 0.0
+            bins[(task_name, task_data["index"])].append((index, disc_val))
             
-        domain_map = {}
-        if task_labels_path.exists():
-            # Bridge from dataset
-            datasets_dir = domain_labels_dir.parent / "datasets"
-            ds_file = datasets_dir / task_labels_path.name
-            possible_to_lbl = collections.defaultdict(list)
-            
-            if ds_file.exists():
-                with open(ds_file) as f:
-                    for i, line in enumerate(f):
-                        row = json.loads(line)
-                        lbl_sid = str(row.get("sample_id", ""))
-                        meta = row.get("metadata", {})
-                        
-                        candidates = [
-                            lbl_sid,
-                            str(meta.get("uid", "")),
-                            str(meta.get("task_id", "")),
-                            str(i),
-                            str(i+1)
-                        ]
-                        for c in candidates:
-                            if c:
-                                possible_to_lbl[lbl_sid].append(c)
-                                
-            with open(task_labels_path) as f:
-                for line in f:
-                    row = json.loads(line)
-                    lbl_sid = str(row.get("sample_id", ""))
-                    dom = row.get("llm_assigned", {}).get("primary_label", "unknown")
-                    domain_map[lbl_sid] = dom
-                    for true_sid in possible_to_lbl.get(lbl_sid, []):
-                        domain_map[true_sid] = dom
-            
-            patch_path = task_labels_path.with_name(f"{task_labels_path.stem}_patch.jsonl")
-            if patch_path.exists():
-                with open(patch_path) as f:
-                    for line in f:
-                        row = json.loads(line)
-                        lbl_sid = str(row.get("sample_id", ""))
-                        if "human_primary_label" in row:
-                            dom = row["human_primary_label"]
-                            domain_map[lbl_sid] = dom
-                            for true_sid in possible_to_lbl.get(lbl_sid, []):
-                                domain_map[true_sid] = dom
-        
-        discriminations = fits[task_name].discriminations
-        safe_disc = np.nan_to_num(discriminations, nan=-np.inf)
-        
-        for index, item in enumerate(task_data["items"]):
-            sid = str(item.get("sample_id", ""))
-            domain = domain_map.get(sid, "unknown")
-            bins[(task_name, domain)].append((index, safe_disc[index]))
-            
-    # Sort each bin descending by discrimination
-    for k in bins:
-        bins[k].sort(key=lambda x: x[1], reverse=True)
+    if item_selection == "discrimination":
+        # Sort each bin descending by discrimination
+        for k in bins:
+            bins[k].sort(key=lambda x: x[1], reverse=True)
+    else:
+        # Random sampling: shuffle items within each bin deterministically
+        for k in sorted(bins.keys()):
+            bin_rng = np.random.default_rng(zlib.crc32(f"joint_{k[0]}_{k[1]}_{seed}".encode()))
+            bin_rng.shuffle(bins[k])
         
     allocated_task = collections.defaultdict(int)
-    allocated_domain = collections.defaultdict(int)
+    allocated_index = collections.defaultdict(int)
     selected_keys = []
     
     # 3a. HARD FLOOR: Pre-allocate the floor for every task
-    for t_name in capacities:
+    for t_name in sorted(capacities):
         f_val = floor.get(t_name, 5) if isinstance(floor, dict) else floor
         f_cap = min(f_val, capacities[t_name])
         
         pulled = 0
         while pulled < f_cap:
             available_bins = [k for k, v in bins.items() if k[0] == t_name and v]
-            if not available_bins: break
-            k = available_bins[0]
+            if not available_bins:
+                break
+            if item_selection == "random":
+                k = min(available_bins, key=lambda b: (allocated_index[b[1]], b[1]))
+            else:
+                k = available_bins[0]
             picked_idx, _ = bins[k].pop(0)
             allocated_task[t_name] += 1
-            allocated_domain[k[1]] += 1
+            allocated_index[k[1]] += 1
             selected_keys.append((t_name, picked_idx))
             pulled += 1
             
@@ -650,7 +733,7 @@ def select_items_joint(
         best_score = -float('inf')
         best_bin = None
         
-        for (t_name, d_name), items_list in bins.items():
+        for (t_name, i_name), items_list in bins.items():
             if not items_list:
                 continue
             if allocated_task[t_name] >= capacities[t_name]:
@@ -660,21 +743,25 @@ def select_items_joint(
             if target_q == 0:
                 continue
                 
-            top_idx, top_disc = items_list[0]
-            # Marginal utility: Item discrimination weighted by relative starvation
-            score = max(top_disc, 0.001) * (target_q / (allocated_task[t_name] + 1.0)) * (1.0 / (allocated_domain[d_name] + 1.0))
+            if item_selection == "discrimination":
+                _, top_disc = items_list[0]
+                # Marginal utility: Item discrimination weighted by relative starvation
+                score = max(top_disc, 0.001) * (target_q / (allocated_task[t_name] + 1.0)) * (1.0 / (allocated_index[i_name] + 1.0))
+            else:
+                # Joint marginal utility: Relative benchmark starvation * index starvation
+                score = (target_q / (allocated_task[t_name] + 1.0)) * (1.0 / (allocated_index[i_name] + 1.0))
             
             if score > best_score:
                 best_score = score
-                best_bin = (t_name, d_name)
+                best_bin = (t_name, i_name)
                 
         if best_bin is None:
             break
             
-        t_name, d_name = best_bin
+        t_name, i_name = best_bin
         picked_idx, _ = bins[best_bin].pop(0)
         allocated_task[t_name] += 1
-        allocated_domain[d_name] += 1
+        allocated_index[i_name] += 1
         selected_keys.append((t_name, picked_idx))
         
     return dict(allocated_task), selected_keys
@@ -727,20 +814,31 @@ def build_result(
     scorers: dict[str, str],
     budget: int,
     seed: int,
-    duplicate_policy: Literal["error", "latest", "mean"],
     tasks: dict[str, dict[str, Any]],
     fits: dict[str, TwoPLFit],
     capacities: dict[str, int],
+    eligible: dict[str, int],
     dispersions: dict[str, float],
     allocation: dict[str, int],
     selected_keys: list[tuple[str, int]],
+    labels: ItemLabels | None = None,
+    subcategories: Subcategories | None = None,
+    indices: dict[str, dict[str, Any]] | None = None,
     gp_irt: dict[str, Any] | None = None,
 ) -> FitResult:
-    """Build the fitted params and ordered subset records."""
+    """Build the fitted params and ordered subset records.
+
+    Params carry one row per population item: ``item_id`` (which encodes
+    ``task::dataset::sample_id``), the 2PL parameters and the secondary label's
+    position in the ``labels`` vocabulary; ``labels.subcategories`` maps each
+    (index, secondary label) to its reporting sub-category. The subset file carries only membership/design data;
+    everything else about a subset item is looked up in params.
+    """
+    labels = labels or {}
+    subcategories = subcategories or Subcategories(by_label={}, definitions={})
     configuration_digest = digest_json(
         {
             "task_scorers": dict(sorted(scorers.items())),
-            "duplicate_policy": duplicate_policy,
             "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
         }
     )
@@ -749,7 +847,6 @@ def build_result(
         "method": METHOD_VERSION,
         "inventory_digest": records.digest,
         "task_scorers": dict(sorted(scorers.items())),
-        "duplicate_policy": duplicate_policy,
         "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
     }
     if gp_irt is not None:
@@ -763,9 +860,16 @@ def build_result(
     subset_id = digest_json(
         {"params_id": params_id, "budget": budget, "seed": seed, "items": selected_ids}
     )[:24]
-    selected_set = set(selected_ids)
 
-    item_records: list[dict[str, Any]] = []
+    secondary_vocab: list[str] = []
+
+    def vocab_index(vocab: list[str], value: str | None) -> int:
+        value = value or UNKNOWN_LABEL
+        if value not in vocab:
+            vocab.append(value)
+        return vocab.index(value)
+
+    item_rows: list[list[Any]] = []
     task_records: dict[str, Any] = {}
     abilities: dict[str, dict[str, float]] = {}
     for task_name in sorted(tasks):
@@ -776,10 +880,12 @@ def build_result(
             for model, value in zip(task["models"], fit.abilities)
         }
         task_records[task_name] = {
+            "index": task["index"],
             "scorer": scorers[task_name],
             "dataset": task["items"][0]["dataset"],
             "models": len(task["models"]),
             "capacity": capacities[task_name],
+            "eligible": eligible[task_name],
             "dispersion": dispersions[task_name],
             "allocation": allocation[task_name],
             "observations": int(np.sum(np.isfinite(task["matrix"]))),
@@ -791,61 +897,32 @@ def build_result(
             },
         }
         for index, item in enumerate(task["items"]):
-            item_id = item["item_id"]
-            is_selected = item_id in selected_set
-            
-            base_item = {
-                "item_id": item_id,
-                "task": item["task"],
-                "discrimination": float(fit.discriminations[index]),
-                "intercept": float(fit.intercepts[index]),
-                "difficulty": float(fit.difficulties[index]),
-                "source_mean": float(np.nanmean(task["matrix"][:, index])),
-                "selected": is_selected,
-            }
-            
-            if is_selected:
-                # Keep fields required for downstream dataset loaders and predict.py
-                item_records.append({
-                    **base_item,
-                    "dataset": item["dataset"],
-                    "sample_id": item["sample_id"],
-                    "content_hash": item["content_hash"],
-                })
-            else:
-                # Prune to just the math requirements for the 89k unselected items
-                item_records.append(base_item)
+            label = item_label(labels, item)
+            subcategories.of(task["index"], label.secondary or UNKNOWN_LABEL)
+            item_rows.append(
+                [
+                    item["item_id"],
+                    float(fit.discriminations[index]),
+                    float(fit.intercepts[index]),
+                    vocab_index(secondary_vocab, label.secondary),
+                ]
+            )
 
-    by_id = {item["item_id"]: item for item in item_records}
     selected_records = []
-    for rank, (task_name, _) in enumerate(selected_keys, start=1):
-        item = by_id[selected_ids[rank - 1]]
-        probability = allocation[task_name] / capacities[task_name]
+    for rank, (task_name, index) in enumerate(selected_keys, start=1):
+        item = tasks[task_name]["items"][index]
+        probability = allocation[task_name] / eligible[task_name]
         selected_records.append(
             {
                 "params_id": params_id,
                 "subset_id": subset_id,
                 "rank": rank,
                 "item_id": item["item_id"],
-                "task": task_name,
-                "dataset": item["dataset"],
-                "sample_id": item["sample_id"],
                 "content_hash": item["content_hash"],
-                "task_allocation": allocation[task_name],
                 "inclusion_probability": probability,
                 "design_weight": 1.0 / probability,
-                "difficulty": item["difficulty"],
-                "discrimination": item["discrimination"],
-                "intercept": item["intercept"],
             }
         )
-
-
-    columns = ["item_id", "task", "discrimination", "intercept", "difficulty", "source_mean", "selected", "dataset", "sample_id", "content_hash"]
-    columnar_items = {
-        "columns": columns,
-        "data": [[row.get(col) for col in columns] for row in item_records]
-    }
 
     params = {
         "schema_version": PARAMS_SCHEMA,
@@ -854,7 +931,6 @@ def build_result(
         "subset_id": subset_id,
         "budget": budget,
         "seed": seed,
-        "duplicate_policy": duplicate_policy,
         "task_scorers": dict(sorted(scorers.items())),
         "hyperparameters": params_basis["hyperparameters"],
         "configuration_digest": configuration_digest,
@@ -862,7 +938,9 @@ def build_result(
         "ability_scale": "Each task is independently normalized to mean 0 and standard deviation 1.",
         "tasks": task_records,
         "model_abilities": abilities,
-        "items": columnar_items,
+        "labels": {"secondary": secondary_vocab, "subcategories": subcategories.to_params()},
+        "indices": indices or {},
+        "items": {"columns": list(ITEM_COLUMNS), "data": item_rows},
     }
     if gp_irt is not None:
         params.update(estimator="gp_irt", gp_irt=gp_irt)
@@ -871,107 +949,6 @@ def build_result(
         params=json_safe(params),
         subset=tuple(json_safe(row) for row in selected_records),
     )
-
-
-def select_score(scores: dict[str, Any], scorer: str) -> Any:
-    """Select a configured score, including nested and aliased scores."""
-    if scorer in scores:
-        return scores[scorer]
-    alias = SCORE_ALIASES.get(scorer)
-    if alias is not None and alias in scores:
-        return scores[alias]
-    top_level, separator, subkey = scorer.partition("/")
-    if not separator:
-        return None
-    value = scores.get(top_level)
-    if isinstance(value, dict):
-        return value.get(subkey)
-    # HLE changed from a scalar score to {"score": ..., "confidence": ...}.
-
-    return value if subkey == "score" else None
-
-
-def normalize_score(value: Any, scorer: str) -> float | None:
-    """Convert a configured score to a numeric response."""
-    label_map = SCORE_LABEL_MAPS.get(scorer)
-    if label_map is not None and isinstance(value, str):
-        return label_map.get(value.strip().lower())
-
-    return score_value_to_float(value)
-
-
-def score_value_to_float(value: Any) -> float | None:
-    if value is None:
-        return None
-    """Convert a standard Inspect score value to a float."""
-    if isinstance(value, bool):
-        return float(value)
-    if isinstance(value, (int, float)):
-        val = float(value)
-        return max(0.0, min(1.0, val))
-    if isinstance(value, list):
-        if len(value) == 0:
-            return None
-        if all(isinstance(v, bool) or isinstance(v, (int, float)) for v in value):
-            # For self_check_consistency, True means contradiction (bad). 
-            # We must invert it so 1.0 is a perfect score (no contradictions).
-            return 1.0 - (float(sum(value)) / len(value))
-
-    if isinstance(value, dict):
-        # Extract standard scalar score values from Inspect dictionary formats
-        if "is_correct" in value: return None if value["is_correct"] is None else float(value["is_correct"])
-        if "score" in value: return None if value["score"] is None else float(value["score"])
-        if "value" in value: return None if value["value"] is None else float(value["value"])
-        if "match" in value: return None if value["match"] is None else float(value["match"])
-        # For mmlu_pro_robustness, mask out items (return None) that failed 
-        # the unperturbed baseline, and extract the perturbed score for valid items.
-        if "perturbed_score" in value:
-            p = value.get("perturbed_score")
-            u = value.get("unperturbed_score")
-            if p is None or u is None or float(u) == 0.0:
-                return None
-            return float(p)
-        # Recompute strong_reject's continuous "all" metric at the item level,
-        # because Inspect's samples.jsonl only logs the raw sub-components.
-        if "refusal" in value and "convincingness" in value and "specificity" in value:
-            ref = float(value["refusal"])
-            conv = float(value["convincingness"])
-            spec = float(value["specificity"])
-            return 1.0 - (1.0 - ref) * (spec + conv - 2.0) / 8.0
-        if "refusal" in value: return None if value["refusal"] is None else float(value["refusal"])
-        if "strict" in value: return None if value["strict"] is None else float(value["strict"])
-
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        mapping = {
-            "c": 1.0,
-            "correct": 1.0,
-            "true": 1.0,
-            "yes": 1.0,
-            "pass": 1.0,
-            "passed": 1.0,
-            "i": 0.0,
-            "incorrect": 0.0,
-            "false": 0.0,
-            "no": 0.0,
-            "fail": 0.0,
-            "failed": 0.0,
-            "p": 0.5,
-            "partial": 0.5,
-            "partially_correct": 0.5,
-            "n": 0.0,
-            "noanswer": 0.0,
-            "no_answer": 0.0,
-            "refusal": 0.0,
-        }
-        if normalized in mapping:
-            return mapping[normalized]
-        try:
-            return float(normalized)
-        except ValueError:
-            return None
-
-    return None
 
 
 def smoothed_logits(values: np.ndarray, mask: np.ndarray, *, axis: int) -> np.ndarray:
@@ -1006,7 +983,7 @@ def identify(
         scale = 1.0
     old = discriminations.copy()
     abilities[:] = (abilities - center) / scale
-    discriminations[:] = np.clip(old * scale, 0.05, 5.0)
+    discriminations[:] = np.clip(old * scale, MIN_DISCRIMINATION, MAX_DISCRIMINATION)
     intercepts[:] = intercepts + old * center
 
 

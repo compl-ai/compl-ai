@@ -25,6 +25,7 @@ from rich import print
 
 from complai.utils.log_parser import content_hash as _content_hash
 from complai.utils.log_parser import logical_sample_id as _logical_sample_id
+from complai.utils.log_parser import VARIANT_TASKS
 
 
 def get_complai_tasks(
@@ -419,17 +420,18 @@ def apply_eval_subset(
         dataset = task.dataset
         if dataset is None:
             raise ValueError(f"Task {task_name!r} has no dataset")
-        samples = {}
-        samples_by_hash: dict[str, list[Any]] = {}
+        # Variant tasks map several dataset samples to one basis sample; those
+        # samples keep their own IDs and a selected basis sample runs them all.
+        has_variants = task_name in VARIANT_TASKS
+        groups: dict[str, list[Any]] = {}
         hashes: dict[str, set[str]] = {}
+        ids_by_hash: dict[str, set[str]] = {}
         for index, sample in enumerate(dataset, start=1):
+            raw_id = sample.id if sample.id is not None else index
             sample_id = _logical_sample_id(
-                task_name,
-                sample.id if sample.id is not None else index,
-                sample.metadata,
-                sample.input,
+                task_name, raw_id, sample.metadata, sample.input
             )
-            if sample_id in samples:
+            if sample_id in groups and not has_variants:
                 raise ValueError(
                     f"Task {task_name!r} contains duplicate sample ID {sample_id!r}"
                 )
@@ -440,6 +442,7 @@ def apply_eval_subset(
                     sample.metadata,
                     choices=sample.choices,
                     task=task_name,
+                    sample_id=raw_id,
                 ),
                 _content_hash(
                     thin_input(deepcopy(sample.input)),
@@ -447,21 +450,21 @@ def apply_eval_subset(
                     thin_metadata(sample.metadata or {}),
                     choices=sample.choices,
                     task=task_name,
+                    sample_id=raw_id,
                 ),
             }
-            samples[sample_id] = sample
-            hashes[sample_id] = sample_hashes
+            if has_variants and sample.id is None:
+                sample = sample.model_copy(update={"id": raw_id})
+            groups.setdefault(sample_id, []).append(sample)
+            hashes.setdefault(sample_id, set()).update(sample_hashes)
             for sample_hash in sample_hashes:
-                samples_by_hash.setdefault(sample_hash, []).append(sample)
+                ids_by_hash.setdefault(sample_hash, set()).add(sample_id)
         rows = selected[task_name]
         ordered = []
         for row in rows:
-            selected_sample = samples.get(row["sample_id"])
-            if (
-                selected_sample is None
-                or row["content_hash"] not in hashes[row["sample_id"]]
-            ):
-                matches = samples_by_hash.get(row["content_hash"], [])
+            sample_id = row["sample_id"]
+            if sample_id not in groups or row["content_hash"] not in hashes[sample_id]:
+                matches = ids_by_hash.get(row["content_hash"], set())
                 if not matches:
                     raise ValueError(
                         f"Task {task_name!r} is missing selected item "
@@ -472,7 +475,11 @@ def apply_eval_subset(
                         f"Selected item {row['item_id']!r} matches multiple samples by "
                         "content hash"
                     )
-                selected_sample = matches[0]
+                sample_id = next(iter(matches))
+            if has_variants:
+                ordered.extend(groups[sample_id])
+                continue
+            selected_sample = groups[sample_id][0]
             if (
                 selected_sample.id is None
                 or str(selected_sample.id) != row["sample_id"]

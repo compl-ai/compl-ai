@@ -1,22 +1,16 @@
-import collections
-
-from typing import Literal
-DuplicatePolicy = Literal["error", "latest", "mean"]
-import math
-import numpy as np
-from typing import Any
-from complai.constants import SCORE_LABEL_MAPS
-
 import hashlib
 import importlib.metadata
 import json
+import math
 import os
 import re
 import tempfile
 import unicodedata
 from collections import Counter
 from collections.abc import Iterator
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile
@@ -28,6 +22,9 @@ from inspect_ai.log import read_eval_log_sample
 from inspect_ai.log import read_eval_log_sample_summaries
 from tqdm import tqdm
 
+from complai.utils.scores import metric_source
+from complai.utils.scores import select_score
+
 
 RECORDS_SCHEMA = "complai.utils.log_parser-v1"
 SUPPORTED_RECORDS_SCHEMAS = {RECORDS_SCHEMA}
@@ -37,7 +34,13 @@ GPQA_PARSER_VERSION = "complai-core-inspect-v1-gpqa"
 HLE_PARSER_VERSION = "complai-core-inspect-v1-hle"
 HIJACKING_PARSER_VERSION = "complai-core-inspect-v1-hijacking"
 MMLU_PARSER_VERSION = "complai-core-inspect-v1-mmlu"
+STRONG_REJECT_PARSER_VERSION = "complai-core-inspect-v1-strong-reject-basis"
 LOG_SUFFIXES = (".eval", ".eval.gz")
+# strong_reject repeats its 60 base prompts once per jailbreak method, so log
+# sample k is a variant of base prompt (k - 1) % 60 + 1. The base prompt is the
+# basis sample: its variants share one ID and hash and are averaged like epochs.
+STRONG_REJECT_BASE_PROMPTS = 60
+VARIANT_TASKS = {"strong_reject"}
 
 QUESTION_METADATA_KEYS = {
     "sensitive_attribute",
@@ -114,6 +117,7 @@ class PreprocessedRecords:
                 "eligible": statuses["ok"],
                 "excluded": statuses["excluded"],
                 "deferred": statuses["deferred"],
+                "superseded": statuses["superseded"],
                 "failed": statuses["error"],
             },
             "files": list(self.files),
@@ -125,10 +129,16 @@ def preprocess_logs(
     scorers: dict[str, str],
     output_path: Path,
     *,
-    domain_labels_dir: Path | None = None,
-    valid_labels_only: bool = False,
+    workers: int = 1,
 ) -> PreprocessedRecords:
-    """Write compact response JSONL and a provenance manifest."""
+    """Write compact response JSONL, a provenance manifest and ``metrics.json``.
+
+    Each task's question set is defined by its newest full eval (the
+    "reference"); records for questions outside it are dropped. When a model has
+    several evals of a task, the one answering the most reference questions is
+    kept and the others are marked ``superseded``. Every kept eval records its
+    ``coverage`` of the reference. Benchmark metrics come from the kept eval.
+    """
     if not scorers or any(not task or not scorer for task, scorer in scorers.items()):
         raise ValueError("scorers must be a non-empty task-to-scorer mapping")
     roots, paths = _discover_logs(log_paths)
@@ -141,126 +151,166 @@ def preprocess_logs(
         raise FileExistsError(f"Output already exists: {existing[0]}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{output_path.name}.", dir=output_path.parent
-    )
-    temporary_path = Path(temporary_name)
-    digest = hashlib.sha256()
-    file_rows: list[dict[str, Any]] = []
-    record_count = 0
-    valid_ids_by_task = {}
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            for path in tqdm(
-                paths, total=len(paths), desc="Preprocessing logs", unit="log"
-            ):
-                file_row, records = _preprocess_file(path, scorers)
-                file_rows.append(file_row)
-                for record in records:
-                    if valid_labels_only:
-                        if domain_labels_dir is None:
-                            raise ValueError("--domain-labels is required when using --valid-labels-only")
-                        
-                        task_name = record["task"]
-                        if task_name not in valid_ids_by_task:
-                            dataset_name = record.get("dataset", "")
-                            label_file = dataset_name.split("/")[-1] + ".jsonl"
-                            task_labels_path = domain_labels_dir / label_file
-                            if not task_labels_path.exists():
-                                task_labels_path = domain_labels_dir / f"{task_name}.jsonl"
-                            
-                            if not task_labels_path.exists():
-                                valid_ids_by_task[task_name] = set()
-                            else:
-                                datasets_dir = domain_labels_dir.parent / "datasets"
-                                possible_to_lbl = collections.defaultdict(list)
-                                ds_file = datasets_dir / task_labels_path.name
-                                if ds_file.exists():
-                                    with open(ds_file) as dsf:
-                                        for i, line in enumerate(dsf):
-                                            row = json.loads(line)
-                                            lbl_sid = str(row.get("sample_id", ""))
-                                            meta = row.get("metadata", {})
-                                            for c in [lbl_sid, str(meta.get("uid", "")), str(meta.get("task_id", "")), str(i), str(i+1)]:
-                                                if c: possible_to_lbl[lbl_sid].append(c)
+    with tempfile.TemporaryDirectory(prefix=".preprocess-", dir=output_path.parent) as scratch:
+        scratch_dir = Path(scratch)
+        parsed = _parse_logs(paths, scorers, scratch_dir, workers)
+        file_rows = [file_row for file_row, _, _ in parsed]
+        chosen, references = _select_evals(parsed)
 
-                                valid_ids = set()
-                                with open(task_labels_path) as tf:
-                                    for line in tf:
-                                        row = json.loads(line)
-                                        lbl_sid = str(row.get("sample_id", ""))
-                                        valid_ids.add(lbl_sid)
-                                        for true_sid in possible_to_lbl.get(lbl_sid, []):
-                                            valid_ids.add(true_sid)
-                                valid_ids_by_task[task_name] = valid_ids
-                        
-                        if str(record.get("sample_id", "")) not in valid_ids_by_task[task_name]:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{output_path.name}.", dir=output_path.parent
+        )
+        temporary_path = Path(temporary_name)
+        digest = hashlib.sha256()
+        record_count = 0
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                for index in chosen:
+                    task = file_rows[index]["task"]
+                    for line in _scratch_path(scratch_dir, index).open(encoding="utf-8"):
+                        record = json.loads(line)
+                        if _hash_key(record["content_hash"]) not in references[task]:
                             continue
+                        handle.write(line)
+                        digest.update(line.encode())
+                        record_count += 1
+                handle.flush()
+                os.fsync(handle.fileno())
 
-                    encoded = (
-                        json.dumps(
-                            record,
-                            sort_keys=True,
-                            ensure_ascii=False,
-                            separators=(",", ":"),
-                            allow_nan=False,
-                        )
-                        + "\n"
-                    )
-                    handle.write(encoded)
-                    digest.update(encoded.encode())
-                    record_count += 1
-            handle.flush()
-            os.fsync(handle.fileno())
+            manifest = {
+                "schema_version": RECORDS_SCHEMA,
+                "records": record_count,
+                "records_sha256": digest.hexdigest(),
+                "scorers": dict(sorted(scorers.items())),
+                "inspect_version": importlib.metadata.version("inspect-ai"),
+                "roots": [str(path) for path in roots],
+                "files": file_rows,
+            }
+            manifest["input_digest"] = digest_json(manifest)
+            _write_manifest(manifest_path, manifest)
+            os.replace(temporary_path, output_path)
+        except Exception:
+            temporary_path.unlink(missing_ok=True)
+            raise
 
-        manifest = {
-            "schema_version": RECORDS_SCHEMA,
-            "records": record_count,
-            "records_sha256": digest.hexdigest(),
-            "scorers": dict(sorted(scorers.items())),
-            "inspect_version": importlib.metadata.version("inspect-ai"),
-            "roots": [str(path) for path in roots],
-            "files": file_rows,
-        }
-        manifest["input_digest"] = digest_json(manifest)
-        _write_manifest(manifest_path, manifest)
-        os.replace(temporary_path, output_path)
-
-        # Write metrics.json
-        metrics_out = {}
-        for row in file_rows:
-            if row["parse_status"] != "ok":
-                continue
-            task = row["task"]
-            model = row["model"]
-            mets = row.get("metrics", {})
-            if task not in metrics_out:
-                metrics_out[task] = {}
-            if model not in metrics_out[task]:
-                metrics_out[task][model] = {}
-            
-            scorer_name = scorers.get(task)
-            if scorer_name and scorer_name in mets:
-                metrics_out[task][model] = mets[scorer_name]
-            else:
-                # If the exact scorer name isn't found (sometimes it's just 'choice' or 'accuracy')
-                # Just take the first available scorer's metrics
-                if mets:
-                    first_scorer = list(mets.keys())[0]
-                    metrics_out[task][model] = mets[first_scorer]
-                else:
-                    metrics_out[task][model] = {}
-
-        metrics_file = output_path.parent / "metrics.json"
-        with open(metrics_file, "w") as f:
-            json.dump(metrics_out, f, indent=2)
-
-    except Exception:
-
-        temporary_path.unlink(missing_ok=True)
-        raise
-
+    _write_benchmark_metrics(output_path.parent / "metrics.json", file_rows, chosen, scorers)
     return load_records(output_path)
+
+
+def _parse_logs(
+    paths: tuple[Path, ...], scorers: dict[str, str], scratch_dir: Path, workers: int
+) -> list[tuple[dict[str, Any], frozenset[bytes], frozenset[bytes]]]:
+    """Parse every log (in parallel when ``workers > 1``), in path order."""
+    job = partial(_preprocess_to_scratch, scorers=scorers, scratch_dir=scratch_dir)
+    jobs = list(enumerate(paths))
+    progress = partial(tqdm, total=len(paths), desc="Preprocessing logs", unit="log")
+    if workers <= 1:
+        return list(progress(job(item) for item in jobs))
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        return list(progress(pool.map(job, jobs)))
+
+
+def _preprocess_to_scratch(
+    item: tuple[int, Path], *, scorers: dict[str, str], scratch_dir: Path
+) -> tuple[dict[str, Any], frozenset[bytes], frozenset[bytes]]:
+    """Parse one log into a scratch JSONL file.
+
+    Returns its file row plus the content-hash keys of answered and unanswered
+    questions, where answered means the configured score is present.
+    """
+    index, path = item
+    file_row, records = _preprocess_file(path, scorers)
+    scorer = scorers.get(file_row["task"], "")
+    answered: set[bytes] = set()
+    unanswered: set[bytes] = set()
+    with _scratch_path(scratch_dir, index).open("w", encoding="utf-8") as handle:
+        for record in records:
+            key = _hash_key(record["content_hash"])
+            (answered if select_score(record["scores"], scorer) is not None else unanswered).add(key)
+            handle.write(
+                json.dumps(
+                    record,
+                    sort_keys=True,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+                + "\n"
+            )
+    return file_row, frozenset(answered), frozenset(unanswered - answered)
+
+
+def _select_evals(
+    parsed: list[tuple[dict[str, Any], frozenset[bytes], frozenset[bytes]]],
+) -> tuple[list[int], dict[str, frozenset[bytes]]]:
+    """Pick one eval per (model, task) and each task's reference question set.
+
+    Updates the file rows in place with ``coverage`` and, for evals that lose to
+    a more complete one, ``parse_status="superseded"`` plus ``superseded_by``.
+    Returns the chosen row indices in path order and the per-task references.
+    """
+    by_task: dict[str, list[int]] = {}
+    for index, (file_row, _, _) in enumerate(parsed):
+        if file_row["parse_status"] == "ok":
+            by_task.setdefault(file_row["task"], []).append(index)
+
+    def recency(index: int) -> tuple[str, str]:
+        return parsed[index][0]["created"], parsed[index][0]["path"]
+
+    references: dict[str, frozenset[bytes]] = {}
+    chosen: list[int] = []
+    for task, indices in by_task.items():
+        full = [index for index in indices if not parsed[index][0]["partial"]]
+        if full:
+            newest = max(full, key=recency)
+            references[task] = parsed[newest][1] | parsed[newest][2]
+        else:
+            references[task] = frozenset().union(*(parsed[index][1] for index in indices))
+        reference = references[task]
+        by_model: dict[str, list[int]] = {}
+        for index in indices:
+            file_row, answered, _ = parsed[index]
+            file_row["coverage"] = len(answered & reference) / len(reference) if reference else 0.0
+            by_model.setdefault(file_row["model"], []).append(index)
+        for candidates in by_model.values():
+            best = max(
+                candidates, key=lambda index: (parsed[index][0]["coverage"], *recency(index))
+            )
+            chosen.append(best)
+            for index in candidates:
+                if index != best:
+                    parsed[index][0]["parse_status"] = "superseded"
+                    parsed[index][0]["superseded_by"] = parsed[best][0]["path"]
+    return sorted(chosen), references
+
+
+def _write_benchmark_metrics(
+    path: Path, file_rows: list[dict[str, Any]], chosen: list[int], scorers: dict[str, str]
+) -> None:
+    """Write task -> model -> benchmark metrics of each kept eval's configured scorer."""
+    metrics: dict[str, dict[str, dict[str, Any]]] = {}
+    missing: list[str] = []
+    for index in chosen:
+        row = file_rows[index]
+        logged = row.get("metrics", {})
+        source = metric_source(logged, scorers[row["task"]])
+        if source is None:
+            missing.append(f"{row['task']}/{row['model']}")
+        metrics.setdefault(row["task"], {})[row["model"]] = logged[source] if source else {}
+    if missing:
+        print(f"WARNING: no benchmark metrics for the configured scorer in {len(missing)} eval(s): "
+              + ", ".join(sorted(missing)[:10]) + (" ..." if len(missing) > 10 else ""))
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(metrics, handle, indent=2, sort_keys=True)
+
+
+def _scratch_path(scratch_dir: Path, index: int) -> Path:
+    return scratch_dir / f"{index:06d}.jsonl"
+
+
+def _hash_key(content_hash: str) -> bytes:
+    """Compact set key for a hex content hash (first 128 bits)."""
+    return bytes.fromhex(content_hash[:32])
 
 
 def load_records(records_path: Path) -> PreprocessedRecords:
@@ -351,6 +401,7 @@ def _preprocess_file(
             "dataset": metadata["dataset"],
             "created": metadata["created"],
             "sample_count": metadata["sample_count"],
+            "partial": metadata["partial"],
             "metrics": metadata.get("metrics", {}),
             "model_config": metadata.get("model_config", {}),
             "task_config": metadata.get("task_config", {}),
@@ -403,7 +454,6 @@ def _discover_logs(paths: list[Path]) -> tuple[tuple[Path, ...], tuple[Path, ...
 
 
 def _extract_metrics(results: Any) -> dict[str, dict[str, float]]:
-    import math
     metrics = {}
     if results and getattr(results, "scores", None):
         for s in results.scores:
@@ -420,7 +470,6 @@ def _extract_metrics(results: Any) -> dict[str, dict[str, float]]:
     return metrics
 
 def _read_log_metadata(path: Path) -> dict[str, Any]:
-
     """Read lightweight run metadata from an Inspect log header."""
     log = read_eval_log(str(path), header_only=True)
     spec = log.eval
@@ -435,7 +484,6 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
     model_config = {}
     task_config = {}
     try:
-        from zipfile import ZipFile
         with ZipFile(path, 'r') as z:
             if 'header.json' in z.namelist():
                 header = json.loads(z.read('header.json'))
@@ -468,6 +516,10 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
             or "unknown_dataset"
         ),
         "sample_count": int(completed or 0),
+        # Runs restricted with --limit or --sample-id cannot define a task's question set.
+        "partial": bool(
+            getattr(spec.config, "limit", None) or getattr(spec.config, "sample_id", None)
+        ),
         "eligible": (
             status.lower() == "success" and total is not None and total == completed
         ),
@@ -484,6 +536,8 @@ def _parse_log(
     metadata = metadata or _read_log_metadata(path)
     if not metadata["eligible"]:
         return metadata, []
+    if metadata["task"] == "strong_reject" and (metadata.get("task_config") or {}).get("full"):
+        raise ValueError(f"strong_reject with full=True is not supported: {path}")
     summaries = read_eval_log_sample_summaries(str(path))
     missing_choices = _read_missing_choices(path, summaries)
     samples = []
@@ -510,12 +564,14 @@ def _parse_log(
                     sample.metadata,
                     choices=choices,
                     task=str(metadata["task"]),
+                    sample_id=sample.id,
                 ),
                 "question_hash": question_hash(
                     sample.input,
                     sample.metadata,
                     choices=choices,
                     task=str(metadata["task"]),
+                    sample_id=sample.id,
                 ),
             }
         )
@@ -599,6 +655,7 @@ def _parser_version(task: str) -> str:
         "hle": HLE_PARSER_VERSION,
         "instruction_goal_hijacking": HIJACKING_PARSER_VERSION,
         "mmlu_pro": MMLU_PARSER_VERSION,
+        "strong_reject": STRONG_REJECT_PARSER_VERSION,
     }.get(task, PARSER_VERSION)
 
 
@@ -608,11 +665,22 @@ def _is_log(path: Path) -> bool:
 
 
 def question_hash(
-    input_value: Any, metadata: Any, *, choices: list[str] | None = None, task: str = ""
+    input_value: Any,
+    metadata: Any,
+    *,
+    choices: list[str] | None = None,
+    task: str = "",
+    sample_id: Any = None,
 ) -> str:
     """Create a stable digest for a logical question."""
     values = metadata if isinstance(metadata, dict) else {}
-    if task == "instruction_goal_hijacking":
+    if task in VARIANT_TASKS:
+        payload = {
+            "basis": logical_sample_id(task, sample_id, metadata),
+            "category": canonical_item_value(values.get("category")),
+            "source": canonical_item_value(values.get("source")),
+        }
+    elif task == "instruction_goal_hijacking":
         payload = {
             "access_code": canonical_item_value(values.get("access_code")),
             "attack": canonical_item_value(values.get("attack")),
@@ -640,6 +708,7 @@ def content_hash(
     *,
     choices: list[str] | None = None,
     task: str = "",
+    sample_id: Any = None,
 ) -> str:
     """Create a stable digest for a question and its scoring contract."""
     values = metadata if isinstance(metadata, dict) else {}
@@ -651,7 +720,7 @@ def content_hash(
     payload = {
         "recipe": "complai-scoring-v2",
         "question_hash": question_hash(
-            input_value, metadata, choices=choices, task=task
+            input_value, metadata, choices=choices, task=task, sample_id=sample_id
         ),
         "target": _canonical_target(target, choices, task),
         "answer_metadata": canonical_item_value(answer_metadata),
@@ -709,6 +778,10 @@ def logical_sample_id(
         return f"truthfulqa_{digest}"
     if task == "hle" and isinstance(metadata, dict) and metadata.get("uid"):
         return str(metadata["uid"])
+    if task in VARIANT_TASKS:
+        if sample_id is None:
+            raise ValueError(f"{task} samples need an ID to find their base prompt")
+        return str((int(sample_id) - 1) % STRONG_REJECT_BASE_PROMPTS + 1)
     return str(sample_id)
 
 
@@ -737,6 +810,8 @@ def canonical_item_value(value: Any) -> Any:
             for key, item in sorted(encoded.items())
             if not (is_message and key == "id")
         }
+    if isinstance(encoded, str):
+        return " ".join(encoded.split())
     return encoded
 
 
@@ -751,7 +826,7 @@ def canonical_mmlu_value(value: Any) -> Any:
         }
     if not isinstance(encoded, str):
         return encoded
-    text = unicodedata.normalize("NFKC", encoded).lower()
+    text = unicodedata.normalize("NFKC", encoded.strip()).lower()
     text = text.replace("\x0bert_t", "at_t").replace("\\vert_t", "at_t")
     text = text.replace("\x0bert", "").replace("\\vert", "").replace("√", "surd")
     return re.sub(r"[^a-z0-9]+", "", text)
