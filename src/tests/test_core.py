@@ -25,8 +25,17 @@ from complai._cli.utils import read_eval_subset
 from complai.irt import dispersion23_allocation
 from complai.irt import fit
 from complai.irt import fit_2pl
+from complai.irt import fit_indices
+from complai.irt import prepare_tasks
+from complai.labels import load_labels
+from complai.labels import lookup_label
+from complai.utils.scores import metric_source
 from complai.utils.log_parser import load_records
 from tools.minify.config import load_scorers
+from complai.predict import Observation
+from complai.predict import Prediction
+from complai.predict import add_index_thetas
+from complai.irt import index_thetas
 from complai.predict import predict_scores
 from complai.utils.log_parser import preprocess_logs
 from complai.utils.io import write_outputs
@@ -34,6 +43,7 @@ from complai.utils.log_parser import content_hash as _content_hash
 from complai.utils.log_parser import logical_sample_id as _logical_sample_id
 from complai.utils.log_parser import PARSER_VERSION
 from complai.utils.log_parser import question_hash as _question_hash
+from complai.utils.log_parser import STRONG_REJECT_BASE_PROMPTS
 
 
 def test_fit_2pl_is_identified_and_marks_thin_items() -> None:
@@ -70,6 +80,83 @@ def test_fit_2pl_recovers_known_model() -> None:
     np.testing.assert_allclose(fitted.abilities, abilities, atol=1e-5)
     np.testing.assert_allclose(fitted.discriminations, discriminations, atol=1e-5)
     np.testing.assert_allclose(fitted.intercepts, intercepts, atol=1e-5)
+
+
+def test_fit_indices_recovers_task_calibration() -> None:
+    thetas = np.linspace(-2.0, 2.0, 30)
+    thetas = (thetas - thetas.mean()) / thetas.std()
+    models = [f"m{index}" for index in range(len(thetas))]
+    discriminations = np.asarray([0.6, 1.0, 1.8])
+    intercepts = np.asarray([0.5, -0.2, -1.0])
+    tasks = {}
+    for column, name in enumerate(["a", "b", "c"]):
+        probability = 1.0 / (1.0 + np.exp(-(discriminations[column] * thetas + intercepts[column])))
+        # Two items whose mean is the task score; one model skips one item.
+        matrix = np.stack([probability, probability], axis=1)
+        matrix[0, 1] = np.nan
+        tasks[name] = {"index": "d", "models": models, "matrix": matrix}
+    tasks["lonely"] = {"index": "e", "models": models, "matrix": np.full((30, 2), 0.5)}
+
+    calibration = fit_indices(tasks)
+
+    assert set(calibration) == {"d"}
+    fitted = calibration["d"]["tasks"]
+    assert calibration["d"]["models"] == 30
+    np.testing.assert_allclose(
+        [fitted[name]["discrimination"] for name in ["a", "b", "c"]], discriminations, atol=0.1
+    )
+    np.testing.assert_allclose(
+        [fitted[name]["intercept"] for name in ["a", "b", "c"]], intercepts, atol=0.1
+    )
+
+
+def test_index_thetas_recovers_theta_and_skips_missing_scores() -> None:
+    discrimination = np.asarray([0.8, 1.5, 2.0])
+    intercept = np.asarray([0.3, -0.5, 0.0])
+    truth = np.asarray([-1.0, 0.0, 1.2])
+    scores = 1.0 / (1.0 + np.exp(-(truth[:, None] * discrimination + intercept)))
+    scores[2, 0] = np.nan
+
+    fitted = index_thetas(scores, discrimination, intercept)
+
+    np.testing.assert_allclose(fitted, truth, atol=0.02)
+
+
+def test_add_index_thetas_requires_two_run_tasks() -> None:
+    responses = np.asarray([1.0] * 7 + [0.0] * 3)
+
+    def population(name: str) -> list[dict]:
+        return [{"item_id": f"{name}-{i}", "discrimination": 1.0, "intercept": 0.0} for i in range(10)]
+
+    def ran(name: str) -> dict:
+        return {"status": "ok", "ability": 0.5, "ability_standard_error": 0.5, "predicted_score": 0.7}
+
+    def observation(name: str) -> Observation:
+        return Observation(
+            item_ids=[f"{name}-{i}" for i in range(10)], responses=responses,
+            discrimination=np.ones(10), intercept=np.zeros(10),
+        )
+
+    calibration = {name: {"discrimination": 1.0, "intercept": 0.0} for name in ["a", "b", "c"]}
+    prediction = Prediction(
+        result={"models": {
+            "two": {"indices": {"d": {}}, "tasks": {"a": ran("a"), "b": ran("b"), "c": {"status": "missing"}}},
+            "one": {"indices": {"d": {}}, "tasks": {"a": ran("a"), "b": {"status": "missing"}}},
+        }},
+        params={"indices": {"d": {"tasks": calibration}}},
+        tasks={},
+        populations={name: population(name) for name in calibration},
+        observations={(model, name): observation(name) for model in ("two", "one") for name in ("a", "b")},
+    )
+
+    add_index_thetas(prediction)
+
+    two = prediction.result["models"]["two"]["indices"]["d"]["index_theta"]
+    assert two["tasks"] == 2 and two["tasks_total"] == 3
+    assert two["theta"] == pytest.approx(np.log(0.7 / 0.3), abs=0.05)
+    # Every population item was answered, so ability uncertainty cannot move the score.
+    assert two["interval"] == pytest.approx([two["theta"], two["theta"]])
+    assert prediction.result["models"]["one"]["indices"]["d"]["index_theta"] is None
 
 
 def test_fit_2pl_recovers_known_model_from_bernoulli_samples() -> None:
@@ -123,8 +210,8 @@ def test_fit_records_writes_deterministic_outputs(tmp_path: Path) -> None:
         )
 
     records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
-    first = fit(records, {"toy": "choice"}, 5, seed=7)
-    second = fit(load_records(records.records_path), {"toy": "choice"}, 5, seed=7)
+    first = fit(records, {"toy": "choice"}, 5, indices={"toy": "capability"}, seed=7)
+    second = fit(load_records(records.records_path), {"toy": "choice"}, 5, indices={"toy": "capability"}, seed=7)
 
     assert first.params == second.params
     assert first.subset == second.subset
@@ -141,7 +228,7 @@ def test_fit_records_writes_deterministic_outputs(tmp_path: Path) -> None:
     assert len(subset_path.read_text().splitlines()) == 5
 
 
-def test_duplicate_eval_policies(tmp_path: Path) -> None:
+def test_preprocess_keeps_most_complete_eval_per_model(tmp_path: Path) -> None:
     logs = tmp_path / "logs"
     logs.mkdir()
     for model_index in range(3):
@@ -152,20 +239,151 @@ def test_duplicate_eval_policies(tmp_path: Path) -> None:
             created=f"2026-03-0{model_index + 1}T00:00:00+00:00",
             values=[float((item + model_index) % 2) for item in range(12)],
         )
+    # A newer but less complete rerun of model-0 loses to its older complete eval.
     _write_eval(
         logs / "m0-new.eval",
         model="model-0",
         run_id="run-new",
-        created="2026-04-01T00:00:00+00:00",
-        values=[1.0] * 12,
+        created="2026-03-02T12:00:00+00:00",
+        values=[1.0] * 6,
     )
     records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
 
-    with pytest.raises(ValueError, match="Duplicate successful evaluations"):
-        fit(records, {"toy": "choice"}, 5)
-    averaged = fit(records, {"toy": "choice"}, 5, duplicate_policy="mean")
-    latest = fit(records, {"toy": "choice"}, 5, duplicate_policy="latest")
-    assert averaged.params["params_id"] != latest.params["params_id"]
+    rows = {Path(row["path"]).name: row for row in records.files}
+    assert rows["m0-new.eval"]["parse_status"] == "superseded"
+    assert rows["m0-new.eval"]["superseded_by"] == rows["m0.eval"]["path"]
+    assert rows["m0.eval"]["coverage"] == 1.0
+    assert rows["m0-new.eval"]["coverage"] == 0.5
+    assert records.inventory["summary"]["superseded"] == 1
+    assert records.records == 36
+    fit(records, {"toy": "choice"}, 5, indices={"toy": "capability"})
+
+
+def test_preprocess_newest_full_eval_defines_question_set(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    inputs = [f"Question {item}" for item in range(12)]
+    _write_eval(
+        logs / "old.eval",
+        model="old-model",
+        run_id="old",
+        created="2026-01-01T00:00:00+00:00",
+        values=[1.0] * 12,
+        inputs=inputs,
+    )
+    # The newest full eval drops the last four questions.
+    _write_eval(
+        logs / "new.eval",
+        model="new-model",
+        run_id="new",
+        created="2026-02-01T00:00:00+00:00",
+        values=[1.0] * 8,
+        inputs=inputs[:8],
+    )
+    # A newer partial run cannot redefine the question set.
+    _write_eval(
+        logs / "partial.eval",
+        model="partial-model",
+        run_id="partial",
+        created="2026-03-01T00:00:00+00:00",
+        values=[1.0] * 2,
+        inputs=inputs[:2],
+        limit=2,
+    )
+    records = preprocess_logs(
+        [logs], {"toy": "choice"}, tmp_path / "records.jsonl", workers=2
+    )
+
+    rows = {Path(row["path"]).name: row for row in records.files}
+    assert rows["partial.eval"]["partial"]
+    assert rows["old.eval"]["coverage"] == 1.0
+    assert rows["partial.eval"]["coverage"] == pytest.approx(0.25)
+    assert records.records == 8 + 8 + 2
+
+
+def test_labels_apply_patches(tmp_path: Path) -> None:
+    labels_dir = tmp_path / "labels"
+    labels_dir.mkdir()
+    (labels_dir / "strong_reject.jsonl").write_text(
+        "".join(
+            json.dumps({"sample_id": str(index), "llm_assigned": {"primary_label": f"d{index}"}})
+            + "\n"
+            for index in (1, 2)
+        )
+    )
+    (labels_dir / "strong_reject_patch.jsonl").write_text(
+        json.dumps({"sample_id": "2", "human_primary_label": "fixed"}) + "\n"
+    )
+    labels = load_labels(labels_dir)
+    assert lookup_label(labels, "strong_reject", "x/strong_reject", "1").primary == "d1"
+    assert lookup_label(labels, "strong_reject", "x/strong_reject", "2").primary == "fixed"
+
+
+def test_strong_reject_variants_collapse_to_basis_samples(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    base_count = STRONG_REJECT_BASE_PROMPTS
+    metadata = [
+        {"category": f"c{index % base_count}", "source": "s", "jailbreak_method": method}
+        for method in ("none", "rot_13")
+        for index in range(base_count)
+    ]
+    for model_index in range(3):
+        _write_eval(
+            logs / f"sr-{model_index}.eval",
+            model=f"model-{model_index}",
+            run_id=f"sr-{model_index}",
+            created=f"2026-01-0{model_index + 1}T00:00:00+00:00",
+            values=[1.0] * base_count + [0.0] * base_count,
+            task="strong_reject",
+            sample_ids=list(range(1, 2 * base_count + 1)),
+            inputs=[f"Prompt {index}" for index in range(2 * base_count)],
+            targets=[""] * (2 * base_count),
+            metadata=metadata,
+        )
+
+    records = preprocess_logs(
+        [logs], {"strong_reject": "choice"}, tmp_path / "records.jsonl"
+    )
+    task = prepare_tasks(records, {"strong_reject": "choice"})["strong_reject"]
+
+    assert [item["sample_id"] for item in task["items"]] == sorted(
+        str(index) for index in range(1, base_count + 1)
+    )
+    assert np.all(task["matrix"] == 0.5)
+
+    variants = [
+        Sample(input=f"Prompt {index}", target="", metadata=metadata[index])
+        for index in range(2 * base_count)
+    ]
+    eval_task = Task(dataset=MemoryDataset(variants, name="unknown_dataset"))
+    selected = {
+        "strong_reject": [
+            {"sample_id": item["sample_id"], "item_id": item["item_id"],
+             "content_hash": item["content_hash"]}
+            for item in task["items"][:2]
+        ]
+    }
+    apply_eval_subset(["strong_reject"], [eval_task], selected)
+
+    assert [sample.id for sample in eval_task.dataset] == [1, 61, 10, 70]
+
+
+@pytest.mark.parametrize(
+    ("logged", "scorer", "expected"),
+    [
+        ({"score": {}}, "hle_scorer/score", "score"),
+        ({"hle_scorer": {}}, "hle_scorer/score", "hle_scorer"),
+        ({"strict": {}, "loose": {}}, "ifbench_scorer/strict", "strict"),
+        ({"schema_tool_graded_scorer": {}}, "simpleqa_scorer/correct", "schema_tool_graded_scorer"),
+        ({"accuracy_and_honesty": {}}, "accuracy_and_honesty/honesty", "accuracy_and_honesty"),
+        ({"other": {}}, "choice", None),
+    ],
+)
+def test_metric_source_matches_logged_scorer_names(
+    logged: dict[str, object], scorer: str, expected: str | None
+) -> None:
+    assert metric_source(logged, scorer) == expected
 
 
 def test_dataset_renames_do_not_split_identical_content(tmp_path: Path) -> None:
@@ -201,7 +419,7 @@ def test_dataset_renames_do_not_split_identical_content(tmp_path: Path) -> None:
         )
 
     records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
-    result = fit(records, {"toy": "choice"}, 5)
+    result = fit(records, {"toy": "choice"}, 5, indices={"toy": "capability"})
 
     assert result.params["tasks"]["toy"]["capacity"] == 12
     assert result.params["tasks"]["toy"]["models"] == 6
@@ -505,8 +723,8 @@ def test_preprocess_records_and_fit_without_source_logs(tmp_path: Path) -> None:
     for path in logs.iterdir():
         path.unlink()
     loaded = load_records(records_path)
-    preprocessed = fit(loaded, loaded.scorers, 5, seed=7)
-    alternate_scorer = fit(loaded, {"toy": "secondary"}, 5, seed=7)
+    preprocessed = fit(loaded, loaded.scorers, 5, indices=dict.fromkeys(loaded.scorers, "capability"), seed=7)
+    alternate_scorer = fit(loaded, {"toy": "secondary"}, 5, indices={"toy": "capability"}, seed=7)
 
     assert records.records == 36
     assert records.manifest_path == tmp_path / "samples.manifest.json"
@@ -651,7 +869,7 @@ def test_default_config_uses_present_tasks_and_nested_scorers(tmp_path: Path) ->
     params = json.loads((output / "params.json").read_text())
     assert params["task_scorers"] == {"mask": "accuracy_and_honesty/honesty"}
     assert len((output / "subset.jsonl").read_text().splitlines()) == 5
-    accuracy = fit(records, {"mask": "accuracy_and_honesty/accuracy"}, 5)
+    accuracy = fit(records, {"mask": "accuracy_and_honesty/accuracy"}, 5, indices={"mask": "capability"})
     assert accuracy.params["items"][0]["source_mean"] == pytest.approx(1 / 3)
 
 
@@ -675,7 +893,7 @@ def test_hle_contract_accepts_scalar_and_structured_scores(tmp_path: Path) -> No
     records = preprocess_logs(
         [logs], {"hle": "hle_scorer/score"}, tmp_path / "records.jsonl"
     )
-    result = fit(records, {"hle": "hle_scorer/score"}, 5)
+    result = fit(records, {"hle": "hle_scorer/score"}, 5, indices={"hle": "capability"})
 
     assert len(result.subset) == 5
 
@@ -708,7 +926,7 @@ def test_simpleqa_contract_accepts_legacy_and_current_scorers(tmp_path: Path) ->
         {"simpleqa_verified": "simpleqa_scorer/correct"},
         tmp_path / "records.jsonl",
     )
-    result = fit(records, {"simpleqa_verified": "simpleqa_scorer/correct"}, 5)
+    result = fit(records, {"simpleqa_verified": "simpleqa_scorer/correct"}, 5, indices={"simpleqa_verified": "capability"})
 
     assert len(result.subset) == 5
 
@@ -734,7 +952,7 @@ def test_epochs_are_averaged_within_an_eval(tmp_path: Path) -> None:
         )
 
     records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
-    result = fit(records, {"toy": "choice"}, 5)
+    result = fit(records, {"toy": "choice"}, 5, indices={"toy": "capability"})
 
     assert result.params["items"][0]["observation_count"] == 3
     assert result.params["items"][0]["source_mean"] == pytest.approx(0.5)
@@ -754,7 +972,7 @@ def test_predict_new_model_scores_from_params_and_subset(tmp_path: Path) -> None
     source_records = preprocess_logs(
         [source_logs], {"toy": "choice"}, tmp_path / "source.jsonl"
     )
-    fitted = fit(source_records, {"toy": "choice"}, 6)
+    fitted = fit(source_records, {"toy": "choice"}, 6, indices={"toy": "capability"})
     params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
 
     new_logs = tmp_path / "new"
@@ -795,7 +1013,7 @@ def test_complai_core_predict_cli(tmp_path: Path) -> None:
     source_records = preprocess_logs(
         [source_logs], {"toy": "choice"}, tmp_path / "source.jsonl"
     )
-    fitted = fit(source_records, {"toy": "choice"}, 5)
+    fitted = fit(source_records, {"toy": "choice"}, 5, indices={"toy": "capability"})
     params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
     new_logs = tmp_path / "new"
     new_logs.mkdir()
@@ -970,6 +1188,8 @@ def _write_eval(
     inputs: list[str] | None = None,
     targets: list[str | list[str]] | None = None,
     choices: list[list[str] | None] | None = None,
+    limit: int | None = None,
+    metadata: list[dict[str, object]] | None = None,
 ) -> None:
     samples = []
     for epoch, epoch_values in enumerate([values, *(additional_epochs or [])], start=1):
@@ -986,6 +1206,7 @@ def _write_eval(
                     item_index
                 ],
                 choices=(choices or [None] * len(values))[item_index],
+                metadata=(metadata or [{}] * len(values))[item_index],
                 scores={scorer: Score(value=value)}
                 | {
                     name: Score(value=extra_value)
@@ -1003,9 +1224,33 @@ def _write_eval(
             task_id=f"{task}-task",
             dataset=EvalDataset(name=dataset or f"{task}-data", samples=len(samples)),
             model=model,
-            config=EvalConfig(),
+            config=EvalConfig(limit=limit),
         ),
         results=EvalResults(total_samples=len(samples), completed_samples=len(samples)),
         samples=samples,
     )
     write_eval_log(log, path)
+
+
+def test_dataset_row_aliases_never_replace_a_labeled_sample_id(tmp_path: Path) -> None:
+    def write(path: Path, rows: list[dict]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    labels_dir = tmp_path / "labels"
+    # Row index 1 aliases to sample "1", which is also another sample's own id.
+    write(tmp_path / "datasets" / "bench.jsonl", [
+        {"sample_id": "7"},
+        {"sample_id": "1"},
+        {"sample_id": "u", "metadata": {"uid": "x"}},
+    ])
+    write(labels_dir / "bench.jsonl", [
+        {"sample_id": "7", "llm_assigned": {"primary_label": "safety"}},
+        {"sample_id": "1", "llm_assigned": {"primary_label": "capability"}},
+        {"sample_id": "u", "llm_assigned": {"primary_label": "reliability"}},
+    ])
+
+    labels = load_labels(labels_dir)["bench"]
+    assert labels["1"].primary == "capability"
+    assert labels["x"].primary == "reliability"
+    assert set(load_labels(labels_dir, with_aliases=False)["bench"]) == {"7", "1", "u"}
