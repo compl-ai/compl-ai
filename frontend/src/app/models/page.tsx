@@ -10,7 +10,7 @@ export default function ModelsPage() {
       <div className="max-w-3xl space-y-3">
         <h1 className="text-3xl font-medium tracking-tight">Evaluate exactly what matters</h1>
         <p className="text-gray-500 text-sm">
-          Browse the {models.length} models evaluated in the COMPL-AI Index. Sort by parameter size, organization, or dive deep into specific domain performance profiles.
+          Browse the {models.length} models evaluated in the COMPL-AI Index. Sort by parameter size, organization, or dive deep into specific index performance profiles.
         </p>
       </div>
 

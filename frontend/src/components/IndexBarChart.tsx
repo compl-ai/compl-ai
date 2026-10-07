@@ -1,12 +1,12 @@
 'use client';
 
-export function DomainBarChart({ data }: { data: { domain: string, score: number, globalAvg: number }[] }) {
+export function IndexBarChart({ data }: { data: { label: string, score: number, globalAvg: number }[] }) {
   return (
     <div className="space-y-4">
       {data.map(item => (
-        <div key={item.domain} className="grid grid-cols-12 gap-4 items-center">
+        <div key={item.label} className="grid grid-cols-12 gap-4 items-center">
           <div className="col-span-4 font-medium text-sm text-gray-900 truncate">
-            {item.domain}
+            {item.label}
           </div>
           <div className="col-span-7 relative h-3 bg-gray-100 rounded-sm">
             <div 

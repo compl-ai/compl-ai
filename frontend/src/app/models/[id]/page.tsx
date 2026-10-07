@@ -1,6 +1,6 @@
 import { getJoinedModels } from '@/lib/data';
 import { notFound } from 'next/navigation';
-import { DomainBarChart } from '@/components/DomainBarChart';
+import { IndexBarChart } from '@/components/IndexBarChart';
 import Link from 'next/link';
 
 export function generateStaticParams() {
@@ -19,19 +19,17 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
     notFound();
   }
 
-  const globalAvgs: Record<string, number> = {};
-  ['capability', 'safety', 'security-privacy', 'reliability', 'fairness-bias'].forEach(domain => {
-    const scores = models.map(m => m.prediction.domains?.[domain] || 0).filter(s => s > 0);
-    globalAvgs[domain] = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-  });
-
-  const barData = [
-    { domain: 'Capability', score: model.prediction.domains?.['capability'] || 0, globalAvg: globalAvgs['capability'] },
-    { domain: 'Safety', score: model.prediction.domains?.['safety'] || 0, globalAvg: globalAvgs['safety'] },
-    { domain: 'Security', score: model.prediction.domains?.['security-privacy'] || 0, globalAvg: globalAvgs['security-privacy'] },
-    { domain: 'Reliability', score: model.prediction.domains?.['reliability'] || 0, globalAvg: globalAvgs['reliability'] },
-    { domain: 'Fairness & Bias', score: model.prediction.domains?.['fairness-bias'] || 0, globalAvg: globalAvgs['fairness-bias'] },
+  const INDICES = [
+    { id: 'capability', label: 'Capability' },
+    { id: 'reliability', label: 'Reliability' },
+    { id: 'safety', label: 'Safety' },
   ];
+
+  const barData = INDICES.map(({ id, label }) => {
+    const scores = models.map(m => m.prediction.indices?.[id]?.predicted_score || 0).filter(s => s > 0);
+    const globalAvg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    return { label, score: model.prediction.indices?.[id]?.predicted_score || 0, globalAvg };
+  });
 
   const sortedByOverall = [...models].sort((a, b) => (b.prediction.predicted_score || 0) - (a.prediction.predicted_score || 0));
   const rank = sortedByOverall.findIndex(m => m.id === model.id) + 1;
@@ -68,9 +66,9 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
         <div className="md:col-span-8 space-y-6">
-          <h2 className="text-lg font-medium tracking-tight">Domain Profile</h2>
+          <h2 className="text-lg font-medium tracking-tight">Index Profile</h2>
           <div className="pt-2">
-            <DomainBarChart data={barData} />
+            <IndexBarChart data={barData} />
           </div>
           
           <div className="pt-12">

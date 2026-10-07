@@ -38,10 +38,10 @@ export default function MethodologyPage() {
           <h2 className="text-lg font-medium text-gray-900 border-b pb-2">1. Sample-level Coverage</h2>
           <div className="text-sm text-gray-600 space-y-4 leading-relaxed">
             <p>
-              Evaluation items from various source benchmarks are individually tagged across five core domains: <strong>Capability, Safety, Security & Privacy, Reliability, and Fairness & Bias</strong>. 
+              Each source benchmark is assigned as a whole to one of three indices: <strong>Capability, Reliability, and Safety</strong>. A benchmark only contributes to the index it is assigned to.
             </p>
             <p>
-              This bottom-up labeling ensures our coverage mapping is grounded directly in the item content, rather than assuming an entire benchmark belongs exclusively to one category.
+              Within an index, individual items are labelled with sub-categories (for example, math or coding within Capability). Sub-categories are used for reporting coverage only; a sub-category with too few items is marked as a gap and not scored.
             </p>
           </div>
         </section>

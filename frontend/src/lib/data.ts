@@ -59,18 +59,46 @@ export const ModelSchema = z.object({
 
 export type ModelParams = z.infer<typeof ModelSchema>;
 
+// Index theta: the model's position on the index's scale (panel mean 0, SD 1),
+// fitted on its scores for the index's benchmarks. Null when it ran too few of them.
+export interface IndexTheta {
+  theta: number;
+  interval: [number, number];
+  tasks: number;
+  tasks_total: number;
+}
+
+// Scores are null when gap is set: the reason too few subset items cover the label.
+export interface LabelScore {
+  gap: string | null;
+  predicted_score: number | null;
+  population_items: number;
+  population_tasks: number;
+  subset_items: number;
+  observations: number;
+  ability: number | null;
+  ability_standard_error: number | null;
+  observed_subset_score: number | null;
+  index_theta?: IndexTheta | null;
+}
+
 export interface ModelPrediction {
   predicted_score: number;
   predicted_score_error?: number;
   task_macro_score?: number;
-  domains: {
-    [domain: string]: number;
+  // Per-label predicted scores over the full item population (from complai.predict)
+  indices: {
+    [index: string]: LabelScore;
+  };
+  subcategories?: {
+    [label: string]: LabelScore;
   };
   coverage?: {
     tasks_completed: number;
     tasks_total: number;
     samples_completed: number;
     samples_total: number;
+    population_samples_observed: number;
   };
   tasks: {
     [task: string]: {
@@ -86,7 +114,8 @@ export interface JoinedModelData {
   yamlId: string; // The inferred yaml key based on the name or ID
   prediction: ModelPrediction;
   metadata: ModelParams | null;
-  groundTruth?: Record<string, number> | null;
+  // Debug artifact: per-task/label observed scores, plus a `_masked` detail object
+  groundTruth?: Record<string, number | Record<string, unknown>> | null;
 }
 
 export function getPredictions() {

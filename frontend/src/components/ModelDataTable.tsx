@@ -5,10 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { JoinedModelData } from '@/lib/data';
 import { ArrowUpDown } from 'lucide-react';
+import { ScoreView, formatTheta, getIndexTheta } from '@/lib/scores';
 
-export function ModelDataTable({ initialModels }: { initialModels: JoinedModelData[] }) {
+// The theta bar spans this theta range (panel SD units).
+const THETA_BAR_RANGE = 3;
+
+export function ModelDataTable({ initialModels, scoreView = 'predictions' }: { initialModels: JoinedModelData[], scoreView?: ScoreView }) {
   const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState<'domains' | 'benchmarks'>('domains');
+  const [tableMode, setViewMode] = useState<'indices' | 'benchmarks'>('indices');
+  // Thetas exist only per index, so the theta view always shows index columns.
+  const viewMode = scoreView === 'theta' ? 'indices' : tableMode;
   const [showActuals, setShowActuals] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({
     key: 'overall',
@@ -24,9 +30,10 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
   }, [initialModels]);
 
   const getScore = (m: JoinedModelData, key: string) => {
+    if (scoreView === 'theta') return getIndexTheta(m, key)?.theta ?? null;
     if (key === 'overall') return m.prediction?.predicted_score ?? null;
-    if (viewMode === 'domains') {
-      return m.prediction?.domains?.[key] ?? null;
+    if (viewMode === 'indices') {
+      return m.prediction?.indices?.[key]?.predicted_score ?? null;
     } else {
       const task = m.prediction?.tasks?.[key];
       if (task && task.status !== 'missing') {
@@ -46,12 +53,22 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
     return null;
   };
 
+  // Predictions cover every population item, including ones the model never answered;
+  // for the error colour, compare the observed score with the prediction over the same answered items.
+  const getComparableScore = (m: JoinedModelData, key: string, score: number | null) => {
+    const masked = m.groundTruth?._masked as Record<string, { predicted_score?: number }> | undefined;
+    return masked?.[key]?.predicted_score ?? score;
+  };
+
   const filteredModels = initialModels.filter(m => {
     const term = search.toLowerCase();
     const name = (m.metadata?.name || m.yamlId).toLowerCase();
     const org = (m.metadata?.organization || '').toLowerCase();
     return name.includes(term) || org.includes(term);
   });
+
+  // The theta view has no overall column, so it sorts by the first index instead.
+  const activeSortKey = scoreView === 'theta' && sortConfig.key === 'overall' ? 'capability' : sortConfig.key;
 
   const sortedModels = [...filteredModels].sort((a, b) => {
     if (sortConfig.key === 'name') {
@@ -76,9 +93,9 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
       return sortConfig.direction === 'asc' ? sA - sB : sB - sA;
     }
     
-    // Domain/Benchmark sorting
-    const sA = getScore(a, sortConfig.key) ?? -1;
-    const sB = getScore(b, sortConfig.key) ?? -1;
+    // Index/Benchmark sorting
+    const sA = getScore(a, activeSortKey) ?? -Infinity;
+    const sB = getScore(b, activeSortKey) ?? -Infinity;
     return sortConfig.direction === 'asc' ? sA - sB : sB - sA;
   });
 
@@ -95,15 +112,17 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
       className={`cursor-pointer hover:text-gray-900 transition-colors h-10 px-2 border-b text-xs font-medium ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : ''} ${className}`}
       onClick={() => requestSort(sortKey)}
     >
-      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''} ${sortConfig.key === sortKey ? 'text-primary' : 'text-gray-500'}`}>
+      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''} ${activeSortKey === sortKey ? 'text-primary' : 'text-gray-500'}`}>
         {label}
         <ArrowUpDown className="w-3 h-3 opacity-40" />
       </div>
     </TableHead>
   );
 
-  const DOMAIN_COLUMNS = ['overall', 'capability', 'safety', 'security-privacy', 'reliability', 'fairness-bias'];
-  const columnsToRender = viewMode === 'domains' ? DOMAIN_COLUMNS : ['overall', ...allBenchmarks];
+  const INDEX_COLUMNS = ['overall', 'capability', 'reliability', 'safety'];
+  const columnsToRender = viewMode === 'indices'
+    ? INDEX_COLUMNS.filter(key => scoreView === 'predictions' || key !== 'overall')
+    : ['overall', ...allBenchmarks];
 
   return (
     <div className="space-y-6">
@@ -118,7 +137,7 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
           />
         </div>
         <div className="flex items-center gap-3">
-          {hasGroundTruth && (
+          {hasGroundTruth && scoreView === 'predictions' && (
             <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 transition-colors pr-2 border-r border-gray-200" title="Shows True Population Scores extracted from full dataset logs">
               <input 
                 type="checkbox" 
@@ -129,21 +148,22 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
               Show True Scores
             </label>
           )}
+          {scoreView === 'predictions' && (
           <div className="flex bg-gray-100 p-1 rounded-full">
             <button
               onClick={() => {
-                setViewMode('domains');
-                if (!DOMAIN_COLUMNS.includes(sortConfig.key) && sortConfig.key !== 'name' && sortConfig.key !== 'coverage' && sortConfig.key !== 'samples' && sortConfig.key !== 'params') {
+                setViewMode('indices');
+                if (!INDEX_COLUMNS.includes(sortConfig.key) && sortConfig.key !== 'name' && sortConfig.key !== 'coverage' && sortConfig.key !== 'samples' && sortConfig.key !== 'params') {
                   setSortConfig({ key: 'overall', direction: 'desc' });
                 }
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                viewMode === 'domains' 
+                viewMode === 'indices' 
                   ? 'bg-white text-gray-900 shadow-sm' 
                   : 'text-gray-500 hover:text-gray-900'
               }`}
             >
-              Domains
+              Indices
             </button>
             <button
               onClick={() => setViewMode('benchmarks')}
@@ -156,6 +176,7 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
               Benchmarks
             </button>
           </div>
+          )}
         </div>
       </div>
 
@@ -168,14 +189,12 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
               <SortableHead label="Tasks" sortKey="coverage" align="right" />
               <SortableHead label="Samples" sortKey="samples" align="right" />
               <SortableHead label="Params" sortKey="params" align="right" />
-              {viewMode === 'domains' ? (
+              {viewMode === 'indices' ? (
                 <>
-                  <SortableHead label="Overall" sortKey="overall" align="right" />
+                  {scoreView === 'predictions' && <SortableHead label="Overall" sortKey="overall" align="right" />}
                   <SortableHead label="Capability" sortKey="capability" align="right" />
-                  <SortableHead label="Safety" sortKey="safety" align="right" />
-                  <SortableHead label="Security" sortKey="security-privacy" align="right" />
                   <SortableHead label="Reliability" sortKey="reliability" align="right" />
-                  <SortableHead label="Fairness" sortKey="fairness-bias" align="right" />
+                  <SortableHead label="Safety" sortKey="safety" align="right" />
                 </>
               ) : (
                 <>
@@ -224,16 +243,21 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
                   const score = getScore(model, key);
                   const actualScore = getActualScore(model, key);
                   
-                  const isSorted = sortConfig.key === key;
-                  const display = score !== null ? (score * 100).toFixed(1) : '—';
+                  const isSorted = activeSortKey === key;
+                  const indexTheta = scoreView === 'theta' ? getIndexTheta(model, key) : null;
+                  const display = score === null ? '—' : indexTheta ? formatTheta(indexTheta.theta) : (score * 100).toFixed(1);
+                  const barWidth = score === null ? 0 : indexTheta
+                    ? Math.min(Math.max((indexTheta.theta + THETA_BAR_RANGE) / (2 * THETA_BAR_RANGE), 0), 1) * 100
+                    : score * 100;
                   const displayActual = actualScore !== null ? (actualScore * 100).toFixed(1) : null;
                   
                   let barColor = isSorted ? 'bg-blue-600' : 'bg-gray-300';
                   let textColor = isSorted ? 'font-bold text-gray-900' : 'text-gray-500 font-medium';
                   let gapColor = 'text-gray-400 font-normal';
                   
-                  if (score !== null && actualScore !== null) {
-                    const delta = Math.abs(score * 100 - actualScore * 100);
+                  const comparableScore = getComparableScore(model, key, score);
+                  if (comparableScore !== null && actualScore !== null) {
+                    const delta = Math.abs(comparableScore * 100 - actualScore * 100);
                     if (delta > 10) {
                       gapColor = 'font-bold text-red-500';
                     } else if (delta > 5) {
@@ -249,7 +273,12 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
                         <div className="flex flex-col items-end gap-1.5">
                           <span className={`font-mono text-xs ${textColor}`}>
                             {display}
-                            {showActuals && displayActual !== null && (
+                            {indexTheta && (
+                              <span className="text-[10px] ml-1 text-gray-400 font-normal" title={`90% interval; fitted on ${indexTheta.tasks} of ${indexTheta.tasks_total} benchmarks`}>
+                                [{formatTheta(indexTheta.interval[0])}, {formatTheta(indexTheta.interval[1])}]
+                              </span>
+                            )}
+                            {scoreView === 'predictions' && showActuals && displayActual !== null && (
                               <span className={`text-[10px] ml-1 ${gapColor}`}>
                                 ({displayActual})
                               </span>
@@ -258,7 +287,7 @@ export function ModelDataTable({ initialModels }: { initialModels: JoinedModelDa
                           <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden flex justify-end">
                             <div 
                               className={`h-full rounded-full ${barColor}`} 
-                              style={{ width: `${score * 100}%` }}
+                              style={{ width: `${barWidth}%` }}
                             ></div>
                           </div>
                         </div>
