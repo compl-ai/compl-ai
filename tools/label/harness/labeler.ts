@@ -151,7 +151,7 @@ function generateTaxonomyMd(records: any[]) {
 }
 
 console.log("Parsing taxonomy.csv...");
-const taxonomyRecords: any[] = parse(fs.readFileSync(path.join(__dirname, '../../../src/complai/data/taxonomy.csv'), 'utf8'), { columns: true, skip_empty_lines: true });
+const taxonomyRecords: any[] = parse(fs.readFileSync(path.join(__dirname, '../taxonomy.csv'), 'utf8'), { columns: true, skip_empty_lines: true });
 const labelSets: TaxonomyLabelSets = {
     secondary: taxonomyRecords
         .filter(r => r.label_type !== 'core_index' && r.label_type !== 'subcategory' && !r.label_id.startsWith('modality:') && !r.label_id.startsWith('agent:'))

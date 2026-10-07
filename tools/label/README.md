@@ -35,7 +35,7 @@ npx tsx labeler.ts --dataset strong_reject --provider anthropic --relabel
 ```
 *(See `harness/run_evals.sh` for batch-running examples).*
 
-API keys are read from `tools/label/.env`: `GEMINI_API_KEY` or `ANTHROPIC_API_KEY`. Both providers use JSON-schema structured output: Gemini's `responseSchema` and Anthropic's `output_config.format`. The schema's enums come from `src/complai/data/taxonomy.csv` (its `subcategory` rows are reporting-only and excluded), so responses always parse and only contain valid label ids. Other flags: `--limit N` labels only the first N new samples, and `--mock` makes no API calls.
+API keys are read from `tools/label/.env`: `GEMINI_API_KEY` or `ANTHROPIC_API_KEY`. Both providers use JSON-schema structured output: Gemini's `responseSchema` and Anthropic's `output_config.format`. The schema's enums come from `tools/label/taxonomy.csv` (its `subcategory` rows are reporting-only and excluded), so responses always parse and only contain valid label ids. Other flags: `--limit N` labels only the first N new samples, and `--mock` makes no API calls.
 
 **Refusals:** red-teaming prompts sometimes trip the provider's own safety filter. When Claude refuses and `GEMINI_API_KEY` is set, the sample is retried with Gemini automatically, and the row's `llm_assigned.model` records which model labeled it. Samples that are still refused are logged as `🚫 REFUSED` and saved with low confidence, so the UI marks them for review. Re-running the same command retries them; anything that keeps getting refused should be labeled by hand in the UI.
 

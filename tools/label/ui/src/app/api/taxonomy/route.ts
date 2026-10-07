@@ -5,7 +5,7 @@ import { parse } from 'csv-parse/sync';
 
 export async function GET() {
   try {
-    const csvPath = path.join(process.cwd(), '..', '..', '..', 'src', 'complai', 'data', 'taxonomy.csv');
+    const csvPath = path.join(process.cwd(), '..', 'taxonomy.csv');
     
     if (!fs.existsSync(csvPath)) {
       return NextResponse.json({ error: `Could not find CSV at ${csvPath}` }, { status: 500 });
