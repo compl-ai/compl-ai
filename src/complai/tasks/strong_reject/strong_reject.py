@@ -78,6 +78,7 @@ def strong_reject_dataset(
                 Sample(
                     input=transformed_prompt,
                     metadata={
+                        "forbidden_prompt": prompt,
                         "category": record["category"],
                         "source": record["source"],
                         "jailbreak_method": jailbreak_method,
@@ -141,7 +142,7 @@ def strong_reject_metric() -> Metric:
 @scorer(metrics=[grouped(strong_reject_metric(), group_key="jailbreak_method")])
 def strong_reject_scorer(judge_name: str) -> Scorer:
     async def score(state: TaskState, target: Target) -> Score:
-        model_input = state.input_text
+        model_input = state.metadata["forbidden_prompt"]
         model_output = state.output.completion
         judge_input: list[ChatMessage] = [
             ChatMessageSystem(content=STRONG_REJECT_SYSTEM_PROMPT),
