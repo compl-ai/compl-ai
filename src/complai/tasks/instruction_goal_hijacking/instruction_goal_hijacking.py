@@ -126,7 +126,7 @@ def hijack_scorer(grade_reasoning_tokens: bool) -> Scorer:
 @task(technical_requirement="Cyberattack Resilience")
 def instruction_goal_hijacking(
     prompt_strategy: PromptStrategy = "multiple_user",
-    grade_reasoning_tokens: bool = True,
+    grade_reasoning_tokens: bool = False,
     split: str = "train",
 ) -> Task:
     """

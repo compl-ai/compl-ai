@@ -1,0 +1,70 @@
+name: "MiniMax-M2.5"
+release_date: "2026-02-12"
+open_weights: true
+organization: "MiniMax"
+license: "mit-modified"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  MiniMax-M2.5 is a Mixture-of-Experts language model developed by MiniMax, with approximately 229 billion total parameters and 10 billion active parameters per token. It is designed for reasoning, coding, multilingual tasks, mathematics, and agentic tool use, and supports a context length of up to 196 thousand tokens.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 229_000_000_000
+  active_params: 10_000_000_000
+  context: 196_608
+  max_output_tokens: 32_768
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "MiniMax M2.5"
+    url: "https://www.minimax.io/models/text"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.5"
+    type: "model-weights"
+  - title: "The MiniMax-M2 Series: Mini Activations Unleashing Max Real-World Intelligence"
+    url: "https://arxiv.org/abs/2605.26494"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE-MODEL"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "reinforcement learning system"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 50
+  latency_ms_per_token: 20
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”
+evals:
+  - "openai-api/vllm/MiniMaxAI/MiniMax-M2.5"

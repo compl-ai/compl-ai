@@ -1,0 +1,70 @@
+name: "MiniMax-M2.7"
+release_date: "2026-03-18"
+open_weights: true
+organization: "MiniMax"
+license: "non-commercial"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  MiniMax-M2.7 is a sparse Mixture-of-Experts language model developed by MiniMax, with approximately 230 billion total parameters and 10 billion active parameters. It is designed for reasoning, coding, mathematical tasks, multilingual use, and tool-enabled agentic workflows, and supports a context length of approximately 205 thousand tokens.
+
+specs:
+  architecture: "Transformer / Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 229_000_000_000
+  active_params: 10_000_000_000
+  context: 204_800
+  max_output_tokens: 196_608
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "MiniMax M2.7"
+    url: "https://www.minimax.io/models/text/m27"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.7"
+    type: "model-weights"
+  - title: "The MiniMax-M2 Series: Mini Activations Unleashing Max Real-World Intelligence"
+    url: "https://arxiv.org/abs/2605.26494v2"
+    type: "paper-url"
+  - title: "Non-Commercial License"
+    url: "https://github.com/MiniMax-AI/MiniMax-M2.7/blob/main/LICENSE"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "model iteration system"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: 20_100_000
+  throughput_tokens_per_second: 11_606
+  latency_ms_per_token: 20
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - “CN”
+evals:
+  - "openai-api/vllm/MiniMaxAI/MiniMax-M2.7"

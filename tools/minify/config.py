@@ -31,16 +31,13 @@ def load_scorers(path: Path | None = None) -> dict[str, str]:
             scorers[task] = info
     return scorers
 
-def get_task_allocations(path: Path | None = None) -> dict[str, str]:
-    """Load a task-to-allocation-strategy mapping for the subset allocator."""
+def load_indices(path: Path | None = None) -> dict[str, str]:
+    """Load the task-to-index assignment; every task must name its index."""
     tasks = _load_config(path)
-    allocations = {}
-    for task, info in tasks.items():
-        if isinstance(info, dict):
-            allocations[task] = info.get("allocation", "default")
-        else:
-            allocations[task] = "default"
-    return allocations
+    missing = sorted(task for task, info in tasks.items() if not isinstance(info, dict) or not info.get("index"))
+    if missing:
+        raise ValueError(f"Configuration tasks without an 'index': {', '.join(missing)}")
+    return {task: info["index"] for task, info in tasks.items()}
 
 def get_primary_metrics(path: Path | None = None) -> dict[str, str]:
     """Load a task-to-primary-metric mapping for evaluation."""

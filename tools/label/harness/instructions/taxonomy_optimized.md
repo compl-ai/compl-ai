@@ -32,8 +32,8 @@ Top-level Core benchmark for adversarial security, privacy, leakage, and cyber/t
   - *Apply when:* Apply when the attack is embedded in untrusted context and attempts to override, redirect, or manipulate model/agent instructions.
   - *Do not apply when:* Do not apply to direct jailbreak prompts that are not embedded in third-party/untrusted context.
 - **security-privacy:jailbreak-resilience** (Jailbreak resilience)
-  - *Apply when:* Apply when the sample explicitly tries to bypass safety rules, system instructions, or guardrails to obtain restricted behavior.
-  - *Do not apply when:* Do not apply to ordinary harmful requests without a bypass or guardrail-removal mechanism.
+  - *Apply when:* Apply when the sample explicitly tries to bypass safety rules, system instructions, or guardrails to obtain restricted behavior, including jailbreaks applied at evaluation time (e.g. StrongReject runs each base prompt through ~35 jailbreak methods). This describes the attack mechanism: when the underlying request has its own risk domain, label that domain first and add this label after it.
+  - *Do not apply when:* Do not apply to ordinary harmful requests that are scored without any bypass or guardrail-removal mechanism.
 - **security-privacy:goal-hijacking** (Goal hijacking resilience)
   - *Apply when:* Apply when the sample tries to redirect an agent/model from the original task to an attacker-controlled goal.
   - *Do not apply when:* Do not apply when the sample only asks a harmful question but does not hijack an existing task/goal.

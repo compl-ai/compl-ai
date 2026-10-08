@@ -70,9 +70,9 @@ def test_small_source_fallback_and_full_sample_reconstruction() -> None:
 
 def test_artifact_roundtrip_and_prediction_without_training_data(tmp_path: Path, monkeypatch) -> None:
     records = _records(tmp_path, "source", _source())
-    legacy = fit(records, records.scorers, 8)
-    assert legacy == fit(records, records.scorers, 8, estimator="irt")
-    fitted = fit(records, records.scorers, 8, estimator="gp_irt")
+    legacy = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"))
+    assert legacy == fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"), estimator="irt")
+    fitted = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"), estimator="gp_irt")
     assert fitted.params["method"] == METHOD_VERSION
     assert fitted.params["params_id"] != legacy.params["params_id"]
     assert fitted.params["subset_id"] != legacy.params["subset_id"]
@@ -92,7 +92,7 @@ def test_artifact_roundtrip_and_prediction_without_training_data(tmp_path: Path,
     assert irt["prediction_id"] != automatic["prediction_id"]
     assert irt["models"]["target-0"]["predicted_score_error"] is not None
     # Changing unobserved responses cannot change either gp score component.
-    selected_ids = {int(row["sample_id"]) for row in fitted.subset}
+    selected_ids = {int(row["item_id"].rsplit("::", 1)[1]) for row in fitted.subset}
     changed = np.array([[1. if i in selected_ids else 0. for i in range(20)]])
     target = _records(tmp_path, "target", changed)
     assert predict_scores(target.records_path, params, subset)["models"] == automatic["models"]
@@ -100,7 +100,7 @@ def test_artifact_roundtrip_and_prediction_without_training_data(tmp_path: Path,
 
 def test_legacy_artifact_rejects_uncalibrated_gp(tmp_path: Path) -> None:
     records = _records(tmp_path, "source", _source())
-    fitted = fit(records, records.scorers, 8)
+    fitted = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"))
     params, subset = write_outputs(fitted, tmp_path / "irt")
     default = predict_scores(records.records_path, params, subset)
     assert default == predict_scores(records.records_path, params, subset, estimator="irt")
@@ -112,7 +112,7 @@ def test_legacy_artifact_rejects_uncalibrated_gp(tmp_path: Path) -> None:
 def test_fit_and_predict_cli(tmp_path: Path, estimator: str) -> None:
     records = _records(tmp_path, "source", _source())
     config = tmp_path / "config.json"
-    config.write_text(json.dumps({"tasks": {"toy": "choice"}}))
+    config.write_text(json.dumps({"tasks": {"toy": {"index": "capability", "scorer": "choice"}}}))
     directory = tmp_path / "fitted"
     runner = CliRunner()
     result = runner.invoke(app, ["minify", "fit", str(records.records_path), "--config", str(config),
@@ -131,7 +131,7 @@ def test_gp_stats_uses_saved_blend_and_production_estimator(tmp_path: Path, monk
     from tools.minify import evaluate_subsets as stats
 
     records = _records(tmp_path, "source", _source())
-    fitted = fit(records, records.scorers, 8, estimator="gp_irt")
+    fitted = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"), estimator="gp_irt")
     params, subset = write_outputs(fitted, tmp_path / "gp")
     target = np.random.default_rng(19).binomial(1, .6, (3, 20)).astype(float)
     target[:, 2] = np.nan
@@ -140,7 +140,6 @@ def test_gp_stats_uses_saved_blend_and_production_estimator(tmp_path: Path, monk
     (data / "metrics.json").write_text(json.dumps({"toy": {f"samples-{i}": float(np.nanmean(row)) for i, row in enumerate(target)}}))
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(stats, "load_scorers", lambda _: {"toy": "choice"})
-    monkeypatch.setattr(stats, "get_task_allocations", lambda _: {"toy": "default"})
     monkeypatch.setattr(stats, "get_primary_metrics", lambda _: {"toy": ["accuracy"]})
     monkeypatch.setattr("complai.gp_irt.calibrate_blend", lambda *a: pytest.fail("Stats must not calibrate on targets"))
     captured = []
@@ -163,10 +162,21 @@ def test_gp_stats_uses_saved_blend_and_production_estimator(tmp_path: Path, monk
 @pytest.mark.parametrize("blend", [None, -1, 2, float("nan")])
 def test_invalid_calibration_rejected(tmp_path: Path, blend) -> None:
     records = _records(tmp_path, "source", _source())
-    fitted = fit(records, records.scorers, 8, estimator="gp_irt")
+    fitted = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"), estimator="gp_irt")
     params, subset = write_outputs(fitted, tmp_path / "gp")
     payload = json.loads(params.read_text())
     payload["gp_irt"]["task_blends"]["toy"] = blend
     params.write_text(json.dumps(payload))
     with pytest.raises(ValueError, match="Missing or invalid gp_irt blend"):
         predict_scores(records.records_path, params, subset)
+
+
+def test_gp_irt_index_score_matches_task_score(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("complai.predict.MIN_SUBSET_ITEMS", 1)
+    records = _records(tmp_path, "source", _source())
+    fitted = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"), estimator="gp_irt")
+    params, subset = write_outputs(fitted, tmp_path / "gp")
+    target = _records(tmp_path, "target", np.random.default_rng(3).binomial(1, .8, (1, 20)).astype(float))
+    model = predict_scores(target.records_path, params, subset)["models"]["target-0"]
+    assert model["tasks"]["toy"]["blend_weight"] > 0
+    assert model["indices"]["capability"]["predicted_score"] == pytest.approx(model["tasks"]["toy"]["predicted_score"], abs=1e-12)

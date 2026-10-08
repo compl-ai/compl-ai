@@ -35,10 +35,10 @@ export class RateLimiter {
         } catch (error: any) {
             // Check if it's a rate limit (429) or high demand (503) error
             const isRateLimit = error?.status === 429 || error?.code === 429 || error?.message?.includes('429');
-            const isUnavailable = error?.status === 503 || error?.code === 503 || error?.message?.includes('503');
+            const isUnavailable = [503, 529].includes(error?.status) || error?.code === 503 || error?.message?.includes('503') || error?.message?.includes('overloaded');
             
             if ((isRateLimit || isUnavailable) && retries > 0) {
-                console.warn(`\n[RateLimiter] Hit ${isRateLimit ? '429 (Rate Limit)' : '503 (High Demand)'}. Retrying in ${delayMs / 1000}s... (${retries} retries left)`);
+                console.warn(`\n[RateLimiter] Hit ${isRateLimit ? '429 (Rate Limit)' : '503/529 (High Demand)'}. Retrying in ${delayMs / 1000}s... (${retries} retries left)`);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
                 return this.withBackoff(fn, retries - 1, delayMs * 2);
             }

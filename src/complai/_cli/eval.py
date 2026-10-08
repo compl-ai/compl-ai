@@ -22,6 +22,7 @@ from complai._cli.utils import parse_task_args
 from complai._cli.utils import patch_display_results
 from complai._cli.utils import read_eval_subset
 from complai._cli.utils import validate_model_args
+from complai.utils.log_parser import SUBSET_METADATA_KEY
 
 
 def eval_command(
@@ -360,6 +361,7 @@ def eval_command(
 ) -> None:
     """Run tasks."""
     selected = None
+    subset_metadata = None
     if subset is not None:
         conflicts = {
             "--tasks": tasks,
@@ -378,6 +380,9 @@ def eval_command(
         except (TypeError, ValueError) as exc:
             raise typer.BadParameter(str(exc)) from exc
         tasks = ",".join(selected)
+        # Mark the run so preprocessing never takes it as a task's full question set.
+        first = next(iter(selected.values()))[0]
+        subset_metadata = {SUBSET_METADATA_KEY: str(first.get("subset_id") or subset)}
 
     # Get TaskInfo objects from task names
     parsed_task_filters = parse_cli_config(task_filter, None)
@@ -460,5 +465,6 @@ def eval_command(
             time_limit=time_limit,
             working_limit=working_limit,
             log_dir_allow_dirty=log_dir_allow_dirty,
+            metadata=subset_metadata,
             **parsed_generate_args,
         )

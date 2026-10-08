@@ -1,0 +1,61 @@
+
+name: "Seed-OSS-36B-Instruct"
+release_date: "2025-08-20"
+open_weights: true
+organization: "ByteDance"
+license: null
+
+availability:
+  - "open-weights"
+  - "api"
+  - "saas-chat"
+
+description: |
+  Tencent's Seed-OSS-36B-Instruct is an instruction-tuned large language model optimized for dialogue, reasoning, and coding tasks.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: 36000000000
+  active_params: null
+  context: 128000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/ByteDance-Seed/Seed-OSS-36B-Instruct"
+    type: "model-weights"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - null
+
+evals:
+  - "openai-api/vllm/ByteDance-Seed/Seed-OSS-36B-Instruct"
