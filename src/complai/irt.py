@@ -202,13 +202,16 @@ def prepare_tasks(
     scorers: dict[str, str],
     *,
     _min_models: int = 3,
+    _allow_missing: bool = False,
 ) -> dict[str, dict[str, Any]]:
     """Build model-by-item score matrices from preprocessed records.
 
     Preprocessing already keeps one evaluation per model and task, restricted to
     the task's current question set, so records map directly onto matrix cells.
+    ``_allow_missing`` (prediction) leaves out configured tasks without records
+    instead of raising.
     """
-    canonical_datasets = _canonical_datasets(records, scorers)
+    canonical_datasets = _canonical_datasets(records, scorers, allow_missing=_allow_missing)
 
     epochs: dict[tuple[str, str, str, str], list[float]] = {}
     metadata: dict[tuple[str, str, str, str], dict[str, Any]] = {}
@@ -279,6 +282,8 @@ def prepare_tasks(
     output: dict[str, dict[str, Any]] = {}
     for task_name in sorted(scorers):
         rows = [row for row in resolved if row["task"] == task_name]
+        if not rows and _allow_missing:
+            continue
         if not rows:
             raise ValueError(
                 f"No eligible samples found for configured task {task_name!r}"
@@ -329,7 +334,7 @@ def prepare_tasks(
 
 
 def _canonical_datasets(
-    records: PreprocessedRecords, scorers: dict[str, str]
+    records: PreprocessedRecords, scorers: dict[str, str], *, allow_missing: bool = False
 ) -> dict[str, str]:
     """Name each task's items after the dataset of its newest evaluation."""
     newest: dict[str, dict[str, Any]] = {}
@@ -342,7 +347,7 @@ def _canonical_datasets(
         ):
             newest[task] = row
     missing = sorted(set(scorers) - set(newest))
-    if missing:
+    if missing and not allow_missing:
         raise ValueError(f"No eligible samples found for configured task {missing[0]!r}")
     return {task: str(row["dataset"]) for task, row in newest.items()}
 
@@ -763,8 +768,9 @@ def select_items_joint(
         allocated_task[t_name] += 1
         allocated_index[i_name] += 1
         selected_keys.append((t_name, picked_idx))
-        
-    return dict(allocated_task), selected_keys
+
+    # Keep explicit zero allocations for tasks with no selected items.
+    return {name: allocated_task[name] for name in capacities}, selected_keys
 
 
 def dispersion23_allocation(
@@ -853,13 +859,6 @@ def build_result(
         from complai.gp_irt import METHOD_VERSION as GP_IRT_METHOD_VERSION
         params_basis.update(method=GP_IRT_METHOD_VERSION, gp_irt=gp_irt)
         configuration_digest = digest_json({"base": configuration_digest, "gp_irt": gp_irt})
-    params_id = digest_json(params_basis)[:24]
-    selected_ids = [
-        tasks[task]["items"][index]["item_id"] for task, index in selected_keys
-    ]
-    subset_id = digest_json(
-        {"params_id": params_id, "budget": budget, "seed": seed, "items": selected_ids}
-    )[:24]
 
     secondary_vocab: list[str] = []
 
@@ -907,6 +906,26 @@ def build_result(
                     vocab_index(secondary_vocab, label.secondary),
                 ]
             )
+
+    # Index assignment and labels change index/sub-category scores, so they are
+    # part of the params identity.
+    params_basis.update(
+        task_indices={name: tasks[name]["index"] for name in sorted(tasks)},
+        labels_digest=digest_json(
+            {
+                "secondary": secondary_vocab,
+                "items": [row[ITEM_COLUMNS.index("secondary")] for row in item_rows],
+                "subcategories": subcategories.to_params(),
+            }
+        ),
+    )
+    params_id = digest_json(params_basis)[:24]
+    selected_ids = [
+        tasks[task]["items"][index]["item_id"] for task, index in selected_keys
+    ]
+    subset_id = digest_json(
+        {"params_id": params_id, "budget": budget, "seed": seed, "items": selected_ids}
+    )[:24]
 
     selected_records = []
     for rank, (task_name, index) in enumerate(selected_keys, start=1):

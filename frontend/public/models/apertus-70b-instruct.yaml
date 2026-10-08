@@ -50,7 +50,7 @@ sources:
 
 training:
   tokens: 15000000000000
-  compute_flops: "6.74e24"
+  compute_flops: 6.74e24
   energy_kwh: 5000000
   emissions_co2: 0
   training_dataset: "highly multilingual"

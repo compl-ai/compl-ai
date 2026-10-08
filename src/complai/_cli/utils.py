@@ -378,7 +378,8 @@ def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
                 row = json.loads(line)
             except json.JSONDecodeError as exc:
                 raise ValueError(f"{path}:{line_number}: invalid JSON") from exc
-            required = ("task", "sample_id", "item_id", "content_hash")
+            # Bundled subsets carry only item_id; task and sample_id derive from it.
+            required = ("item_id", "content_hash")
             if not isinstance(row, dict) or any(
                 not isinstance(row.get(field), str) or not row[field]
                 for field in required
@@ -391,7 +392,7 @@ def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
             if len(parts) != 3 or not all(parts):
                 raise ValueError(f"{path}:{line_number}: invalid item_id")
             task, dataset, sample_id = parts
-            if row["task"] != task or row["sample_id"] != sample_id:
+            if row.setdefault("task", task) != task or row.setdefault("sample_id", sample_id) != sample_id:
                 raise ValueError(f"{path}:{line_number}: item identity does not match")
             if "dataset" in row and row["dataset"] != dataset:
                 raise ValueError(

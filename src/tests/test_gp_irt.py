@@ -92,7 +92,7 @@ def test_artifact_roundtrip_and_prediction_without_training_data(tmp_path: Path,
     assert irt["prediction_id"] != automatic["prediction_id"]
     assert irt["models"]["target-0"]["predicted_score_error"] is not None
     # Changing unobserved responses cannot change either gp score component.
-    selected_ids = {int(row["sample_id"]) for row in fitted.subset}
+    selected_ids = {int(row["item_id"].rsplit("::", 1)[1]) for row in fitted.subset}
     changed = np.array([[1. if i in selected_ids else 0. for i in range(20)]])
     target = _records(tmp_path, "target", changed)
     assert predict_scores(target.records_path, params, subset)["models"] == automatic["models"]
@@ -169,3 +169,14 @@ def test_invalid_calibration_rejected(tmp_path: Path, blend) -> None:
     params.write_text(json.dumps(payload))
     with pytest.raises(ValueError, match="Missing or invalid gp_irt blend"):
         predict_scores(records.records_path, params, subset)
+
+
+def test_gp_irt_index_score_matches_task_score(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("complai.predict.MIN_SUBSET_ITEMS", 1)
+    records = _records(tmp_path, "source", _source())
+    fitted = fit(records, records.scorers, 8, indices=dict.fromkeys(records.scorers, "capability"), estimator="gp_irt")
+    params, subset = write_outputs(fitted, tmp_path / "gp")
+    target = _records(tmp_path, "target", np.random.default_rng(3).binomial(1, .8, (1, 20)).astype(float))
+    model = predict_scores(target.records_path, params, subset)["models"]["target-0"]
+    assert model["tasks"]["toy"]["blend_weight"] > 0
+    assert model["indices"]["capability"]["predicted_score"] == pytest.approx(model["tasks"]["toy"]["predicted_score"], abs=1e-12)

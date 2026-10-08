@@ -133,7 +133,7 @@ def prepared_tasks(
         if (records.digest, task, scorer) not in _PREPARED_TASKS
     }
     if missing:
-        built = prepare_tasks(records, missing, _min_models=1)
+        built = prepare_tasks(records, missing, _min_models=1, _allow_missing=True)
         for task, scorer in missing.items():
             _PREPARED_TASKS[(records.digest, task, scorer)] = built.get(task)
     return {
@@ -170,6 +170,8 @@ def _predict_task_scores(
     iterations = int(hyperparameters.get("iterations", 10))
     params_items = {str(row["item_id"]): row for row in params["items"]}
     tasks = prepared_tasks(records, task_scorers)
+    if not tasks:
+        raise ValueError("No responses found for any subset task")
     selected_by_task: dict[str, list[dict[str, Any]]] = {}
     for row in subset:
         selected_by_task.setdefault(str(row["task"]), []).append(row)
@@ -489,6 +491,8 @@ def item_probabilities(prediction: Prediction) -> dict[str, dict[str, np.ndarray
 
     Items the model answered in its subset take the observed response; the rest
     use sigmoid(a*theta + c) with the (re-estimated or imputed) task ability.
+    Under gp_irt every item instead takes the task's blend of the observed
+    subset mean and its 2PL probability, so the items average to the task score.
     """
     out: dict[str, dict[str, np.ndarray]] = {}
     for model, model_result in prediction.result["models"].items():
@@ -506,8 +510,12 @@ def item_probabilities(prediction: Prediction) -> dict[str, dict[str, np.ndarray
             a = np.asarray([float(row["discrimination"]) for row in population])
             c = np.asarray([float(row["intercept"]) for row in population])
             probabilities = sigmoid(a * np.asarray(ability, dtype=float) + c)
-            answered = np.isfinite(observed)
-            probabilities[answered] = observed[answered]
+            blend = task_result.get("blend_weight")
+            if blend is not None and not task_result.get("imputed"):
+                probabilities = blend * task_result["observed_subset_score"] + (1 - blend) * probabilities
+            else:
+                answered = np.isfinite(observed)
+                probabilities[answered] = observed[answered]
             per_task[task_name] = probabilities
         out[model] = per_task
     return out

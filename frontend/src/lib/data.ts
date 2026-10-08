@@ -130,23 +130,32 @@ export function getLabels() {
   return JSON.parse(fileContents);
 }
 
-export function getModelMetadata(filename: string): ModelParams {
+// js-yaml follows YAML 1.2, which reads digit-grouped numbers like 128_000 as strings.
+function normalizeGroupedNumbers(value: unknown): unknown {
+  if (typeof value === 'string' && /^-?\d{1,3}(_\d{3})+(\.\d+)?$/.test(value)) {
+    return Number(value.replace(/_/g, ''));
+  }
+  if (Array.isArray(value)) return value.map(normalizeGroupedNumbers);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeGroupedNumbers(item)])
+    );
+  }
+  return value;
+}
+
+// Returns null for a file that fails validation, so invalid values never reach the UI.
+export function getModelMetadata(filename: string): ModelParams | null {
   const dataPath = path.join(process.cwd(), 'public', 'models', filename);
   const fileContents = fs.readFileSync(dataPath, 'utf8');
-  const rawYaml = yaml.load(fileContents);
-  
-  try {
-    return ModelSchema.parse(rawYaml);
-  } catch (error) {
-    console.error(`\n❌ Zod Validation Error in ${filename}:`);
-    if (error instanceof z.ZodError) {
-      error.issues.forEach(issue => {
-        console.error(`   - [${issue.path.join('.')}] ${issue.message}`);
-      });
-    }
-    // Return the raw data anyway so we don't hard-crash the site, just warn
-    return rawYaml as ModelParams;
-  }
+  const parsed = ModelSchema.safeParse(normalizeGroupedNumbers(yaml.load(fileContents)));
+  if (parsed.success) return parsed.data;
+
+  console.error(`\n❌ Zod Validation Error in ${filename}:`);
+  parsed.error.issues.forEach(issue => {
+    console.error(`   - [${issue.path.join('.')}] ${issue.message}`);
+  });
+  return null;
 }
 
 export function getAllModelMetadata(): Record<string, ModelParams> {
@@ -158,7 +167,8 @@ export function getAllModelMetadata(): Record<string, ModelParams> {
   
   for (const file of files) {
     const id = file.replace(/\.ya?ml$/, '');
-    metadata[id] = getModelMetadata(file);
+    const parsed = getModelMetadata(file);
+    if (parsed) metadata[id] = parsed;
   }
   
   return metadata;

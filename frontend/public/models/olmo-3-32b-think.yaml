@@ -49,7 +49,7 @@ sources:
 
 training:
   tokens: 5800000000000
-  compute_flops: "4e23"
+  compute_flops: 4e23
   energy_kwh: null
   emissions_co2: null
   training_dataset: "web content + code + books + scientific text"

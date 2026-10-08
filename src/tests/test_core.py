@@ -44,6 +44,7 @@ from complai.utils.log_parser import logical_sample_id as _logical_sample_id
 from complai.utils.log_parser import PARSER_VERSION
 from complai.utils.log_parser import question_hash as _question_hash
 from complai.utils.log_parser import STRONG_REJECT_BASE_PROMPTS
+from complai.utils.log_parser import SUBSET_METADATA_KEY
 
 
 def test_fit_2pl_is_identified_and_marks_thin_items() -> None:
@@ -1190,6 +1191,7 @@ def _write_eval(
     choices: list[list[str] | None] | None = None,
     limit: int | None = None,
     metadata: list[dict[str, object]] | None = None,
+    eval_metadata: dict[str, object] | None = None,
 ) -> None:
     samples = []
     for epoch, epoch_values in enumerate([values, *(additional_epochs or [])], start=1):
@@ -1225,6 +1227,7 @@ def _write_eval(
             dataset=EvalDataset(name=dataset or f"{task}-data", samples=len(samples)),
             model=model,
             config=EvalConfig(limit=limit),
+            metadata=eval_metadata,
         ),
         results=EvalResults(total_samples=len(samples), completed_samples=len(samples)),
         samples=samples,
@@ -1254,3 +1257,104 @@ def test_dataset_row_aliases_never_replace_a_labeled_sample_id(tmp_path: Path) -
     assert labels["1"].primary == "capability"
     assert labels["x"].primary == "reliability"
     assert set(load_labels(labels_dir, with_aliases=False)["bench"]) == {"7", "1", "u"}
+
+
+def _task_records(tmp_path: Path, name: str, matrices: dict[str, np.ndarray]):
+    """Preprocess one eval per (model, task) row of each task's score matrix."""
+    logs = tmp_path / f"logs-{name}"
+    logs.mkdir()
+    for task, matrix in matrices.items():
+        for model, row in enumerate(matrix):
+            _write_eval(
+                logs / f"{task}-{model}.eval",
+                model=f"{name}-{model}",
+                run_id=f"{name}-{task}-{model}",
+                created=f"2026-01-{model + 1:02d}T00:00:00+00:00",
+                values=[float(value) for value in row],
+                task=task,
+                inputs=[f"{task} question {item}" for item in range(len(row))],
+            )
+    return preprocess_logs(
+        [logs], dict.fromkeys(matrices, "choice"), tmp_path / f"{name}.jsonl"
+    )
+
+
+def _panel(*tasks: str) -> dict[str, np.ndarray]:
+    rng = np.random.default_rng(0)
+    return {task: rng.binomial(1, 0.5, (6, 30)).astype(float) for task in tasks}
+
+
+def test_eval_subset_reads_rows_without_task_and_sample_id(tmp_path: Path) -> None:
+    subset_path = tmp_path / "subset.jsonl"
+    row = {"item_id": "toy::toy-data::3", "content_hash": "abc"}
+    subset_path.write_text(json.dumps(row) + "\n")
+
+    selected = read_eval_subset(subset_path)
+
+    assert selected["toy"][0]["task"] == "toy"
+    assert selected["toy"][0]["sample_id"] == "3"
+    bundled = read_eval_subset(
+        Path(__file__).parents[1] / "complai/data/core.v1/subset.jsonl"
+    )
+    assert sum(len(rows) for rows in bundled.values()) == 2000
+
+
+def test_preprocess_subset_run_cannot_redefine_question_set(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    inputs = [f"Question {item}" for item in range(100)]
+    _write_eval(
+        logs / "full.eval", model="full", run_id="full",
+        created="2026-01-01T00:00:00+00:00", values=[1.0] * 100, inputs=inputs,
+    )
+    # complai eval --subset filters the dataset first, so only its marker shows it is partial.
+    _write_eval(
+        logs / "subset.eval", model="subset", run_id="subset",
+        created="2026-02-01T00:00:00+00:00", values=[1.0] * 20, inputs=inputs[:20],
+        eval_metadata={SUBSET_METADATA_KEY: "subset-id"},
+    )
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
+
+    rows = {Path(row["path"]).name: row for row in records.files}
+    assert rows["subset.eval"]["partial"]
+    assert rows["subset.eval"]["coverage"] == pytest.approx(0.2)
+    assert records.records == 120
+
+
+def test_predict_imputes_tasks_absent_from_records(tmp_path: Path) -> None:
+    panel = _panel("taska", "taskb")
+    source = _task_records(tmp_path, "panel", panel)
+    fitted = fit(source, dict.fromkeys(panel, "choice"), 20, indices=dict.fromkeys(panel, "capability"))
+    params, subset = write_outputs(fitted, tmp_path / "out")
+    target = _task_records(tmp_path, "new", {"taska": np.ones((1, 30))})
+
+    tasks = predict_scores(target.records_path, params, subset)["models"]["new-0"]["tasks"]
+
+    assert tasks["taska"]["status"] == "ok"
+    assert tasks["taskb"]["status"] == "imputed"
+
+
+def test_joint_selection_keeps_zero_allocations(tmp_path: Path) -> None:
+    panel = dict(_panel("taska", "taskb"), solved=np.ones((6, 30)))
+    records = _task_records(tmp_path, "panel", panel)
+    for selection in ("joint", "joint_discrimination"):
+        fitted = fit(
+            records, dict.fromkeys(panel, "choice"), 20,
+            indices=dict.fromkeys(panel, "capability"),
+            item_selection=selection, drop_uninformative=True,
+        )
+        assert fitted.params["tasks"]["solved"]["allocation"] == 0
+
+
+def test_params_id_depends_on_index_assignment(tmp_path: Path) -> None:
+    panel = _panel("taska", "taskb", "taskc", "taskd")
+    records = _task_records(tmp_path, "panel", panel)
+    first = fit(records, dict.fromkeys(panel, "choice"), 20, indices={
+        "taska": "capability", "taskb": "capability", "taskc": "reliability", "taskd": "reliability",
+    })
+    swapped = fit(records, dict.fromkeys(panel, "choice"), 20, indices={
+        "taska": "capability", "taskc": "capability", "taskb": "reliability", "taskd": "reliability",
+    })
+
+    assert first.params["params_id"] != swapped.params["params_id"]
+    assert first.params["subset_id"] != swapped.params["subset_id"]

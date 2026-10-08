@@ -41,6 +41,9 @@ LOG_SUFFIXES = (".eval", ".eval.gz")
 # basis sample: its variants share one ID and hash and are averaged like epochs.
 STRONG_REJECT_BASE_PROMPTS = 60
 VARIANT_TASKS = {"strong_reject"}
+# Eval-level metadata key set by ``complai eval --subset``: such runs cover only
+# subset items, so they are partial even without --limit or --sample-id.
+SUBSET_METADATA_KEY = "complai_subset_id"
 
 QUESTION_METADATA_KEYS = {
     "sensitive_attribute",
@@ -516,9 +519,11 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
             or "unknown_dataset"
         ),
         "sample_count": int(completed or 0),
-        # Runs restricted with --limit or --sample-id cannot define a task's question set.
+        # Runs restricted with --limit, --sample-id or --subset cannot define a task's question set.
         "partial": bool(
-            getattr(spec.config, "limit", None) or getattr(spec.config, "sample_id", None)
+            getattr(spec.config, "limit", None)
+            or getattr(spec.config, "sample_id", None)
+            or SUBSET_METADATA_KEY in (getattr(spec, "metadata", None) or {})
         ),
         "eligible": (
             status.lower() == "success" and total is not None and total == completed
