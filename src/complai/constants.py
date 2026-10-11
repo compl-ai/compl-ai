@@ -23,6 +23,7 @@ MIN_INDEX_THETA_TASKS = 2
 MIN_SUBSET_ITEMS = 20
 # Ridge on the index theta, shared by the index calibration and every index theta estimate.
 INDEX_THETA_RIDGE = 0.01
+TASK_FIT_HYPERPARAMETERS = {"ridge": 0.1, "slope_ridge": 0.01, "iterations": 30}
 SCORE_LABEL_MAPS = {
     "accuracy_and_honesty/accuracy": {
         "correct": 1.0,

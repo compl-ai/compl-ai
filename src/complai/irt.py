@@ -20,6 +20,7 @@ from complai.constants import (
     MIN_DISCRIMINATION,
     MIN_INDEX_THETA_TASKS,
     PARAMS_SCHEMA,
+    TASK_FIT_HYPERPARAMETERS,
 )
 from complai.labels import (
     UNKNOWN_LABEL,
@@ -88,14 +89,7 @@ def fit(
     if missing:
         raise ValueError(f"tasks without an index: {', '.join(missing)}")
 
-    # Every task belongs to one index, which alone drives the fit. Item labels
-    # never affect fitting or selection; when available their secondary label is
-    # written into params as reporting metadata, together with the taxonomy's
-    # sub-categories so params are self-contained for reporting.
-    labels = load_labels(labels_dir) if labels_dir is not None else {}
-    subcategories = (
-        load_subcategories() if labels_dir is not None else Subcategories(by_label={}, definitions={})
-    )
+    labels, subcategories = _load_labels(labels_dir)
     tasks = prepare_tasks(records, scorers)
     for name, task in tasks.items():
         task["index"] = indices[name]
@@ -177,6 +171,80 @@ def fit(
         indices=index_calibration,
         gp_irt=calibration,
     )
+
+
+def refit(
+    records: PreprocessedRecords,
+    params: dict[str, Any],
+    subset: list[dict[str, Any]],
+    *,
+    labels_dir: Path | None = None,
+) -> FitResult:
+    """Refit params on new records while keeping an existing subset's items.
+
+    Tasks, scorers, indices, estimator, budget and seed come from the existing
+    params. Each task's allocation and eligible count are kept too, so every
+    subset item keeps its inclusion probability. Every subset item must still
+    be in the records with unchanged content.
+    """
+    scorers = params["task_scorers"]
+    estimator = params.get("estimator", "irt")
+    labels, subcategories = _load_labels(labels_dir)
+    tasks = prepare_tasks(records, scorers)
+    for name, task in tasks.items():
+        task["index"] = params["tasks"][name]["index"]
+
+    positions = {
+        item["item_id"]: (name, index, item["content_hash"])
+        for name, task in tasks.items()
+        for index, item in enumerate(task["items"])
+    }
+    selected_keys: list[tuple[str, int]] = []
+    for row in sorted(subset, key=lambda row: row["rank"]):
+        item_id = row["item_id"]
+        if item_id not in positions:
+            raise ValueError(f"Subset item {item_id!r} is missing from the records")
+        name, index, content_hash = positions[item_id]
+        if content_hash != row["content_hash"]:
+            raise ValueError(f"Subset item {item_id!r} has different content in the records")
+        selected_keys.append((name, index))
+
+    fits, capacities, dispersions = fit_tasks(tasks, estimator=estimator)
+    calibration = None
+    if estimator == "gp_irt":
+        from complai.gp_irt import calibrate_tasks
+        calibration = calibrate_tasks(tasks, selected_keys)
+
+    return build_result(
+        records=records,
+        scorers=scorers,
+        budget=params["budget"],
+        seed=params["seed"],
+        tasks=tasks,
+        fits=fits,
+        capacities=capacities,
+        eligible={name: task["eligible"] for name, task in params["tasks"].items()},
+        dispersions=dispersions,
+        allocation={name: task["allocation"] for name, task in params["tasks"].items()},
+        selected_keys=selected_keys,
+        labels=labels,
+        subcategories=subcategories,
+        indices=fit_indices(tasks),
+        gp_irt=calibration,
+    )
+
+
+def _load_labels(labels_dir: Path | None) -> tuple[ItemLabels, Subcategories]:
+    """Load item labels and sub-categories, or empty ones without a directory.
+
+    Every task belongs to one index, which alone drives the fit. Item labels
+    never affect fitting or selection; when available their secondary label is
+    written into params as reporting metadata, together with the taxonomy's
+    sub-categories so params are self-contained for reporting.
+    """
+    if labels_dir is None:
+        return {}, Subcategories(by_label={}, definitions={})
+    return load_labels(labels_dir), load_subcategories()
 
 
 def filter_seen_scorers(
@@ -366,7 +434,7 @@ def fit_tasks(
             from complai.gp_irt import fit_model
             fits[task_name] = fit_model(matrix)
         else:
-            fits[task_name] = fit_2pl(matrix, ridge=0.01, slope_ridge=0.01, iterations=30)
+            fits[task_name] = fit_2pl(matrix, **TASK_FIT_HYPERPARAMETERS)
 
         # Number of samples in task
         capacities[task_name] = matrix.shape[1]
@@ -842,10 +910,15 @@ def build_result(
     """
     labels = labels or {}
     subcategories = subcategories or Subcategories(by_label={}, definitions={})
+    # The gp_irt estimator fits with its own settings (gp_irt.py).
+    hyperparameters = (
+        dict(TASK_FIT_HYPERPARAMETERS) if gp_irt is None
+        else {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10}
+    )
     configuration_digest = digest_json(
         {
             "task_scorers": dict(sorted(scorers.items())),
-            "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
+            "hyperparameters": hyperparameters,
         }
     )
     params_basis = {
@@ -853,7 +926,7 @@ def build_result(
         "method": METHOD_VERSION,
         "inventory_digest": records.digest,
         "task_scorers": dict(sorted(scorers.items())),
-        "hyperparameters": {"ridge": 0.01, "slope_ridge": 0.01, "iterations": 10},
+        "hyperparameters": hyperparameters,
     }
     if gp_irt is not None:
         from complai.gp_irt import METHOD_VERSION as GP_IRT_METHOD_VERSION
