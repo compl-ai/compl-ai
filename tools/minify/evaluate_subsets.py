@@ -109,31 +109,6 @@ def overall_errors(prediction: Prediction, truth: GroundTruth) -> list[float]:
     return errors
 
 
-def masked_task_errors(prediction: Prediction, truth: GroundTruth) -> dict[str, dict[str, Any]]:
-    """Masked MAE per task: predicted vs observed item means over the items each model answered.
-
-    Imputed tasks are skipped: their error measures imputation, not the fit.
-    """
-    models = prediction.result["models"]
-    first_model = next(iter(models.values()))
-    masked = masked_task_scores(prediction, truth)
-    out: dict[str, dict[str, Any]] = {}
-    for name in sorted(prediction.populations):
-        scores = [
-            masked[model][name]
-            for model, model_result in models.items()
-            if name in masked.get(model, {}) and not model_result["tasks"][name].get("imputed")
-        ]
-        out[name] = {
-            "population_items": len(prediction.populations[name]),
-            "subset_items": first_model["tasks"][name]["subset_items"],
-            "masked_mae": float(np.mean([abs(s["predicted_score"] - s["observed_score"]) for s in scores])) if scores else None,
-            "avg_gt_items": int(np.mean([s["items"] for s in scores])) if scores else 0,
-            "models": len(scores),
-        }
-    return out
-
-
 def label_errors(prediction: Prediction, truth: GroundTruth, column: str) -> dict[str, dict[str, Any]]:
     """Masked MAE per label value: predicted vs observed item means over full-pool items with ground truth."""
     pools = label_pools(prediction, column)
@@ -367,7 +342,6 @@ def evaluate_stats(
             print(f"  Overall Score MAE (Masked): {np.mean(overall) * 100:.2f}% ({len(overall)} models)")
         print_label_table("Index", label_errors(prediction, truth, "index"))
         print_label_table("Sub-category", label_errors(prediction, truth, "subcategory"))
-        print_label_table("Task", masked_task_errors(prediction, truth), "Per-Task Item Breakdown")
         print_index_theta_table(index_theta_errors(prediction, truth))
         print_membership_table(rest_correlations(prediction, truth))
 

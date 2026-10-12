@@ -16,6 +16,7 @@ import numpy as np
 
 from complai.predict import Prediction, label_pools, prepared_tasks
 from complai.utils.log_parser import load_records, preprocess_logs
+from complai.utils.scores import primary_metric
 from tools.minify.config import get_primary_metrics, load_scorers
 
 DEFAULT_SAMPLES = Path("tools/minify/data/samples.jsonl")
@@ -131,14 +132,8 @@ def primary_metric_value(task: str, value: Any, primary_metrics: dict[str, Any])
         return None
     if not isinstance(value, dict):
         return float(value)
-    expected = primary_metrics.get(task, ["accuracy"])
-    if isinstance(expected, str):
-        expected = [expected]
-    for key in expected:
-        if value.get(key) is not None:
-            return float(value[key])
-    fallback = [v for k, v in value.items() if k not in ("cerr", "stderr") and v is not None]
-    return float(fallback[0]) if fallback else None
+    picked = primary_metric(value, primary_metrics.get(task, ["accuracy"]))
+    return picked[1] if picked else None
 
 
 def load_ground_truth(

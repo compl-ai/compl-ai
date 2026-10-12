@@ -41,9 +41,25 @@ LOG_SUFFIXES = (".eval", ".eval.gz")
 # basis sample: its variants share one ID and hash and are averaged like epochs.
 STRONG_REJECT_BASE_PROMPTS = 60
 VARIANT_TASKS = {"strong_reject"}
-# Eval-level metadata key set by ``complai eval --subset``: such runs cover only
+# Eval-level metadata keys set by ``complai eval`` on subset runs: the subset_id
+# hash from subset.jsonl and the subset name (e.g. "core.v1.1"). Such runs cover only
 # subset items, so they are partial even without --limit or --sample-id.
 SUBSET_METADATA_KEY = "complai_subset_id"
+SUBSET_NAME_METADATA_KEY = "complai_subset"
+# Eval-level metadata key set by ``complai eval --smoke``: smoke runs only check
+# that a task works, so they are never used for scoring.
+SMOKE_METADATA_KEY = "complai_smoke"
+# Evals are grouped by the exact model name stored in each log (``eval.model``),
+# so the same model run through another provider counts as a different model.
+# This maps such names to the name used by the model's other runs. Add an entry
+# only when it really is the same model; the left side is the name in the log.
+# The two entries below are mmmu_pro runs done through OpenRouter (up to 65,536
+# output tokens, reasoning on) for models whose other tasks ran on vLLM
+# (16,384 output tokens, reasoning effort high).
+MODEL_ALIASES = {
+    "openrouter/qwen/qwen3.5-397b-a17b": "openai-api/vllm/Qwen/Qwen3.5-397B-A17B",
+    "openrouter/moonshotai/kimi-k2.6": "openai-api/vllm/moonshotai/Kimi-K2.6",
+}
 
 QUESTION_METADATA_KEYS = {
     "sensitive_attribute",
@@ -141,6 +157,10 @@ def preprocess_logs(
     several evals of a task, the one answering the most reference questions is
     kept and the others are marked ``superseded``. Every kept eval records its
     ``coverage`` of the reference. Benchmark metrics come from the kept eval.
+
+    Evals belong to the same model when their logged model names match after
+    applying ``MODEL_ALIASES``. Folder layout and other files next to the logs
+    (such as ``eval-set.json``) are ignored.
     """
     if not scorers or any(not task or not scorer for task, scorer in scorers.items()):
         raise ValueError("scorers must be a non-empty task-to-scorer mapping")
@@ -186,7 +206,7 @@ def preprocess_logs(
                 "records_sha256": digest.hexdigest(),
                 "scorers": dict(sorted(scorers.items())),
                 "inspect_version": importlib.metadata.version("inspect-ai"),
-                "roots": [str(path) for path in roots],
+                "roots": [path.name for path in roots],
                 "files": file_rows,
             }
             manifest["input_digest"] = digest_json(manifest)
@@ -201,7 +221,10 @@ def preprocess_logs(
 
 
 def _parse_logs(
-    paths: tuple[Path, ...], scorers: dict[str, str], scratch_dir: Path, workers: int
+    paths: tuple[tuple[Path, str], ...],
+    scorers: dict[str, str],
+    scratch_dir: Path,
+    workers: int,
 ) -> list[tuple[dict[str, Any], frozenset[bytes], frozenset[bytes]]]:
     """Parse every log (in parallel when ``workers > 1``), in path order."""
     job = partial(_preprocess_to_scratch, scorers=scorers, scratch_dir=scratch_dir)
@@ -214,15 +237,15 @@ def _parse_logs(
 
 
 def _preprocess_to_scratch(
-    item: tuple[int, Path], *, scorers: dict[str, str], scratch_dir: Path
+    item: tuple[int, tuple[Path, str]], *, scorers: dict[str, str], scratch_dir: Path
 ) -> tuple[dict[str, Any], frozenset[bytes], frozenset[bytes]]:
     """Parse one log into a scratch JSONL file.
 
     Returns its file row plus the content-hash keys of answered and unanswered
     questions, where answered means the configured score is present.
     """
-    index, path = item
-    file_row, records = _preprocess_file(path, scorers)
+    index, (path, recorded_path) = item
+    file_row, records = _preprocess_file(path, recorded_path, scorers)
     scorer = scorers.get(file_row["task"], "")
     answered: set[bytes] = set()
     unanswered: set[bytes] = set()
@@ -356,9 +379,9 @@ def records_manifest_path(records_path: Path) -> Path:
 
 
 def _preprocess_file(
-    path: Path, scorers: dict[str, str]
+    path: Path, recorded_path: str, scorers: dict[str, str]
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Preprocess one Inspect log."""
+    """Preprocess one Inspect log, recording it as ``recorded_path``."""
     try:
         metadata = _read_log_metadata(path)
         task = str(metadata["task"])
@@ -376,7 +399,7 @@ def _preprocess_file(
         for sample in samples:
             records.append(
                 {
-                    "file_path": str(path),
+                    "file_path": recorded_path,
                     "run_id": metadata["run_id"],
                     "created": metadata["created"],
                     "model": metadata["model"],
@@ -391,7 +414,7 @@ def _preprocess_file(
             )
         stat = path.stat()
         file_row = {
-            "path": str(path),
+            "path": recorded_path,
             "size": stat.st_size,
             "mtime_ns": stat.st_mtime_ns,
             "parser_version": _parser_version(task),
@@ -432,27 +455,34 @@ def _write_manifest(path: Path, manifest: dict[str, Any]) -> None:
         raise
 
 
-def _discover_logs(paths: list[Path]) -> tuple[tuple[Path, ...], tuple[Path, ...]]:
-    """Resolve input roots and discover Inspect logs."""
+def _discover_logs(
+    paths: list[Path],
+) -> tuple[tuple[Path, ...], tuple[tuple[Path, str], ...]]:
+    """Resolve input roots and discover Inspect logs.
+
+    Each log comes with the path written to the records: relative to the parent
+    of its input root (e.g. ``logs/MODEL_RUN/x.eval``), so no machine-specific
+    absolute path is stored.
+    """
     roots = tuple(sorted({path.expanduser().resolve() for path in paths}))
-    found: set[Path] = set()
+    found: dict[Path, str] = {}
     for root in roots:
         if not root.exists():
             raise FileNotFoundError(f"Inspect log path does not exist: {root}")
         if root.is_file():
             if _is_log(root):
-                found.add(root)
+                found.setdefault(root, root.name)
             else:
                 raise ValueError(f"Unsupported Inspect log file: {root}")
         else:
-            found.update(
-                path.resolve()
-                for path in root.rglob("*")
-                if path.is_file() and _is_log(path)
-            )
+            for path in root.rglob("*"):
+                if path.is_file() and _is_log(path):
+                    found.setdefault(
+                        path.resolve(), path.relative_to(root.parent).as_posix()
+                    )
     if not found:
         raise ValueError("No .eval or .eval.gz files were found")
-    return roots, tuple(sorted(found))
+    return roots, tuple(sorted(found.items()))
 
 
 
@@ -507,11 +537,12 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
     except Exception:
         pass
 
+    model = str(getattr(spec, "model", ""))
     return {
         "run_id": str(getattr(spec, "eval_id", "") or getattr(spec, "run_id", "")),
         "created": str(getattr(spec, "created", "")),
         "status": status,
-        "model": str(getattr(spec, "model", "")),
+        "model": MODEL_ALIASES.get(model, model),
         "task": str(getattr(spec, "task", "")),
         "dataset": str(
             getattr(dataset_spec, "name", None)
@@ -519,14 +550,17 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
             or "unknown_dataset"
         ),
         "sample_count": int(completed or 0),
-        # Runs restricted with --limit, --sample-id or --subset cannot define a task's question set.
+        # Runs restricted with --limit, --sample-id or to the subset cannot define a task's question set.
         "partial": bool(
             getattr(spec.config, "limit", None)
             or getattr(spec.config, "sample_id", None)
             or SUBSET_METADATA_KEY in (getattr(spec, "metadata", None) or {})
         ),
         "eligible": (
-            status.lower() == "success" and total is not None and total == completed
+            status.lower() == "success"
+            and total is not None
+            and total == completed
+            and SMOKE_METADATA_KEY not in (getattr(spec, "metadata", None) or {})
         ),
         "metrics": _extract_metrics(results),
         "model_config": model_config,

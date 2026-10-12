@@ -10,8 +10,11 @@ import collections
 from typing import Annotated, Any
 from pathlib import Path
 
+from complai._cli.utils import default_subset_dir
 from complai.labels import UNKNOWN_LABEL, Subcategories, load_labels
 from complai.predict import gap_reason, predict_detailed
+
+SUBSET_DIR = default_subset_dir()
 
 app = typer.Typer(help="Export COMPL-AI predictions and labels to static JSON files for the frontend.")
 
@@ -37,10 +40,10 @@ def compile_labels(labels_dir: Path, task_indices: dict[str, str], subcategories
 @app.command()
 def export(
     input_path: Annotated[Path, typer.Argument(help="Preprocessed samples.jsonl")] = Path("tools/minify/data/samples.jsonl"),
-    params_path: Annotated[Path, typer.Option(help="Path to core params.json")] = Path("src/complai/data/core.v1/params.json"),
-    subset_path: Annotated[Path, typer.Option(help="Path to core subset.jsonl")] = Path("src/complai/data/core.v1/subset.jsonl"),
+    params_path: Annotated[Path, typer.Option(help="Path to core params.json (default: the subset named in src/complai/data/config.json)")] = SUBSET_DIR / "params.json",
+    subset_path: Annotated[Path, typer.Option(help="Path to core subset.jsonl (default: the subset named in src/complai/data/config.json)")] = SUBSET_DIR / "subset.jsonl",
     labels_dir: Annotated[Path, typer.Option(help="Directory containing item labels")] = Path("tools/label/labels"),
-    predictions_out: Annotated[Path, typer.Option(help="Output JSON file for frontend predictions")] = Path("frontend/public/data/predictions.core.v1.json"),
+    predictions_out: Annotated[Path, typer.Option(help="Output JSON file for frontend predictions")] = Path("frontend/public/data/predictions.json"),
     labels_out: Annotated[Path, typer.Option(help="Output JSON file for frontend labels")] = Path("frontend/public/data/labels.json"),
     ground_truth: Annotated[bool, typer.Option(help="Export observed scores to ground_truth.json")] = True,
 ):
@@ -50,6 +53,7 @@ def export(
     print("1. Predicting scores (complai.predict)...")
     prediction = predict_detailed(input_path, params_path, subset_path)
     params, subset, result = prediction.params, prediction.subset, prediction.result
+    result["subset"] = params_path.parent.name
 
     print("2. Compiling label dataset for the frontend...")
     subcategories = Subcategories.from_params(params["labels"]["subcategories"])

@@ -3,7 +3,7 @@ import statistics
 import collections
 from pathlib import Path
 
-logs_dir = Path("logs/logs/")
+logs_dir = Path("logs/")
 task_model_accumulator = collections.defaultdict(lambda: collections.defaultdict(lambda: {"input": 0, "output": 0, "total": 0, "samples": 0}))
 
 # 1. Properly parse all JSON files using Python's json library
