@@ -25,7 +25,11 @@ from rich import print
 
 from complai.utils.log_parser import content_hash as _content_hash
 from complai.utils.log_parser import logical_sample_id as _logical_sample_id
+from complai.utils.log_parser import SUBSET_METADATA_KEY
+from complai.utils.log_parser import SUBSET_NAME_METADATA_KEY
 from complai.utils.log_parser import VARIANT_TASKS
+from complai.utils.scores import CONFIG
+from complai.utils.scores import read_config
 
 
 def get_complai_tasks(
@@ -316,7 +320,7 @@ def get_log_dir(model: str, base_log_dir: str) -> str:
         datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
     )
 
-    return f"{base_log_dir}/{model_name}_{timestamp}"
+    return f"{base_log_dir.rstrip('/')}/{model_name}_{timestamp}"
 
 
 def bool_or_float(value: str) -> bool | float:
@@ -366,6 +370,11 @@ def error_handler(debug: bool) -> Iterator:
             sys.exit(1)
 
 
+def default_subset_dir() -> Path:
+    """Return the bundled data folder of the current subset in ``data/config.json``."""
+    return CONFIG.parent / read_config()["current_subset"]
+
+
 def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
     """Read a subset JSONL file grouped by task."""
     selected: dict[str, list[dict[str, Any]]] = {}
@@ -408,6 +417,47 @@ def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
     if not selected:
         raise ValueError(f"Subset is empty: {path}")
     return selected
+
+
+def select_subset_items(
+    tasks: list[str],
+    tasks_to_skip: list[str],
+    smoke: int | None,
+    full_only: dict[str, Any],
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    """Pick the bundled subset items to run and the eval metadata marking the run.
+
+    ``tasks`` and ``tasks_to_skip`` select tasks within the subset; ``smoke`` keeps
+    the first N items of each task. ``full_only`` maps options that only apply to
+    ``--full`` runs to their values.
+    """
+    used = [name for name, value in full_only.items() if value]
+    if used:
+        raise typer.BadParameter(
+            f"{', '.join(used)} can only be used with --full. "
+            "Use --smoke to run a few items of each subset task."
+        )
+    subset_dir = default_subset_dir()
+    selected = read_eval_subset(subset_dir / "subset.jsonl")
+    unknown = sorted(set(tasks + tasks_to_skip) - set(selected))
+    if unknown:
+        raise typer.BadParameter(
+            f"Not in the {subset_dir.name} subset: {', '.join(unknown)}. "
+            "Use --full to run tasks outside the subset."
+        )
+    selected = {
+        task: rows[:smoke] if smoke is not None else rows
+        for task, rows in selected.items()
+        if (not tasks or task in tasks) and task not in tasks_to_skip
+    }
+    if not selected:
+        raise typer.BadParameter("No subset tasks left to run")
+    subset_id = next(iter(selected.values()))[0]["subset_id"]
+    # Marks the run so preprocessing never takes it as a task's full question set.
+    return selected, {
+        SUBSET_NAME_METADATA_KEY: subset_dir.name,
+        SUBSET_METADATA_KEY: subset_id,
+    }
 
 
 def apply_eval_subset(

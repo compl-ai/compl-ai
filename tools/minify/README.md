@@ -28,7 +28,7 @@ Run the MLE optimization solver to generate Item Response Theory parameters (`pa
 
 The budget counts basis samples. Variants that a benchmark generates from one base prompt (strong_reject's 35 jailbreaks per prompt, fairllm's prompt sequences) are averaged into one item and count once; strong_reject therefore has at most 60 items, and each selected one runs all 35 jailbreaks.
 
-Each benchmark belongs wholesale to one index (capability, reliability or safety), set by its `index` field in `subset_config.json`. This assignment is the only grouping the fit uses. Item labels from `tools/label/labels` (`--labels`) are written into `params.json` for reporting only and do not affect the fit or the selection.
+Each benchmark belongs wholesale to one index (capability, reliability or safety), set by the group it is listed under in the current release in `src/complai/data/config.json` (see Subset versions below). This assignment is the only grouping the fit uses. Item labels from `tools/label/labels` (`--labels`) are written into `params.json` for reporting only and do not affect the fit or the selection.
 
 We use the `--item-selection joint` strategy to ensure a balanced allocation across indices and tasks rather than just picking randomly. The outputs are written directly into the main `src/complai/data/` folder so they bundle into the PyPI package.
 ```bash
@@ -46,6 +46,23 @@ Add `--drop-uninformative` to any strategy to skip items that cannot separate mo
 ```bash
 complai minify fit --budget 5000 --item-selection joint --drop-uninformative --name core.v1-informative
 ```
+
+#### Refit params without selecting new items
+When new logs arrive (for example more models on one benchmark), rerun step 1 and refit the params while keeping the items of an existing subset:
+```bash
+complai minify refit --subset core.v1 --name core.v1.1
+```
+Tasks, scorers, indices, estimator, budget, seed and each task's allocation are copied from the existing params, so every item keeps its inclusion probability. The command stops if a subset item is missing from the new samples or its content changed. The params and subset IDs change, because they are derived from the fitted params. Results from earlier runs still score against the new params, because answers are matched to items by content.
+
+#### Subset versions
+Subset names follow `<name>.v<major>.<minor>`:
+- **Major** (`core.v1` → `core.v2`): a new item selection with `complai minify fit`. The items change, so models must be re-run on the new subset.
+- **Minor** (`core.v1` → `core.v1.1`): the same items, with all params refit on more panel data using `complai minify refit`. Nobody needs to re-run anything: existing logs from any `core.v1.x` are re-scored against the new params with `complai predict`. Task scores and index thetas can shift, most for the tasks that gained new panel data.
+
+`src/complai/data/config.json` is edited by hand:
+- `current_subset` is the subset that `complai eval`, `report`, `predict` and `export-web` use.
+- `releases` lists the benchmarks of each major version, grouped by index. A minor version has no entry of its own: it uses the list of its major version (`core.v1.1` uses `core.v1`). `minify preprocess` and `minify fit` use the release of `current_subset`.
+- `benchmarks` gives each benchmark's scorer and the names its main metric may have in the logs. The first name found in a log is used.
 
 ### 3. Evaluate the Subsets
 To verify that the newly generated subsets have strong discriminative power (High "Predicted Score Spread") and low error (MAE), run the evaluation script. 

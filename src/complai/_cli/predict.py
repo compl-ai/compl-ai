@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 import typer
 from rich import print
 
+from complai._cli.utils import default_subset_dir
 from complai._cli.utils import error_handler
 from complai.predict import predict_scores, read_inputs, write_prediction
 from complai.utils.log_parser import preprocess_logs
@@ -37,24 +38,10 @@ def predict_command(
 ) -> None:
     """Predict full-task scores from results on a selected GP-IRT subset."""
     with error_handler(debug):
-        # Auto-resolve bundled data paths if not provided
-        data_dir = Path(__file__).parent.parent / "data"
-        if params is None or subset is None:
-            import json
-            config_path = data_dir / "config.json"
-            default_version = "core.v1"
-            if config_path.exists():
-                try:
-                    with open(config_path, "r") as f:
-                        cfg = json.load(f)
-                        default_version = cfg.get("default_subset", default_version)
-                except Exception:
-                    pass
-            
-            if params is None:
-                params = data_dir / default_version / "params.json"
-            if subset is None:
-                subset = data_dir / default_version / "subset.jsonl"
+        if params is None:
+            params = default_subset_dir() / "params.json"
+        if subset is None:
+            subset = default_subset_dir() / "subset.jsonl"
         if output is None:
             output = Path("predicted.json")
 

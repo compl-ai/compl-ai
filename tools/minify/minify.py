@@ -10,6 +10,7 @@ if str(_src_dir) not in sys.path:
 if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 
+import json
 import typer
 from pathlib import Path
 from typing import Annotated, Literal
@@ -18,7 +19,7 @@ from rich import print
 from complai._cli.utils import error_handler
 from tools.minify.config import load_indices, load_scorers
 from complai.utils.log_parser import load_records, preprocess_logs
-from complai.irt import fit
+from complai.irt import fit, refit
 from complai.utils.io import check_output_available, write_outputs
 
 app = typer.Typer(help="Maintainer tools for generating COMPL-AI Core subsets.")
@@ -57,7 +58,7 @@ def preprocess_command(
         typer.Option(
             "--scorers",
             "--config",
-            help="JSON subset configuration mapping; uses bundled defaults if omitted.",
+            help="File in the format of src/complai/data/config.json; uses that file if omitted.",
         ),
     ] = None,
     workers: Annotated[
@@ -95,7 +96,7 @@ def fit_command(
         typer.Option(
             "--scorers",
             "--config",
-            help="JSON subset configuration mapping; uses bundled defaults if omitted.",
+            help="File in the format of src/complai/data/config.json; uses that file if omitted.",
         ),
     ] = None,
     seed: Annotated[int, typer.Option("--seed", help="Selection seed.")] = 0,
@@ -157,6 +158,41 @@ def fit_command(
         print(
             f"Wrote {params_path} and {subset_path} ({len(result.subset)} subset items)"
         )
+
+@app.command("refit")
+def refit_command(
+    samples_path: Annotated[Path, typer.Argument(help="Preprocessed response JSONL.")] = Path("tools/minify/data/samples.jsonl"),
+    subset: Annotated[
+        str, typer.Option("--subset", help="Existing subset version whose items are kept (e.g. core.v1).")
+    ] = ...,
+    name: Annotated[
+        str, typer.Option("--name", help="Name of the new subset version (e.g. core.v1.1).")
+    ] = ...,
+    labels: Annotated[
+        Path | None,
+        typer.Option(
+            "--labels",
+            help="Item label directory; secondary labels are written into params for reporting only.",
+        ),
+    ] = Path("tools/label/labels"),
+    debug: Annotated[
+        bool, typer.Option("--debug", help="Enable full stack traces.")
+    ] = False,
+) -> None:
+    """Refit params on new samples, keeping the items of an existing subset."""
+    with error_handler(debug):
+        data_dir = Path(__file__).resolve().parent.parent.parent / "src" / "complai" / "data"
+        output = data_dir / name
+        check_output_available(output)
+        params = json.loads((data_dir / subset / "params.json").read_text())
+        with (data_dir / subset / "subset.jsonl").open() as file:
+            subset_rows = [json.loads(line) for line in file if line.strip()]
+        result = refit(load_records(samples_path), params, subset_rows, labels_dir=labels)
+        params_path, subset_path = write_outputs(result, output)
+        print(
+            f"Wrote {params_path} and {subset_path} ({len(result.subset)} subset items)"
+        )
+
 
 @app.command("cost")
 def cost_command(
