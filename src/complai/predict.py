@@ -2,6 +2,7 @@
 import collections
 import json
 import math
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -179,6 +180,7 @@ def _predict_task_scores(
     for row in params["items"]:
         populations.setdefault(str(row["task"]), []).append(row)
     observations: dict[tuple[str, str], Observation] = {}
+    changed_items: set[str] = set()
 
     models = sorted({model for task in tasks.values() for model in task["models"]})
     model_results: dict[str, Any] = {}
@@ -207,8 +209,16 @@ def _predict_task_scores(
                 ):
                     continue
                 observed_item = task["items"][selected_index]
-                if observed_item["content_hash"] != selected_item["content_hash"]:
-                    raise ValueError(f"Content mismatch for selected item {item_id}")
+                if (
+                    observed_item["content_hash"] != selected_item["content_hash"]
+                    and item_id not in changed_items
+                ):
+                    changed_items.add(item_id)
+                    print(
+                        f"Warning: core item {item_id} changed since the core set was "
+                        "built; its answer is still used",
+                        file=sys.stderr,
+                    )
                 responses.append(float(task["matrix"][model_index, selected_index]))
                 selected_parameters.append(params_items[item_id])
                 if estimator == "gp_irt":

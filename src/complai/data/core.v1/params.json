@@ -1202,7 +1202,8 @@
       "models": 39,
       "observations": 1170,
       "response_coverage": 1.0,
-      "scorer": "aime_scorer"
+      "scorer": "aime_scorer",
+      "unscored_sample_ids": []
     },
     "arc_challenge": {
       "allocation": 73,
@@ -1219,7 +1220,8 @@
       "models": 41,
       "observations": 48052,
       "response_coverage": 1.0,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     },
     "bbq": {
       "allocation": 96,
@@ -1236,7 +1238,8 @@
       "models": 16,
       "observations": 930240,
       "response_coverage": 1.0,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     },
     "boolq_contrast": {
       "allocation": 97,
@@ -1253,7 +1256,8 @@
       "models": 41,
       "observations": 6273,
       "response_coverage": 1.0,
-      "scorer": "match"
+      "scorer": "match",
+      "unscored_sample_ids": []
     },
     "cab": {
       "allocation": 54,
@@ -1270,7 +1274,8 @@
       "models": 24,
       "observations": 19536,
       "response_coverage": 1.0,
-      "scorer": "cab_scorer"
+      "scorer": "cab_scorer",
+      "unscored_sample_ids": []
     },
     "fairllm": {
       "allocation": 69,
@@ -1287,7 +1292,8 @@
       "models": 39,
       "observations": 7800,
       "response_coverage": 1.0,
-      "scorer": "fairllm_scorer"
+      "scorer": "fairllm_scorer",
+      "unscored_sample_ids": []
     },
     "gpqa_diamond": {
       "allocation": 100,
@@ -1304,7 +1310,8 @@
       "models": 34,
       "observations": 6732,
       "response_coverage": 1.0,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     },
     "hle": {
       "allocation": 82,
@@ -1321,7 +1328,8 @@
       "models": 30,
       "observations": 64740,
       "response_coverage": 1.0,
-      "scorer": "hle_scorer/score"
+      "scorer": "hle_scorer/score",
+      "unscored_sample_ids": []
     },
     "human_deception": {
       "allocation": 39,
@@ -1338,7 +1346,8 @@
       "models": 39,
       "observations": 1521,
       "response_coverage": 1.0,
-      "scorer": "match"
+      "scorer": "match",
+      "unscored_sample_ids": []
     },
     "ifbench": {
       "allocation": 124,
@@ -1355,7 +1364,8 @@
       "models": 38,
       "observations": 11400,
       "response_coverage": 1.0,
-      "scorer": "ifbench_scorer/strict"
+      "scorer": "ifbench_scorer/strict",
+      "unscored_sample_ids": []
     },
     "imdb_contrast": {
       "allocation": 78,
@@ -1372,7 +1382,8 @@
       "models": 39,
       "observations": 19032,
       "response_coverage": 1.0,
-      "scorer": "imdb_sentiment_scorer"
+      "scorer": "imdb_sentiment_scorer",
+      "unscored_sample_ids": []
     },
     "include": {
       "allocation": 111,
@@ -1389,7 +1400,8 @@
       "models": 33,
       "observations": 354024,
       "response_coverage": 1.0,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     },
     "instruction_goal_hijacking": {
       "allocation": 120,
@@ -1406,7 +1418,8 @@
       "models": 41,
       "observations": 31652,
       "response_coverage": 1.0,
-      "scorer": "Hijacking Score"
+      "scorer": "Hijacking Score",
+      "unscored_sample_ids": []
     },
     "livebench_coding": {
       "allocation": 110,
@@ -1423,7 +1436,8 @@
       "models": 23,
       "observations": 2944,
       "response_coverage": 1.0,
-      "scorer": "decide_scorer"
+      "scorer": "decide_scorer",
+      "unscored_sample_ids": []
     },
     "llm_rules": {
       "allocation": 76,
@@ -1440,7 +1454,8 @@
       "models": 41,
       "observations": 3116,
       "response_coverage": 1.0,
-      "scorer": "llm_rules_scorer"
+      "scorer": "llm_rules_scorer",
+      "unscored_sample_ids": []
     },
     "mask": {
       "allocation": 119,
@@ -1457,7 +1472,8 @@
       "models": 36,
       "observations": 36000,
       "response_coverage": 1.0,
-      "scorer": "accuracy_and_honesty/honesty"
+      "scorer": "accuracy_and_honesty/honesty",
+      "unscored_sample_ids": []
     },
     "mmlu_pro": {
       "allocation": 105,
@@ -1474,7 +1490,8 @@
       "models": 34,
       "observations": 403716,
       "response_coverage": 1.0,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     },
     "mmlu_pro_robustness": {
       "allocation": 74,
@@ -1491,7 +1508,13 @@
       "models": 39,
       "observations": 5967,
       "response_coverage": 0.7806122448979592,
-      "scorer": "mmlu_pro_robustness_scorer"
+      "scorer": "mmlu_pro_robustness_scorer",
+      "unscored_sample_ids": [
+        "10421",
+        "2769",
+        "6199",
+        "9720"
+      ]
     },
     "mmmu_pro": {
       "allocation": 112,
@@ -1508,7 +1531,8 @@
       "models": 8,
       "observations": 13791,
       "response_coverage": 0.9993478260869565,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     },
     "self_check_consistency": {
       "allocation": 54,
@@ -1525,7 +1549,8 @@
       "models": 36,
       "observations": 5073,
       "response_coverage": 0.9923708920187794,
-      "scorer": "Non-Contradictory"
+      "scorer": "Non-Contradictory",
+      "unscored_sample_ids": []
     },
     "simpleqa_verified": {
       "allocation": 97,
@@ -1542,7 +1567,8 @@
       "models": 38,
       "observations": 38000,
       "response_coverage": 1.0,
-      "scorer": "simpleqa_scorer/correct"
+      "scorer": "simpleqa_scorer/correct",
+      "unscored_sample_ids": []
     },
     "strong_reject": {
       "allocation": 55,
@@ -1559,7 +1585,8 @@
       "models": 23,
       "observations": 1380,
       "response_coverage": 1.0,
-      "scorer": "strong_reject_scorer"
+      "scorer": "strong_reject_scorer",
+      "unscored_sample_ids": []
     },
     "truthfulqa": {
       "allocation": 127,
@@ -1576,7 +1603,8 @@
       "models": 40,
       "observations": 32680,
       "response_coverage": 1.0,
-      "scorer": "choice"
+      "scorer": "choice",
+      "unscored_sample_ids": []
     }
   },
   "items": {

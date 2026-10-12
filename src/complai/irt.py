@@ -284,10 +284,13 @@ def prepare_tasks(
     epochs: dict[tuple[str, str, str, str], list[float]] = {}
     metadata: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     content_by_question: dict[tuple[str, str], str] = {}
+    seen_ids: dict[str, set[str]] = {}
+    scored_ids: dict[str, set[str]] = {}
     for sample_row in records.iter_samples():
         task = str(sample_row["task"])
         if task not in scorers:
             continue
+        seen_ids.setdefault(task, set()).add(str(sample_row["sample_id"]))
         file_path = str(sample_row["file_path"])
         scorer = scorers[task]
         value: float | None
@@ -317,6 +320,7 @@ def prepare_tasks(
         # Ensure row uses the modified hash for downstream indexing
         sample_row["question_hash"] = question_hash
         sample_id = str(sample_row["sample_id"])
+        scored_ids.setdefault(task, set()).add(sample_id)
         key = (file_path, str(sample_row["model"]), task, question_hash)
         epochs.setdefault(key, []).append(value)
         metadata[key] = {
@@ -396,7 +400,14 @@ def prepare_tasks(
                 "value"
             ]
 
-        output[task_name] = {"models": models, "items": items, "matrix": matrix}
+        output[task_name] = {
+            "models": models,
+            "items": items,
+            "matrix": matrix,
+            # Samples no model produced a usable score for (e.g. mmlu_pro_robustness
+            # masks items whose clean question was answered wrong).
+            "unscored": sorted(seen_ids[task_name] - scored_ids[task_name]),
+        }
 
     return output
 
@@ -960,6 +971,7 @@ def build_result(
             "eligible": eligible[task_name],
             "dispersion": dispersions[task_name],
             "allocation": allocation[task_name],
+            "unscored_sample_ids": task["unscored"],
             "observations": int(np.sum(np.isfinite(task["matrix"]))),
             "response_coverage": float(np.mean(np.isfinite(task["matrix"]))),
             "fit": {

@@ -17,6 +17,7 @@ from complai._cli.status import print_checks
 from complai._cli.status import run_checks
 from complai._cli.utils import apply_eval_subset
 from complai._cli.utils import bool_or_float
+from complai._cli.utils import default_subset_dir
 from complai._cli.utils import error_handler
 from complai._cli.utils import get_log_dir
 from complai._cli.utils import get_task_infos
@@ -26,6 +27,7 @@ from complai._cli.utils import parse_samples_limit
 from complai._cli.utils import parse_task_args
 from complai._cli.utils import parse_tasks
 from complai._cli.utils import patch_display_results
+from complai._cli.utils import read_eval_subset
 from complai._cli.utils import select_subset_items
 from complai._cli.utils import validate_model_args
 from complai.utils.log_parser import SMOKE_METADATA_KEY
@@ -452,6 +454,15 @@ def eval_command(
                 task_names,
                 instantiated_tasks,
                 selected,
+            )
+        else:
+            # --full runs keep their datasets; this only warns about core drift.
+            core = read_eval_subset(default_subset_dir() / "subset.jsonl")
+            apply_eval_subset(
+                task_names,
+                instantiated_tasks,
+                {name: core[name] for name in task_names if name in core},
+                filter_datasets=False,
             )
 
         print("\nStarting evals...")

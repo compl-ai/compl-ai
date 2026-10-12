@@ -1003,6 +1003,48 @@ def test_predict_new_model_scores_from_params_and_subset(tmp_path: Path) -> None
     assert model["tasks"]["toy"]["ability"] > 0.0
 
 
+def test_predict_warns_and_keeps_changed_subset_items(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source_logs = tmp_path / "source"
+    source_logs.mkdir()
+    for model_index in range(3):
+        _write_eval(
+            source_logs / f"m{model_index}.eval",
+            model=f"source-{model_index}",
+            run_id=f"source-{model_index}",
+            created=f"2026-09-0{model_index + 1}T00:00:00+00:00",
+            values=[float(item <= model_index * 3) for item in range(12)],
+        )
+    source_records = preprocess_logs(
+        [source_logs], {"toy": "choice"}, tmp_path / "source.jsonl"
+    )
+    fitted = fit(source_records, {"toy": "choice"}, 6, indices={"toy": "capability"})
+    params_path, subset_path = write_outputs(fitted, tmp_path / "fitted")
+    changed_id = json.loads(subset_path.read_text().splitlines()[0])["item_id"]
+    changed = changed_id.split("::", 2)[2]
+
+    new_logs = tmp_path / "new"
+    new_logs.mkdir()
+    _write_eval(
+        new_logs / "new.eval",
+        model="new-model",
+        run_id="new-model",
+        created="2026-09-10T00:00:00+00:00",
+        values=[1.0] * 12,
+        targets=[
+            f"{item} (edited)" if str(item) == changed else str(item)
+            for item in range(12)
+        ],
+    )
+
+    new_records = preprocess_logs([new_logs], {"toy": "choice"}, tmp_path / "new.jsonl")
+    result = predict_scores(new_records.records_path, params_path, subset_path)
+
+    assert result["models"]["new-model"]["tasks"]["toy"]["observations"] == 6
+    assert f"core item {changed_id} changed" in capsys.readouterr().err
+
+
 def test_complai_core_predict_cli(tmp_path: Path) -> None:
     source_logs = tmp_path / "source"
     source_logs.mkdir()
@@ -1147,6 +1189,40 @@ def test_eval_subset_uses_positions_for_missing_sample_ids(tmp_path: Path) -> No
 
     assert [sample.input for sample in task.dataset] == ["Question 3", "Question 1"]
     assert [sample.id for sample in task.dataset] == ["3", "1"]
+
+
+def test_eval_subset_warns_on_changed_and_missing_items(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    samples = [
+        Sample(id=1, input="Question 1 (edited)", target="1"),
+        Sample(id=2, input="Question 2", target="2"),
+    ]
+    task = Task(dataset=MemoryDataset(samples, name="toy-data"))
+    subset_path = tmp_path / "subset.jsonl"
+    rows = [
+        {
+            "item_id": f"toy::toy-data::{sample_id}",
+            "content_hash": _content_hash(
+                f"Question {sample_id}", str(sample_id), {}, task="toy"
+            ),
+        }
+        for sample_id in (1, 2, 3)
+    ]
+    subset_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    selected = read_eval_subset(subset_path)
+
+    apply_eval_subset(["toy"], [task], selected, filter_datasets=False)
+    assert len(task.dataset) == 2
+    apply_eval_subset(["toy"], [task], selected)
+
+    assert [sample.input for sample in task.dataset] == [
+        "Question 1 (edited)",
+        "Question 2",
+    ]
+    output = capsys.readouterr().out
+    assert "1 core items changed since the core set was built (1)" in output
+    assert "1 core items are no longer in the dataset (3)" in output
 
 
 def test_eval_subset_accepts_inspect_summary_hashes(tmp_path: Path) -> None:

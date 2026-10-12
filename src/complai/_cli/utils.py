@@ -460,14 +460,51 @@ def select_subset_items(
     }
 
 
+def _params_sample_ids() -> dict[str, set[str]]:
+    """Return the sample IDs per task that the bundled params were fit on.
+
+    This includes samples the fit saw but dropped because no model had a usable
+    score for them.
+    """
+    params = json.loads((default_subset_dir() / "params.json").read_text())
+    items = params["items"]
+    column = items["columns"].index("item_id")
+    sample_ids: dict[str, set[str]] = {}
+    for row in items["data"]:
+        task, _, sample_id = row[column].split("::", 2)
+        sample_ids.setdefault(task, set()).add(sample_id)
+    for task, info in params["tasks"].items():
+        sample_ids.setdefault(task, set()).update(info.get("unscored_sample_ids", []))
+    return sample_ids
+
+
+def _warn_drift(task_name: str, sample_ids: list[str], message: str) -> None:
+    if sample_ids:
+        shown = ", ".join(sorted(sample_ids)[:5]) + (", ..." if len(sample_ids) > 5 else "")
+        print(f"[yellow]Warning: {task_name}: {len(sample_ids)} {message} ({shown})[/yellow]")
+
+
 def apply_eval_subset(
-    task_names: list[str], tasks: list[Task], selected: dict[str, list[dict[str, Any]]]
+    task_names: list[str],
+    tasks: list[Task],
+    selected: dict[str, list[dict[str, Any]]],
+    *,
+    filter_datasets: bool = True,
 ) -> None:
-    """Filter and order task datasets to match a subset."""
-    if len(task_names) != len(tasks) or set(task_names) != set(selected):
+    """Filter and order task datasets to match a subset, warning about dataset drift.
+
+    With ``filter_datasets=False`` (``--full`` runs) datasets are left untouched and
+    only the drift warnings are printed for the tasks in ``selected``.
+    """
+    if filter_datasets and (
+        len(task_names) != len(tasks) or set(task_names) != set(selected)
+    ):
         raise ValueError("Requested tasks do not match the subset tasks")
 
+    params_ids = _params_sample_ids()
     for task_name, task in zip(task_names, tasks, strict=True):
+        if task_name not in selected:
+            continue
         dataset = task.dataset
         if dataset is None:
             raise ValueError(f"Task {task_name!r} has no dataset")
@@ -477,6 +514,7 @@ def apply_eval_subset(
         groups: dict[str, list[Any]] = {}
         hashes: dict[str, set[str]] = {}
         ids_by_hash: dict[str, set[str]] = {}
+        ids_by_thin_hash: dict[str, set[str]] = {}
         for index, sample in enumerate(dataset, start=1):
             raw_id = sample.id if sample.id is not None else index
             sample_id = _logical_sample_id(
@@ -486,6 +524,14 @@ def apply_eval_subset(
                 raise ValueError(
                     f"Task {task_name!r} contains duplicate sample ID {sample_id!r}"
                 )
+            thin_hash = _content_hash(
+                thin_input(deepcopy(sample.input)),
+                thin_target(deepcopy(sample.target)),
+                thin_metadata(sample.metadata or {}),
+                choices=sample.choices,
+                task=task_name,
+                sample_id=raw_id,
+            )
             sample_hashes = {
                 _content_hash(
                     sample.input,
@@ -495,38 +541,56 @@ def apply_eval_subset(
                     task=task_name,
                     sample_id=raw_id,
                 ),
-                _content_hash(
-                    thin_input(deepcopy(sample.input)),
-                    thin_target(deepcopy(sample.target)),
-                    thin_metadata(sample.metadata or {}),
-                    choices=sample.choices,
-                    task=task_name,
-                    sample_id=raw_id,
-                ),
+                thin_hash,
             }
             if has_variants and sample.id is None:
                 sample = sample.model_copy(update={"id": raw_id})
             groups.setdefault(sample_id, []).append(sample)
             hashes.setdefault(sample_id, set()).update(sample_hashes)
+            ids_by_thin_hash.setdefault(thin_hash, set()).add(sample_id)
             for sample_hash in sample_hashes:
                 ids_by_hash.setdefault(sample_hash, set()).add(sample_id)
+
+        known = params_ids.get(task_name)
+        if known is not None:
+            # params.json keeps one item per distinct content, so duplicates count once.
+            new = [min(ids) for ids in ids_by_thin_hash.values() if not ids & known]
+            # Subset runs load hle with text_only=False; its image questions were
+            # never part of the text-only benchmark that params.json covers.
+            if task_name == "hle" and filter_datasets:
+                new = []
+            _warn_drift(
+                task_name,
+                new,
+                "items are not in params.json, so the predicted score does not cover them",
+            )
+            _warn_drift(
+                task_name,
+                list(known.difference(groups)),
+                "params.json items are no longer in the dataset "
+                "(removed upstream or filtered by task args)",
+            )
+
         rows = selected[task_name]
         ordered = []
+        changed: list[str] = []
+        missing: list[str] = []
         for row in rows:
             sample_id = row["sample_id"]
             if sample_id not in groups or row["content_hash"] not in hashes[sample_id]:
                 matches = ids_by_hash.get(row["content_hash"], set())
-                if not matches:
-                    raise ValueError(
-                        f"Task {task_name!r} is missing selected item "
-                        f"{row['item_id']!r}: no sample ID or content hash matches"
-                    )
-                if len(matches) > 1:
+                if len(matches) > 1 and filter_datasets:
                     raise ValueError(
                         f"Selected item {row['item_id']!r} matches multiple samples by "
                         "content hash"
                     )
-                sample_id = next(iter(matches))
+                if matches:
+                    sample_id = next(iter(matches))
+                elif sample_id in groups:
+                    changed.append(sample_id)
+                else:
+                    missing.append(sample_id)
+                    continue
             if has_variants:
                 ordered.extend(groups[sample_id])
                 continue
@@ -539,9 +603,14 @@ def apply_eval_subset(
                     update={"id": row["sample_id"]}
                 )
             ordered.append(selected_sample)
-        task.dataset = MemoryDataset(
-            ordered,
-            name=dataset.name,
-            location=dataset.location,
-            shuffled=dataset.shuffled,
+        _warn_drift(
+            task_name, changed, "core items changed since the core set was built"
         )
+        _warn_drift(task_name, missing, "core items are no longer in the dataset")
+        if filter_datasets:
+            task.dataset = MemoryDataset(
+                ordered,
+                name=dataset.name,
+                location=dataset.location,
+                shuffled=dataset.shuffled,
+            )
