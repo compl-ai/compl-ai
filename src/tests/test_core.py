@@ -27,6 +27,7 @@ from complai.irt import fit
 from complai.irt import fit_2pl
 from complai.irt import fit_indices
 from complai.irt import prepare_tasks
+from complai.irt import refit
 from complai.labels import load_labels
 from complai.labels import lookup_label
 from complai.utils.scores import metric_source
@@ -41,9 +42,11 @@ from complai.utils.log_parser import preprocess_logs
 from complai.utils.io import write_outputs
 from complai.utils.log_parser import content_hash as _content_hash
 from complai.utils.log_parser import logical_sample_id as _logical_sample_id
+from complai.utils.log_parser import MODEL_ALIASES
 from complai.utils.log_parser import PARSER_VERSION
 from complai.utils.log_parser import question_hash as _question_hash
 from complai.utils.log_parser import STRONG_REJECT_BASE_PROMPTS
+from complai.utils.log_parser import SMOKE_METADATA_KEY
 from complai.utils.log_parser import SUBSET_METADATA_KEY
 
 
@@ -1284,6 +1287,28 @@ def _panel(*tasks: str) -> dict[str, np.ndarray]:
     return {task: rng.binomial(1, 0.5, (6, 30)).astype(float) for task in tasks}
 
 
+def test_refit_keeps_subset_items_and_refits_params(tmp_path: Path) -> None:
+    indices = {"a": "capability", "b": "capability"}
+    first = fit(_task_records(tmp_path, "old", _panel("a", "b")), dict.fromkeys(indices, "choice"), 10, indices=indices)
+    rng = np.random.default_rng(1)
+    more_models = {task: rng.binomial(1, 0.5, (9, 30)).astype(float) for task in indices}
+    new_records = _task_records(tmp_path, "new", more_models)
+
+    result = refit(new_records, first.params, list(first.subset))
+
+    def kept(row: dict) -> tuple:
+        return row["rank"], row["item_id"], row["content_hash"], row["inclusion_probability"]
+
+    assert [kept(row) for row in result.subset] == [kept(row) for row in first.subset]
+    assert result.params["tasks"]["a"]["models"] == 9
+    assert result.params["params_id"] != first.params["params_id"]
+    assert {row["subset_id"] for row in result.subset} == {result.params["subset_id"]}
+
+    changed = [dict(first.subset[0], content_hash="other"), *first.subset[1:]]
+    with pytest.raises(ValueError, match="different content"):
+        refit(new_records, first.params, changed)
+
+
 def test_eval_subset_reads_rows_without_task_and_sample_id(tmp_path: Path) -> None:
     subset_path = tmp_path / "subset.jsonl"
     row = {"item_id": "toy::toy-data::3", "content_hash": "abc"}
@@ -1307,7 +1332,7 @@ def test_preprocess_subset_run_cannot_redefine_question_set(tmp_path: Path) -> N
         logs / "full.eval", model="full", run_id="full",
         created="2026-01-01T00:00:00+00:00", values=[1.0] * 100, inputs=inputs,
     )
-    # complai eval --subset filters the dataset first, so only its marker shows it is partial.
+    # complai eval filters the dataset to the subset first, so only its marker shows it is partial.
     _write_eval(
         logs / "subset.eval", model="subset", run_id="subset",
         created="2026-02-01T00:00:00+00:00", values=[1.0] * 20, inputs=inputs[:20],
@@ -1319,6 +1344,38 @@ def test_preprocess_subset_run_cannot_redefine_question_set(tmp_path: Path) -> N
     assert rows["subset.eval"]["partial"]
     assert rows["subset.eval"]["coverage"] == pytest.approx(0.2)
     assert records.records == 120
+
+
+def test_preprocess_excludes_smoke_runs(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    _write_eval(
+        logs / "full.eval", model="full", run_id="full",
+        created="2026-01-01T00:00:00+00:00", values=[1.0] * 10,
+    )
+    _write_eval(
+        logs / "smoke.eval", model="smoke", run_id="smoke",
+        created="2026-02-01T00:00:00+00:00", values=[1.0] * 2,
+        eval_metadata={SUBSET_METADATA_KEY: "subset-id", SMOKE_METADATA_KEY: 2},
+    )
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
+
+    rows = {Path(row["path"]).name: row for row in records.files}
+    assert rows["smoke.eval"]["parse_status"] == "excluded"
+    assert records.records == 10
+
+
+def test_preprocess_maps_model_aliases(tmp_path: Path) -> None:
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    alias, model = next(iter(MODEL_ALIASES.items()))
+    _write_eval(
+        logs / "alias.eval", model=alias, run_id="alias",
+        created="2026-01-01T00:00:00+00:00", values=[1.0] * 10,
+    )
+    records = preprocess_logs([logs], {"toy": "choice"}, tmp_path / "records.jsonl")
+
+    assert [row["model"] for row in records.files] == [model]
 
 
 def test_predict_imputes_tasks_absent_from_records(tmp_path: Path) -> None:

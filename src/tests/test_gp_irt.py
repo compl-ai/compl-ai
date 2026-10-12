@@ -112,7 +112,11 @@ def test_legacy_artifact_rejects_uncalibrated_gp(tmp_path: Path) -> None:
 def test_fit_and_predict_cli(tmp_path: Path, estimator: str) -> None:
     records = _records(tmp_path, "source", _source())
     config = tmp_path / "config.json"
-    config.write_text(json.dumps({"tasks": {"toy": {"index": "capability", "scorer": "choice"}}}))
+    config.write_text(json.dumps({
+        "current_subset": "toy.v1",
+        "releases": {"toy.v1": {"capability": ["toy"]}},
+        "benchmarks": {"toy": {"scorer": "choice"}},
+    }))
     directory = tmp_path / "fitted"
     runner = CliRunner()
     result = runner.invoke(app, ["minify", "fit", str(records.records_path), "--config", str(config),
