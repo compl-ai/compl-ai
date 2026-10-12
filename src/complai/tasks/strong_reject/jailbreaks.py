@@ -1,13 +1,39 @@
 import json
+import logging
+import sys
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal
 
-from strong_reject.jailbreaks import registered_jailbreaks as strong_reject_jailbreaks
+from huggingface_hub import hf_hub_download
 
 from complai.constants import CACHE_DIR
 
 
+# Inspect loads task files with their folder first on sys.path, where our
+# strong_reject.py would hide the installed strong_reject package.
+_task_dir = Path(__file__).parent.resolve()
+_sys_path = sys.path[:]
+sys.path[:] = [p for p in sys.path if Path(p or ".").resolve() != _task_dir]
+try:
+    from strong_reject.jailbreaks import (
+        registered_jailbreaks as strong_reject_jailbreaks,
+    )
+finally:
+    sys.path[:] = _sys_path
+
+
+logger = logging.getLogger(__name__)
+
 STRONG_REJECT_CACHE_DIR = CACHE_DIR / "strong_reject"
+
+# Jailbroken prompts of the small dataset, generated once and used by the reference
+# logs the Core subset is calibrated on. Gated: request access on the dataset page.
+REFERENCE_PROMPTS_DATASET = "compl-ai/strong_reject"
+REFERENCE_PROMPTS_REVISION = "fb7cdd5e5a31a1ddc155711fb9cff00f6a1105f8"
+REFERENCE_PROMPT_SOURCE = (
+    f"{REFERENCE_PROMPTS_DATASET}@{REFERENCE_PROMPTS_REVISION[:7]}"
+)
 
 
 JailbreakMethod = Literal[
@@ -62,6 +88,35 @@ def get_jailbreak_prompt(
 
     jailbroken_prompt = strong_reject_jailbreaks[method](forbidden_prompt)
     return jailbroken_prompt, True
+
+
+def load_reference_prompts(
+    methods: Iterable[JailbreakMethod],
+) -> dict[str, dict[str, str]]:
+    """Download the reference prompts of each method, or return {} if unavailable."""
+    prompts: dict[str, dict[str, str]] = {}
+    try:
+        for method in methods:
+            path = hf_hub_download(
+                REFERENCE_PROMPTS_DATASET,
+                f"{method}_small.json",
+                repo_type="dataset",
+                revision=REFERENCE_PROMPTS_REVISION,
+            )
+            with open(path) as f:
+                prompts[method] = json.load(f)
+    except Exception as exc:  # noqa: BLE001 - any failure falls back to generation
+        logger.warning(
+            "Could not load the reference strong_reject prompts from %s (%s). "
+            "Falling back to locally cached or newly generated prompts, so scores "
+            "are not comparable with reference runs. Request access on "
+            "https://huggingface.co/datasets/%s and set HF_TOKEN.",
+            REFERENCE_PROMPTS_DATASET,
+            exc.__class__.__name__,
+            REFERENCE_PROMPTS_DATASET,
+        )
+        return {}
+    return prompts
 
 
 def get_method_cache_path(method: JailbreakMethod, full: bool = False) -> Path:

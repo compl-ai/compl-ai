@@ -1,0 +1,70 @@
+
+name: "Qwen3-8B"
+release_date: "2025-04-28"
+open_weights: true
+organization: "Alibaba Cloud"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Qwen3-8B is an 8-billion-parameter large language model developed by Alibaba Cloud as part of the Qwen3 series. It was built on a transformer-based architecture and is released under an open-weight license, making it accessible for research and commercial use. The model is designed to provide strong performance in general instruction following, multilingual understanding, reasoning, and code generation while maintaining relatively efficient inference compared to larger models.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: 8200000000
+  active_params: 8200000000
+  context: 32768
+  max_output_tokens: 32768
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Qwen-3: Explore the Next-Generation Open Source Large Model"
+    url: "https://qwen-3.com/en"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/Qwen/Qwen3-8B"
+    type: "model-weights"
+  - title: "Qwen3 Technical Report"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/Qwen/Qwen3-8B/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: 36000000000000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "multilingual knowledge-intensive web content + PDF documents + synthetic data"
+  base_model: "Qwen3-8B-Base"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openai-api/vllm/Qwen/Qwen3-8B"

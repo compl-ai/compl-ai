@@ -1,0 +1,61 @@
+
+name: "Ministral-3-14B-Instruct-2512"
+release_date: "2025-12-10"
+open_weights: true
+organization: "Mistral AI"
+license: null
+
+availability:
+  - "open-weights"
+  - "api"
+  - "saas-chat"
+
+description: |
+  Mistral AI's Ministral-3-14B-Instruct-2512 is an instruction-tuned large language model optimized for dialogue, reasoning, and coding tasks.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: 14000000000
+  active_params: null
+  context: 128000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512"
+    type: "model-weights"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - null
+
+evals:
+  - "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512"

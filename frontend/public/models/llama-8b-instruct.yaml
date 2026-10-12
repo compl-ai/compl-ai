@@ -1,0 +1,71 @@
+
+name: "Llama-3.1-8B-Instruct"
+release_date: "2024-07-23"
+open_weights: true
+organization: "Meta"
+license: "llama3.1"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Llama‑3.1‑8B‑Instruct is an 8-billion-parameter language model developed by Meta as part of the Llama‑3.1 family. It is fine-tuned for instruction-following tasks, supports multilingual text and code generation, and is designed for reasoning, coding, math, and general-purpose text applications. The model is pretrained on a large corpus of publicly available text and further instruction-tuned on both curated datasets and synthetic instruction examples.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2023-12"
+  total_params: 8000000000
+  active_params: 8000000000
+  context: 128000
+  max_output_tokens: 8000
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Llama 3.1"
+    url: "https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_1/"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct"
+    type: "model-weights"
+  - title: "The Carbon Footprint of Machine Learning Training Will Plateau, Then Shrink"
+    url: "https://arxiv.org/abs/2204.05149"
+    type: "paper-url"
+  - title: "Llama 3.1 Community License Agreement"
+    url: "https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: 15000000000000
+  compute_flops: null
+  energy_kwh: 1022000
+  emissions_co2: 420000
+  training_dataset: "publicly available online data + synthetically generated examples"
+  base_model: "Llama-3.1-8B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct"

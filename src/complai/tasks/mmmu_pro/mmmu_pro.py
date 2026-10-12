@@ -29,6 +29,8 @@ from complai.tasks.mmmu_pro.utils import replace_image_tokens
 
 
 DATASET_PATH = "MMMU/MMMU_Pro"
+# Pinned: the 2026-10-05 upstream re-upload rewrote validation_Finance_5, breaking core.v1 subset hashes.
+DATASET_REVISION = "563f3e84bb3b90893083a1f039cfa13077f2302b"
 
 MMMUProSubset = Literal["standard_10", "standard_4", "vision"]
 
@@ -152,6 +154,7 @@ def mmmu_pro_dataset(subset: MMMUProSubset) -> Dataset:
     return hf_dataset(
         path=DATASET_PATH,
         name=name,
+        revision=DATASET_REVISION,
         split="test",
         sample_fields=partial(record_to_sample, subset=subset),
     )

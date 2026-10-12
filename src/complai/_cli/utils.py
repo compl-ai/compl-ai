@@ -25,6 +25,11 @@ from rich import print
 
 from complai.utils.log_parser import content_hash as _content_hash
 from complai.utils.log_parser import logical_sample_id as _logical_sample_id
+from complai.utils.log_parser import SUBSET_METADATA_KEY
+from complai.utils.log_parser import SUBSET_NAME_METADATA_KEY
+from complai.utils.log_parser import VARIANT_TASKS
+from complai.utils.scores import CONFIG
+from complai.utils.scores import read_config
 
 
 def get_complai_tasks(
@@ -315,7 +320,7 @@ def get_log_dir(model: str, base_log_dir: str) -> str:
         datetime.now().astimezone().isoformat(timespec="seconds").replace(":", "-")
     )
 
-    return f"{base_log_dir}/{model_name}_{timestamp}"
+    return f"{base_log_dir.rstrip('/')}/{model_name}_{timestamp}"
 
 
 def bool_or_float(value: str) -> bool | float:
@@ -365,6 +370,11 @@ def error_handler(debug: bool) -> Iterator:
             sys.exit(1)
 
 
+def default_subset_dir() -> Path:
+    """Return the bundled data folder of the current subset in ``data/config.json``."""
+    return CONFIG.parent / read_config()["current_subset"]
+
+
 def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
     """Read a subset JSONL file grouped by task."""
     selected: dict[str, list[dict[str, Any]]] = {}
@@ -377,7 +387,8 @@ def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
                 row = json.loads(line)
             except json.JSONDecodeError as exc:
                 raise ValueError(f"{path}:{line_number}: invalid JSON") from exc
-            required = ("task", "sample_id", "item_id", "content_hash")
+            # Bundled subsets carry only item_id; task and sample_id derive from it.
+            required = ("item_id", "content_hash")
             if not isinstance(row, dict) or any(
                 not isinstance(row.get(field), str) or not row[field]
                 for field in required
@@ -390,7 +401,7 @@ def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
             if len(parts) != 3 or not all(parts):
                 raise ValueError(f"{path}:{line_number}: invalid item_id")
             task, dataset, sample_id = parts
-            if row["task"] != task or row["sample_id"] != sample_id:
+            if row.setdefault("task", task) != task or row.setdefault("sample_id", sample_id) != sample_id:
                 raise ValueError(f"{path}:{line_number}: item identity does not match")
             if "dataset" in row and row["dataset"] != dataset:
                 raise ValueError(
@@ -408,6 +419,47 @@ def read_eval_subset(path: Path) -> dict[str, list[dict[str, Any]]]:
     return selected
 
 
+def select_subset_items(
+    tasks: list[str],
+    tasks_to_skip: list[str],
+    smoke: int | None,
+    full_only: dict[str, Any],
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    """Pick the bundled subset items to run and the eval metadata marking the run.
+
+    ``tasks`` and ``tasks_to_skip`` select tasks within the subset; ``smoke`` keeps
+    the first N items of each task. ``full_only`` maps options that only apply to
+    ``--full`` runs to their values.
+    """
+    used = [name for name, value in full_only.items() if value]
+    if used:
+        raise typer.BadParameter(
+            f"{', '.join(used)} can only be used with --full. "
+            "Use --smoke to run a few items of each subset task."
+        )
+    subset_dir = default_subset_dir()
+    selected = read_eval_subset(subset_dir / "subset.jsonl")
+    unknown = sorted(set(tasks + tasks_to_skip) - set(selected))
+    if unknown:
+        raise typer.BadParameter(
+            f"Not in the {subset_dir.name} subset: {', '.join(unknown)}. "
+            "Use --full to run tasks outside the subset."
+        )
+    selected = {
+        task: rows[:smoke] if smoke is not None else rows
+        for task, rows in selected.items()
+        if (not tasks or task in tasks) and task not in tasks_to_skip
+    }
+    if not selected:
+        raise typer.BadParameter("No subset tasks left to run")
+    subset_id = next(iter(selected.values()))[0]["subset_id"]
+    # Marks the run so preprocessing never takes it as a task's full question set.
+    return selected, {
+        SUBSET_NAME_METADATA_KEY: subset_dir.name,
+        SUBSET_METADATA_KEY: subset_id,
+    }
+
+
 def apply_eval_subset(
     task_names: list[str], tasks: list[Task], selected: dict[str, list[dict[str, Any]]]
 ) -> None:
@@ -419,17 +471,18 @@ def apply_eval_subset(
         dataset = task.dataset
         if dataset is None:
             raise ValueError(f"Task {task_name!r} has no dataset")
-        samples = {}
-        samples_by_hash: dict[str, list[Any]] = {}
+        # Variant tasks map several dataset samples to one basis sample; those
+        # samples keep their own IDs and a selected basis sample runs them all.
+        has_variants = task_name in VARIANT_TASKS
+        groups: dict[str, list[Any]] = {}
         hashes: dict[str, set[str]] = {}
+        ids_by_hash: dict[str, set[str]] = {}
         for index, sample in enumerate(dataset, start=1):
+            raw_id = sample.id if sample.id is not None else index
             sample_id = _logical_sample_id(
-                task_name,
-                sample.id if sample.id is not None else index,
-                sample.metadata,
-                sample.input,
+                task_name, raw_id, sample.metadata, sample.input
             )
-            if sample_id in samples:
+            if sample_id in groups and not has_variants:
                 raise ValueError(
                     f"Task {task_name!r} contains duplicate sample ID {sample_id!r}"
                 )
@@ -440,6 +493,7 @@ def apply_eval_subset(
                     sample.metadata,
                     choices=sample.choices,
                     task=task_name,
+                    sample_id=raw_id,
                 ),
                 _content_hash(
                     thin_input(deepcopy(sample.input)),
@@ -447,21 +501,21 @@ def apply_eval_subset(
                     thin_metadata(sample.metadata or {}),
                     choices=sample.choices,
                     task=task_name,
+                    sample_id=raw_id,
                 ),
             }
-            samples[sample_id] = sample
-            hashes[sample_id] = sample_hashes
+            if has_variants and sample.id is None:
+                sample = sample.model_copy(update={"id": raw_id})
+            groups.setdefault(sample_id, []).append(sample)
+            hashes.setdefault(sample_id, set()).update(sample_hashes)
             for sample_hash in sample_hashes:
-                samples_by_hash.setdefault(sample_hash, []).append(sample)
+                ids_by_hash.setdefault(sample_hash, set()).add(sample_id)
         rows = selected[task_name]
         ordered = []
         for row in rows:
-            selected_sample = samples.get(row["sample_id"])
-            if (
-                selected_sample is None
-                or row["content_hash"] not in hashes[row["sample_id"]]
-            ):
-                matches = samples_by_hash.get(row["content_hash"], [])
+            sample_id = row["sample_id"]
+            if sample_id not in groups or row["content_hash"] not in hashes[sample_id]:
+                matches = ids_by_hash.get(row["content_hash"], set())
                 if not matches:
                     raise ValueError(
                         f"Task {task_name!r} is missing selected item "
@@ -472,7 +526,11 @@ def apply_eval_subset(
                         f"Selected item {row['item_id']!r} matches multiple samples by "
                         "content hash"
                     )
-                selected_sample = matches[0]
+                sample_id = next(iter(matches))
+            if has_variants:
+                ordered.extend(groups[sample_id])
+                continue
+            selected_sample = groups[sample_id][0]
             if (
                 selected_sample.id is None
                 or str(selected_sample.id) != row["sample_id"]

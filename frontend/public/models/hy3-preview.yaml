@@ -1,0 +1,60 @@
+
+name: "Hy3-preview"
+release_date: "2026-04-23"
+open_weights: false
+organization: "Tencent"
+license: null
+
+availability:
+  - "api"
+  - "saas-chat"
+
+description: |
+  Tencent's Hy3-preview is a powerful foundation model.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: 295000000000
+  active_params: null
+  context: 128000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/tencent/Hy3-preview"
+    type: "model-weights"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - null
+
+evals:
+  - "openai-api/vllm/tencent/Hy3-preview"

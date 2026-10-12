@@ -1,5 +1,6 @@
 # ruff: noqa: F401
 
+from complai.providers.openrouter_batch import openrouter_batch
 from complai.tasks.aime_2025 import aime_2025
 from complai.tasks.arc_challenge import arc_challenge
 from complai.tasks.bbq import bbq

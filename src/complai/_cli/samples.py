@@ -34,9 +34,16 @@ def collect_task_samples(
         if index >= start and (stop is None or index < stop):
             sample_json = sample.model_dump(mode="json")
             metadata = sample_json["metadata"] or {}
+            
+            sample_id = sample.id
+            if sample_id is None and "uid" in metadata:
+                sample_id = metadata["uid"]
+            if sample_id is None:
+                sample_id = index + 1
+                
             record = {
                 "task": task_name,
-                "sample_id": sample.id if sample.id is not None else index + 1,
+                "sample_id": sample_id,
                 "input": metadata.pop("_model_inputs", _input_json(sample.input)),
             }
             if task_name == "livebench_coding":

@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@google/genai": "^2.13.0",
     "csv-parse": "^7.0.1",
     "dotenv": "^17.4.2",

@@ -1,0 +1,61 @@
+
+name: "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"
+release_date: "2026-06-04"
+open_weights: true
+organization: "NVIDIA"
+license: null
+
+availability:
+  - "open-weights"
+  - "api"
+  - "saas-chat"
+
+description: |
+  NVIDIA's NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16 is a powerful foundation model.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 550000000000
+  active_params: 55000000000
+  context: 128000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"
+    type: "model-weights"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - null
+
+evals:
+  - "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"

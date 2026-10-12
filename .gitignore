@@ -149,6 +149,7 @@ cython_debug/
 
 # Temporary files
 temp_link
+/scratch
 
 # Packaged sources
 dist_py_*
@@ -165,3 +166,4 @@ tools/label/datasets/*.jsonl
 
 # Minify pipeline local data
 tools/minify/data/
+

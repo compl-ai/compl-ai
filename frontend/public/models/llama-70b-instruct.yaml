@@ -1,0 +1,71 @@
+
+name: "Llama-3.3-70B-Instruct"
+release_date: "2024-12-06"
+open_weights: true
+organization: "Meta"
+license: "llama3.3"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  The Llama-3.3-70B-Instruct model is a 70-billion-parameter instruction-tuned language model from Meta’s Llama 3.3 family. It is trained on roughly 15 trillion tokens of publicly available text and further refined using a mixture of public instruction datasets and synthetic data. The model is designed to follow user prompts, generate coherent responses, and handle a wide range of general-purpose language tasks.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2023-12"
+  total_params: 70000000000
+  active_params: 70000000000
+  context: 128000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Llama 3.3"
+    url: "https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_3/"
+    type: "model-homepage"
+  - title: "The official Meta Llama 3 GitHub site"
+    url: "https://github.com/meta-llama/llama3"
+    type: "model-weights"
+  - title: "The Carbon Footprint of Machine Learning Training Will Plateau, Then Shrink"
+    url: "https://arxiv.org/abs/2204.05149"
+    type: "paper-url"
+  - title: "Llama 3.3 Communioty License Agreement"
+    url: "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: 15000000000000
+  compute_flops: null
+  energy_kwh: 4900000
+  emissions_co2: 2040000
+  training_dataset: "publicly available online data + synthetically generated examples"
+  base_model: "Llama-3.1-70B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "vllm/meta-llama/Llama-3.3-70B-Instruct"
