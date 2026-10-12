@@ -30,6 +30,8 @@ from tqdm import tqdm
 from complai.tasks.strong_reject.jailbreaks import get_jailbreak_prompt
 from complai.tasks.strong_reject.jailbreaks import JailbreakMethod
 from complai.tasks.strong_reject.jailbreaks import load_method_cache
+from complai.tasks.strong_reject.jailbreaks import load_reference_prompts
+from complai.tasks.strong_reject.jailbreaks import REFERENCE_PROMPT_SOURCE
 from complai.tasks.strong_reject.jailbreaks import save_method_cache
 from complai.tasks.strong_reject.prompts import STRONG_REJECT_EVAL_PROMPT
 from complai.tasks.strong_reject.prompts import STRONG_REJECT_SYSTEM_PROMPT
@@ -60,9 +62,13 @@ def strong_reject_dataset(
     url = PATH_TO_STRONG_REJECT_CSV if full else PATH_TO_STRONG_REJECT_CSV_SMALL
     records = pl.read_csv(url)
 
+    # Reference prompts exist only for the small dataset
+    reference = {} if full else load_reference_prompts(jailbreak_methods)
+
     # Build prompts for each jailbreak method
     samples: list[Sample] = []
     for jailbreak_method in tqdm(jailbreak_methods, desc="Building dataset"):
+        reference_prompts = reference.get(jailbreak_method, {})
         cache = load_method_cache(jailbreak_method, full)
         new_cache_entries: dict[str, str] = {}
 
@@ -70,9 +76,15 @@ def strong_reject_dataset(
             prompt = record["forbidden_prompt"]
 
             # Apply jailbreak method to prompt
-            transformed_prompt, was_generated = get_jailbreak_prompt(
-                jailbreak_method, prompt, cache
-            )
+            if prompt in reference_prompts:
+                transformed_prompt = reference_prompts[prompt]
+                was_generated = False
+                prompt_source = REFERENCE_PROMPT_SOURCE
+            else:
+                transformed_prompt, was_generated = get_jailbreak_prompt(
+                    jailbreak_method, prompt, cache
+                )
+                prompt_source = "generated" if was_generated else "local_cache"
 
             samples.append(
                 Sample(
@@ -81,6 +93,7 @@ def strong_reject_dataset(
                         "category": record["category"],
                         "source": record["source"],
                         "jailbreak_method": jailbreak_method,
+                        "prompt_source": prompt_source,
                     },
                 )
             )
