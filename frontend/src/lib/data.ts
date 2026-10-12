@@ -119,7 +119,7 @@ export interface JoinedModelData {
 }
 
 export function getPredictions() {
-  const dataPath = path.join(process.cwd(), 'public', 'data', 'predictions.core.v1.json');
+  const dataPath = path.join(process.cwd(), 'public', 'data', 'predictions.json');
   const fileContents = fs.readFileSync(dataPath, 'utf8');
   return JSON.parse(fileContents);
 }

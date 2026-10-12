@@ -37,7 +37,7 @@ export default function AboutPage() {
               <a href="https://github.com/compl-ai">GitHub Repository</a>
             </li>
             <li>
-              <a href="/data/predictions.core.v1.json">core.v1 Dataset</a>
+              <a href="/data/predictions.json">Core predictions</a>
             </li>
           </ul>
         </section>
