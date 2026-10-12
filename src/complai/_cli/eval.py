@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Annotated
+from typing import Any
 from typing import cast
 from typing import Literal
 
@@ -10,6 +11,10 @@ from inspect_ai._cli.util import parse_cli_config
 from inspect_ai.model import CachePolicy
 from rich import print
 
+from complai._cli.report import report_log_dir
+from complai._cli.status import apply_judge_fallback
+from complai._cli.status import print_checks
+from complai._cli.status import run_checks
 from complai._cli.utils import apply_eval_subset
 from complai._cli.utils import bool_or_float
 from complai._cli.utils import error_handler
@@ -19,10 +24,11 @@ from complai._cli.utils import instantiate_tasks_from_infos
 from complai._cli.utils import parse_sample_id
 from complai._cli.utils import parse_samples_limit
 from complai._cli.utils import parse_task_args
+from complai._cli.utils import parse_tasks
 from complai._cli.utils import patch_display_results
-from complai._cli.utils import read_eval_subset
+from complai._cli.utils import select_subset_items
 from complai._cli.utils import validate_model_args
-from complai.utils.log_parser import SUBSET_METADATA_KEY
+from complai.utils.log_parser import SMOKE_METADATA_KEY
 
 
 def eval_command(
@@ -38,7 +44,7 @@ def eval_command(
         typer.Option(
             "-t",
             "--tasks",
-            help="Comma-separated list of tasks to run. If not provided, all COMPL-AI tasks are run.",
+            help="Comma-separated list of tasks to run. If not provided, all tasks in the core subset are run (all COMPL-AI tasks with `--full`).",
             envvar="COMPLAI_TASKS",
         ),
     ] = None,
@@ -151,10 +157,21 @@ def eval_command(
             envvar="COMPLAI_SAMPLE_ID",
         ),
     ] = None,
-    subset: Annotated[
-        Path | None,
+    full: Annotated[
+        bool,
         typer.Option(
-            "--subset", help="Evaluate only the items in a subset.jsonl file."
+            "--full",
+            help="Run the full COMPL-AI suite instead of the core subset.",
+            envvar="COMPLAI_FULL",
+        ),
+    ] = False,
+    smoke: Annotated[
+        int | None,
+        typer.Option(
+            "--smoke",
+            min=1,
+            help="Check that tasks run end to end on the first N items of each task. Smoke runs are never used for scoring.",
+            envvar="COMPLAI_SMOKE",
         ),
     ] = None,
     sample_shuffle: Annotated[
@@ -176,7 +193,7 @@ def eval_command(
             help="Maximum number of tokens that can be generated in a model completion.",
             envvar="COMPLAI_MAX_TOKENS",
         ),
-    ] = 4096,
+    ] = 64000,
     temperature: Annotated[
         float | None,
         typer.Option(help="Model temperature.", envvar="COMPLAI_TEMPERATURE"),
@@ -359,30 +376,31 @@ def eval_command(
         ),
     ] = False,
 ) -> None:
-    """Run tasks."""
+    """Run the core subset, or the full suite with --full."""
     selected = None
-    subset_metadata = None
-    if subset is not None:
-        conflicts = {
-            "--tasks": tasks,
-            "--tasks-to-skip": tasks_to_skip,
-            "--task-filter": task_filter,
-            "--limit": limit,
-            "--sample-id": sample_id,
-        }
-        used = [name for name, value in conflicts.items() if value is not None]
-        if used:
-            raise typer.BadParameter(
-                f"--subset cannot be combined with {', '.join(used)}"
-            )
-        try:
-            selected = read_eval_subset(subset)
-        except (TypeError, ValueError) as exc:
-            raise typer.BadParameter(str(exc)) from exc
+    run_metadata: dict[str, Any] = {}
+    if full:
+        if smoke is not None:
+            if limit is not None or sample_id is not None:
+                raise typer.BadParameter(
+                    "--smoke cannot be combined with --limit or --sample-id"
+                )
+            limit = str(smoke)
+    else:
+        selected, run_metadata = select_subset_items(
+            parse_tasks(tasks),
+            parse_tasks(tasks_to_skip),
+            smoke,
+            {
+                "--task-filter": task_filter,
+                "--limit": limit,
+                "--sample-id": sample_id,
+            },
+        )
         tasks = ",".join(selected)
-        # Mark the run so preprocessing never takes it as a task's full question set.
-        first = next(iter(selected.values()))[0]
-        subset_metadata = {SUBSET_METADATA_KEY: str(first.get("subset_id") or subset)}
+        tasks_to_skip = None
+    if smoke is not None:
+        run_metadata[SMOKE_METADATA_KEY] = smoke
 
     # Get TaskInfo objects from task names
     parsed_task_filters = parse_cli_config(task_filter, None)
@@ -411,6 +429,18 @@ def eval_command(
     # Validate model arguments
     validate_model_args(model, task_infos, parsed_model_args)
 
+    task_names = [task_info.name for task_info in task_infos]
+    for switched in apply_judge_fallback(task_names, parsed_task_args):
+        print(f"Judge {switched} uses OpenRouter (no OPENAI_API_KEY set)")
+    checks_passed = print_checks(
+        run_checks(
+            model, model_base_url, parsed_model_args, task_names, parsed_task_args
+        )
+    )
+    if not checks_passed:
+        print("[bold red]Pre-run checks failed; no eval was started.[/bold red]")
+        raise typer.Exit(1)
+
     # Define log directory
     log_dir = get_log_dir(model, log_dir)
 
@@ -419,7 +449,7 @@ def eval_command(
         instantiated_tasks = instantiate_tasks_from_infos(task_infos, parsed_task_args)
         if selected is not None:
             apply_eval_subset(
-                [task_info.name for task_info in task_infos],
+                task_names,
                 instantiated_tasks,
                 selected,
             )
@@ -465,6 +495,7 @@ def eval_command(
             time_limit=time_limit,
             working_limit=working_limit,
             log_dir_allow_dirty=log_dir_allow_dirty,
-            metadata=subset_metadata,
+            metadata=run_metadata or None,
             **parsed_generate_args,
         )
+        report_log_dir(Path(log_dir))
