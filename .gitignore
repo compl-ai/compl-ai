@@ -155,8 +155,8 @@ temp_link
 dist_py_*
 
 # AI Inspect
-/logs
-/results/
+/logs*
+/results
 
 # Node
 node_modules/
