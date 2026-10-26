@@ -7,12 +7,13 @@ every label from ``complai.labels``. It only reshapes and writes files.
 import typer
 import json
 import collections
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 from pathlib import Path
 
 from complai._cli.utils import default_subset_dir
 from complai.labels import UNKNOWN_LABEL, Subcategories, load_labels
 from complai.predict import gap_reason, predict_detailed
+from complai.utils.log_parser import records_manifest_path
 
 SUBSET_DIR = default_subset_dir()
 
@@ -37,9 +38,57 @@ def compile_labels(labels_dir: Path, task_indices: dict[str, str], subcategories
     return out
 
 
+def load_manifest(records_path: Path) -> dict:
+    path = records_manifest_path(records_path)
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def newest_eval(manifest: dict, model: str) -> str:
+    return max(
+        (f.get("created", "") for f in manifest.get("files", []) if f.get("model") == model and f.get("parse_status") == "ok"),
+        default="",
+    )
+
+
+def merge_models(input_paths: list[Path], results: list[dict], manifests: list[dict]) -> tuple[dict[str, dict], dict[str, int]]:
+    """Take each model from the file with its newest kept eval (later file on ties); return models and source file index."""
+    sources: dict[str, list[int]] = collections.defaultdict(list)
+    for i, result in enumerate(results):
+        for model in result["models"]:
+            sources[model].append(i)
+    winners = {
+        model: max(files, key=lambda i: (newest_eval(manifests[i], model), i))
+        for model, files in sources.items()
+    }
+    for model, files in sources.items():
+        if len(files) > 1:
+            ran = {i: results[i]["models"][model]["coverage"]["tasks_completed"] for i in files}
+            ignored = ", ".join(f"{input_paths[i]} ({ran[i]} tasks)" for i in files if i != winners[model])
+            print(f"Note: {model} is in {len(files)} files; using {input_paths[winners[model]]} "
+                  f"({ran[winners[model]]} tasks), ignoring {ignored}")
+    return {model: results[i]["models"][model] for model, i in winners.items()}, winners
+
+
+def mark_missing_reasons(models: dict[str, dict], winners: dict[str, int], manifests: list[dict]) -> None:
+    """Add ``missing_reason`` to tasks a model has no responses for: ``failed`` if its eval errored, else ``not_run``."""
+    failed = {
+        (i, f.get("model"), f.get("task"))
+        for i, manifest in enumerate(manifests)
+        for f in manifest.get("files", [])
+        if f.get("parse_status") in {"excluded", "error"}
+    }
+    for model, model_data in models.items():
+        for task, task_data in model_data["tasks"].items():
+            if task_data["status"] in {"imputed", "missing"}:
+                task_data["missing_reason"] = "failed" if (winners[model], model, task) in failed else "not_run"
+
+
 @app.command()
 def export(
-    input_path: Annotated[Path, typer.Argument(help="Preprocessed samples.jsonl")] = Path("tools/minify/data/samples.jsonl"),
+    input_paths: Annotated[Optional[list[Path]], typer.Argument(help="Preprocessed samples.jsonl files (default: tools/minify/data/samples.jsonl); a model in several files is taken from the one with its newest eval")] = None,
     params_path: Annotated[Path, typer.Option(help="Path to core params.json (default: the subset named in src/complai/data/config.json)")] = SUBSET_DIR / "params.json",
     subset_path: Annotated[Path, typer.Option(help="Path to core subset.jsonl (default: the subset named in src/complai/data/config.json)")] = SUBSET_DIR / "subset.jsonl",
     labels_dir: Annotated[Path, typer.Option(help="Directory containing item labels")] = Path("tools/label/labels"),
@@ -47,12 +96,17 @@ def export(
     labels_out: Annotated[Path, typer.Option(help="Output JSON file for frontend labels")] = Path("frontend/public/data/labels.json"),
     ground_truth: Annotated[bool, typer.Option(help="Export observed scores to ground_truth.json")] = True,
 ):
+    input_paths = input_paths or [Path("tools/minify/data/samples.jsonl")]
     predictions_out.parent.mkdir(parents=True, exist_ok=True)
     labels_out.parent.mkdir(parents=True, exist_ok=True)
 
     print("1. Predicting scores (complai.predict)...")
-    prediction = predict_detailed(input_path, params_path, subset_path)
+    predictions = [predict_detailed(path, params_path, subset_path) for path in input_paths]
+    manifests = [load_manifest(path) for path in input_paths]
+    prediction = predictions[0]
     params, subset, result = prediction.params, prediction.subset, prediction.result
+    result["models"], winners = merge_models(input_paths, [p.result for p in predictions], manifests)
+    mark_missing_reasons(result["models"], winners, manifests)
     result["subset"] = params_path.parent.name
 
     print("2. Compiling label dataset for the frontend...")
@@ -90,18 +144,12 @@ def export(
     }
 
     print("4. Attaching run configurations from manifest...")
-    manifest_path = input_path.with_suffix(".manifest.json")
     model_configs: dict[str, dict] = {}
-    if manifest_path.exists():
-        try:
-            with open(manifest_path, "r", encoding="utf-8") as f:
-                for file_meta in json.load(f).get("files", []):
-                    mid = file_meta.get("model")
-                    m_cfg = file_meta.get("model_config") or file_meta.get("eval_config")
-                    if mid and m_cfg:
-                        model_configs.setdefault(mid, {}).update(m_cfg)
-        except Exception as e:
-            print(f"Warning: Could not read manifest eval configs: {e}")
+    for model_id, i in winners.items():
+        for file_meta in manifests[i].get("files", []):
+            m_cfg = file_meta.get("model_config") or file_meta.get("eval_config")
+            if file_meta.get("model") == model_id and m_cfg:
+                model_configs.setdefault(model_id, {}).update(m_cfg)
     for model_id, model_data in result["models"].items():
         if model_id in model_configs:
             model_data["model_config"] = model_configs[model_id]
@@ -129,7 +177,8 @@ def export(
         print("7. Writing observed (ground truth) scores...")
         from tools.minify.ground_truth import load_ground_truth, masked_label_scores, masked_task_scores
 
-        truth = load_ground_truth(samples_path=input_path)
+        # Ground truth is a temporary debug aid; it only covers the first input file.
+        truth = load_ground_truth(samples_path=input_paths[0])
         true_scores: dict[str, dict[str, Any]] = collections.defaultdict(dict)
         for task, per_model in truth.benchmark_scores.items():
             for model, score in per_model.items():
