@@ -1,0 +1,65 @@
+name: "Ling-3.1-flash"
+release_date: "2026-10-02"
+open_weights: true
+organization: "inclusionAI"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  A native hybrid reasoning model from inclusionAI with a hybrid-linear Mixture-of-Experts architecture (560B total, 25B active parameters) and a 1M-token context window, building on Ling-3.0-flash.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 560000000000
+  active_params: 25000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/inclusionai/ling-3.1-flash"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/inclusionAI/Ling-3.1-flash"
+    type: "model-weights"
+  - title: "MIT License"
+    url: "https://opensource.org/license/mit"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/inclusionai/ling-3.1-flash"

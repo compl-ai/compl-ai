@@ -3,23 +3,24 @@ name: "NVIDIA-Nemotron-3-Super-120B-A12B-BF16"
 release_date: "2026-03-11"
 open_weights: true
 organization: "NVIDIA"
-license: null
+license: "nvidia-nemotron-open-model-license"
 
 availability:
   - "open-weights"
-  - "api"
   - "saas-chat"
+  - "api"
+  
 
 description: |
-  NVIDIA's NVIDIA-Nemotron-3-Super-120B-A12B-BF16 is a powerful foundation model.
+  NVIDIA Nemotron-3-Super-120B-A12B is a 120-billion-parameter open-weight language model developed by NVIDIA. It uses a hybrid Mamba-2–Transformer architecture with a Latent Mixture of Experts (LatentMoE) design and supports reasoning, coding, multilingual tasks, mathematical problem-solving, and tool use. The model is designed for long-context and agentic workloads, with up to a 1-million-token context window.
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
-  knowledge_cutoff: null
-  total_params: 120000000000
-  active_params: 12000000000
-  context: 128000
-  max_output_tokens: null
+  architecture: "Mamba-2–Transformer hybrid, Latent Mixture of Experts (LatentMoE) with Multi-Token Prediction (MTP)"
+  knowledge_cutoff: "2026-02"
+  total_params: 120_000_000_000
+  active_params: 12_000_000_000
+  context: 1_000_000
+  max_output_tokens: 32_768
 
   modalities:
     input:
@@ -32,30 +33,41 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "NVIDIA-Nemotron-3-Super-120B-A12B"
+    url: "https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b/modelcard"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16"
     type: "model-weights"
+  - title: "Nemotron 3 Super: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model for Agentic Reasoning"
+    url: "https://research.nvidia.com/labs/nemotron/files/NVIDIA-Nemotron-3-Super-Technical-Report.pdf"
+    type: "paper-url"
+  - title: "NVIDIA Nemotron Open Model License"
+    url: "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-nemotron-open-model-license/"
+    type: "licence-url"
+
 
 training:
-  tokens: null
+  tokens: 25_000_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
-  base_model: null
+  training_dataset: "code + math + science + general knowledge data"
+  base_model: "NVIDIA-Nemotron-3-Super-120B-A12B-Base-BF16"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 553
+  latency_ms_per_token: 51
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "US"
 
 evals:
   - "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16"

@@ -51,13 +51,13 @@ training:
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: "from large-scale agentic task synthesis pipeline"
+  training_dataset: "large-scale agentic task synthesis pipeline"
   base_model: "DeepSeek-V3.2-Exp-Base"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: 29
-  latency_ms_per_token: 1_360
+  throughput_tokens_per_second: 48
+  latency_ms_per_token: 740
 
 region:
   region_deployable:

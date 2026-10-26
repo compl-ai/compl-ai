@@ -1,0 +1,68 @@
+name: "MiMo-V2.6-Flash"
+release_date: "2026-09-21"
+open_weights: true
+organization: "Xiaomi"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Xiaomi's open omnimodal Mixture-of-Experts model (309B total, 15B active) with hybrid sliding-window attention and a 1M-token context.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 309000000000
+  active_params: 15000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/xiaomi/mimo-v2.6-flash"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL"
+    type: "model-weights"
+  - title: "MIT License"
+    url: "https://opensource.org/license/mit"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/xiaomi/mimo-v2.6-flash"

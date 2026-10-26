@@ -1,0 +1,65 @@
+name: "Nemotron 3.5 Lightning"
+release_date: "2026-08-11"
+open_weights: true
+organization: "NVIDIA"
+license: "openmdw-1.1"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  An open hybrid Mamba-2/Transformer Mixture-of-Experts model from NVIDIA with 30B total and 3B active parameters, aimed at high-throughput agentic workloads.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2025-09"
+  total_params: 30000000000
+  active_params: 3000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/nvidia/nemotron-3.5-lightning"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16"
+    type: "model-weights"
+  - title: "OpenMDW License Agreement, version 1.1"
+    url: "https://openmdw.ai/license/1-1/"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openrouter/nvidia/nemotron-3.5-lightning"

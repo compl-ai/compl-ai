@@ -1,24 +1,25 @@
 
 name: "DeepSeek-V4-Flash"
 release_date: "2026-04-24"
-open_weights: false
+open_weights: true
 organization: "DeepSeek"
-license: null
+license: "mit"
 
 availability:
+  - "open-weights"
   - "api"
   - "saas-chat"
 
 description: |
-  DeepSeek's DeepSeek-V4-Flash is a powerful foundation model.
+  DeepSeek-V4-Flash is a 284-billion-parameter Mixture-of-Experts language model with 13 billion active parameters per token. It supports long-context processing of up to 1 million tokens and is designed for reasoning, coding, mathematics, multilingual tasks, and tool use.
 
 specs:
-  architecture: "dense decoder-only transformer"
-  knowledge_cutoff: null
-  total_params: 284000000000
-  active_params: null
-  context: 256000
-  max_output_tokens: null
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2025-05"
+  total_params: 284_000_000_000
+  active_params: 13_000_000_000
+  context: 1_000_000
+  max_output_tokens: 393_216
 
   modalities:
     input:
@@ -31,30 +32,41 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "DeepSeek-V4 Preview: Entering the Era of Affordable Million-Token Context"
+    url: "https://deepseek.com/en/news/v4-preview/"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash"
     type: "model-weights"
+  - title: "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence"  
+    url: "https://arxiv.org/abs/2606.19348"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
 
 training:
-  tokens: null
+  tokens: 32_000_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
-  base_model: null
+  training_dataset: "math + code + web pages + multilingual data + scientific papers + technical reports + high-quality text"
+  base_model: "DeepSeek-V4-Flash-Base"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 1_222
+  latency_ms_per_token: 24
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash"

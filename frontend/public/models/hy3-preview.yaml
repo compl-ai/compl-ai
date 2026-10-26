@@ -1,24 +1,25 @@
 
-name: "Hy3-preview"
+name: "Hy3 preview"
 release_date: "2026-04-23"
-open_weights: false
+open_weights: true
 organization: "Tencent"
-license: null
+license: "tencent-hy-community"
 
 availability:
-  - "api"
+  - "open-weights"
   - "saas-chat"
+  - "api"
 
 description: |
-  Tencent's Hy3-preview is a powerful foundation model.
+  Hy3 preview is a 295-billion-parameter Mixture-of-Experts language model developed by Tencent. It activates approximately 21 billion parameters per token and supports a 256K-token context window. The model is designed for reasoning, coding, mathematical problem-solving, multilingual tasks, and tool use.
 
 specs:
-  architecture: "dense decoder-only transformer"
+  architecture: "Mixture-of-Experts (MoE)"
   knowledge_cutoff: null
-  total_params: 295000000000
-  active_params: null
-  context: 128000
-  max_output_tokens: null
+  total_params: 295_000_000_000
+  active_params: 21_000_000_000
+  context: 256_000
+  max_output_tokens: 128_000
 
   modalities:
     input:
@@ -31,11 +32,19 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "Introducing Hy3"
+    url: "https://hy.tencent.ai/research/hy3"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/tencent/Hy3-preview"
     type: "model-weights"
+  - title: "Tencent Hy Community License Agreement"
+    url: "https://huggingface.co/tencent/Hy3-preview/blob/main/LICENSE"
+    type: "licence-url"
+
 
 training:
   tokens: null
@@ -47,14 +56,14 @@ training:
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 85
+  latency_ms_per_token: 11.76
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/tencent/Hy3-preview"

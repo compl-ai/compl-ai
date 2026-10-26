@@ -3,27 +3,29 @@ name: "Qwen3.5-9B"
 release_date: "2026-03-02"
 open_weights: true
 organization: "Alibaba Cloud"
-license: null
+license: "apache-2.0"
 
 availability:
   - "open-weights"
-  - "api"
   - "saas-chat"
+  - "api"
 
 description: |
-  Alibaba Cloud's Qwen3.5-9B is a powerful foundation model.
+  Qwen3.5-9B is a 9-billion-parameter multimodal language model developed by the Qwen team at Alibaba. It accepts text, images, and video as inputs and generates text outputs, using a hybrid architecture that combines Gated DeltaNet and Gated Attention. The model is designed for general-purpose tasks including reasoning, coding, mathematics, multilingual understanding, and tool use.
 
 specs:
-  architecture: "dense decoder-only transformer"
-  knowledge_cutoff: null
-  total_params: 9000000000
-  active_params: null
-  context: 128000
-  max_output_tokens: null
+  architecture: "Hybrid Gated DeltaNet + Gated Attention"
+  knowledge_cutoff: "2025-04"
+  total_params: 9_000_000_000
+  active_params: 9_000_000_000
+  context: 262_144
+  max_output_tokens: 81_920
 
   modalities:
     input:
       - "text"
+      - "image"
+      - "video"
     output:
       - "text"
 
@@ -32,30 +34,38 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "Qwen3.5-9B"
+    url: "https://modelscope.cn/models/Qwen/Qwen3.5-9B"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/Qwen/Qwen3.5-9B"
     type: "model-weights"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/Qwen/Qwen3.5-9B/blob/main/LICENSE"
+    type: "licence-url"
+
 
 training:
   tokens: null
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
-  base_model: null
+  training_dataset: "text + image + video + audio"
+  base_model: "Qwen3.5-9B-Base"
 
 stats:
-  inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  inference_efficiency_tokens_per_kwh: 1_994_000
+  throughput_tokens_per_second: 125
+  latency_ms_per_token: 8
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/Qwen/Qwen3.5-9B"

@@ -6,6 +6,7 @@ organization: "Ai2"
 license: "apache-2.0"
 
 availability:
+  - "open-source"
   - "open-weights"
   - "saas-chat"
   - "api"
@@ -19,7 +20,6 @@ specs:
   total_params: 32000000000
   active_params: 32000000000
   context: 65536
-  max_output_tokens: 65536
 
   modalities:
     input:

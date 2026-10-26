@@ -1,0 +1,65 @@
+name: "Hy3"
+release_date: "2026-07-06"
+open_weights: true
+organization: "Tencent"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Tencent's Mixture-of-Experts model (295B total, 21B active, 192 experts with top-8 routing) for reasoning, agentic workflows and production use, succeeding Hy3-preview with scaled-up post-training.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 295000000000
+  active_params: 21000000000
+  context: 262144
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/tencent/hy3"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/tencent/Hy3"
+    type: "model-weights"
+  - title: "Apache License Version 2.0"
+    url: "https://www.apache.org/licenses/LICENSE-2.0"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/tencent/hy3"

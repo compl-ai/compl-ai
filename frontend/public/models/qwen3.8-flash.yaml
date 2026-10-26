@@ -1,0 +1,64 @@
+name: "Qwen3.8-Flash"
+release_date: "2026-08-26"
+open_weights: true
+organization: "Alibaba (Qwen)"
+license: "qwen-community-1.0"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Alibaba's multimodal reasoning model for coding, agentic workflows and visual and long-video understanding. Qwen describes it as the official API version of the open-weight Qwen3.8-Flash-Next (125B parameters, 6B active), with production features such as a 1M-token default context and built-in tools.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 125000000000
+  active_params: 6000000000
+  context: 1000000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/qwen/qwen3.8-flash"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/Qwen/Qwen3.8-Flash-Next"
+    type: "model-weights"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/qwen/qwen3.8-flash"

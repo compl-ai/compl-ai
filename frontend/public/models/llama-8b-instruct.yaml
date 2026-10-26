@@ -19,7 +19,6 @@ specs:
   total_params: 8000000000
   active_params: 8000000000
   context: 128000
-  max_output_tokens: 8000
 
   modalities:
     input:

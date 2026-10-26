@@ -3,27 +3,28 @@ name: "GLM-5"
 release_date: "2026-02-11"
 open_weights: true
 organization: "Zhipu AI"
-license: null
+license: "mit"
 
 availability:
   - "open-weights"
-  - "api"
   - "saas-chat"
+  - "api"
 
 description: |
-  Zhipu AI's GLM-5 is a powerful foundation model.
+  GLM-5 is a large Mixture-of-Experts language model developed by Z.ai, with 744 billion total parameters and 40 billion active parameters. It uses DeepSeek Sparse Attention (DSA) and is designed for reasoning, coding, mathematical tasks, multilingual applications, and agentic tool use.
 
 specs:
-  architecture: "dense decoder-only transformer"
+  architecture: "Mixture-of-Experts (MoE) with DeepSeek Sparse Attention (DSA)"
   knowledge_cutoff: null
-  total_params: 744000000000
-  active_params: null
-  context: 128000
-  max_output_tokens: null
+  total_params: 744_000_000_000
+  active_params: 40_000_000_000
+  context: 202_752
+  max_output_tokens: 131_072
 
   modalities:
     input:
       - "text"
+      - "image"
     output:
       - "text"
 
@@ -32,30 +33,41 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "The model that thinks before it answers."
+    url: "https://glm5.ai/"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/zai-org/GLM-5"
     type: "model-weights"
+  - title: "GLM-5: from Vibe Coding to Agentic Engineering"          
+    url: "https://arxiv.org/abs/2602.15763"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
 
 training:
-  tokens: null
-  compute_flops: null
+  tokens: 28_500_000_000_000
+  compute_flops: 6.8e24
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
+  training_dataset: "web + code + math + science data"
   base_model: null
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 1214.97
+  latency_ms_per_token: 38.73
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/zai-org/GLM-5"

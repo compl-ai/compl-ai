@@ -1,9 +1,9 @@
 
-name: "gemma-4-31B-it"
-release_date: "2026-04-02"
+name: "Gemma 4 31B Instruct"
+release_date: "2026-03-31"
 open_weights: true
 organization: "Google"
-license: null
+license: "apache-2.0"
 
 availability:
   - "open-weights"
@@ -11,19 +11,21 @@ availability:
   - "saas-chat"
 
 description: |
-  Google's gemma-4-31B-it is an instruction-tuned large language model optimized for dialogue, reasoning, and coding tasks.
+  Gemma 4 31B is a 30.7-billion-parameter dense multimodal language model developed by Google DeepMind. It supports text, image, and video inputs and is designed for tasks including reasoning, coding, mathematics, multilingual understanding, and tool use. The model has a 256K-token context window and is available with open weights.
 
 specs:
-  architecture: "dense decoder-only transformer"
-  knowledge_cutoff: null
-  total_params: 31000000000
-  active_params: null
-  context: 128000
+  architecture: "dense transformer"
+  knowledge_cutoff: "2025-01"
+  total_params: 30_700_000_000
+  active_params: 30_700_000_000
+  context: 256_000
   max_output_tokens: null
 
   modalities:
     input:
       - "text"
+      - "image"
+      - "video"
     output:
       - "text"
 
@@ -32,11 +34,22 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "Gemma 4 Model Card"
+    url: "https://ai.google.dev/gemma/docs/core/model_card_4"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/google/gemma-4-31B-it"
     type: "model-weights"
+  - title: "Gemma 4 Technical Report"          
+    url: "https://arxiv.org/abs/2607.02770"
+    type: "paper-url"
+  - title: "Apache License 2.0"
+    url: "https://ai.google.dev/gemma/apache_2"
+    type: "licence-url"
+
 
 training:
   tokens: null
@@ -55,7 +68,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "US"
 
 evals:
   - "openai-api/vllm/google/gemma-4-31B-it"

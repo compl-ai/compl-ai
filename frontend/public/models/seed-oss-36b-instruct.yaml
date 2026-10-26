@@ -3,22 +3,20 @@ name: "Seed-OSS-36B-Instruct"
 release_date: "2025-08-20"
 open_weights: true
 organization: "ByteDance"
-license: null
+license: "apache-2.0"
 
 availability:
   - "open-weights"
-  - "api"
-  - "saas-chat"
 
 description: |
-  Tencent's Seed-OSS-36B-Instruct is an instruction-tuned large language model optimized for dialogue, reasoning, and coding tasks.
+  Seed-OSS-36B-Instruct is a 36-billion-parameter, open-weight language model developed by ByteDance Seed. It is a decoder-only Transformer designed for instruction following, with an emphasis on reasoning, mathematical problem-solving, coding, and agentic tasks. The model supports text input and output and is released under the Apache 2.0 license.
 
 specs:
   architecture: "dense decoder-only transformer"
-  knowledge_cutoff: null
-  total_params: 36000000000
-  active_params: null
-  context: 128000
+  knowledge_cutoff: "2024-07"
+  total_params: 36_000_000_000
+  active_params: 36_000_000_000
+  context: 512_000
   max_output_tokens: null
 
   modalities:
@@ -32,30 +30,37 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "Seed-OSS Open-Source Models Release"
+    url: "https://seed.bytedance.com/en/blog/seed-oss-open-source-models-release"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/ByteDance-Seed/Seed-OSS-36B-Instruct"
     type: "model-weights"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
 
 training:
-  tokens: null
+  tokens: 12_000_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
-  base_model: null
+  training_dataset: "publicly available data + purchased data from external vendors + generated data"
+  base_model: "Seed-OSS-36B-Base"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 38
+  latency_ms_per_token: 26.32
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/ByteDance-Seed/Seed-OSS-36B-Instruct"

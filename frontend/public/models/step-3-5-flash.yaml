@@ -1,24 +1,25 @@
 
 name: "Step-3.5-Flash"
-release_date: "2026-01-29"
-open_weights: false
+release_date: "2026-02-02"
+open_weights: true
 organization: "StepFun"
-license: null
+license: "apache-2.0"
 
 availability:
-  - "api"
+  - "open-weights"
   - "saas-chat"
+  - "api"
 
 description: |
-  StepFun's Step-3.5-Flash is a powerful foundation model.
+  Step 3.5 Flash is an open-weight, sparse Mixture-of-Experts language model developed by StepFun. It has approximately 196.8 billion total parameters, with around 11 billion active per token, and supports a 256K-token context window. The model is designed for reasoning, coding, mathematics, and agentic tasks, including tool use. Its weights are publicly available under the Apache 2.0 license.
 
 specs:
-  architecture: "dense decoder-only transformer"
+  architecture: "decoder-only Transformer with a sparse Mixture-of-Experts (MoE)"
   knowledge_cutoff: null
-  total_params: 196000000000
-  active_params: null
-  context: 128000
-  max_output_tokens: null
+  total_params: 196_000_000_000
+  active_params: 11_000_000_000
+  context: 256_000
+  max_output_tokens: 131_072
 
   modalities:
     input:
@@ -29,32 +30,42 @@ specs:
   capabilities:
     - "reasoning"
     - "coding"
-    - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "Step 3.5 Flash"
+    url: "https://static.stepfun.com/blog/step-3.5-flash/"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
     type: "model-weights"
+  - title: "Step 3.5 Flash: Open Frontier-Level Intelligence with 11B Active Parameters"
+    url: "https://arxiv.org/abs/2602.10604"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
 
 training:
-  tokens: null
+  tokens: 17_200_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
+  training_dataset: "general open-domain data + agentic-oriented data"
   base_model: null
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 200
+  latency_ms_per_token: 5
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/stepfun-ai/Step-3.5-Flash"

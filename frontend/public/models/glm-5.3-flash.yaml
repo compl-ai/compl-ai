@@ -1,0 +1,67 @@
+name: "GLM-5.3-Flash"
+release_date: "2026-08-26"
+open_weights: true
+organization: "Z.ai"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Z.ai's first natively multimodal GLM-5 model (320B total, 18B active parameters), using hybrid sparse and linear attention for efficient coding and long-horizon agent tasks. Pre-trained on a 30T-token multimodal corpus.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 320000000000
+  active_params: 18000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/z-ai/glm-5.3-flash"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/zai-org/GLM-5.3-Flash"
+    type: "model-weights"
+  - title: "MIT License"
+    url: "https://opensource.org/license/mit"
+    type: "licence-url"
+
+training:
+  tokens: 30000000000000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/z-ai/glm-5.3-flash"

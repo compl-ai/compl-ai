@@ -3,23 +3,22 @@ name: "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"
 release_date: "2026-06-04"
 open_weights: true
 organization: "NVIDIA"
-license: null
+license: "openmdw-1.1"
 
 availability:
   - "open-weights"
   - "api"
-  - "saas-chat"
 
 description: |
-  NVIDIA's NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16 is a powerful foundation model.
+  NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16 is a 550-billion-parameter open-weight language model developed by NVIDIA. It uses a hybrid Mamba-2 and Transformer attention architecture with a LatentMixture-of-Experts design, activating approximately 55 billion parameters per token. The model is designed for reasoning, coding, mathematical problem-solving, multilingual tasks, and tool use, with support for long-context applications.
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
-  knowledge_cutoff: null
-  total_params: 550000000000
-  active_params: 55000000000
-  context: 128000
-  max_output_tokens: null
+  architecture: "Hybrid Mamba-2 + Attention + LatentMoE (Mixture-of-Experts), with Multi-Token Prediction (MTP)"
+  knowledge_cutoff: "2026-05"
+  total_params: 550_000_000_000
+  active_params: 55_000_000_000
+  context: 1_000_000
+  max_output_tokens: 32_768
 
   modalities:
     input:
@@ -32,19 +31,30 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"
+    url: "https://catalog.ngc.nvidia.com/orgs/nim/nvidia/models/nemotron-3-ultra-550b-a55b/"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"
     type: "model-weights"
+  - title: "Nemotron 3 Ultra: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model for Agentic Reasoning"
+    url: "https://research.nvidia.com/labs/nemotron/files/NVIDIA-Nemotron-3-Ultra-Technical-Report.pdf"
+    type: "paper-url"
+  - title: "OpenMDW-1.1"
+    url: "https://openmdw.ai/license/1-1/"
+    type: "licence-url"
+
 
 training:
-  tokens: null
+  tokens: 20_000_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
-  base_model: null
+  training_dataset: "code + legal + math + science + finance"
+  base_model: "NVIDIA-Nemotron-3-Ultra-550B-A55B-Base-BF16"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
@@ -55,7 +65,7 @@ region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "US"
 
 evals:
   - "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"

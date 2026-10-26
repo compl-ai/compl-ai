@@ -3,27 +3,30 @@ name: "Qwen3.5-397B-A17B"
 release_date: "2026-02-16"
 open_weights: true
 organization: "Alibaba Cloud"
-license: null
+license: "apache-2.0"
 
 availability:
   - "open-weights"
-  - "api"
   - "saas-chat"
+  - "api"
+  
 
 description: |
-  Alibaba Cloud's Qwen3.5-397B-A17B is a powerful foundation model.
+  Qwen3.5-397B-A17B is an open-weight model with 397 billion total parameters, of which 17 billion are activated per forward pass. It uses a hybrid attention architecture combining linear attention and gated attention to balance computational efficiency with long-context processing. The model supports text, image, and video inputs, with text output, and is designed for reasoning, coding, mathematical tasks, multilingual processing, and tool use.
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
+  architecture: "Hybrid Gated DeltaNet + Gated Attention"
   knowledge_cutoff: null
-  total_params: 397000000000
-  active_params: 17000000000
-  context: 128000
-  max_output_tokens: null
+  total_params: 397_000_000_000
+  active_params: 17_000_000_000
+  context: 262_144
+  max_output_tokens: 65_536
 
   modalities:
     input:
       - "text"
+      - "image"
+      - "video"
     output:
       - "text"
 
@@ -32,30 +35,37 @@ specs:
     - "coding"
     - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "Qwen3.5: Towards Native Multimodal Agents"
+    url: "https://qwen.ai/blog?id=qwen3.5"
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
     type: "model-weights"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B/blob/main/LICENSE"
+    type: "licence-url"
 
 training:
   tokens: null
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
+  training_dataset: "text + image + video + audio"
   base_model: null
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 1_269
+  latency_ms_per_token: 23
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "CN"
 
 evals:
   - "openai-api/vllm/Qwen/Qwen3.5-397B-A17B"

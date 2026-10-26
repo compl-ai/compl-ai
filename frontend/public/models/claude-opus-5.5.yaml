@@ -1,0 +1,60 @@
+name: "Claude Opus 5.5"
+release_date: "2026-09-22"
+open_weights: false
+organization: "Anthropic"
+license: null
+
+availability:
+  - "api"
+  - "saas-chat"
+
+description: |
+  Anthropic's flagship Claude model for demanding reasoning, coding and long-horizon agentic work, succeeding Claude Opus 5. Accepts text and image input.
+
+specs:
+  architecture: null
+  knowledge_cutoff: null
+  total_params: null
+  active_params: null
+  context: 1000000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/anthropic/claude-opus-5.5"
+    type: "model-homepage"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openrouter/anthropic/claude-opus-5.5"

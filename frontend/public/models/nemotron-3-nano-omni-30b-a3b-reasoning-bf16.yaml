@@ -1,62 +1,71 @@
 
 name: "Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16"
-release_date: "2025-12-15"
+release_date: "2026-04-28"
 open_weights: true
 organization: "NVIDIA"
-license: null
+license: "nvidia-open-model-agreement"
 
 availability:
   - "open-weights"
   - "api"
-  - "saas-chat"
 
 description: |
-  NVIDIA's Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16 is a powerful foundation model.
+  Nemotron 3 Nano Omni is an open-weight multimodal language model developed by NVIDIA. It accepts text, images, audio, and video as inputs and generates text, using a hybrid Mamba-Transformer Mixture-of-Experts architecture designed for reasoning and agentic applications.
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
+  architecture: "Hybrid Mixture-of-Experts (MoE)"
   knowledge_cutoff: null
-  total_params: 30000000000
-  active_params: 3000000000
-  context: 128000
-  max_output_tokens: null
+  total_params: 31_000_000_000
+  active_params: 3_000_000_000
+  context: 262_144
+  max_output_tokens: 131_072
 
   modalities:
     input:
       - "text"
       - "image"
+      - "video"
     output:
       - "text"
 
   capabilities:
     - "reasoning"
-    - "coding"
-    - "multilingual"
     - "math"
+    - "tools"
 
 sources:
+  - title: "NVIDIA Nemotron"
+    url: "https://developer.nvidia.com/topics/ai/nemotron "
+    type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16"
     type: "model-weights"
+  - title: "Nemotron 3 Nano Omni: Efficient and Open Multimodal Intelligence"
+    url: "https://research.nvidia.com/labs/nemotron/files/NVIDIA-Nemotron-3-Omni-report.pdf"
+    type: "paper-url"
+  - title: "NVIDIA Open Model Agreement"
+    url: "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-agreement/"
+    type: "licence-url"
+
 
 training:
-  tokens: null
+  tokens: 717_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
-  base_model: null
+  training_dataset: "publicly available academic datasets + licensed third-party data + NVIDIA-internal collections + synthetically generated annotations"
+  base_model: "Nemotron 3 Nano (30B-A3B) backbone"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 62
+  latency_ms_per_token: 16.13
 
 region:
   region_deployable:
     - null
   region_developed:
-    - null
+    - "US"
 
 evals:
   - "openai-api/vllm/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16"

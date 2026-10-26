@@ -6,6 +6,7 @@ organization: "Swiss AI Initiative"
 license: "apache-2.0"
 
 availability:
+  - "open-source"
   - "open-weights"
   - "saas-chat"
   - "api"
@@ -19,7 +20,6 @@ specs:
   total_params: 8000000000
   active_params: 8000000000
   context: 65536
-  max_output_tokens: 32768
 
   modalities:
     input:
