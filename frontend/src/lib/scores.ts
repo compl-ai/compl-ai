@@ -1,12 +1,140 @@
-import type { IndexTheta, JoinedModelData } from '@/lib/data';
+import type { IndexTheta, JoinedModelData, LabelScore, RunType, TaskStatus } from '@/lib/data';
 
-// PREDICTIONS shows predicted scores; THETA shows index thetas.
-export type ScoreView = 'predictions' | 'theta';
+// θ is standardized on the model panel (mean 0, SD 1). It is published on an
+// IQ-style scale: 100 = panel average, 15 points = one standard deviation.
+export const THETA_MEAN = 100;
+const THETA_SD = 15;
+
+export const INDICES = [
+  { id: 'capability', label: 'Capability', description: 'Measures the model’s ability to successfully perform challenging tasks across reasoning, knowledge, mathematics, coding, languages and modalities.' },
+  { id: 'reliability', label: 'Reliability', description: 'Measures whether the model produces factual, consistent and instruction-following outputs that remain stable under perturbation.' },
+  { id: 'safety', label: 'Safety', description: 'Measures the model’s propensity to avoid harmful, deceptive, adversarial and discriminatory behavior.' },
+] as const;
+
+export type IndexId = (typeof INDICES)[number]['id'];
+
+// Static class names keyed by index, so Tailwind can see them.
+export const INDEX_TONE: Record<IndexId, { bar: string; soft: string; line: string }> = {
+  capability: { bar: 'bg-capability', soft: 'bg-brand-soft', line: 'border-capability' },
+  reliability: { bar: 'bg-reliability', soft: 'bg-teal-soft', line: 'border-reliability' },
+  safety: { bar: 'bg-safety', soft: 'bg-lavender-soft', line: 'border-safety' },
+};
 
 export function getIndexTheta(m: JoinedModelData, index: string): IndexTheta | null {
   return m.prediction?.indices?.[index]?.index_theta ?? null;
 }
 
-export function formatTheta(theta: number): string {
-  return `${theta >= 0 ? '+' : ''}${theta.toFixed(2)}`;
+export function scaleTheta(theta: number): number {
+  return THETA_MEAN + THETA_SD * theta;
 }
+
+export function formatScore(theta: number): string {
+  return Math.round(scaleTheta(theta)).toString();
+}
+
+export function formatInterval(interval: readonly [number, number] | number[]): string {
+  return `${formatScore(interval[0])}–${formatScore(interval[1])}`;
+}
+
+export const NO_SCORE_REASON = "Too few of this index's benchmarks were run to estimate a score.";
+
+export const RUN_TYPES: Record<RunType, { label: string; short: string; description: string; className: string }> = {
+  core: {
+    label: 'CORE subset',
+    short: 'CORE',
+    description: 'Evaluated on the compact CORE subset only; scores are estimated from those items.',
+    className: 'bg-teal-soft text-teal-strong border-teal/60',
+  },
+  full: {
+    label: 'Calibration',
+    short: 'Calibration',
+    description: 'Ran every item of the benchmarks it was evaluated on, though usually not every benchmark. These runs form the calibration set the CORE subset is fitted on.',
+    className: 'bg-lavender-soft text-lavender-strong border-lavender/50',
+  },
+  mixed: {
+    label: 'Mixed',
+    short: 'Mixed',
+    description: 'Some benchmarks were run on all items and others on the CORE subset only.',
+    className: 'bg-muted text-muted-foreground border-border',
+  },
+};
+
+// Falls back to coverage for exports without usage data: a CORE-only run observed no
+// population items beyond the CORE items it answered.
+export function getRunType(m: JoinedModelData): RunType | null {
+  const usage = m.prediction?.usage;
+  if (usage) return usage.run_type;
+  const cov = m.prediction?.coverage;
+  if (!cov) return null;
+  return cov.population_samples_observed > cov.samples_completed ? 'full' : 'core';
+}
+
+export function formatTokens(n: number): string {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e8 ? 0 : 1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(0)}k`;
+  return n.toString();
+}
+
+// Parameter counts may arrive as numbers or as digit-grouped strings like "70_000_000_000".
+export const parseParams = (v: unknown) => typeof v === 'number' ? v : Number(String(v ?? '0').replace(/_/g, ''));
+
+export function formatPercent(share: number): string {
+  return `${Math.round(share * 100)}%`;
+}
+
+export function formatAccuracyInterval(interval: readonly [number, number]): string {
+  return `${Math.round(interval[0] * 100)}–${Math.round(interval[1] * 100)}%`;
+}
+
+// Above this share of imputed items, an evaluation-area score mostly reflects benchmarks the
+// model did not run, and its interval (which excludes imputation error) understates the uncertainty.
+export const IMPUTED_SHARE_LIMIT = 0.5;
+
+// An evaluation-area score is only shown when the model answered at least one of its CORE items.
+export function hasMeasuredScore(score: LabelScore | undefined): score is LabelScore & { predicted_score: number } {
+  return !!score && score.predicted_score !== null && score.observations > 0;
+}
+
+export function imputedShare(score: LabelScore): number {
+  return score.population_items > 0 ? score.imputed_items / score.population_items : 0;
+}
+
+// Plausible rank range from 90% intervals: models whose interval lies entirely above this
+// one's are clearly ahead; models whose interval lies entirely below are clearly behind.
+export function rankRange(models: JoinedModelData[], model: JoinedModelData, index: string): { best: number; worst: number; of: number } | null {
+  const own = getIndexTheta(model, index);
+  if (!own) return null;
+  const others = models.filter(m => m.id !== model.id).map(m => getIndexTheta(m, index)).filter(t => t !== null);
+  const ahead = others.filter(t => t.interval[0] > own.interval[1]).length;
+  const behind = others.filter(t => t.interval[1] < own.interval[0]).length;
+  const of = others.length + 1;
+  return { best: ahead + 1, worst: of - behind, of };
+}
+
+export function formatRankRange({ best, worst }: { best: number; worst: number }): string {
+  return best === worst ? `#${best}` : `#${best}–${worst}`;
+}
+
+export const TASK_STATUS: Record<TaskStatus, { label: string; description: string; className: string }> = {
+  ok: {
+    label: 'Run',
+    description: 'All of this benchmark’s CORE items were answered.',
+    className: 'bg-teal-soft text-teal-strong border-teal/60',
+  },
+  partial: {
+    label: 'Partly run',
+    description: 'Some of this benchmark’s CORE items were answered; the rest are predicted.',
+    className: 'bg-brand-soft text-brand-strong border-brand/50',
+  },
+  imputed: {
+    label: 'Not run',
+    description: 'The model was not run on this benchmark. It does not count towards the index score.',
+    className: 'bg-muted text-muted-foreground border-border',
+  },
+  missing: {
+    label: 'Not run',
+    description: 'The model was not run on this benchmark.',
+    className: 'bg-muted text-muted-foreground border-border',
+  },
+};

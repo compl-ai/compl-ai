@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { awelier, plexMono, plexSans } from "./fonts";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "COMPL-AI Index",
-  description: "High-signal evaluation of AI models and agents across Safety, Security, Reliability, Fairness, and Capability.",
+  title: "ComplAI CORE - Open, reproducible and efficient AI evaluation.",
+  description: "Open, calibrated AI evaluations that predict broad benchmark performance from a compact set of tasks.",
 };
 
 export default function RootLayout({
@@ -15,12 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" className={`${awelier.variable} ${plexSans.variable} ${plexMono.variable} scroll-smooth`}>
       <body className="min-h-screen bg-background font-sans antialiased flex flex-col">
         <TooltipProvider>
           <SiteHeader />

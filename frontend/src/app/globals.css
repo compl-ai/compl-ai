@@ -3,8 +3,28 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
-  
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-awelier), ui-serif, Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-plex: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand palette */
+  --color-brand: #FFA600;
+  --color-brand-strong: #9A6300; /* orange that passes AA as text on white */
+  --color-brand-soft: #FFF4DE;
+  --color-teal: #7FDDDA;
+  --color-teal-strong: #2E8C88;
+  --color-teal-soft: #E8F8F7;
+  --color-lavender: #8A90D1;
+  --color-lavender-strong: #5A61A8;
+  --color-lavender-soft: #EEEFF9;
+  --color-ink: #051C2C;
+
+  /* Index colours: use these (bg-capability, text-safety, var(--color-reliability), ...) for anything keyed to an index */
+  --color-capability: var(--color-brand);
+  --color-reliability: var(--color-teal);
+  --color-safety: var(--color-lavender);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
@@ -36,38 +56,39 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  --radius-panel: calc(var(--radius) * 2); /* large section containers, e.g. the results explorer */
 }
 
 :root {
-  --background: #FBFBF8;
-  --foreground: 220 39% 11%;
-  
+  --background: #FFFFFF;
+  --foreground: #051C2C;
+
   --card: #FFFFFF;
-  --card-foreground: 220 39% 11%;
-  
+  --card-foreground: #051C2C;
+
   --popover: #FFFFFF;
-  --popover-foreground: 220 39% 11%;
-  
-  --primary: 221 83% 53%; /* Blue 600 for active states */
-  --primary-foreground: 0 0% 100%;
-  
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  
-  --muted: 0 0% 100%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 210 40% 98%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 220 13% 91%; /* light gray */
-  --input: 220 13% 91%;
-  --ring: 221 83% 53%;
-  
-  --radius: 0.5rem;
+  --popover-foreground: #051C2C;
+
+  --primary: #FFA600;
+  --primary-foreground: #051C2C;
+
+  --secondary: #7FDDDA;
+  --secondary-foreground: #051C2C;
+
+  --muted: #F5F6F8;
+  --muted-foreground: #5B6670;
+
+  --accent: #EEEFF9;
+  --accent-foreground: #051C2C;
+
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E6E8EB;
+  --input: #E6E8EB;
+  --ring: #FFA600;
+
+  --radius: 0.75rem;
 }
 
 @layer base {
@@ -76,5 +97,11 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

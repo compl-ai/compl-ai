@@ -1,0 +1,1412 @@
+{
+ "_meta": {
+  "source": "method_results.md (scripts run 2026-11-02 on core.v1, dispersion23-gp-irt-2pl-v1)",
+  "eci_pulled": "2026-10-26",
+  "prices_pulled": "2026-11-02"
+ },
+ "lomo": [
+  {
+   "model": "Qwen3-8B",
+   "index": "capability",
+   "observed": 98.38,
+   "predicted": 97.53,
+   "lower": 96.51,
+   "upper": 98.58,
+   "inside": true
+  },
+  {
+   "model": "Qwen3-8B",
+   "index": "reliability",
+   "observed": 92.57,
+   "predicted": 91.69,
+   "lower": 89.62,
+   "upper": 93.19,
+   "inside": true
+  },
+  {
+   "model": "Qwen3-8B",
+   "index": "safety",
+   "observed": 93.57,
+   "predicted": 93.49,
+   "lower": 92.22,
+   "upper": 94.74,
+   "inside": true
+  },
+  {
+   "model": "MiniMax-M2.7",
+   "index": "capability",
+   "observed": 114.45,
+   "predicted": 114.31,
+   "lower": 113.16,
+   "upper": 115.0,
+   "inside": true
+  },
+  {
+   "model": "MiniMax-M2.7",
+   "index": "reliability",
+   "observed": 108.23,
+   "predicted": 107.93,
+   "lower": 105.04,
+   "upper": 110.11,
+   "inside": true
+  },
+  {
+   "model": "MiniMax-M2.7",
+   "index": "safety",
+   "observed": 97.81,
+   "predicted": 99.01,
+   "lower": 97.45,
+   "upper": 100.36,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-27B",
+   "index": "capability",
+   "observed": 100.62,
+   "predicted": 101.21,
+   "lower": 100.1,
+   "upper": 101.93,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-27B",
+   "index": "reliability",
+   "observed": 105.14,
+   "predicted": 105.42,
+   "lower": 98.43,
+   "upper": 107.05,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-27B",
+   "index": "safety",
+   "observed": 118.38,
+   "predicted": 118.04,
+   "lower": 115.27,
+   "upper": 120.36,
+   "inside": true
+  },
+  {
+   "model": "Seed-OSS-36B-Instruct",
+   "index": "capability",
+   "observed": 109.52,
+   "predicted": 108.47,
+   "lower": 107.39,
+   "upper": 109.21,
+   "inside": false
+  },
+  {
+   "model": "Seed-OSS-36B-Instruct",
+   "index": "reliability",
+   "observed": 51.87,
+   "predicted": 51.01,
+   "lower": 48.83,
+   "upper": 53.05,
+   "inside": true
+  },
+  {
+   "model": "Seed-OSS-36B-Instruct",
+   "index": "safety",
+   "observed": 57.58,
+   "predicted": 59.58,
+   "lower": 58.2,
+   "upper": 60.96,
+   "inside": false
+  },
+  {
+   "model": "MiniMax-M2.5",
+   "index": "capability",
+   "observed": 106.84,
+   "predicted": 107.0,
+   "lower": 105.94,
+   "upper": 107.65,
+   "inside": true
+  },
+  {
+   "model": "MiniMax-M2.5",
+   "index": "reliability",
+   "observed": 107.25,
+   "predicted": 108.19,
+   "lower": 105.16,
+   "upper": 110.25,
+   "inside": true
+  },
+  {
+   "model": "MiniMax-M2.5",
+   "index": "safety",
+   "observed": 98.48,
+   "predicted": 98.03,
+   "lower": 96.43,
+   "upper": 99.15,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-35B-A3B",
+   "index": "capability",
+   "observed": 99.24,
+   "predicted": 99.11,
+   "lower": 98.16,
+   "upper": 99.81,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-35B-A3B",
+   "index": "reliability",
+   "observed": 105.11,
+   "predicted": 105.69,
+   "lower": 99.02,
+   "upper": 107.23,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-35B-A3B",
+   "index": "safety",
+   "observed": 115.25,
+   "predicted": 112.39,
+   "lower": 109.84,
+   "upper": 114.59,
+   "inside": false
+  },
+  {
+   "model": "Qwen3.5-9B",
+   "index": "capability",
+   "observed": 92.63,
+   "predicted": 92.34,
+   "lower": 91.27,
+   "upper": 93.4,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-9B",
+   "index": "reliability",
+   "observed": 100.82,
+   "predicted": 100.68,
+   "lower": 98.51,
+   "upper": 102.3,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-9B",
+   "index": "safety",
+   "observed": 111.82,
+   "predicted": 110.41,
+   "lower": 107.94,
+   "upper": 112.0,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-397B-A17B",
+   "index": "reliability",
+   "observed": 119.15,
+   "predicted": 121.29,
+   "lower": 117.1,
+   "upper": 123.85,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.5-397B-A17B",
+   "index": "safety",
+   "observed": 119.67,
+   "predicted": 120.49,
+   "lower": 117.48,
+   "upper": 122.66,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.6-35B-A3B",
+   "index": "capability",
+   "observed": 95.33,
+   "predicted": 94.94,
+   "lower": 93.79,
+   "upper": 95.84,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.6-35B-A3B",
+   "index": "reliability",
+   "observed": 108.86,
+   "predicted": 108.98,
+   "lower": 101.64,
+   "upper": 110.73,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.6-35B-A3B",
+   "index": "safety",
+   "observed": 109.91,
+   "predicted": 109.81,
+   "lower": 107.72,
+   "upper": 111.51,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.6-27B",
+   "index": "capability",
+   "observed": 94.4,
+   "predicted": 93.67,
+   "lower": 92.44,
+   "upper": 94.67,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.6-27B",
+   "index": "reliability",
+   "observed": 109.04,
+   "predicted": 109.71,
+   "lower": 105.68,
+   "upper": 111.71,
+   "inside": true
+  },
+  {
+   "model": "Qwen3.6-27B",
+   "index": "safety",
+   "observed": 113.44,
+   "predicted": 113.13,
+   "lower": 110.95,
+   "upper": 114.78,
+   "inside": true
+  },
+  {
+   "model": "MiMo-V2.5",
+   "index": "capability",
+   "observed": 114.93,
+   "predicted": 114.45,
+   "lower": 113.29,
+   "upper": 115.19,
+   "inside": true
+  },
+  {
+   "model": "MiMo-V2.5",
+   "index": "reliability",
+   "observed": 100.87,
+   "predicted": 101.4,
+   "lower": 98.92,
+   "upper": 103.12,
+   "inside": true
+  },
+  {
+   "model": "MiMo-V2.5",
+   "index": "safety",
+   "observed": 110.03,
+   "predicted": 107.73,
+   "lower": 105.55,
+   "upper": 109.63,
+   "inside": false
+  },
+  {
+   "model": "Olmo-3-32B-Think",
+   "index": "capability",
+   "observed": 70.68,
+   "predicted": 73.56,
+   "lower": 71.57,
+   "upper": 75.54,
+   "inside": false
+  },
+  {
+   "model": "Olmo-3-32B-Think",
+   "index": "reliability",
+   "observed": 50.93,
+   "predicted": 51.17,
+   "lower": 48.8,
+   "upper": 53.39,
+   "inside": true
+  },
+  {
+   "model": "Olmo-3-32B-Think",
+   "index": "safety",
+   "observed": 65.24,
+   "predicted": 65.65,
+   "lower": 64.57,
+   "upper": 66.54,
+   "inside": true
+  },
+  {
+   "model": "Olmo-3.1-32B-Instruct",
+   "index": "capability",
+   "observed": 94.29,
+   "predicted": 93.31,
+   "lower": 92.2,
+   "upper": 94.35,
+   "inside": true
+  },
+  {
+   "model": "Olmo-3.1-32B-Instruct",
+   "index": "reliability",
+   "observed": 71.05,
+   "predicted": 72.91,
+   "lower": 71.44,
+   "upper": 74.57,
+   "inside": false
+  },
+  {
+   "model": "Olmo-3.1-32B-Instruct",
+   "index": "safety",
+   "observed": 85.66,
+   "predicted": 84.12,
+   "lower": 82.86,
+   "upper": 85.33,
+   "inside": false
+  },
+  {
+   "model": "DeepSeek-V4-Flash",
+   "index": "capability",
+   "observed": 114.2,
+   "predicted": 114.26,
+   "lower": 112.95,
+   "upper": 115.21,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V4-Flash",
+   "index": "reliability",
+   "observed": 118.1,
+   "predicted": 118.09,
+   "lower": 113.55,
+   "upper": 120.73,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V4-Flash",
+   "index": "safety",
+   "observed": 102.12,
+   "predicted": 103.5,
+   "lower": 101.68,
+   "upper": 105.12,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V4-Pro",
+   "index": "reliability",
+   "observed": 113.53,
+   "predicted": 112.59,
+   "lower": 105.19,
+   "upper": 115.84,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V4-Pro",
+   "index": "safety",
+   "observed": 104.85,
+   "predicted": 105.58,
+   "lower": 103.94,
+   "upper": 106.77,
+   "inside": true
+  },
+  {
+   "model": "gemma-3-27b-it",
+   "index": "capability",
+   "observed": 89.35,
+   "predicted": 89.32,
+   "lower": 88.09,
+   "upper": 90.38,
+   "inside": true
+  },
+  {
+   "model": "gemma-3-27b-it",
+   "index": "reliability",
+   "observed": 96.22,
+   "predicted": 95.25,
+   "lower": 90.01,
+   "upper": 96.84,
+   "inside": true
+  },
+  {
+   "model": "gemma-3-27b-it",
+   "index": "safety",
+   "observed": 81.09,
+   "predicted": 81.16,
+   "lower": 79.92,
+   "upper": 82.42,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V3.2",
+   "index": "capability",
+   "observed": 106.76,
+   "predicted": 106.35,
+   "lower": 105.42,
+   "upper": 107.05,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V3.2",
+   "index": "reliability",
+   "observed": 103.24,
+   "predicted": 101.8,
+   "lower": 99.17,
+   "upper": 103.65,
+   "inside": true
+  },
+  {
+   "model": "DeepSeek-V3.2",
+   "index": "safety",
+   "observed": 97.8,
+   "predicted": 97.13,
+   "lower": 95.63,
+   "upper": 98.46,
+   "inside": true
+  },
+  {
+   "model": "diffusiongemma-26B-A4B-it",
+   "index": "capability",
+   "observed": 104.29,
+   "predicted": 104.73,
+   "lower": 103.57,
+   "upper": 105.38,
+   "inside": true
+  },
+  {
+   "model": "diffusiongemma-26B-A4B-it",
+   "index": "reliability",
+   "observed": 100.36,
+   "predicted": 100.32,
+   "lower": 98.09,
+   "upper": 102.45,
+   "inside": true
+  },
+  {
+   "model": "diffusiongemma-26B-A4B-it",
+   "index": "safety",
+   "observed": 97.86,
+   "predicted": 97.27,
+   "lower": 96.01,
+   "upper": 98.27,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-12B-it",
+   "index": "capability",
+   "observed": 101.71,
+   "predicted": 101.56,
+   "lower": 100.5,
+   "upper": 102.47,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-12B-it",
+   "index": "reliability",
+   "observed": 108.46,
+   "predicted": 106.6,
+   "lower": 103.08,
+   "upper": 108.26,
+   "inside": false
+  },
+  {
+   "model": "gemma-4-12B-it",
+   "index": "safety",
+   "observed": 113.13,
+   "predicted": 113.57,
+   "lower": 111.28,
+   "upper": 115.38,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-26B-A4B-it",
+   "index": "capability",
+   "observed": 109.01,
+   "predicted": 109.24,
+   "lower": 107.87,
+   "upper": 109.94,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-26B-A4B-it",
+   "index": "reliability",
+   "observed": 101.25,
+   "predicted": 99.83,
+   "lower": 94.09,
+   "upper": 101.36,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-26B-A4B-it",
+   "index": "safety",
+   "observed": 110.21,
+   "predicted": 109.52,
+   "lower": 107.32,
+   "upper": 111.31,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-31B-it",
+   "index": "capability",
+   "observed": 110.71,
+   "predicted": 111.22,
+   "lower": 110.0,
+   "upper": 111.92,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-31B-it",
+   "index": "reliability",
+   "observed": 104.44,
+   "predicted": 104.03,
+   "lower": 97.65,
+   "upper": 105.7,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-31B-it",
+   "index": "safety",
+   "observed": 119.3,
+   "predicted": 118.31,
+   "lower": 115.64,
+   "upper": 120.33,
+   "inside": true
+  },
+  {
+   "model": "granite-4.0-h-small",
+   "index": "capability",
+   "observed": 79.49,
+   "predicted": 78.79,
+   "lower": 77.0,
+   "upper": 80.46,
+   "inside": true
+  },
+  {
+   "model": "granite-4.0-h-small",
+   "index": "reliability",
+   "observed": 91.74,
+   "predicted": 89.61,
+   "lower": 87.84,
+   "upper": 91.02,
+   "inside": false
+  },
+  {
+   "model": "granite-4.0-h-small",
+   "index": "safety",
+   "observed": 83.88,
+   "predicted": 86.12,
+   "lower": 84.96,
+   "upper": 87.34,
+   "inside": false
+  },
+  {
+   "model": "Llama-3.1-8B-Instruct",
+   "index": "capability",
+   "observed": 66.31,
+   "predicted": 67.19,
+   "lower": 65.32,
+   "upper": 69.51,
+   "inside": true
+  },
+  {
+   "model": "Llama-3.1-8B-Instruct",
+   "index": "reliability",
+   "observed": 90.13,
+   "predicted": 88.48,
+   "lower": 84.09,
+   "upper": 89.78,
+   "inside": false
+  },
+  {
+   "model": "Llama-3.1-8B-Instruct",
+   "index": "safety",
+   "observed": 83.07,
+   "predicted": 84.0,
+   "lower": 82.87,
+   "upper": 85.27,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-E4B-it",
+   "index": "capability",
+   "observed": 92.68,
+   "predicted": 92.53,
+   "lower": 91.26,
+   "upper": 93.63,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-E4B-it",
+   "index": "reliability",
+   "observed": 91.92,
+   "predicted": 90.69,
+   "lower": 88.38,
+   "upper": 91.94,
+   "inside": true
+  },
+  {
+   "model": "gemma-4-E4B-it",
+   "index": "safety",
+   "observed": 99.15,
+   "predicted": 99.02,
+   "lower": 97.42,
+   "upper": 100.44,
+   "inside": true
+  },
+  {
+   "model": "phi-4",
+   "index": "capability",
+   "observed": 87.4,
+   "predicted": 86.48,
+   "lower": 85.2,
+   "upper": 87.9,
+   "inside": true
+  },
+  {
+   "model": "phi-4",
+   "index": "reliability",
+   "observed": 90.09,
+   "predicted": 89.86,
+   "lower": 88.02,
+   "upper": 91.29,
+   "inside": true
+  },
+  {
+   "model": "phi-4",
+   "index": "safety",
+   "observed": 92.51,
+   "predicted": 91.06,
+   "lower": 89.8,
+   "upper": 92.17,
+   "inside": false
+  },
+  {
+   "model": "Mistral-Medium-3.5-128B",
+   "index": "capability",
+   "observed": 111.61,
+   "predicted": 111.09,
+   "lower": 109.77,
+   "upper": 111.83,
+   "inside": true
+  },
+  {
+   "model": "Mistral-Medium-3.5-128B",
+   "index": "reliability",
+   "observed": 116.22,
+   "predicted": 112.45,
+   "lower": 108.42,
+   "upper": 114.46,
+   "inside": false
+  },
+  {
+   "model": "Mistral-Medium-3.5-128B",
+   "index": "safety",
+   "observed": 98.9,
+   "predicted": 100.24,
+   "lower": 98.57,
+   "upper": 101.74,
+   "inside": true
+  },
+  {
+   "model": "Kimi-K2.6",
+   "index": "reliability",
+   "observed": 120.41,
+   "predicted": 118.71,
+   "lower": 112.8,
+   "upper": 121.07,
+   "inside": true
+  },
+  {
+   "model": "Kimi-K2.6",
+   "index": "safety",
+   "observed": 121.46,
+   "predicted": 122.98,
+   "lower": 119.42,
+   "upper": 126.05,
+   "inside": true
+  },
+  {
+   "model": "Ministral-3-14B-Instruct-2512",
+   "index": "capability",
+   "observed": 90.0,
+   "predicted": 90.58,
+   "lower": 89.39,
+   "upper": 91.56,
+   "inside": true
+  },
+  {
+   "model": "Ministral-3-14B-Instruct-2512",
+   "index": "reliability",
+   "observed": 88.89,
+   "predicted": 87.94,
+   "lower": 85.79,
+   "upper": 89.44,
+   "inside": true
+  },
+  {
+   "model": "Ministral-3-14B-Instruct-2512",
+   "index": "safety",
+   "observed": 87.32,
+   "predicted": 88.4,
+   "lower": 87.25,
+   "upper": 89.64,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+   "index": "capability",
+   "observed": 92.38,
+   "predicted": 93.34,
+   "lower": 91.97,
+   "upper": 94.43,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+   "index": "reliability",
+   "observed": 101.48,
+   "predicted": 100.49,
+   "lower": 97.73,
+   "upper": 102.58,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+   "index": "safety",
+   "observed": 93.96,
+   "predicted": 94.13,
+   "lower": 92.78,
+   "upper": 95.35,
+   "inside": true
+  },
+  {
+   "model": "Mistral-Small-4-119B-2603",
+   "index": "capability",
+   "observed": 90.0,
+   "predicted": 91.18,
+   "lower": 89.72,
+   "upper": 92.25,
+   "inside": true
+  },
+  {
+   "model": "Mistral-Small-4-119B-2603",
+   "index": "reliability",
+   "observed": 94.43,
+   "predicted": 94.7,
+   "lower": 91.78,
+   "upper": 97.0,
+   "inside": true
+  },
+  {
+   "model": "Mistral-Small-4-119B-2603",
+   "index": "safety",
+   "observed": 90.7,
+   "predicted": 91.26,
+   "lower": 90.07,
+   "upper": 92.44,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Nano-4B-BF16",
+   "index": "capability",
+   "observed": 95.94,
+   "predicted": 98.01,
+   "lower": 96.99,
+   "upper": 98.91,
+   "inside": false
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Nano-4B-BF16",
+   "index": "reliability",
+   "observed": 84.24,
+   "predicted": 87.3,
+   "lower": 85.21,
+   "upper": 89.28,
+   "inside": false
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Nano-4B-BF16",
+   "index": "safety",
+   "observed": 93.13,
+   "predicted": 93.54,
+   "lower": 92.21,
+   "upper": 94.74,
+   "inside": true
+  },
+  {
+   "model": "gpt-oss-120b",
+   "index": "capability",
+   "observed": 103.45,
+   "predicted": 104.04,
+   "lower": 102.93,
+   "upper": 104.73,
+   "inside": true
+  },
+  {
+   "model": "gpt-oss-120b",
+   "index": "reliability",
+   "observed": 100.15,
+   "predicted": 99.69,
+   "lower": 96.98,
+   "upper": 101.89,
+   "inside": true
+  },
+  {
+   "model": "gpt-oss-120b",
+   "index": "safety",
+   "observed": 112.1,
+   "predicted": 111.74,
+   "lower": 109.15,
+   "upper": 114.11,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+   "index": "reliability",
+   "observed": 124.23,
+   "predicted": 122.49,
+   "lower": 118.52,
+   "upper": 124.88,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+   "index": "safety",
+   "observed": 122.02,
+   "predicted": 119.34,
+   "lower": 115.96,
+   "upper": 122.27,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+   "index": "capability",
+   "observed": 101.52,
+   "predicted": 101.64,
+   "lower": 100.45,
+   "upper": 102.45,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+   "index": "reliability",
+   "observed": 103.28,
+   "predicted": 102.88,
+   "lower": 98.96,
+   "upper": 105.63,
+   "inside": true
+  },
+  {
+   "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+   "index": "safety",
+   "observed": 95.0,
+   "predicted": 94.47,
+   "lower": 93.11,
+   "upper": 95.62,
+   "inside": true
+  },
+  {
+   "model": "gpt-oss-20b",
+   "index": "capability",
+   "observed": 90.54,
+   "predicted": 91.28,
+   "lower": 89.9,
+   "upper": 92.32,
+   "inside": true
+  },
+  {
+   "model": "gpt-oss-20b",
+   "index": "reliability",
+   "observed": 93.92,
+   "predicted": 94.8,
+   "lower": 92.44,
+   "upper": 96.76,
+   "inside": true
+  },
+  {
+   "model": "gpt-oss-20b",
+   "index": "safety",
+   "observed": 108.2,
+   "predicted": 107.92,
+   "lower": 105.62,
+   "upper": 109.43,
+   "inside": true
+  },
+  {
+   "model": "Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16",
+   "index": "capability",
+   "observed": 91.99,
+   "predicted": 92.5,
+   "lower": 91.2,
+   "upper": 93.67,
+   "inside": true
+  },
+  {
+   "model": "Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16",
+   "index": "reliability",
+   "observed": 98.66,
+   "predicted": 98.34,
+   "lower": 95.36,
+   "upper": 100.44,
+   "inside": true
+  },
+  {
+   "model": "Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16",
+   "index": "safety",
+   "observed": 104.56,
+   "predicted": 103.06,
+   "lower": 101.16,
+   "upper": 104.76,
+   "inside": true
+  },
+  {
+   "model": "Hy3-preview",
+   "index": "reliability",
+   "observed": 115.44,
+   "predicted": 114.56,
+   "lower": 109.72,
+   "upper": 116.53,
+   "inside": true
+  },
+  {
+   "model": "Hy3-preview",
+   "index": "safety",
+   "observed": 106.24,
+   "predicted": 104.84,
+   "lower": 102.85,
+   "upper": 106.7,
+   "inside": true
+  },
+  {
+   "model": "Apertus-70B-Instruct-2509",
+   "index": "capability",
+   "observed": 61.2,
+   "predicted": 59.54,
+   "lower": 57.64,
+   "upper": 62.63,
+   "inside": true
+  },
+  {
+   "model": "Apertus-70B-Instruct-2509",
+   "index": "reliability",
+   "observed": 87.47,
+   "predicted": 87.46,
+   "lower": 85.6,
+   "upper": 89.0,
+   "inside": true
+  },
+  {
+   "model": "Apertus-70B-Instruct-2509",
+   "index": "safety",
+   "observed": 71.96,
+   "predicted": 73.36,
+   "lower": 72.09,
+   "upper": 74.85,
+   "inside": false
+  },
+  {
+   "model": "Step-3.5-Flash",
+   "index": "capability",
+   "observed": 109.95,
+   "predicted": 110.47,
+   "lower": 109.16,
+   "upper": 111.21,
+   "inside": true
+  },
+  {
+   "model": "Step-3.5-Flash",
+   "index": "reliability",
+   "observed": 107.46,
+   "predicted": 105.77,
+   "lower": 102.27,
+   "upper": 108.13,
+   "inside": true
+  },
+  {
+   "model": "Step-3.5-Flash",
+   "index": "safety",
+   "observed": 101.56,
+   "predicted": 101.88,
+   "lower": 100.23,
+   "upper": 103.26,
+   "inside": true
+  },
+  {
+   "model": "GLM-5",
+   "index": "reliability",
+   "observed": 117.97,
+   "predicted": 115.85,
+   "lower": 102.11,
+   "upper": 118.22,
+   "inside": true
+  },
+  {
+   "model": "GLM-5",
+   "index": "safety",
+   "observed": 113.11,
+   "predicted": 114.89,
+   "lower": 112.55,
+   "upper": 116.78,
+   "inside": true
+  },
+  {
+   "model": "Llama-3.3-70B-Instruct",
+   "index": "capability",
+   "observed": 84.23,
+   "predicted": 84.88,
+   "lower": 83.36,
+   "upper": 86.15,
+   "inside": true
+  },
+  {
+   "model": "Llama-3.3-70B-Instruct",
+   "index": "reliability",
+   "observed": 102.62,
+   "predicted": 99.82,
+   "lower": 96.58,
+   "upper": 102.05,
+   "inside": false
+  },
+  {
+   "model": "Llama-3.3-70B-Instruct",
+   "index": "safety",
+   "observed": 91.73,
+   "predicted": 90.43,
+   "lower": 89.25,
+   "upper": 91.68,
+   "inside": false
+  }
+ ],
+ "eci": [
+  {
+   "model": "Gemini 4 Argon",
+   "type": "closed",
+   "ours": 139.8,
+   "ours_lower": 136.8,
+   "ours_upper": 142.0,
+   "eci": 166.45,
+   "eci_lower": 163.23,
+   "eci_upper": 171.52
+  },
+  {
+   "model": "Claude Opus 5.5",
+   "type": "closed",
+   "ours": 133.7,
+   "ours_lower": 131.3,
+   "ours_upper": 135.5,
+   "eci": 168.83,
+   "eci_lower": 165.25,
+   "eci_upper": 173.95
+  },
+  {
+   "model": "Claude Sonnet 5.5",
+   "type": "closed",
+   "ours": 132.5,
+   "ours_lower": 130.0,
+   "ours_upper": 134.0,
+   "eci": 166.18,
+   "eci_lower": 163.06,
+   "eci_upper": 171.34
+  },
+  {
+   "model": "Muse Spark Open",
+   "type": "open",
+   "ours": 130.4,
+   "ours_lower": 128.0,
+   "ours_upper": 132.4,
+   "eci": 155.11,
+   "eci_lower": 152.66,
+   "eci_upper": 157.97
+  },
+  {
+   "model": "DeepSeek V4.1 Flash",
+   "type": "open",
+   "ours": 126.8,
+   "ours_lower": 124.7,
+   "ours_upper": 127.9,
+   "eci": 155.93,
+   "eci_lower": 153.68,
+   "eci_upper": 158.59
+  },
+  {
+   "model": "Claude Haiku 5.5",
+   "type": "closed",
+   "ours": 123.2,
+   "ours_lower": 121.7,
+   "ours_upper": 124.3,
+   "eci": 159.32,
+   "eci_lower": 156.19,
+   "eci_upper": 162.47
+  },
+  {
+   "model": "GPT-6 Luna",
+   "type": "closed",
+   "ours": 122.2,
+   "ours_lower": 120.4,
+   "ours_upper": 123.1,
+   "eci": 156.75,
+   "eci_lower": 154.32,
+   "eci_upper": 159.43
+  },
+  {
+   "model": "Mistral Large 4",
+   "type": "open",
+   "ours": 117.3,
+   "ours_lower": 115.9,
+   "ours_upper": 118.0,
+   "eci": 150.03,
+   "eci_lower": 146.94,
+   "eci_upper": 152.74
+  },
+  {
+   "model": "Gemini 3.8 Flash",
+   "type": "closed",
+   "ours": 116.6,
+   "ours_lower": 115.3,
+   "ours_upper": 117.3,
+   "eci": 157.44,
+   "eci_lower": 155.07,
+   "eci_upper": 161.08
+  },
+  {
+   "model": "GLM-5.3-Flash",
+   "type": "open",
+   "ours": 115.8,
+   "ours_lower": 114.5,
+   "ours_upper": 116.5,
+   "eci": 153.08,
+   "eci_lower": 150.76,
+   "eci_upper": 155.53
+  },
+  {
+   "model": "MiniMax-M2.7",
+   "type": "open",
+   "ours": 115.4,
+   "ours_lower": 114.1,
+   "ours_upper": 116.2,
+   "eci": 145.78,
+   "eci_lower": 138.37,
+   "eci_upper": 148.18
+  },
+  {
+   "model": "DeepSeek-V4-Flash",
+   "type": "open",
+   "ours": 114.6,
+   "ours_lower": 113.2,
+   "ours_upper": 115.6,
+   "eci": 146.11,
+   "eci_lower": 143.82,
+   "eci_upper": 147.99
+  },
+  {
+   "model": "Nemotron 3 Ultra",
+   "type": "open",
+   "ours": 113.8,
+   "ours_lower": 112.3,
+   "ours_upper": 114.6,
+   "eci": 145.97,
+   "eci_lower": 143.68,
+   "eci_upper": 148.22
+  },
+  {
+   "model": "Gemma 4 31B IT",
+   "type": "open",
+   "ours": 111.3,
+   "ours_lower": 109.9,
+   "ours_upper": 112.1,
+   "eci": 142.99,
+   "eci_lower": 140.34,
+   "eci_upper": 145.75
+  },
+  {
+   "model": "Mistral Medium 3.5",
+   "type": "open",
+   "ours": 111.2,
+   "ours_lower": 110.0,
+   "ours_upper": 112.0,
+   "eci": 141.36,
+   "eci_lower": 138.5,
+   "eci_upper": 144.33
+  },
+  {
+   "model": "Gemma 4 26B A4B",
+   "type": "open",
+   "ours": 109.3,
+   "ours_lower": 107.9,
+   "ours_upper": 110.1,
+   "eci": 141.88,
+   "eci_lower": 138.86,
+   "eci_upper": 143.43
+  },
+  {
+   "model": "MiniMax-M2.5",
+   "type": "open",
+   "ours": 107.3,
+   "ours_lower": 106.2,
+   "ours_upper": 107.9,
+   "eci": 146.59,
+   "eci_lower": 142.21,
+   "eci_upper": 147.9
+  },
+  {
+   "model": "DeepSeek-V3.2",
+   "type": "open",
+   "ours": 106.6,
+   "ours_lower": 105.6,
+   "ours_upper": 107.3,
+   "eci": 146.09,
+   "eci_lower": 144.27,
+   "eci_upper": 147.38
+  },
+  {
+   "model": "gpt-oss-120b",
+   "type": "open",
+   "ours": 104.1,
+   "ours_lower": 103.0,
+   "ours_upper": 104.8,
+   "eci": 139.79,
+   "eci_lower": 135.57,
+   "eci_upper": 142.12
+  },
+  {
+   "model": "Qwen3.5-35B-A3B",
+   "type": "open",
+   "ours": 99.3,
+   "ours_lower": 98.3,
+   "ours_upper": 100.0,
+   "eci": 142.49,
+   "eci_lower": 140.42,
+   "eci_upper": 144.98
+  },
+  {
+   "model": "Qwen3-8B",
+   "type": "open",
+   "ours": 97.6,
+   "ours_lower": 96.6,
+   "ours_upper": 98.7,
+   "eci": 136.06,
+   "eci_lower": 129.92,
+   "eci_upper": 138.29
+  },
+  {
+   "model": "Qwen 3.6 35B-A3B",
+   "type": "open",
+   "ours": 95.3,
+   "ours_lower": 94.1,
+   "ours_upper": 96.2,
+   "eci": 143.73,
+   "eci_lower": 141.05,
+   "eci_upper": 145.8
+  },
+  {
+   "model": "Qwen3.6 27B",
+   "type": "open",
+   "ours": 94.0,
+   "ours_lower": 92.7,
+   "ours_upper": 95.0,
+   "eci": 146.23,
+   "eci_lower": 144.13,
+   "eci_upper": 147.65
+  },
+  {
+   "model": "Qwen3.5-9B",
+   "type": "open",
+   "ours": 92.3,
+   "ours_lower": 91.1,
+   "ours_upper": 93.4,
+   "eci": 139.32,
+   "eci_lower": 136.13,
+   "eci_upper": 140.83
+  },
+  {
+   "model": "gpt-oss-20b",
+   "type": "open",
+   "ours": 91.1,
+   "ours_lower": 89.7,
+   "ours_upper": 92.2,
+   "eci": 137.7,
+   "eci_lower": 132.2,
+   "eci_upper": 139.58
+  },
+  {
+   "model": "Gemma 3 27B",
+   "type": "open",
+   "ours": 89.3,
+   "ours_lower": 88.1,
+   "ours_upper": 90.4,
+   "eci": 129.97,
+   "eci_lower": 124.48,
+   "eci_upper": 132.04
+  },
+  {
+   "model": "Phi-4",
+   "type": "open",
+   "ours": 86.6,
+   "ours_lower": 85.3,
+   "ours_upper": 88.1,
+   "eci": 130.48,
+   "eci_lower": 124.66,
+   "eci_upper": 132.01
+  },
+  {
+   "model": "Llama 3.3 70B",
+   "type": "open",
+   "ours": 84.9,
+   "ours_lower": 83.4,
+   "ours_upper": 86.2,
+   "eci": 127.33,
+   "eci_lower": 122.51,
+   "eci_upper": 129.38
+  },
+  {
+   "model": "Llama 3.1-8B",
+   "type": "open",
+   "ours": 66.9,
+   "ours_lower": 65.1,
+   "ours_upper": 69.5,
+   "eci": 116.47,
+   "eci_lower": 105.92,
+   "eci_upper": 121.64
+  }
+ ],
+ "cost": [
+  {
+   "model": "Gemini 4 Argon",
+   "source": "Google",
+   "core": 156,
+   "full": 1418,
+   "ratio": 9.1
+  },
+  {
+   "model": "Claude Opus 5.5",
+   "source": "Anthropic",
+   "core": 138,
+   "full": 1028,
+   "ratio": 7.4
+  },
+  {
+   "model": "GPT-6.1 Terra",
+   "source": "OpenAI",
+   "core": 27,
+   "full": 165,
+   "ratio": 6.0
+  },
+  {
+   "model": "MiniMax-M2.5",
+   "source": "OpenRouter (proxy)",
+   "core": 19.02,
+   "full": 134.57,
+   "ratio": 7.1
+  },
+  {
+   "model": "DeepSeek V4.1 Flash",
+   "source": "OpenRouter",
+   "core": 13.67,
+   "full": 98.67,
+   "ratio": 7.2
+  },
+  {
+   "model": "Claude Haiku 5.5",
+   "source": "Anthropic",
+   "core": 5.44,
+   "full": 43.83,
+   "ratio": 8.1
+  },
+  {
+   "model": "GPT-6 Luna",
+   "source": "OpenAI",
+   "core": 4.0,
+   "full": 36.18,
+   "ratio": 9.0
+  },
+  {
+   "model": "gpt-oss-120b",
+   "source": "OpenRouter (proxy)",
+   "core": 2.3,
+   "full": 14.16,
+   "ratio": 6.2
+  }
+ ]
+}

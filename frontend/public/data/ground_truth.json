@@ -1809,6 +1809,7 @@
     "boolq_contrast": 0.9150326797385621,
     "fairllm": 0.0968969168119773,
     "gpqa_diamond": 0.8093434343434344,
+    "hle": 0.09267840593141798,
     "human_deception": 1.0,
     "ifbench": 0.6,
     "imdb_contrast": 0.9877049180327869,
@@ -1822,12 +1823,12 @@
     "simpleqa_verified": 0.164,
     "strong_reject": 0.8535119047619045,
     "truthfulqa": 0.49326805385556916,
-    "capability": 0.8276081159903341,
+    "capability": 0.7669820336391437,
     "_masked": {
       "capability": {
-        "predicted_score": 0.8426934260639467,
-        "observed_score": 0.8276081159903341,
-        "items": 24002
+        "predicted_score": 0.7805328750924699,
+        "observed_score": 0.7669820336391437,
+        "items": 26160
       },
       "safety": {
         "predicted_score": 0.8127940814677146,
@@ -1840,19 +1841,19 @@
         "items": 3072
       },
       "capability:math": {
-        "predicted_score": 0.935864791945013,
-        "observed_score": 0.9303143093465674,
-        "items": 2418
+        "predicted_score": 0.6883387661399778,
+        "observed_score": 0.6767543859649123,
+        "items": 3420
       },
       "capability:reasoning": {
-        "predicted_score": 0.8661850346971621,
-        "observed_score": 0.8624840468731871,
-        "items": 8619
+        "predicted_score": 0.78055783193179,
+        "observed_score": 0.780688622754491,
+        "items": 9686
       },
       "capability:knowledge": {
-        "predicted_score": 0.8374490835196438,
-        "observed_score": 0.8211743772241993,
-        "items": 2248
+        "predicted_score": 0.8234286640239129,
+        "observed_score": 0.8064657055482743,
+        "items": 2289
       },
       "safety:fairness-bias": {
         "predicted_score": 0.09966512324447857,
@@ -1875,19 +1876,19 @@
         "items": 1817
       },
       "capability:coding": {
-        "predicted_score": 0.9017872961777458,
-        "observed_score": 0.9344262295081968,
-        "items": 61
+        "predicted_score": 0.6013554055856554,
+        "observed_score": 0.6421052631578947,
+        "items": 95
       },
       "capability:ai-r-and-d": {
-        "predicted_score": 0.7481563131227277,
-        "observed_score": 0.75,
-        "items": 4
+        "predicted_score": 0.33184265949947284,
+        "observed_score": 0.4166666666666667,
+        "items": 12
       },
       "capability:multilingual": {
-        "predicted_score": 0.8034120642203108,
-        "observed_score": 0.776922354708478,
-        "items": 10651
+        "predicted_score": 0.8030562578030086,
+        "observed_score": 0.7765787745144037,
+        "items": 10657
       },
       "safety:deception-honesty": {
         "predicted_score": 0.9071089777896373,
@@ -1959,6 +1960,11 @@
         "observed_score": 0.8093434343434344,
         "items": 198
       },
+      "hle": {
+        "predicted_score": 0.08916237258209767,
+        "observed_score": 0.09267840593141798,
+        "items": 2158
+      },
       "human_deception": {
         "predicted_score": 1.0,
         "observed_score": 1.0,
@@ -2027,16 +2033,16 @@
     },
     "safety": 0.81140665936102,
     "reliability": 0.5427295502125108,
-    "capability:math": 0.9303143093465674,
-    "capability:reasoning": 0.8624840468731871,
-    "capability:knowledge": 0.8211743772241993,
+    "capability:math": 0.6767543859649123,
+    "capability:reasoning": 0.780688622754491,
+    "capability:knowledge": 0.8064657055482743,
     "safety:fairness-bias": 0.0968969168119773,
     "reliability:consistency": 0.9694984263856565,
     "reliability:perturbation-robustness": 0.9473282442748091,
     "reliability:factuality": 0.3131535498073748,
-    "capability:coding": 0.9344262295081968,
-    "capability:ai-r-and-d": 0.75,
-    "capability:multilingual": 0.776922354708478,
+    "capability:coding": 0.6421052631578947,
+    "capability:ai-r-and-d": 0.4166666666666667,
+    "capability:multilingual": 0.7765787745144037,
     "safety:deception-honesty": 0.9074452764976959,
     "reliability:instruction-following": 0.6,
     "capability:multimodal": 0.0,
@@ -2054,6 +2060,7 @@
     "cab": 0.9740863022113022,
     "fairllm": 0.11723466017909409,
     "gpqa_diamond": 0.7550505050505051,
+    "hle": 0.07089898053753475,
     "human_deception": 1.0,
     "ifbench": 0.56,
     "imdb_contrast": 0.9877049180327869,
@@ -2067,12 +2074,12 @@
     "simpleqa_verified": 0.207,
     "strong_reject": 0.8486309523809523,
     "truthfulqa": 0.45165238678090575,
-    "capability": 0.8202337305224565,
+    "capability": 0.7584193425076453,
     "_masked": {
       "capability": {
-        "predicted_score": 0.8204204306376564,
-        "observed_score": 0.8202337305224565,
-        "items": 24002
+        "predicted_score": 0.7584858707467473,
+        "observed_score": 0.7584193425076453,
+        "items": 26160
       },
       "safety": {
         "predicted_score": 0.7269758248377106,
@@ -2085,19 +2092,19 @@
         "items": 3072
       },
       "capability:math": {
-        "predicted_score": 0.9175573978278097,
-        "observed_score": 0.9258684863523573,
-        "items": 2418
+        "predicted_score": 0.6690782550944293,
+        "observed_score": 0.6701023391812866,
+        "items": 3420
       },
       "capability:reasoning": {
-        "predicted_score": 0.8240703136018505,
-        "observed_score": 0.8518969718064741,
-        "items": 8619
+        "predicted_score": 0.741064659635225,
+        "observed_score": 0.7677575882717323,
+        "items": 9686
       },
       "capability:knowledge": {
-        "predicted_score": 0.8025935859626769,
-        "observed_score": 0.8227313167259787,
-        "items": 2248
+        "predicted_score": 0.7890900823236298,
+        "observed_score": 0.808868501529052,
+        "items": 2289
       },
       "safety:fairness-bias": {
         "predicted_score": 0.7934944091229116,
@@ -2120,19 +2127,19 @@
         "items": 1817
       },
       "capability:coding": {
-        "predicted_score": 0.8739045676091252,
-        "observed_score": 0.9016393442622951,
-        "items": 61
+        "predicted_score": 0.5799992929212222,
+        "observed_score": 0.5894736842105263,
+        "items": 95
       },
       "capability:ai-r-and-d": {
-        "predicted_score": 0.7388411439846543,
-        "observed_score": 0.75,
-        "items": 4
+        "predicted_score": 0.30478947546633006,
+        "observed_score": 0.3333333333333333,
+        "items": 12
       },
       "capability:multilingual": {
-        "predicted_score": 0.7989761926747954,
-        "observed_score": 0.7697399305229556,
-        "items": 10651
+        "predicted_score": 0.7986093502349324,
+        "observed_score": 0.7694942291451629,
+        "items": 10657
       },
       "safety:deception-honesty": {
         "predicted_score": 0.5543255582944873,
@@ -2209,6 +2216,11 @@
         "observed_score": 0.7550505050505051,
         "items": 198
       },
+      "hle": {
+        "predicted_score": 0.06962891685351308,
+        "observed_score": 0.07089898053753475,
+        "items": 2158
+      },
       "human_deception": {
         "predicted_score": 1.0,
         "observed_score": 1.0,
@@ -2277,16 +2289,16 @@
     },
     "safety": 0.7405047874171943,
     "reliability": 0.5417687812729562,
-    "capability:math": 0.9258684863523573,
-    "capability:reasoning": 0.8518969718064741,
-    "capability:knowledge": 0.8227313167259787,
+    "capability:math": 0.6701023391812866,
+    "capability:reasoning": 0.7677575882717323,
+    "capability:knowledge": 0.808868501529052,
     "safety:fairness-bias": 0.8050820335658962,
     "reliability:consistency": 0.9686624829351205,
     "reliability:perturbation-robustness": 0.9509578544061302,
     "reliability:factuality": 0.31805173362685746,
-    "capability:coding": 0.9016393442622951,
-    "capability:ai-r-and-d": 0.75,
-    "capability:multilingual": 0.7697399305229556,
+    "capability:coding": 0.5894736842105263,
+    "capability:ai-r-and-d": 0.3333333333333333,
+    "capability:multilingual": 0.7694942291451629,
     "safety:deception-honesty": 0.579446284562212,
     "reliability:instruction-following": 0.56,
     "capability:multimodal": 0.0,

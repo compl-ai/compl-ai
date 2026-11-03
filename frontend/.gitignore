@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# licensed font originals (only the WOFF2 conversions in src/app/fonts are committed)
+/font-source/

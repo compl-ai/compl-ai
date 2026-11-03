@@ -4,14 +4,14 @@ import * as yaml from 'js-yaml';
 
 import { z } from 'zod';
 
-export const ModelSchema = z.object({
+const ModelSchema = z.object({
   name: z.string(),
   release_date: z.string().nullable().optional(),
   open_weights: z.boolean().nullable().optional(),
   organization: z.string().nullable().optional(),
   license: z.string().nullable().optional(),
   
-  availability: z.array(z.enum(["open-weights", "saas-chat", "api"])).nullable().optional(),
+  availability: z.array(z.enum(["open-source", "open-weights", "saas-chat", "api"])).nullable().optional(),
   description: z.string().nullable().optional(),
   
   specs: z.object({
@@ -20,10 +20,9 @@ export const ModelSchema = z.object({
     total_params: z.number().nullable().optional(),
     active_params: z.number().nullable().optional(),
     context: z.number().nullable().optional(),
-    max_output_tokens: z.number().nullable().optional(),
     modalities: z.object({
-      input: z.array(z.enum(["text", "image", "video"])).nullable().optional(),
-      output: z.array(z.enum(["text", "image", "video"])).nullable().optional()
+      input: z.array(z.enum(["text", "image", "video", "audio"])).nullable().optional(),
+      output: z.array(z.enum(["text", "image", "video", "audio"])).nullable().optional()
     }).nullable().optional(),
     capabilities: z.array(z.enum(["reasoning", "coding", "multilingual", "math", "tools"])).nullable().optional()
   }).nullable().optional(),
@@ -57,7 +56,7 @@ export const ModelSchema = z.object({
   evals: z.array(z.string()).nullable().optional()
 }).catchall(z.any());
 
-export type ModelParams = z.infer<typeof ModelSchema>;
+type ModelParams = z.infer<typeof ModelSchema>;
 
 // Index theta: the model's position on the index's scale (panel mean 0, SD 1),
 // fitted on its scores for the index's benchmarks. Null when it ran too few of them.
@@ -69,12 +68,16 @@ export interface IndexTheta {
 }
 
 // Scores are null when gap is set: the reason too few subset items cover the label.
+// score_interval is a 90% bootstrap interval of predicted_score. It does not cover the
+// error of imputing benchmarks the model did not run (imputed_items of population_items).
 export interface LabelScore {
   gap: string | null;
   predicted_score: number | null;
+  score_interval: [number, number] | null;
   population_items: number;
   population_tasks: number;
   subset_items: number;
+  imputed_items: number;
   observations: number;
   ability: number | null;
   ability_standard_error: number | null;
@@ -82,8 +85,100 @@ export interface LabelScore {
   index_theta?: IndexTheta | null;
 }
 
-export interface ModelPrediction {
+export type RunType = 'core' | 'full' | 'mixed';
+
+// Tokens of the evaluated model (judge models are excluded; `judge` is kept for reference). `measured` is what the logs recorded;
+// `core`/`full` are measured for the run that was done and extrapolated per item for the other.
+interface ModelTokens {
+  tasks: number;
+  measured: number;
+  input: number;
+  output: number;
+  reasoning: number;
+  judge: number;
+  core: number;
+  full: number;
+  reduction: number | null;
+}
+
+interface TaskUsage {
+  // 'partial': more than the core items but well short of all items.
+  run: 'core' | 'full' | 'partial';
+  observed_items: number;
+  subset_items: number;
+  population_items: number;
+  input_tokens: number;
+  output_tokens: number;
+  reasoning_tokens: number;
+  model_tokens: number;
+  judge_tokens: number;
+}
+
+interface ModelUsage {
+  run_type: RunType | null;
+  observed_items: number;
+  tasks?: Record<string, TaskUsage>;
+  tokens: ModelTokens | null;
+}
+
+// ok: all core items answered; partial: some; imputed: not run, score imputed from other benchmarks.
+export type TaskStatus = 'ok' | 'partial' | 'imputed' | 'missing';
+
+interface TaskPrediction {
+  predicted_score: number | null;
+  // Covers only the predicted items (all but the core items answered); null for imputed tasks.
+  predicted_score_error: number | null;
+  observed_subset_score: number | null;
+  ability: number | null;
+  ability_standard_error: number | null;
+  status: TaskStatus;
+  observations: number;
+  subset_items: number;
+  coverage: number;
+  population_items: number;
+  imputed: boolean;
+}
+
+interface TaskEfficiency {
+  subset_items: number;
+  population_items: number;
+  tokens_per_item_median: number;
+}
+
+interface SubcategoryInfo {
+  name: string;
+  index: string;
+  description: string;
+  subset_count: number;
+  gap: string | null;
+}
+
+export interface Taxonomy {
+  indices: Record<string, { subset_weight_pct: string; subset_count: number }>;
+  total_subset_items: number;
+  subcategories: Record<string, SubcategoryInfo>;
+}
+
+// One benchmark of the labels export: its index and, per item, its evaluation area and tags.
+interface BenchmarkLabels {
+  index: string;
+  columns: string[];
+  data: [string, string, string[]][];
+}
+
+export interface SuiteEfficiency {
+  subset_items: number;
+  population_items: number;
+  core_tokens_median: number;
+  full_tokens_median: number;
+  token_reduction: number | null;
+  run_types: Record<string, number>;
+  tasks?: Record<string, TaskEfficiency>;
+}
+
+interface ModelPrediction {
   predicted_score: number;
+  usage?: ModelUsage;
   predicted_score_error?: number;
   task_macro_score?: number;
   // Per-label predicted scores over the full item population (from complai.predict)
@@ -100,13 +195,7 @@ export interface ModelPrediction {
     samples_total: number;
     population_samples_observed: number;
   };
-  tasks: {
-    [task: string]: {
-      predicted_score: number;
-      observed_subset_score?: number;
-      [key: string]: any;
-    };
-  };
+  tasks: Record<string, TaskPrediction>;
 }
 
 export interface JoinedModelData {
@@ -114,8 +203,6 @@ export interface JoinedModelData {
   yamlId: string; // The inferred yaml key based on the name or ID
   prediction: ModelPrediction;
   metadata: ModelParams | null;
-  // Debug artifact: per-task/label observed scores, plus a `_masked` detail object
-  groundTruth?: Record<string, number | Record<string, unknown>> | null;
 }
 
 export function getPredictions() {
@@ -124,10 +211,107 @@ export function getPredictions() {
   return JSON.parse(fileContents);
 }
 
-export function getLabels() {
+export function getEfficiency(): SuiteEfficiency | null {
+  return getPredictions().efficiency ?? null;
+}
+
+function getLabels() {
   const dataPath = path.join(process.cwd(), 'public', 'data', 'labels.json');
   const fileContents = fs.readFileSync(dataPath, 'utf8');
   return JSON.parse(fileContents);
+}
+
+export function getTaxonomy(): Taxonomy {
+  return getLabels()._schema;
+}
+
+export interface GroundingRef {
+  framework: 'EU AI Act' | 'GPAI Code of Practice';
+  citation: string;
+  short: string;
+  title: string;
+  url: string;
+  excerpt: string;
+}
+
+// direct: the cited text names what is measured. related: the measurement informs the cited risk.
+// coverage "none": in the taxonomy's scope, but not measured by the current benchmarks.
+export interface GroundingLink {
+  id: string;
+  strength: 'direct' | 'related';
+  coverage?: 'none';
+}
+
+interface Grounding {
+  _meta: {
+    description: string;
+    sources: Record<string, string>;
+    paper: { title: string; url: string; year: number };
+  };
+  refs: Record<string, GroundingRef>;
+  all: string[];
+  indices: Record<string, string[]>;
+  subcategories: Record<string, { refs: GroundingLink[]; lineage: string[] }>;
+  // Cited risk sources and obligations that CORE does not currently evaluate.
+  gaps: string[];
+  // 2024 COMPL-AI technical requirements whose benchmarks are not in the CORE suite.
+  requirements_not_in_core: { name: string; benchmarks: string[] }[];
+}
+
+export function getGrounding(): Grounding {
+  const dataPath = path.join(process.cwd(), 'public', 'data', 'grounding.json');
+  return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+}
+
+// Visitor-facing evaluation-area descriptions, keyed by taxonomy subcategory id.
+export function getAreaDescriptions(): Record<string, string> {
+  const dataPath = path.join(process.cwd(), 'public', 'data', 'areas.json');
+  return JSON.parse(fs.readFileSync(dataPath, 'utf8')).areas;
+}
+
+export interface MethodLomoRow {
+  model: string;
+  index: 'capability' | 'reliability' | 'safety';
+  observed: number;
+  predicted: number;
+  lower: number;
+  upper: number;
+  inside: boolean;
+}
+
+export interface MethodEciRow {
+  model: string;
+  type: string;
+  ours: number;
+  ours_lower: number;
+  ours_upper: number;
+  eci: number;
+  eci_lower: number;
+  eci_upper: number;
+}
+
+export interface MethodCostRow {
+  model: string;
+  source: string;
+  core: number;
+  full: number;
+  ratio: number;
+}
+
+interface MethodData {
+  _meta: Record<string, string>;
+  lomo: MethodLomoRow[];
+  eci: MethodEciRow[];
+  cost: MethodCostRow[];
+}
+
+export function getMethod(): MethodData {
+  const dataPath = path.join(process.cwd(), 'public', 'data', 'method.json');
+  return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+}
+
+export function getBenchmarkLabels(): Record<string, BenchmarkLabels> {
+  return Object.fromEntries(Object.entries(getLabels()).filter(([key]) => key !== '_schema')) as Record<string, BenchmarkLabels>;
 }
 
 // js-yaml follows YAML 1.2, which reads digit-grouped numbers like 128_000 as strings.
@@ -145,7 +329,7 @@ function normalizeGroupedNumbers(value: unknown): unknown {
 }
 
 // Returns null for a file that fails validation, so invalid values never reach the UI.
-export function getModelMetadata(filename: string): ModelParams | null {
+function getModelMetadata(filename: string): ModelParams | null {
   const dataPath = path.join(process.cwd(), 'public', 'models', filename);
   const fileContents = fs.readFileSync(dataPath, 'utf8');
   const parsed = ModelSchema.safeParse(normalizeGroupedNumbers(yaml.load(fileContents)));
@@ -158,7 +342,7 @@ export function getModelMetadata(filename: string): ModelParams | null {
   return null;
 }
 
-export function getAllModelMetadata(): Record<string, ModelParams> {
+function getAllModelMetadata(): Record<string, ModelParams> {
   const modelsDir = path.join(process.cwd(), 'public', 'models');
   if (!fs.existsSync(modelsDir)) return {};
   
@@ -177,7 +361,6 @@ export function getAllModelMetadata(): Record<string, ModelParams> {
 export function getJoinedModels(): JoinedModelData[] {
   const predictions = getPredictions();
   const metadataMap = getAllModelMetadata();
-  const groundTruth = getGroundTruth();
   const joined: JoinedModelData[] = [];
 
   if (!predictions.models) return [];
@@ -198,21 +381,8 @@ export function getJoinedModels(): JoinedModelData[] {
       yamlId: matchedYamlId || predId.split('/').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || '',
       prediction: predData as ModelPrediction,
       metadata: matchedYamlId ? metadataMap[matchedYamlId] : null,
-      groundTruth: groundTruth ? groundTruth[predId] : null
     });
   }
   
   return joined;
-}
-
-export function getGroundTruth(): Record<string, Record<string, number>> | null {
-  try {
-    const p = path.join(process.cwd(), 'public', 'data', 'ground_truth.json');
-    if (fs.existsSync(p)) {
-      return JSON.parse(fs.readFileSync(p, 'utf8'));
-    }
-  } catch (e) {
-    console.warn("Could not load ground truth data", e);
-  }
-  return null;
 }

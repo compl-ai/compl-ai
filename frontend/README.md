@@ -29,8 +29,8 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy (GitHub Pages)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Pushes to `main` or `frontend` that touch `frontend/` run `.github/workflows/deploy-frontend.yml`, which statically exports the site and publishes it to https://compl-ai.github.io/compl-ai/ (or the custom domain, once configured in Settings → Pages).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The workflow sets `NEXT_PUBLIC_BASE_PATH` (`/compl-ai` on github.io, empty on a custom domain). `next/link` applies it automatically; wrap other `/public` URLs (plain `<a>`, `<img>`, `fetch`) in `withBasePath()` from `@/lib/utils`. To test locally: `NEXT_PUBLIC_BASE_PATH=/compl-ai npm run build`.
