@@ -1,4 +1,5 @@
-import { getEfficiency, getJoinedModels } from '@/lib/data';
+import { getEfficiency, getJoinedModels, getLastUpdated } from '@/lib/data';
+import { formatDate } from '@/lib/scores';
 import { CoreStats, HomeHero } from '@/components/home/HomeHero';
 import { ResultsExplorer } from '@/components/home/ResultsExplorer';
 import { computeFindings } from '@/components/home/explorer';
@@ -6,9 +7,9 @@ import { RunCore } from '@/components/home/RunCore';
 import { ModelDataTable } from '@/components/ModelDataTable';
 import { Eyebrow } from '@/components/layout/Eyebrow';
 
-function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
+function SectionHeading({ eyebrow, title, children, className = 'mb-8' }: { eyebrow: string; title: string; children?: React.ReactNode; className?: string }) {
   return (
-    <div className="max-w-3xl mb-8">
+    <div className={`max-w-3xl ${className}`}>
       <Eyebrow>{eyebrow}</Eyebrow>
       <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-ink">{title}</h2>
       {children && <p className="mt-4 text-base text-muted-foreground leading-relaxed">{children}</p>}
@@ -19,32 +20,43 @@ function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: 
 export default function Home() {
   const models = getJoinedModels();
   const efficiency = getEfficiency();
+  const lastUpdated = getLastUpdated();
 
   return (
     <main className="min-h-screen">
       <HomeHero benchmarks={efficiency?.tasks ? Object.keys(efficiency.tasks).length : null} />
       {efficiency && <CoreStats efficiency={efficiency} />}
 
-      <section id="results" className="scroll-mt-24 max-w-[1400px] mx-auto px-4 md:px-8 pt-8 md:pt-14 pb-16">
+      <section id="results" className="scroll-mt-24 frame pt-8 md:pt-14 pb-16">
+        <div className="cols-10">
         <div className="mb-14">
+          <Eyebrow>Results</Eyebrow>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-ink">How do today&rsquo;s AI models compare?</h2>
           <div className="max-w-3xl">
-            <Eyebrow>Results</Eyebrow>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-ink">How do today&apos;s AI models compare?</h2>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed">
               Every model gets three separate scores, one each for safety, capability, and reliability. For each category, we estimate the model&apos;s ability
               (&theta;) with item response theory, which accounts for how difficult each task is. We publish &theta; rescaled so that
               100 is the average evaluated model and 15 points is one standard deviation. Higher is better; scores are not percentages.
             </p>
+            {lastUpdated && <p className="mt-3 text-sm text-faint-foreground">Model evaluation data last updated {formatDate(lastUpdated)}</p>}
           </div>
         </div>
         <ResultsExplorer models={models} findings={computeFindings(models)} />
+        </div>
       </section>
 
-      <section id="rankings" className="scroll-mt-24 max-w-[1400px] mx-auto px-4 md:px-8 pt-8 md:pt-14 pb-20">
-        <SectionHeading eyebrow="Rankings" title="Model rankings">
-          Rank models by one index at a time. Click a model for its evaluation-area and benchmark breakdown.
-        </SectionHeading>
-        <ModelDataTable initialModels={models} initialRows={15} indexTabs />
+      <section id="rankings" className="scroll-mt-24 frame pt-8 md:pt-14 pb-20">
+        <div className="cols-10">
+        <ModelDataTable
+          initialModels={models}
+          initialRows={15}
+          heading={
+            <SectionHeading eyebrow="Rankings" title="Model rankings" className="">
+              Click a column header to re-rank. Click a model for its evaluation-area and benchmark breakdown.
+            </SectionHeading>
+          }
+        />
+        </div>
       </section>
 
       <RunCore subsetItems={efficiency?.subset_items ?? null} />

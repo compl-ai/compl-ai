@@ -6,7 +6,8 @@ const BUTTON = 'font-plex rounded-full px-4 py-1.5 text-base font-medium transit
 
 export function HomeHero({ benchmarks }: { benchmarks: number | null }) {
   return (
-    <section className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-20 xl:px-36 pt-16 md:pt-28 pb-16 md:pb-24 grid gap-10 md:grid-cols-[1fr_auto] md:items-center">
+    <section className="frame pt-16 md:pt-28 pb-16 md:pb-24">
+      <div className="cols-10 grid gap-10 md:grid-cols-[1fr_auto] md:items-center">
       <div>
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-ink leading-[1.02]">
           Run fewer tests.<br />Measure more.
@@ -18,11 +19,12 @@ export function HomeHero({ benchmarks }: { benchmarks: number | null }) {
           on {benchmarks ?? 'the'} established benchmarks across capability, safety, and reliability.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
-          <a href="#run-core" className={`${BUTTON} border border-ink bg-ink text-white hover:bg-ink/85`}>Run CORE</a>
-          <a href="#results" className={`${BUTTON} border border-ink bg-white text-ink hover:bg-muted`}>Explore Results</a>
+          <a href="#run-core" className={`${BUTTON} border border-ink bg-ink text-background hover:bg-ink/85`}>Run CORE</a>
+          <a href="#results" className={`${BUTTON} border border-ink bg-card text-ink hover:bg-muted`}>Explore Results</a>
         </div>
       </div>
-      <CoreMark3D className="hidden md:block w-40 lg:w-48 h-auto md:mr-8 lg:mr-16 xl:mr-0 md:-translate-y-5 md:scale-115" />
+      <CoreMark3D className="hidden md:block w-40 lg:w-48 h-auto md:-translate-y-5 md:scale-115" />
+      </div>
     </section>
   );
 }
@@ -60,7 +62,7 @@ export function CoreStats({ efficiency }: { efficiency: SuiteEfficiency }) {
   const label = 'mt-2 font-plex text-sm text-muted-foreground leading-snug max-w-[18rem]';
 
   return (
-    <section className="max-w-[1400px] mx-auto px-4 md:px-8 pb-16" aria-label="CORE at a glance">
+    <section className="frame pb-16" aria-label="CORE at a glance">
       <div className="grid gap-8 md:grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)_auto_minmax(13rem,1fr)] lg:grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)_auto_minmax(16rem,1fr)] md:items-start md:gap-6 xl:gap-10 border-y border-border py-5 lg:py-6 px-0 [--bleed:24px] min-[1440px]:[--bleed:40px] md:-mx-[var(--bleed)] md:px-[var(--bleed)]">
         <div>
           <StatTag kind="evaluate" />

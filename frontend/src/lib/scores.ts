@@ -20,12 +20,30 @@ export const INDEX_TONE: Record<IndexId, { bar: string; soft: string; line: stri
   safety: { bar: 'bg-safety', soft: 'bg-lavender-soft', line: 'border-safety' },
 };
 
+// Interval band and point colours for score bars (leaderboard and model page).
+export const INDEX_BAR: Record<IndexId, { band: string; dot: string }> = {
+  capability: { band: 'bg-capability/45', dot: 'bg-capability' },
+  safety: { band: 'bg-lavender-strong/45', dot: 'bg-lavender-strong' },
+  reliability: { band: 'bg-teal-strong/45', dot: 'bg-teal-strong' },
+};
+
 export function getIndexTheta(m: JoinedModelData, index: string): IndexTheta | null {
   return m.prediction?.indices?.[index]?.index_theta ?? null;
 }
 
 export function scaleTheta(theta: number): number {
   return THETA_MEAN + THETA_SD * theta;
+}
+
+// Bar position (0–100%) for a scaled score. 50–100 is squeezed into the left quarter so the crowded range above the average gets more room.
+const BAR_LOW = 50;
+const BAR_HIGH = 150;
+const BAR_SPLIT = 25;
+export function scoreBarPct(score: number): number {
+  const v = Math.min(Math.max(score, BAR_LOW), BAR_HIGH);
+  return v <= THETA_MEAN
+    ? (v - BAR_LOW) / (THETA_MEAN - BAR_LOW) * BAR_SPLIT
+    : BAR_SPLIT + (v - THETA_MEAN) / (BAR_HIGH - THETA_MEAN) * (100 - BAR_SPLIT);
 }
 
 export function formatScore(theta: number): string {
@@ -78,6 +96,19 @@ export function formatTokens(n: number): string {
 
 // Parameter counts may arrive as numbers or as digit-grouped strings like "70_000_000_000".
 export const parseParams = (v: unknown) => typeof v === 'number' ? v : Number(String(v ?? '0').replace(/_/g, ''));
+
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+// How many times fewer tokens CORE uses than the full suite.
+export function tokenMultiplier(t: { core: number; full: number }): number | null {
+  return t.core > 0 && t.full > 0 ? t.full / t.core : null;
+}
+
+export function formatMultiplier(m: number): string {
+  return m >= 10 ? Math.round(m).toString() : m.toFixed(1);
+}
 
 export function formatPercent(share: number): string {
   return `${Math.round(share * 100)}%`;

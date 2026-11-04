@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode follows the system setting. It only applies when <html> has data-dark-mode (see DARK_MODE in layout.tsx),
+   so removing that attribute turns it off everywhere. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where([data-dark-mode], [data-dark-mode] *) {
+      @slot;
+    }
+  }
+}
 
 @theme {
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
@@ -9,16 +17,26 @@
   --font-plex: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
 
   /* Brand palette */
-  --color-brand: #FFA600;
-  --color-brand-strong: #9A6300; /* orange that passes AA as text on white */
-  --color-brand-soft: #FFF4DE;
-  --color-teal: #7FDDDA;
-  --color-teal-strong: #2E8C88;
-  --color-teal-soft: #E8F8F7;
+  --color-brand: #FFAB36;
+  --color-brand-strong: var(--brand-strong); /* orange that passes AA as text on the background */
+  --color-brand-soft: var(--brand-soft);
+  --color-link: var(--link); /* links; quieter than the brand orange used for eyebrows */
+  --color-teal: #80DDDA;
+  --color-teal-strong: var(--teal-strong);
+  --color-teal-soft: var(--teal-soft);
   --color-lavender: #8A90D1;
-  --color-lavender-strong: #5A61A8;
-  --color-lavender-soft: #EEEFF9;
-  --color-ink: #051C2C;
+  --color-lavender-strong: var(--lavender-strong);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-ink: var(--ink); /* main text colour; flips in dark mode */
+  --color-navy: #051C2C; /* brand dark; never flips (text on orange, code blocks) */
+
+  /* Neutral greys for rules, tracks and charts */
+  --color-grid: var(--grid);
+  --color-rule: var(--rule);
+  --color-track: var(--track);
+  --color-subtle: var(--subtle);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-hover: var(--hover); /* opaque row hover */
 
   /* Index colours: use these (bg-capability, text-safety, var(--color-reliability), ...) for anything keyed to an index */
   --color-capability: var(--color-brand);
@@ -60,6 +78,21 @@
 }
 
 :root {
+  --ink: #051C2C;
+  --brand-strong: #9A6300;
+  --link: #9A6300;
+  --brand-soft: #FFF4DE;
+  --teal-strong: #2E8C88;
+  --teal-soft: #E8F8F7;
+  --lavender-strong: #5A61A8;
+  --lavender-soft: #EEEFF9;
+  --grid: #EEF0F2;
+  --rule: #C9CDD2;
+  --track: #D5D9DD;
+  --subtle: #AEB4BA;
+  --faint-foreground: #8A939B;
+  --hover: #F9FAFB;
+
   --background: #FFFFFF;
   --foreground: #051C2C;
 
@@ -69,10 +102,10 @@
   --popover: #FFFFFF;
   --popover-foreground: #051C2C;
 
-  --primary: #FFA600;
+  --primary: #FFAB36;
   --primary-foreground: #051C2C;
 
-  --secondary: #7FDDDA;
+  --secondary: #80DDDA;
   --secondary-foreground: #051C2C;
 
   --muted: #F5F6F8;
@@ -86,9 +119,45 @@
 
   --border: #E6E8EB;
   --input: #E6E8EB;
-  --ring: #FFA600;
+  --ring: #FFAB36;
 
   --radius: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-dark-mode] {
+    color-scheme: dark;
+
+    --ink: #F3F3F3;
+    --brand-strong: #FFAB36;
+    --link: #E2C08F;
+    --brand-soft: #3A3626;
+    --teal-strong: #80DDDA;
+    --teal-soft: #14404F;
+    --lavender-strong: #A9AEE8;
+    --lavender-soft: #24345C;
+    --grid: #173A52;
+    --rule: #3A5A70;
+    --track: #2A4B62;
+    --subtle: #6E8494;
+    --faint-foreground: #7F92A0;
+    --hover: #123650;
+
+    --background: #051C2C;
+    --foreground: #F3F3F3;
+    --card: #051C2C; /* same as the page: cards stay outlined, like the light theme */
+    --card-foreground: #F3F3F3;
+    --popover: #0E2E44; /* floating layers only (tooltips, menus) */
+    --popover-foreground: #F3F3F3;
+    --primary-foreground: #051C2C;
+    --secondary-foreground: #051C2C;
+    --muted: #173A52;
+    --muted-foreground: #A3B3BF;
+    --accent: #24345C;
+    --accent-foreground: #F3F3F3;
+    --border: #1F4560;
+    --input: #1F4560;
+  }
 }
 
 @layer base {
@@ -103,5 +172,49 @@
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Layout grid. Every page sits in a 1400px frame whose left edge lines up with the header logo; that frame is the
+   full 12-column width. cols-10/8/6 narrow content to that many columns, centred. punch-10 widens a block inside a
+   cols-8 column back out to 10 columns. The narrower widths apply from lg up; smaller screens use the full frame. */
+:root {
+  --grid-gutter: 2rem;
+}
+
+@utility frame {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (width >= 48rem) {
+    padding-inline: 2rem;
+  }
+}
+
+@utility cols-10 {
+  @media (width >= 64rem) {
+    max-width: calc(10 * (100% - 11 * var(--grid-gutter)) / 12 + 9 * var(--grid-gutter));
+    margin-inline: auto;
+  }
+}
+
+@utility cols-8 {
+  @media (width >= 64rem) {
+    max-width: calc(8 * (100% - 11 * var(--grid-gutter)) / 12 + 7 * var(--grid-gutter));
+    margin-inline: auto;
+  }
+}
+
+@utility cols-6 {
+  @media (width >= 64rem) {
+    max-width: calc(6 * (100% - 11 * var(--grid-gutter)) / 12 + 5 * var(--grid-gutter));
+    margin-inline: auto;
+  }
+}
+
+@utility punch-10 {
+  @media (width >= 64rem) {
+    margin-inline: calc((100% + var(--grid-gutter)) / -8);
   }
 }

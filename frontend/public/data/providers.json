@@ -1,0 +1,23 @@
+{
+  "_note": "Organization name (as in public/models/*.yaml) to logo files in public/assets/provider-logos. `color` is null when only a single-colour mark exists. Organizations not listed fall back to a generic icon.",
+  "providers": {
+    "Ai2": { "logo": "ai2.svg", "color": "ai2-color.svg" },
+    "Alibaba Cloud": { "logo": "alibabacloud.svg", "color": "alibabacloud-color.svg" },
+    "Anthropic": { "logo": "anthropic.svg", "color": null },
+    "ByteDance": { "logo": "bytedance.svg", "color": "bytedance-color.svg" },
+    "DeepSeek": { "logo": "deepseek.svg", "color": "deepseek-color.svg" },
+    "Google": { "logo": "google.svg", "color": "google-color.svg" },
+    "IBM Granite": { "logo": "ibm.svg", "color": null },
+    "Meta": { "logo": "meta.svg", "color": "meta-color.svg" },
+    "Microsoft": { "logo": "microsoft.svg", "color": "microsoft-color.svg" },
+    "MiniMax": { "logo": "minimax.svg", "color": "minimax-color.svg" },
+    "Mistral AI": { "logo": "mistral.svg", "color": "mistral-color.svg" },
+    "Moonshot AI": { "logo": "moonshot.svg", "color": null },
+    "NVIDIA": { "logo": "nvidia.svg", "color": "nvidia-color.svg" },
+    "OpenAI": { "logo": "openai.svg", "color": null },
+    "StepFun": { "logo": "stepfun.svg", "color": "stepfun-color.svg" },
+    "Tencent": { "logo": "tencent.svg", "color": "tencent-color.svg" },
+    "Xiaomi": { "logo": "xiaomi.svg", "color": "xiaomi-color.svg" },
+    "Z.ai": { "logo": "zai.svg", "color": null }
+  }
+}

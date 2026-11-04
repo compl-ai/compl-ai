@@ -38,7 +38,7 @@ function RefCard({ item: r, link }: { item: GroundingRef; link: GroundingLink })
   return (
     <li
       className={`flex flex-col rounded-xl border p-4 ${
-        direct ? 'border-border border-l-4 border-l-ink/70 bg-white' : 'border-dashed border-ink/20 bg-muted/30'
+        direct ? 'border-border border-l-4 border-l-ink/70 bg-card' : 'border-dashed border-ink/20 bg-muted/30'
       }`}
     >
       <div className="text-xs text-muted-foreground">
@@ -161,7 +161,7 @@ export function MeasurementExplorer({
                       >
                         <span className={active ? '' : 'font-medium'}>{s.name}</span>
                         {s.gap && (
-                          <span className="ml-1.5 rounded-full border border-border bg-white px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground lg:ml-0">
+                          <span className="ml-1.5 rounded-full border border-border bg-card px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground lg:ml-0">
                             Not scored
                           </span>
                         )}
@@ -178,7 +178,7 @@ export function MeasurementExplorer({
         })}
       </nav>
 
-      <article ref={detailRef} className="scroll-mt-24 rounded-2xl border border-border bg-white p-5 md:p-8" aria-live="polite">
+      <article ref={detailRef} className="scroll-mt-24 rounded-2xl border border-border bg-card p-5 md:p-8" aria-live="polite">
         <p className={`${EYEBROW_CLASS} mb-1.5`}>{indexLabel} index</p>
         <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight text-ink">{current.name}</h3>
         <p className="mt-2 max-w-2xl text-base leading-relaxed text-ink/80">{current.description}</p>

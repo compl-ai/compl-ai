@@ -70,7 +70,7 @@ function Cite({ ids }: { ids: string[] }) {
       {ids.map((id, i) => (
         <span key={id}>
           {i > 0 && ', '}
-          <a href={`#${id}`} className="text-brand-strong hover:underline">{REF_NUMBER[id]}</a>
+          <a href={`#${id}`} className="text-link hover:underline">{REF_NUMBER[id]}</a>
         </span>
       ))}
       ]
@@ -79,7 +79,7 @@ function Cite({ ids }: { ids: string[] }) {
 }
 
 function Faq({ id, children }: { id: string; children: React.ReactNode }) {
-  return <a href={`#faq-${id}`} className="font-semibold text-brand-strong hover:underline whitespace-nowrap">{children} &rarr;</a>;
+  return <a href={`#faq-${id}`} className="font-semibold text-link hover:underline whitespace-nowrap">{children} &rarr;</a>;
 }
 
 function Section({ id, n, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
@@ -96,7 +96,7 @@ function Section({ id, n, title, children }: { id: string; n: number; title: str
 
 function Figure({ id, n, title, caption, wide = false, children }: { id?: string; n: number; title: string; caption: React.ReactNode; wide?: boolean; children: React.ReactNode }) {
   return (
-    <figure id={id} className={`my-10 scroll-mt-24 border-t border-ink/20 pt-4 ${wide ? 'lg:-mx-28' : ''}`}>
+    <figure id={id} className={`my-10 scroll-mt-24 border-t border-ink/20 pt-4 ${wide ? 'punch-10' : ''}`}>
       <div className="mb-4 text-sm font-semibold text-ink">
         <span className="text-brand-strong">Figure {n}.</span> {title}
       </div>
@@ -150,7 +150,7 @@ const FAQ: { id: string; q: string; a: React.ReactNode }[] = [
   {
     id: 'reproduce',
     q: 'Can I reproduce a score?',
-    a: <>Yes. The harness, the core item list and the IRT parameters for the full suite are public in the <a href={REPO_URL} className="font-semibold text-brand-strong hover:underline">repository</a>; the <a href={README_CORE_URL} className="font-semibold text-brand-strong hover:underline">README</a> shows how to run the core subset and predict scores. Our raw evaluation logs are not published yet.</>,
+    a: <>Yes. The harness, the core item list and the IRT parameters for the full suite are public in the <a href={REPO_URL} className="font-semibold text-link hover:underline">repository</a>; the <a href={README_CORE_URL} className="font-semibold text-link hover:underline">README</a> shows how to run the core subset and predict scores. Our raw evaluation logs are not published yet.</>,
   },
   {
     id: 'theta',
@@ -165,7 +165,8 @@ export default function MethodologyPage() {
   const efficiency = getEfficiency();
   const method = getMethod();
   return (
-    <article className="container mx-auto max-w-3xl px-4 py-12">
+    <article className="frame pt-22 pb-12">
+      <div className="cols-8">
       <header>
         <Eyebrow>How it works</Eyebrow>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-ink">How ComplAI CORE works</h1>
@@ -229,13 +230,13 @@ export default function MethodologyPage() {
               <dd><strong>Item discrimination.</strong> How sharply the item separates models just below that point from those just above.</dd>
             </dl>
             <p>
-              <strong>The core subset.</strong> The 2,000 items are split across benchmarks by signal: a benchmark gets more items the more models differ on it (in proportion to that spread to the power ⅔, with a minimum per benchmark). Within each benchmark the items are drawn by seeded random sampling. The set is fixed, so every model answers exactly the same items.
+              <strong>The core subset.</strong> Each benchmark <i>b</i> gets a target <i>t</i><sub><i>b</i></sub>&nbsp;∝&nbsp;<i>σ</i><sub><i>b</i></sub><sup>2/3</sup>, where <i>σ</i><sub><i>b</i></sub> is how much models differ on it (with a minimum per benchmark). A joint allocator then hands out the 2,000 items one at a time, each to the benchmark maximising <span className="whitespace-nowrap"><i>t</i><sub><i>b</i></sub>&nbsp;/&nbsp;((<i>n</i><sub><i>b</i></sub>+1)(<i>n</i><sub><i>I</i></sub>+1))</span>, where <i>n</i><sub><i>b</i></sub> and <i>n</i><sub><i>I</i></sub> count the items already given to the benchmark and its index. This keeps the three indices balanced. Items within a benchmark are drawn by seeded random sampling, and the set is fixed, so every model answers the same items.
             </p>
             <p>
               <strong>Scoring a new model.</strong> A model answers the core items and we estimate its ability on each benchmark. Its predicted benchmark score combines its real answers on the core items with the predicted probability of a correct answer on every other item.
             </p>
             <p>
-              <strong>Indices.</strong> The benchmark scores are combined into three indices (Capability, Reliability and Safety) with a second IRT fit, in which each benchmark is one observation weighted by its fitted discrimination. A benchmark on which all models score alike has low discrimination and barely moves the result; one that spreads models apart carries more weight. We think this is part of why our rankings agree with external leaderboards even though the suite includes older benchmarks (<Faq id="old-benchmarks">FAQ</Faq>). Each index is published as <strong>100&nbsp;+&nbsp;15θ</strong> with a 90% interval.
+              <strong>Indices.</strong> The benchmark scores are combined into three indices (Capability, Reliability and Safety) with a second IRT fit, in which each benchmark is one observation weighted by its fitted discrimination. A benchmark on which all models score alike has low discrimination and barely moves the result; one that spreads models apart carries more weight. This puts the emphasis on high-signal benchmarks and keeps our rankings in line with external leaderboards, without any manual weighting of benchmarks (<Faq id="old-benchmarks">FAQ</Faq>). Each index is published as <strong>100&nbsp;+&nbsp;15θ</strong> with a 90% interval.
             </p>
             <p>
               <strong>A prediction, not a smaller benchmark.</strong> Compact benchmarks such as the Harbor Index<Cite ids={['ref-harbor']} /> curate a small set of hard, audited tasks and treat that set as the benchmark: the score is the score on those tasks. CORE works differently. Its 2,000 items are not picked for difficulty or audited one by one; they are a statistically allocated sample whose job is to predict a model’s result on the existing 92,210-item suite, using item parameters calibrated on full runs. That makes every CORE score an estimate of full-suite performance, which we can check against real full runs (section 3).
@@ -319,7 +320,7 @@ export default function MethodologyPage() {
               The two most-cited articles have different scopes. <strong>Article&nbsp;15</strong> sets accuracy, robustness and cybersecurity requirements for <em>high-risk AI systems</em>. We use it as a technical reference for what to measure: factuality, consistency and perturbation robustness point to its accuracy and robustness requirements (Art.&nbsp;15(1)), and jailbreak and prompt-injection resistance to its requirement of resilience against attempts to exploit system vulnerabilities (Art.&nbsp;15(5)). <strong>Article&nbsp;55</strong> sets obligations for <em>providers of general-purpose AI models with systemic risk</em>, including model evaluation with adversarial testing (Art.&nbsp;55(1)(a)) and adequate cybersecurity protection (Art.&nbsp;55(1)(d)); the Code of Practice details how to meet them. Four Safety evaluation areas and perturbation robustness cite both, since the same measurement informs a system-level requirement and a model-level obligation.
             </p>
             <p>
-              The citations explain <em>why</em> we measure something; they are not a compliance verdict (<Faq id="compliance">FAQ</Faq>). The full mapping, with the cited text, is on the <Link href="/benchmarks#grounding" className="font-semibold text-brand-strong hover:underline">Benchmarks page</Link>.
+              The citations explain <em>why</em> we measure something; they are not a compliance verdict (<Faq id="compliance">FAQ</Faq>). The full mapping, with the cited text, is on the <Link href="/benchmarks#grounding" className="font-semibold text-link hover:underline">Benchmarks page</Link>.
             </p>
           </div>
         </Section>
@@ -389,16 +390,11 @@ export default function MethodologyPage() {
               <strong>Limitations.</strong> CORE predicts the existing suite; it does not validate it. If a benchmark or its scorer is flawed, CORE inherits the flaw. Benchmark saturation remains an open problem: discrimination weighting lowers the influence of benchmarks that no longer separate models, but it does not make them informative again. Predictions are validated only on open-weight models, and the intervals for Reliability and Safety are narrower than they should be.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <a href={README_CORE_URL} className="inline-flex cursor-pointer items-center rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink/85">Run CORE</a>
-            <Link href="/" className="inline-flex cursor-pointer items-center rounded-full border border-ink/20 px-5 py-2.5 text-sm font-semibold text-ink hover:border-ink/40">Explore results</Link>
-            <Link href="/benchmarks" className="inline-flex cursor-pointer items-center rounded-full border border-ink/20 px-5 py-2.5 text-sm font-semibold text-ink hover:border-ink/40">Benchmarks</Link>
-          </div>
         </Section>
 
         <section id="faq" className="scroll-mt-24 space-y-4">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink">FAQ</h2>
-          <div className="divide-y divide-border rounded-2xl border border-border bg-white">
+          <div className="divide-y divide-border rounded-2xl border border-border bg-card">
             {FAQ.map(item => (
               <details key={item.id} id={`faq-${item.id}`} className="group scroll-mt-24 px-5 py-4">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-semibold text-ink">
@@ -419,12 +415,13 @@ export default function MethodologyPage() {
                 <span className="font-semibold text-ink tabular">[{i + 1}]</span>
                 <span>
                   {r.text}
-                  {r.url && <> <a href={r.url} className="text-brand-strong hover:underline" target="_blank" rel="noreferrer">{r.link}</a></>}
+                  {r.url && <> <a href={r.url} className="text-link hover:underline" target="_blank" rel="noreferrer">{r.link}</a></>}
                 </span>
               </li>
             ))}
           </ol>
         </section>
+      </div>
       </div>
     </article>
   );

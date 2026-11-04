@@ -8,17 +8,18 @@ export const LOGO_HEIGHT = { md: 28.6, sm: 22 } as const;
 
 export function BrandMark({ size = 'md' }: { size?: keyof typeof LOGO_HEIGHT }) {
   const height = LOGO_HEIGHT[size];
+  const props = {
+    width: Math.round((height * 103) / 27),
+    height: Math.round(height),
+    style: { height, width: 'auto' },
+    priority: true,
+    unoptimized: true,
+  };
   return (
-    <Image
-      src={withBasePath('/assets/complai-logo.svg')}
-      alt="ComplAI"
-      width={Math.round((height * 103) / 27)}
-      height={Math.round(height)}
-      style={{ height, width: 'auto' }}
-      className="block shrink-0 max-w-none"
-      priority
-      unoptimized
-    />
+    <>
+      <Image {...props} alt="ComplAI" src={withBasePath('/assets/complai-logo.svg')} className="block shrink-0 max-w-none dark:hidden" />
+      <Image {...props} alt="ComplAI" src={withBasePath('/assets/complai-logo-inv.svg')} className="hidden shrink-0 max-w-none dark:block" />
+    </>
   );
 }
 

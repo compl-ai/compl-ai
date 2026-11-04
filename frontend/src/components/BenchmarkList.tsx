@@ -45,9 +45,9 @@ export function BenchmarkList({ benchmarks }: { benchmarks: BenchmarkRow[] }) {
         placeholder="Search benchmarks or evaluation areas…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm bg-white"
+        className="max-w-sm bg-card"
       />
-      <div className="rounded-2xl border border-border bg-white overflow-x-auto">
+      <div className="rounded-2xl border border-border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -71,7 +71,7 @@ export function BenchmarkList({ benchmarks }: { benchmarks: BenchmarkRow[] }) {
                       <a
                         key={a.key}
                         href={`#${a.slug}`}
-                        className="rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold text-ink/80 whitespace-nowrap hover:border-ink/40 hover:text-ink"
+                        className="rounded-full border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-ink/80 whitespace-nowrap hover:border-ink/40 hover:text-ink"
                       >
                         {a.name}
                       </a>

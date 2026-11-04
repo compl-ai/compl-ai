@@ -2,19 +2,23 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { IntervalBar } from '@/components/IntervalBar';
 import { RunBadge } from '@/components/RunBadge';
-import { getBenchmarkLabels, getJoinedModels, getTaxonomy, type JoinedModelData, type LabelScore } from '@/lib/data';
-import { EYEBROW_CLASS } from '@/components/layout/Eyebrow';
+import { getBenchmarkLabels, getCoreRelease, getJoinedModels, getTaxonomy, type JoinedModelData, type LabelScore, type ModelConfig } from '@/lib/data';
+import { ModelMeta } from '@/components/ModelCard';
 import {
   hasMeasuredScore,
   IMPUTED_SHARE_LIMIT,
+  INDEX_BAR,
   INDICES,
   NO_SCORE_REASON,
   RUN_TYPES,
   TASK_STATUS,
   THETA_MEAN,
   formatAccuracyInterval,
+  formatDate,
   formatInterval,
+  formatMultiplier,
   formatPercent,
+  tokenMultiplier,
   formatRankRange,
   formatScore,
   formatTokens,
@@ -23,11 +27,10 @@ import {
   imputedShare,
   rankRange,
   scaleTheta,
+  scoreBarPct,
 } from '@/lib/scores';
 
 // Same fixed range as the leaderboard bars, in scaled points.
-const SCORE_MIN = 40;
-const SCORE_MAX = 150;
 
 export function generateStaticParams() {
   return getJoinedModels().map((model) => ({ id: model.yamlId }));
@@ -58,11 +61,21 @@ function SectionHeading({ title, children }: { title: string; children?: React.R
   );
 }
 
+function BarKey({ tick, point }: { tick: string; point: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-px bg-ink/40" />{tick}</span>
+      <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-ink/60" />{point}</span>
+      <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-4 rounded-full bg-ink/20" />90% interval</span>
+    </div>
+  );
+}
+
 function IndexCard({ models, model, index }: { models: JoinedModelData[]; model: JoinedModelData; index: (typeof INDICES)[number] }) {
   const theta = getIndexTheta(model, index.id);
   const rank = rankRange(models, model, index.id);
   return (
-    <div className="rounded-2xl border border-border bg-white p-5" title={index.description}>
+    <div className="rounded-2xl border border-border bg-card p-5" title={index.description}>
       <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{index.label}</div>
       {theta ? (
         <>
@@ -74,9 +87,9 @@ function IndexCard({ models, model, index }: { models: JoinedModelData[]; model:
             className="mt-3"
             interval={[scaleTheta(theta.interval[0]), scaleTheta(theta.interval[1])]}
             point={scaleTheta(theta.theta)}
-            min={SCORE_MIN}
-            max={SCORE_MAX}
+            position={scoreBarPct}
             reference={THETA_MEAN}
+            tone={INDEX_BAR[index.id]}
           />
           <div className="mt-3 flex justify-between gap-2 text-xs text-muted-foreground">
             <span>From {theta.tasks} of {theta.tasks_total} benchmarks</span>
@@ -100,8 +113,9 @@ function IndexCard({ models, model, index }: { models: JoinedModelData[]; model:
   );
 }
 
-function AreaRow({ name, description, score, panelMedian }: {
+function AreaRow({ name, description, score, panelMedian, tone }: {
   name: string;
+  tone: { band: string; dot: string };
   description: string;
   score: LabelScore | undefined;
   panelMedian: number | null;
@@ -124,7 +138,7 @@ function AreaRow({ name, description, score, panelMedian }: {
           <span className={`text-lg font-bold tabular ${mostlyImputed ? 'text-ink/50' : 'text-ink'}`}>{formatPercent(score.predicted_score)}</span>
           {interval && <span className="text-xs text-muted-foreground tabular">{formatAccuracyInterval(interval)}</span>}
         </div>
-        <IntervalBar interval={interval} point={score.predicted_score} min={0} max={1} reference={panelMedian ?? undefined} muted={mostlyImputed} />
+        <IntervalBar interval={interval} point={score.predicted_score} min={0} max={1} reference={panelMedian ?? undefined} muted={mostlyImputed} tone={tone} />
         <div className="text-[11px] text-muted-foreground tabular">
           {score.observations.toLocaleString()} of {score.subset_items.toLocaleString()} core items answered
         </div>
@@ -147,6 +161,31 @@ function AreaRow({ name, description, score, panelMedian }: {
   );
 }
 
+// The route is the prefix of the eval model id, e.g. "openai-api/vllm/Qwen/..." or "openrouter/anthropic/...".
+function formatRoute(id: string, config: ModelConfig | undefined): React.ReactNode {
+  const route = id.startsWith('openai-api/vllm/') || id.startsWith('vllm/') ? 'Self-hosted vLLM'
+    : id.startsWith('openrouter/') ? 'OpenRouter'
+    : id.startsWith('openai/') ? 'OpenAI API'
+    : id.split('/')[0];
+  const label = config?.batch ? `${route} (batch)` : route;
+  if (!id.startsWith('openrouter/')) return label;
+  // The OpenRouter model slug from the logs maps directly to its model page.
+  return (
+    <a href={`https://openrouter.ai/${id.slice('openrouter/'.length)}`} target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+      {label}
+    </a>
+  );
+}
+
+function formatReasoning(config: ModelConfig | undefined): string {
+  const kwargs = config?.extra_body?.chat_template_kwargs ?? {};
+  const parts: string[] = [];
+  if (config?.reasoning_effort) parts.push(`${config.reasoning_effort[0].toUpperCase()}${config.reasoning_effort.slice(1)} effort`);
+  if (typeof kwargs.thinking_budget === 'number') parts.push(`${formatTokens(kwargs.thinking_budget)} thinking budget`);
+  if (kwargs.interleaved_thinking) parts.push('interleaved thinking');
+  return parts.length ? parts.join(', ') : 'Not set';
+}
+
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 py-2 border-b border-border last:border-0 text-sm">
@@ -167,8 +206,11 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
   const prediction = model.prediction;
   const run = getRunType(model);
   const tokens = prediction.usage?.tokens ?? null;
+  const multiplier = tokens ? tokenMultiplier(tokens) : null;
   const taskUsage = prediction.usage?.tasks ?? {};
   const coverage = prediction.coverage;
+  const modelConfig = prediction.model_config;
+  const coreRelease = getCoreRelease();
   const name = model.metadata?.name || model.yamlId;
 
   const subcategoryMedians = Object.fromEntries(
@@ -189,30 +231,17 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
   const tasksRun = Object.values(prediction.tasks).filter(t => t.status !== 'imputed' && t.status !== 'missing').length;
 
   return (
-    <div className="container mx-auto px-4 max-w-6xl py-10 space-y-12">
-      <Link href="/models" className="text-sm font-semibold text-muted-foreground hover:text-brand-strong transition-colors">
+    <div className="frame pt-20 pb-10">
+    <div className="cols-10 space-y-12">
+      <Link href="/models" className="inline-block mb-[34px] text-sm font-semibold text-muted-foreground hover:text-link transition-colors">
         ← All models
       </Link>
 
       <header className="space-y-3 max-w-3xl">
-        <div className={`flex flex-wrap items-center gap-2 ${EYEBROW_CLASS}`}>
-          <span>{model.metadata?.organization || 'Unknown organization'}</span>
-          {model.metadata?.release_date && (
-            <>
-              <span aria-hidden>·</span>
-              <span>Released {model.metadata.release_date}</span>
-            </>
-          )}
-        </div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-ink">{name}</h1>
+        <ModelMeta model={model} className="gap-2 text-sm" logoClassName="size-[18px]" />
         {model.metadata?.description && (
           <p className="text-base text-muted-foreground leading-relaxed">{model.metadata.description}</p>
-        )}
-        {run && (
-          <div className="flex items-start gap-2 text-sm text-muted-foreground">
-            <RunBadge run={run} />
-            <span className="leading-5">{RUN_TYPES[run].description}</span>
-          </div>
         )}
       </header>
 
@@ -220,23 +249,28 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {INDICES.map(index => <IndexCard key={index.id} models={models} model={model} index={index} />)}
         </div>
-        <p className="mt-3 text-xs text-muted-foreground leading-relaxed max-w-3xl">
-          {THETA_MEAN} is the average of the {models.length} evaluated models and 15 points is one standard deviation; the tick marks {THETA_MEAN}. Small numbers and shaded bars show the 90% interval.
-        </p>
+        <div className="mt-3 space-y-1.5">
+          <BarKey tick={`Average model (${THETA_MEAN})`} point="This model, in points" />
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-3xl">
+            {THETA_MEAN} is the average of the {models.length} evaluated models and 15 points is one standard deviation. Small numbers show the 90% interval.
+          </p>
+        </div>
       </section>
 
+      <div>
+      <SectionHeading title="Evaluation areas">
+        Predicted accuracy on all items of each evaluation area, with its 90% interval. Areas mix benchmarks of different
+        difficulty, so these percentages are not comparable across areas.
+      </SectionHeading>
+      <div className="mb-4"><BarKey tick="Median model" point="This model, 0–100% accuracy" /></div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8 space-y-12">
-          <section>
-            <SectionHeading title="Evaluation areas">
-              Predicted accuracy on all items of each evaluation area, with its 90% interval. Areas mix benchmarks of different
-              difficulty, so these percentages are not comparable across areas; the tick marks the median model.
-            </SectionHeading>
+          <section aria-label="Evaluation areas">
             <div className="space-y-6">
               {INDICES.map(index => {
                 const subcategories = Object.entries(taxonomy.subcategories).filter(([, s]) => s.index === index.id);
                 return (
-                  <div key={index.id} className="rounded-2xl border border-border bg-white px-5 py-2">
+                  <div key={index.id} className="rounded-2xl border border-border bg-card px-5 py-2">
                     <div className="pt-3 pb-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{index.label}</div>
                     {subcategories.map(([key, info]) => (
                       <AreaRow
@@ -245,6 +279,7 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
                         description={info.description}
                         score={prediction.subcategories?.[key]}
                         panelMedian={subcategoryMedians[key]}
+                        tone={INDEX_BAR[index.id]}
                       />
                     ))}
                   </div>
@@ -259,7 +294,7 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
               from the model’s answers on the core items and predictions for the rest, so every model is scored the same way whatever it ran;
               ± shows the 90% range of those predictions. Benchmarks that were not run have no score here.
             </SectionHeading>
-            <div className="rounded-2xl border border-border bg-white overflow-x-auto">
+            <div className="rounded-2xl border border-border bg-card overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -326,39 +361,54 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
         </div>
 
         <aside className="lg:col-span-4 space-y-6">
-          <div className="rounded-2xl border border-border bg-white p-5">
-            <h2 className="text-lg font-extrabold tracking-tight text-ink">Evaluation cost</h2>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="text-lg font-extrabold tracking-tight text-ink">Evaluation settings</h2>
+            {run && <p className="mt-1 text-sm text-muted-foreground leading-snug">{RUN_TYPES[run].description}</p>}
             {tokens && run ? (
               <>
                 <div className="mt-3 font-serif text-3xl font-extrabold tracking-tight tabular text-teal-strong">
                   {run !== 'core' ? '~' : ''}{formatTokens(tokens.core)}
                 </div>
                 <div className="text-sm text-muted-foreground">tokens on the core subset{run !== 'core' ? ' (estimated)' : ' (measured)'}</div>
-                <div className="relative mt-4 h-2 rounded-full bg-muted" aria-hidden>
-                  <div className="absolute inset-y-0 left-0 rounded-full bg-teal" style={{ width: `${Math.max((tokens.core / tokens.full) * 100, 2)}%` }} />
+                <div className="mt-4 space-y-1" aria-hidden>
+                  <div className="h-1.5 rounded-full bg-ink" style={{ width: `${Math.max((tokens.core / tokens.full) * 100, 2)}%` }} />
+                  <div className="h-1.5 w-full rounded-full bg-track" />
                 </div>
-                <div className="mt-2 flex justify-between text-xs text-muted-foreground tabular">
-                  <span>vs {run !== 'full' ? '~' : ''}{formatTokens(tokens.full)} on all items{run !== 'full' ? ' (estimated)' : ' (measured)'}</span>
-                  {tokens.reduction !== null && <span className="font-semibold text-teal-strong">−{formatPercent(tokens.reduction)}</span>}
+                <div className="mt-2 text-xs text-muted-foreground tabular">
+                  vs {run !== 'full' ? '~' : ''}{formatTokens(tokens.full)} on all items{run !== 'full' ? ' (estimated)' : ' (measured)'}
                 </div>
-                <div className="mt-4">
-                  <DetailRow label="Tokens measured" value={formatTokens(tokens.measured)} />
-                  <DetailRow label="Benchmarks with token counts" value={tokens.tasks} />
-                </div>
+                {multiplier !== null && (
+                  <p className="mt-3 text-sm text-ink">
+                    <span className="font-semibold text-teal-strong tabular">{formatMultiplier(multiplier)}×</span> more efficient evaluation
+                  </p>
+                )}
+                <Link href="/methodology#efficiency" className="mt-2 inline-block text-xs font-semibold text-link hover:underline">How we estimate this</Link>
               </>
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">The logs for this run have no token counts.</p>
             )}
-            {coverage && (
-              <div className={tokens ? '' : 'mt-3'}>
-                <DetailRow label="Core items answered" value={`${coverage.samples_completed.toLocaleString()} / ${coverage.samples_total.toLocaleString()}`} />
-                <DetailRow label="Items answered in total" value={coverage.population_samples_observed.toLocaleString()} />
-              </div>
-            )}
-            <Link href="/methodology#efficiency" className="mt-3 inline-block text-xs font-semibold text-brand-strong hover:underline">How we estimate this</Link>
+            <div className={tokens && run ? 'mt-4' : 'mt-3'}>
+              {tokens && run && (
+                <>
+                  <DetailRow label="Tokens measured" value={formatTokens(tokens.measured)} />
+                  <DetailRow label="Benchmarks with token counts" value={`${tokens.tasks} / ${Object.keys(prediction.tasks).length}`} />
+                </>
+              )}
+              {coverage && (
+                <>
+                  <DetailRow label="Core items answered" value={`${coverage.samples_completed.toLocaleString()} / ${coverage.samples_total.toLocaleString()}`} />
+                  <DetailRow label="Items answered in total" value={coverage.population_samples_observed.toLocaleString()} />
+                </>
+              )}
+              {prediction.last_evaluated && <DetailRow label="Last evaluated" value={formatDate(prediction.last_evaluated)} />}
+              {coreRelease && <DetailRow label="CORE release" value={coreRelease.replace(/^core\./, 'CORE ')} />}
+              <DetailRow label="Served via" value={formatRoute(model.id, modelConfig)} />
+              <DetailRow label="Reasoning" value={formatReasoning(modelConfig)} />
+              {modelConfig?.max_tokens && <DetailRow label="Max output tokens" value={modelConfig.max_tokens.toLocaleString()} />}
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-white p-5">
+          <div className="rounded-2xl border border-border bg-card p-5">
             <h2 className="text-lg font-extrabold tracking-tight text-ink">Model details</h2>
             <div className="mt-2">
               <DetailRow label="Parameters" value={formatParams(model)} />
@@ -372,7 +422,7 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
                 <div className="text-sm text-muted-foreground mb-2">Sources</div>
                 <div className="flex flex-col gap-1.5">
                   {model.metadata.sources.map(source => (
-                    <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-strong hover:underline truncate">
+                    <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-link hover:underline truncate">
                       {source.title || source.url}
                     </a>
                   ))}
@@ -382,6 +432,8 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
           </div>
         </aside>
       </div>
+      </div>
+    </div>
     </div>
   );
 }

@@ -3,10 +3,10 @@ import { useSyncExternalStore } from 'react';
 import { CartesianGrid, ErrorBar, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
 import type { MethodCostRow, MethodEciRow, MethodLomoRow } from '@/lib/data';
 
-const AXIS_TICK = { fill: '#5B6670', fontSize: 11 };
-const AXIS_LABEL = { fill: '#051C2C', fontSize: 12, fontWeight: 600 };
-const GRID = '#EEF0F2';
-const DIAGONAL = '#C9CDD2';
+const AXIS_TICK = { fill: 'var(--muted-foreground)', fontSize: 11 };
+const AXIS_LABEL = { fill: 'var(--color-ink)', fontSize: 12, fontWeight: 600 };
+const GRID = 'var(--color-grid)';
+const DIAGONAL = 'var(--color-rule)';
 
 const noopSubscribe = () => () => {};
 const useMounted = () => useSyncExternalStore(noopSubscribe, () => true, () => false);
@@ -19,7 +19,7 @@ const INDEX_STYLE: Record<MethodLomoRow['index'], { label: string; color: string
 
 function TooltipBox({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
-    <div className="bg-white border border-border shadow-lg p-3 text-xs rounded-xl min-w-[200px]">
+    <div className="bg-card border border-border shadow-lg p-3 text-xs rounded-xl min-w-[200px]">
       <div className="font-bold text-ink text-sm mb-2">{title}</div>
       <div className="flex flex-col gap-1">
         {rows.map(([k, v]) => (
@@ -41,8 +41,8 @@ function LomoDot(props: { cx?: number; cy?: number; payload?: LomoPoint; fill?: 
   const { cx, cy, payload, fill } = props;
   if (cx === undefined || cy === undefined || !payload) return null;
   return payload.inside
-    ? <circle cx={cx} cy={cy} r={4} fill={fill} fillOpacity={0.85} stroke="#FFFFFF" strokeWidth={1} />
-    : <circle cx={cx} cy={cy} r={4} fill="#FFFFFF" stroke="#051C2C" strokeWidth={1.5} />;
+    ? <circle cx={cx} cy={cy} r={4} fill={fill} fillOpacity={0.85} stroke="var(--card)" strokeWidth={1} />
+    : <circle cx={cx} cy={cy} r={4} fill="var(--card)" stroke="var(--color-ink)" strokeWidth={1.5} />;
 }
 
 function LomoTooltip({ active, payload }: { active?: boolean; payload?: { payload: LomoPoint }[] }) {
@@ -138,11 +138,11 @@ function EciDot(props: { cx?: number; cy?: number; payload?: EciPoint }) {
   if (cx === undefined || cy === undefined || !p) return null;
   return (
     <g>
-      <circle cx={cx} cy={cy} r={4} fill={eciColor(p.type)} fillOpacity={0.9} stroke="#FFFFFF" strokeWidth={1.25} />
+      <circle cx={cx} cy={cy} r={4} fill={eciColor(p.type)} fillOpacity={0.9} stroke="var(--card)" strokeWidth={1.25} />
       {p.label && (
         <text
           x={cx + p.label.dx} y={cy + p.label.dy} textAnchor={p.label.anchor} className="pointer-events-none"
-          style={{ fontSize: 11, fontWeight: 600, fill: '#051C2C', paintOrder: 'stroke', stroke: '#FFFFFF', strokeWidth: 3 }}
+          style={{ fontSize: 11, fontWeight: 600, fill: 'var(--color-ink)', paintOrder: 'stroke', stroke: 'var(--card)', strokeWidth: 3 }}
         >
           {p.label.text}
         </text>
@@ -200,8 +200,8 @@ export function EciFigure({ rows }: { rows: MethodEciRow[] }) {
               />
               <Tooltip cursor={false} isAnimationActive={false} content={<EciTooltip />} />
               <Scatter data={data} shape={EciDot} isAnimationActive={false}>
-                <ErrorBar dataKey="errX" direction="x" stroke="#AEB4BA" strokeOpacity={0.7} width={3} />
-                <ErrorBar dataKey="errY" direction="y" stroke="#AEB4BA" strokeOpacity={0.7} width={3} />
+                <ErrorBar dataKey="errX" direction="x" stroke="var(--color-subtle)" strokeOpacity={0.7} width={3} />
+                <ErrorBar dataKey="errY" direction="y" stroke="var(--color-subtle)" strokeOpacity={0.7} width={3} />
               </Scatter>
             </ScatterChart>
           </ResponsiveContainer>
@@ -222,7 +222,7 @@ export function CostFigure({ rows }: { rows: MethodCostRow[] }) {
     <div className="text-xs" data-figure="cost">
       <div className="flex flex-wrap gap-4 text-muted-foreground mb-3">
         <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm bg-brand" />Core run (2,000 items)</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm bg-[#D5D9DD]" />Full suite (92,210 items)</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm bg-track" />Full suite (92,210 items)</span>
       </div>
       <div className="grid grid-cols-[minmax(0,7.5rem)_1fr_3rem] sm:grid-cols-[11rem_1fr_3.5rem] gap-x-3 gap-y-2.5 items-center">
         <div />
@@ -238,7 +238,7 @@ export function CostFigure({ rows }: { rows: MethodCostRow[] }) {
               {COST_TICKS.map(t => (
                 <span key={t} className="absolute inset-y-0 border-l border-dashed border-border" style={{ left: `${logPos(t)}%` }} />
               ))}
-              <div className="absolute top-0 h-3 rounded-r-sm bg-[#D5D9DD]" style={{ width: `${logPos(r.full)}%` }} />
+              <div className="absolute top-0 h-3 rounded-r-sm bg-track" style={{ width: `${logPos(r.full)}%` }} />
               <span className="absolute top-0 h-3 leading-3 pl-1.5 text-[10px] text-muted-foreground tabular whitespace-nowrap" style={{ left: `${logPos(r.full)}%` }}>{usd(r.full)}</span>
               <div className="absolute top-3.5 h-3 rounded-r-sm bg-brand" style={{ width: `${logPos(r.core)}%` }} />
               <span className="absolute top-3.5 h-3 leading-3 pl-1.5 text-[10px] text-brand-strong font-semibold tabular whitespace-nowrap" style={{ left: `${logPos(r.core)}%` }}>{usd(r.core)}</span>

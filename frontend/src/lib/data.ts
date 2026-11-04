@@ -176,9 +176,20 @@ export interface SuiteEfficiency {
   tasks?: Record<string, TaskEfficiency>;
 }
 
+// The generation settings from the eval logs (inspect's GenerateConfig).
+export interface ModelConfig {
+  max_tokens?: number;
+  reasoning_effort?: string;
+  batch?: number;
+  extra_body?: { chat_template_kwargs?: Record<string, unknown> };
+}
+
 interface ModelPrediction {
   predicted_score: number;
   usage?: ModelUsage;
+  model_config?: ModelConfig;
+  // Start time (ISO, UTC) of the model's newest eval log.
+  last_evaluated?: string | null;
   predicted_score_error?: number;
   task_macro_score?: number;
   // Per-label predicted scores over the full item population (from complai.predict)
@@ -209,6 +220,19 @@ export function getPredictions() {
   const dataPath = path.join(process.cwd(), 'public', 'data', 'predictions.json');
   const fileContents = fs.readFileSync(dataPath, 'utf8');
   return JSON.parse(fileContents);
+}
+
+// The CORE release the scores are estimated from, e.g. "core.v1".
+export function getCoreRelease(): string | null {
+  return getPredictions().subset ?? null;
+}
+
+// The newest eval across all models, so re-exports without new runs keep the same date.
+export function getLastUpdated(): string | null {
+  const dates = Object.values(getPredictions().models as Record<string, ModelPrediction>)
+    .map(m => m.last_evaluated)
+    .filter((d): d is string => !!d);
+  return dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : null;
 }
 
 export function getEfficiency(): SuiteEfficiency | null {

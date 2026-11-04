@@ -33,12 +33,12 @@ export function SiteHeader() {
   ));
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur pt-3 md:pt-4">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6">
+    <header className="sticky top-0 z-50 w-full bg-card/90 backdrop-blur pt-3 md:pt-4">
+      <div className="frame h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6">
         <div className="flex items-center gap-2.5">
           <Link href="/" aria-label="ComplAI CORE home" className="flex shrink-0"><BrandMark /></Link>
           <span
-            className="font-mono text-xs font-semibold text-ink bg-brand/30 rounded-full px-2.5 py-1 leading-none"
+            className="font-mono text-[11px] font-semibold text-ink bg-brand/30 dark:bg-brand/70 dark:text-navy rounded-full px-2.5 py-1 leading-none"
             style={{ transform: `translateY(${(LOGO_HEIGHT.md * LOGO_I_CENTER_OFFSET).toFixed(2)}px)` }}
             title="Current release of the CORE evaluation set and results"
           >
@@ -53,7 +53,7 @@ export function SiteHeader() {
             Created by{' '}
             {CREATORS.map((c, i) => (
               <span key={c.name}>
-                <a href={c.href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-brand-strong">{c.name}</a>
+                <a href={c.href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-link">{c.name}</a>
                 {i < CREATORS.length - 2 ? ', ' : i === CREATORS.length - 2 ? ', and ' : ''}
               </span>
             ))}
@@ -62,7 +62,7 @@ export function SiteHeader() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-ink text-white font-mono text-sm font-semibold px-3.5 py-1.5 hover:bg-ink/85 transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-2 rounded-full bg-ink text-background font-mono text-sm font-semibold px-3.5 py-1.5 hover:bg-ink/85 transition-colors whitespace-nowrap"
           >
             <GitHubIcon />
             Run CORE

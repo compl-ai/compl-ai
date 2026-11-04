@@ -2,7 +2,7 @@ import { withBasePath } from '@/lib/utils';
 
 export default function AboutPage() {
   return (
-    <div className="container mx-auto px-4 max-w-4xl py-12 space-y-12">
+    <div className="container mx-auto px-4 max-w-4xl pt-22 pb-12 space-y-12">
       <div>
         <h1 className="text-4xl font-bold tracking-tight mb-4">About ComplAI</h1>
         <p className="text-xl text-muted-foreground">

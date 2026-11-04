@@ -1,6 +1,6 @@
-const INK = '#051C2C';
-const WRONG = '#D5D9DD';
-const EMPTY = '#EEF0F2';
+const INK = 'var(--color-ink)';
+const WRONG = 'var(--color-track)';
+const EMPTY = 'var(--color-grid)';
 const BRAND = 'var(--color-brand)';
 
 const CELL = 5;
@@ -30,7 +30,7 @@ function stripCells() {
 
 function Glyph({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <svg viewBox="-2 -2 124 46" className="h-14 w-full" role="img" aria-label={label}>
+    <svg viewBox="-2 -2 124 46" className="h-20 w-full" role="img" aria-label={label}>
       {children}
     </svg>
   );
@@ -69,13 +69,13 @@ function IccGlyph() {
     <Glyph label="Item characteristic curves: probability of a correct answer rising with model ability">
       <line x1={8} y1={38} x2={118} y2={38} stroke={WRONG} />
       <line x1={8} y1={4} x2={8} y2={38} stroke={WRONG} />
-      <path d={curve(0.8, -0.6)} fill="none" stroke="#AEB4BA" strokeWidth={1.5} />
+      <path d={curve(0.8, -0.6)} fill="none" stroke="var(--color-subtle)" strokeWidth={1.5} />
       <path d={curve(3, 0.4)} fill="none" stroke={BRAND} strokeWidth={2} />
       <line x1={betaX} y1={21} x2={betaX} y2={38} stroke={INK} strokeWidth={0.75} strokeDasharray="2 2" />
       <text x={betaX + 3} y={36} fontSize={8} fontStyle="italic" fill={INK}>β</text>
       <text x={betaX + 9} y={14} fontSize={8} fontStyle="italic" fill={INK}>α</text>
-      <text x={0} y={8} fontSize={6} fill="#5B6670">P</text>
-      <text x={110} y={45} fontSize={6} fill="#5B6670">θ</text>
+      <text x={0} y={8} fontSize={6} fill="var(--muted-foreground)">P</text>
+      <text x={110} y={45} fontSize={6} fill="var(--muted-foreground)">θ</text>
     </Glyph>
   );
 }
@@ -108,12 +108,12 @@ function AnswersGlyph() {
         s.selected ? (
           s.seed < 0.6
             ? <rect key={cellKey(s.b, s.r, s.c)} x={s.x} y={s.y} width={CELL} height={CELL} rx={0.8} fill={INK} fillOpacity={0.8} />
-            : <rect key={cellKey(s.b, s.r, s.c)} x={s.x + 0.4} y={s.y + 0.4} width={CELL - 0.8} height={CELL - 0.8} rx={0.8} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+            : <rect key={cellKey(s.b, s.r, s.c)} x={s.x + 0.4} y={s.y + 0.4} width={CELL - 0.8} height={CELL - 0.8} rx={0.8} fill="var(--card)" stroke={INK} strokeWidth={0.8} />
         ) : (
           <rect key={cellKey(s.b, s.r, s.c)} x={s.x} y={s.y} width={CELL} height={CELL} fill="none" stroke={WRONG} strokeWidth={0.6} strokeDasharray="1 1" />
         ),
       )}
-      <text x={0} y={12} fontSize={7} fill="#5B6670">2,000 of 92,210 items</text>
+      <text x={0} y={12} fontSize={7} fill="var(--muted-foreground)">2,000 of 92,210 items</text>
     </Glyph>
   );
 }
@@ -125,12 +125,12 @@ function PredictGlyph() {
         s.selected ? (
           s.seed < 0.6
             ? <rect key={cellKey(s.b, s.r, s.c)} x={s.x} y={s.y} width={CELL} height={CELL} rx={0.8} fill={INK} fillOpacity={0.8} />
-            : <rect key={cellKey(s.b, s.r, s.c)} x={s.x + 0.4} y={s.y + 0.4} width={CELL - 0.8} height={CELL - 0.8} rx={0.8} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+            : <rect key={cellKey(s.b, s.r, s.c)} x={s.x + 0.4} y={s.y + 0.4} width={CELL - 0.8} height={CELL - 0.8} rx={0.8} fill="var(--card)" stroke={INK} strokeWidth={0.8} />
         ) : (
           <rect key={cellKey(s.b, s.r, s.c)} x={s.x} y={s.y} width={CELL} height={CELL} rx={0.8} fill={BRAND} fillOpacity={0.15 + 0.75 * (1 - s.c / BLOCK_COLS) * (0.6 + 0.4 * s.seed)} />
         ),
       )}
-      <text x={0} y={12} fontSize={7} fill="#5B6670">P(correct) on all items</text>
+      <text x={0} y={12} fontSize={7} fill="var(--muted-foreground)">P(correct) on all items</text>
     </Glyph>
   );
 }
@@ -153,7 +153,7 @@ function IndicesGlyph() {
             <text x={0} y={y + 3} fontSize={8} fontWeight={700} fill={INK}>{r.label}</text>
             <line x1={14} y1={y} x2={118} y2={y} stroke={EMPTY} strokeWidth={4} strokeLinecap="round" />
             <line x1={idxX(r.lo)} y1={y} x2={idxX(r.hi)} y2={y} stroke={r.color} strokeOpacity={0.45} strokeWidth={4} strokeLinecap="round" />
-            <circle cx={idxX(r.mid)} cy={y} r={3} fill={r.color} stroke="#FFFFFF" strokeWidth={1} />
+            <circle cx={idxX(r.mid)} cy={y} r={3} fill={r.color} stroke="var(--card)" strokeWidth={1} />
           </g>
         );
       })}
@@ -163,7 +163,7 @@ function IndicesGlyph() {
 
 function Tile({ n, title, glyph, children, accent = false }: { n: string; title: string; glyph: React.ReactNode; children: React.ReactNode; accent?: boolean }) {
   return (
-    <div className={`flex flex-col rounded-xl border bg-white p-3 ${accent ? 'border-brand/40' : 'border-border'}`}>
+    <div className={`flex flex-col rounded-xl border bg-card p-3 ${accent ? 'border-brand/40' : 'border-border'}`}>
       <div className="mb-2 flex items-baseline gap-1.5 text-xs font-bold text-ink">
         <span className={`font-serif ${accent ? 'text-brand-strong' : 'text-muted-foreground'}`}>{n}</span>
         {title}
@@ -186,7 +186,7 @@ function Arrow() {
 
 function Lane({ title, note, tone, children }: { title: string; note: string; tone: 'muted' | 'brand'; children: React.ReactNode }) {
   return (
-    <div className={`rounded-2xl p-3 sm:p-4 ${tone === 'brand' ? 'bg-brand-soft/60 ring-1 ring-brand/30' : 'bg-[#F4F5F6]'}`}>
+    <div className={`rounded-2xl p-3 sm:p-4 ${tone === 'brand' ? 'bg-brand-soft/60 ring-1 ring-brand/30' : 'bg-muted'}`}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1">
         <div className={`text-xs font-extrabold uppercase tracking-wider ${tone === 'brand' ? 'text-brand-strong' : 'text-ink'}`}>{title}</div>
         <div className="text-[11px] text-muted-foreground">{note}</div>
@@ -209,13 +209,13 @@ export function MethodDiagram() {
         </Tile>
         <Arrow />
         <Tile n="A3" title="Select the core" glyph={<SelectionGlyph />}>
-          2,000 items, allocated to benchmarks by how much models differ on them (bars); seeded random sampling within each.
+          2,000 items, allocated to benchmarks by how much models differ on them (bars) and balanced across the three indices; seeded random sampling within each.
         </Tile>
       </Lane>
 
       <div className="flex flex-col items-center py-2">
         <div className="h-3 w-px bg-ink/30" />
-        <div className="rounded-full border border-ink/15 bg-white px-3 py-1 text-center text-[11px] font-semibold text-ink">
+        <div className="rounded-full border border-ink/15 bg-card px-3 py-1 text-center text-[11px] font-semibold text-ink">
           Frozen and public: α, β for all 92,210 items · the 2,000-item core list
         </div>
         <svg viewBox="0 0 12 14" className="h-3.5 w-3 text-ink/40" aria-hidden>

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { useRouter } from 'next/navigation';
 import { CartesianGrid, ReferenceDot, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 import type { JoinedModelData } from '@/lib/data';
-import { INDICES, type IndexId, RUN_TYPES, THETA_MEAN, formatInterval, formatScore, formatTokens, formatPercent, getIndexTheta, getRunType, scaleTheta } from '@/lib/scores';
+import { INDICES, type IndexId, RUN_TYPES, THETA_MEAN, formatInterval, formatMultiplier, formatScore, formatTokens, getIndexTheta, getRunType, scaleTheta } from '@/lib/scores';
 import {
   LARGE_PARAMS, QUESTIONS, SIZE_BUCKETS, type QuestionId, type SizeBucket, type Weights, capabilityFrontier, fmtParams, indexScore, median, nameOf, paramsOf, releaseOf, sizeBucketOf, tokensOf, weightsOf,
 } from './explorer';
@@ -11,11 +11,11 @@ import {
 const WEIGHT_STYLE: Record<Weights, { color: string; label: string }> = {
   open: { color: 'var(--color-teal-strong)', label: 'Open weights' },
   proprietary: { color: 'var(--color-lavender-strong)', label: 'Proprietary' },
-  unknown: { color: '#AEB4BA', label: 'Not published' },
+  unknown: { color: 'var(--color-subtle)', label: 'Not published' },
 };
 const FRONTIER_COLOR = 'var(--color-brand)';
-const AXIS_TICK = { fill: '#5B6670', fontSize: 11 };
-const AXIS_LABEL = { fill: '#051C2C', fontSize: 13, fontWeight: 600 };
+const AXIS_TICK = { fill: 'var(--muted-foreground)', fontSize: 11 };
+const AXIS_LABEL = { fill: 'var(--color-ink)', fontSize: 13, fontWeight: 600 };
 
 type Point = {
   id: string;
@@ -225,8 +225,8 @@ function indexScatter(models: JoinedModelData[], a: IndexId, b: IndexId): ChartS
   return {
     points, x, y,
     refs: [
-      <ReferenceLine key="x" x={THETA_MEAN} stroke="#C9CDD2" strokeDasharray="4 4" />,
-      <ReferenceLine key="y" y={THETA_MEAN} stroke="#C9CDD2" strokeDasharray="4 4" />,
+      <ReferenceLine key="x" x={THETA_MEAN} stroke="var(--color-rule)" strokeDasharray="4 4" />,
+      <ReferenceLine key="y" y={THETA_MEAN} stroke="var(--color-rule)" strokeDasharray="4 4" />,
     ],
     excluded: models.length - points.length,
     excludedReason: `too few benchmarks run to score ${indexLabel(a)} or ${indexLabel(b)}`,
@@ -304,7 +304,7 @@ function sizeChart(models: JoinedModelData[]): ChartSpec {
   labelOnce(points, [maxBy(points, p => -p.x)]);
   const large = points.filter(p => p.x * 1e9 >= LARGE_PARAMS).map(p => p.y);
   const refs: React.ReactNode[] = [
-    <ReferenceLine key="split" x={LARGE_PARAMS / 1e9} stroke="#C9CDD2" strokeDasharray="4 4" />,
+    <ReferenceLine key="split" x={LARGE_PARAMS / 1e9} stroke="var(--color-rule)" strokeDasharray="4 4" />,
   ];
   if (large.length) {
     refs.push(<ReferenceLine key="bar" segment={[{ x: LARGE_PARAMS / 1e9, y: median(large) }, { x: domain[1], y: median(large) }]} stroke={FRONTIER_COLOR} strokeWidth={2} />);
@@ -340,7 +340,7 @@ function groupChart(models: JoinedModelData[]): ChartSpec {
       if (group.length) {
         const c = i + GROUP_OFFSET[w];
         const med = median(group.map(p => p.y));
-        refs.push(<ReferenceLine key={`${idx.id}-${w}`} segment={[{ x: c - 0.13, y: med }, { x: c + 0.13, y: med }]} stroke="#051C2C" strokeWidth={2.5} />);
+        refs.push(<ReferenceLine key={`${idx.id}-${w}`} segment={[{ x: c - 0.13, y: med }, { x: c + 0.13, y: med }]} stroke="var(--color-ink)" strokeWidth={2.5} />);
       }
     });
   });
@@ -351,7 +351,7 @@ function groupChart(models: JoinedModelData[]): ChartSpec {
     points,
     x: { label: '', domain: [-0.5, 2.5], ticks: [0, 1, 2], format: v => INDICES[Math.round(v)]?.label ?? '' },
     y: scoreAxis('Index score', points.map(p => p.y)),
-    refs: [<ReferenceLine key="avg" y={THETA_MEAN} stroke="#C9CDD2" strokeDasharray="4 4" />, ...refs],
+    refs: [<ReferenceLine key="avg" y={THETA_MEAN} stroke="var(--color-rule)" strokeDasharray="4 4" />, ...refs],
     excluded: models.length - known.length,
     excludedReason: 'open-weight status not published',
     keys: [{ kind: 'bar', label: 'Group median' }, { kind: 'dash', label: `Panel average (${THETA_MEAN})` }],
@@ -366,7 +366,7 @@ function costChart(models: JoinedModelData[]): ChartSpec {
     p.extra = [
       ['Full suite', `${formatTokens(t.full)} tokens${t.measured === 'full' ? ' (measured)' : ' (estimated)'}`],
       ['CORE', `${formatTokens(t.core)} tokens${t.measured === 'core' ? ' (measured)' : ' (estimated)'}`],
-      ['Reduction', formatPercent(t.reduction)],
+      ['Efficiency', `${formatMultiplier(t.full / t.core)}× fewer tokens`],
     ];
     return [p];
   });
@@ -380,7 +380,7 @@ function costChart(models: JoinedModelData[]): ChartSpec {
     <ReferenceLine
       key={k}
       segment={[{ x: xd[0], y: xd[0] / k }, { x: xd[1], y: xd[1] / k }]}
-      stroke="#C9CDD2"
+      stroke="var(--color-rule)"
       strokeDasharray="4 4"
       ifOverflow="hidden"
     />
@@ -422,9 +422,9 @@ function Dot(props: { cx?: number; cy?: number; payload?: Point }) {
         cx={cx}
         cy={cy}
         r={p.r}
-        fill={p.hollow ? '#FFFFFF' : p.color}
+        fill={p.hollow ? 'var(--card)' : p.color}
         fillOpacity={p.hollow ? 1 : 0.85}
-        stroke={p.hollow ? p.color : '#FFFFFF'}
+        stroke={p.hollow ? p.color : 'var(--card)'}
         strokeWidth={1.5}
       />
       {p.label && p.labelPos && (
@@ -433,7 +433,7 @@ function Dot(props: { cx?: number; cy?: number; payload?: Point }) {
           y={cy + p.labelPos.dy}
           textAnchor={p.labelPos.anchor}
           className="pointer-events-none"
-          style={{ fontSize: 11, fontWeight: 600, fill: '#051C2C', paintOrder: 'stroke', stroke: '#FFFFFF', strokeWidth: 3 }}
+          style={{ fontSize: 11, fontWeight: 600, fill: 'var(--color-ink)', paintOrder: 'stroke', stroke: 'var(--card)', strokeWidth: 3 }}
         >
           {p.label}
         </text>
@@ -474,7 +474,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { paylo
   const cov = d.model.prediction?.coverage;
   const run = getRunType(d.model);
   return (
-    <div className="bg-white border border-border shadow-lg p-3 text-xs rounded-xl min-w-[240px]">
+    <div className="bg-card border border-border shadow-lg p-3 text-xs rounded-xl min-w-[240px]">
       <div className="flex items-center gap-2 mb-0.5">
         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
         <span className="font-bold text-ink text-sm">{d.name}</span>
@@ -525,7 +525,7 @@ function SelectFilter({ label, value, onChange, children }: { label: string; val
         value={value}
         onChange={e => onChange(e.target.value)}
         aria-label={label}
-        className="h-[34px] rounded-full border border-border bg-white px-3 text-xs font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand/40"
+        className="h-[34px] rounded-full border border-border bg-card px-3 text-xs font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand/40"
       >
         {children}
       </select>
@@ -553,7 +553,7 @@ function ProviderFilter({ providers, value, onChange }: { providers: [string, nu
         onClick={() => setOpen(o => !o)}
         aria-haspopup="true"
         aria-expanded={open}
-        className="inline-flex h-[34px] items-center gap-2 rounded-full border border-border bg-white pl-3 pr-2.5 text-xs font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand/40"
+        className="inline-flex h-[34px] items-center gap-2 rounded-full border border-border bg-card pl-3 pr-2.5 text-xs font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand/40"
       >
         {text}
         <svg aria-hidden width="10" height="10" viewBox="0 0 10 10" className={`transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -561,10 +561,10 @@ function ProviderFilter({ providers, value, onChange }: { providers: [string, nu
         </svg>
       </button>
       {open && (
-        <div className="absolute left-0 top-[40px] z-30 w-60 rounded-xl border border-border bg-white py-2 shadow-lg">
+        <div className="absolute left-0 top-[40px] z-30 w-60 rounded-xl border border-border bg-card py-2 shadow-lg">
           <div className="flex items-center justify-between px-3 pb-1.5 text-[11px] text-muted-foreground">
             <span>Providers</span>
-            <button type="button" onClick={() => onChange([])} className={`font-semibold text-brand-strong hover:underline ${value.length ? '' : 'invisible'}`}>
+            <button type="button" onClick={() => onChange([])} className={`font-semibold text-link hover:underline ${value.length ? '' : 'invisible'}`}>
               Clear
             </button>
           </div>
@@ -595,8 +595,8 @@ function Switch({ label, checked, disabled, onChange }: { label: string; checked
       onClick={() => onChange(!checked)}
       className="inline-flex h-[34px] items-center gap-2 px-1 text-xs font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-40"
     >
-      <span className={`relative h-[18px] w-8 rounded-full transition-colors ${checked && !disabled ? 'bg-brand' : 'bg-[#D5D9DD]'}`}>
-        <span className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow transition-[left] ${checked && !disabled ? 'left-[16px]' : 'left-[2px]'}`} />
+      <span className={`relative h-[18px] w-8 rounded-full transition-colors ${checked && !disabled ? 'bg-brand' : 'bg-track'}`}>
+        <span className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-card shadow transition-[left] ${checked && !disabled ? 'left-[16px]' : 'left-[2px]'}`} />
       </span>
       {label}
     </button>
@@ -606,8 +606,8 @@ function Switch({ label, checked, disabled, onChange }: { label: string; checked
 function KeySwatch({ kind }: { kind: KeyItem['kind'] }) {
   if (kind === 'line') return <span className="inline-block h-0.5 w-4 rounded" style={{ backgroundColor: FRONTIER_COLOR }} />;
   if (kind === 'bar') return <span className="inline-block h-[3px] w-4 rounded bg-ink" />;
-  if (kind === 'hollow') return <span className="inline-block h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground bg-white" />;
-  return <span className="inline-block w-4 border-t-[1.5px] border-dashed border-[#AEB4BA]" />;
+  if (kind === 'hollow') return <span className="inline-block h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground bg-card" />;
+  return <span className="inline-block w-4 border-t-[1.5px] border-dashed border-subtle" />;
 }
 
 export function ResultsExplorer({ models, findings }: { models: JoinedModelData[]; findings: Record<QuestionId, string | null> }) {
@@ -666,10 +666,10 @@ export function ResultsExplorer({ models, findings }: { models: JoinedModelData[
   const ciAvailable = question !== 'cost';
 
   return (
-    <div className="grid gap-6 rounded-panel border border-border bg-white p-5 md:p-8 lg:relative lg:left-1/2 lg:w-[max(calc(100%+48px),80vw)] lg:-translate-x-1/2 lg:gap-0 lg:min-h-[790px] xl:min-h-[740px]">
+    <div className="grid gap-6 rounded-panel border border-border bg-card p-5 md:p-8 lg:relative lg:left-1/2 lg:w-[max(calc(100%+48px),80vw)] lg:-translate-x-1/2 lg:gap-0 lg:min-h-[790px] xl:min-h-[740px]">
       <div
         ref={cardRef}
-        className="relative z-10 self-start overflow-hidden rounded-2xl border border-border bg-white/90 shadow-[0_8px_30px_-12px_rgba(5,28,44,0.18)] backdrop-blur-sm lg:[grid-area:1/1] lg:w-[360px] xl:w-[390px]"
+        className="relative z-10 self-start overflow-hidden rounded-2xl border border-border bg-card/90 shadow-[0_8px_30px_-12px_rgba(5,28,44,0.18)] backdrop-blur-sm lg:[grid-area:1/1] lg:w-[360px] xl:w-[390px]"
       >
         <ol className="divide-y divide-border">
           {QUESTIONS.map((q, i) => {
@@ -726,7 +726,7 @@ export function ResultsExplorer({ models, findings }: { models: JoinedModelData[
           <Switch label="Show 90% intervals" checked={showCi} disabled={!ciAvailable} onChange={setShowCi} />
           <button
             onClick={() => { setProvider([]); setWeights('all'); setSize('all'); }}
-            className={`h-[34px] px-2 text-xs font-semibold text-brand-strong hover:underline lg:order-first ${filtersActive ? '' : 'invisible'}`}
+            className={`h-[34px] px-2 text-xs font-semibold text-link hover:underline lg:order-first ${filtersActive ? '' : 'invisible'}`}
           >
             Clear filters
           </button>
@@ -743,9 +743,9 @@ export function ResultsExplorer({ models, findings }: { models: JoinedModelData[
               <ScatterChart margin={{ ...MARGIN, left: plotSize.inset }}>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#EEF0F2"
+                  stroke="var(--color-grid)"
                   vertical={question !== 'open-vs-proprietary'}
-                  horizontal={({ key, x2, y1, y2 }) => <line key={key ?? y1} x1={0} y1={y1} x2={x2} y2={y2} stroke="#EEF0F2" strokeDasharray="3 3" />}
+                  horizontal={({ key, x2, y1, y2 }) => <line key={key ?? y1} x1={0} y1={y1} x2={x2} y2={y2} stroke="var(--color-grid)" strokeDasharray="3 3" />}
                 />
                 <XAxis
                   dataKey="x"
@@ -755,7 +755,7 @@ export function ResultsExplorer({ models, findings }: { models: JoinedModelData[
                   allowDataOverflow
                   ticks={chart.x.ticks}
                   tickFormatter={chart.x.format}
-                  tick={question === 'open-vs-proprietary' ? { ...AXIS_TICK, fontSize: 13, fontWeight: 600, fill: '#051C2C' } : AXIS_TICK}
+                  tick={question === 'open-vs-proprietary' ? { ...AXIS_TICK, fontSize: 13, fontWeight: 600, fill: 'var(--color-ink)' } : AXIS_TICK}
                   tickLine={false}
                   axisLine={false}
                   tickMargin={10}
@@ -785,7 +785,7 @@ export function ResultsExplorer({ models, findings }: { models: JoinedModelData[
                     y={n.y}
                     ifOverflow="visible"
                     shape={(d: { cx?: number; cy?: number }) => (
-                      <text x={(d.cx ?? 0) + NOTE_OFFSET.dx} y={(d.cy ?? 0) + NOTE_OFFSET.dy} textAnchor="end" style={{ fontSize: 10, fill: '#8A939B' }}>
+                      <text x={(d.cx ?? 0) + NOTE_OFFSET.dx} y={(d.cy ?? 0) + NOTE_OFFSET.dy} textAnchor="end" style={{ fontSize: 10, fill: 'var(--color-faint-foreground)' }}>
                         {n.text}
                       </text>
                     )}

@@ -727,6 +727,7 @@
         "max_connections": 64,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-06-22T05:32:25+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 31333,
@@ -1658,6 +1659,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-04-13T07:42:11+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 90459,
@@ -2631,6 +2633,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-30T08:13:17+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32321,
@@ -3590,6 +3593,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2025-12-11T12:42:18+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89558,
@@ -4533,6 +4537,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-03-25T20:36:34+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 21489,
@@ -5358,6 +5363,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-03-25T21:02:07+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 34044,
@@ -6309,6 +6315,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-09T10:41:07+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 65424,
@@ -7188,6 +7195,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-03-19T09:06:49+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 92171,
@@ -8168,6 +8176,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-05-28T09:25:21+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 31379,
@@ -9101,6 +9110,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-05-28T08:45:03+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32193,
@@ -10044,6 +10054,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-23T06:46:11+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 28972,
@@ -10957,6 +10968,7 @@
         "max_connections": 256,
         "max_tokens": 4096
       },
+      "last_evaluated": "2025-12-11T08:45:47+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89483,
@@ -11894,6 +11906,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2026-02-05T13:42:46+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89552,
@@ -12842,6 +12855,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2026-02-05T09:35:58+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89589,
@@ -13797,6 +13811,7 @@
           }
         }
       },
+      "last_evaluated": "2026-06-19T19:59:22+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32196,
@@ -14730,6 +14745,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "max"
       },
+      "last_evaluated": "2026-06-29T10:50:00+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 5965,
@@ -15590,6 +15606,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-29T10:42:29+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 5794,
@@ -16472,6 +16489,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2025-12-22T12:05:51+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89554,
@@ -17423,6 +17441,7 @@
         "max_tokens": 64000,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-10T08:12:33+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 33893,
@@ -18383,6 +18402,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-04-15T19:33:08+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32194,
@@ -19334,6 +19354,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-09T09:21:26+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 33915,
@@ -20289,6 +20310,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-05-04T09:22:41+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32153,
@@ -21237,6 +21259,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2025-12-16T09:41:15+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89536,
@@ -22185,6 +22208,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2026-02-05T10:53:45+00:00",
       "usage": {
         "run_type": "mixed",
         "observed_items": 89508,
@@ -23133,6 +23157,7 @@
         "max_connections": 256,
         "max_tokens": 2048
       },
+      "last_evaluated": "2025-12-22T12:02:58+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89564,
@@ -24084,6 +24109,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-09T14:17:14+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 91271,
@@ -25039,6 +25065,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-25T08:05:31+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32187,
@@ -25988,6 +26015,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-09T11:33:41+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32185,
@@ -26921,6 +26949,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-09T10:41:07+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 7968,
@@ -27821,6 +27850,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-08T15:46:35+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32155,
@@ -28770,6 +28800,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-08T11:24:46+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32148,
@@ -29719,6 +29750,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-09T11:33:32+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32179,
@@ -30654,6 +30686,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-29T10:46:22+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 7363,
@@ -31570,6 +31603,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-08T15:51:05+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32148,
@@ -32519,6 +32553,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-02-17T15:26:00+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 89571,
@@ -33472,6 +33507,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-03-05T11:36:40+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 90420,
@@ -34443,6 +34479,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-25T08:04:01+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 32191,
@@ -35391,6 +35428,7 @@
         "max_connections": 256,
         "max_tokens": 16384
       },
+      "last_evaluated": "2025-12-22T13:01:57+00:00",
       "usage": {
         "run_type": "mixed",
         "observed_items": 89489,
@@ -36326,6 +36364,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-06-29T10:45:33+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 6162,
@@ -37169,6 +37208,7 @@
         "max_tokens": 16384,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-03-20T16:54:14+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 4717,
@@ -37984,6 +38024,7 @@
         "max_connections": 256,
         "max_tokens": 4096
       },
+      "last_evaluated": "2025-11-04T11:53:08+00:00",
       "usage": {
         "run_type": "full",
         "observed_items": 84762,
@@ -38871,6 +38912,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-27T07:14:51+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1936,
@@ -39849,6 +39891,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-26T23:41:51+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1993,
@@ -40837,6 +40880,7 @@
         "max_tokens": 32768,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-25T21:29:06+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1994,
@@ -41826,6 +41870,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-25T21:15:09+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1998,
@@ -42815,6 +42860,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-25T21:20:52+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1992,
@@ -43802,6 +43848,7 @@
         "max_connections": 40,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-10-08T08:09:25+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1992,
@@ -44790,6 +44837,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-26T20:12:38+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1993,
@@ -45778,6 +45826,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-15T18:58:26+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1996,
@@ -46761,6 +46810,7 @@
         "max_connections": 4,
         "max_tokens": 32768
       },
+      "last_evaluated": "2026-10-09T10:41:42+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1812,
@@ -47727,6 +47777,7 @@
         "max_tokens": 65536,
         "reasoning_effort": "high"
       },
+      "last_evaluated": "2026-10-15T19:00:13+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1989,
@@ -48714,6 +48765,7 @@
         "max_connections": 40,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-10-13T16:05:56+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1991,
@@ -49699,6 +49751,7 @@
         "max_connections": 40,
         "max_tokens": 32768
       },
+      "last_evaluated": "2026-10-07T19:12:08+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1877,
@@ -50673,6 +50726,7 @@
         "max_connections": 40,
         "max_tokens": 32768
       },
+      "last_evaluated": "2026-10-08T05:59:44+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1868,
@@ -51649,6 +51703,7 @@
         "max_connections": 40,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-10-08T08:10:05+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1989,
@@ -52634,6 +52689,7 @@
         "max_connections": 40,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-10-08T08:10:25+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1879,
@@ -53610,6 +53666,7 @@
         "max_connections": 40,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-10-08T08:10:45+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1989,
@@ -54597,6 +54654,7 @@
         "max_connections": 40,
         "max_tokens": 65536
       },
+      "last_evaluated": "2026-10-08T08:09:45+00:00",
       "usage": {
         "run_type": "core",
         "observed_items": 1978,

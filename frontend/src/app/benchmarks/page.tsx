@@ -101,10 +101,11 @@ export default function BenchmarksPage() {
     }
   }
   const byFramework = (a: CoverageItem, b: CoverageItem) => a.item.framework.localeCompare(b.item.framework);
-  const link = 'font-semibold text-brand-strong hover:underline';
+  const link = 'font-semibold text-link hover:underline';
 
   return (
-    <div className="container mx-auto px-4 max-w-7xl py-12 space-y-16">
+    <div className="frame">
+    <div className="cols-10 pt-22 pb-12 space-y-16">
       <section aria-labelledby="indices-heading" className="space-y-8">
         <header className="max-w-3xl">
           <Eyebrow>Benchmarks</Eyebrow>
@@ -131,7 +132,7 @@ export default function BenchmarksPage() {
               ['CORE tasks', taxonomy.indices[index.id]?.subset_count.toLocaleString() ?? '—', true],
             ];
             return (
-              <div key={index.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-white">
+              <div key={index.id} className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
                 <div className={`h-1.5 ${tone.bar}`} aria-hidden />
                 <div className="flex flex-1 flex-col p-6 md:p-7">
                   <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-ink">{index.label}</h2>
@@ -254,6 +255,7 @@ export default function BenchmarksPage() {
         </div>
         <BenchmarkList benchmarks={rows} />
       </section>
+    </div>
     </div>
   );
 }

@@ -2,15 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
+import { ProviderLogo } from '@/components/ProviderLogo';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { JoinedModelData } from '@/lib/data';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { INDICES, NO_SCORE_REASON, THETA_MEAN, formatInterval, formatScore, formatTokens, getIndexTheta, getRunType, parseParams, scaleTheta } from '@/lib/scores';
-
-// Fixed display range for the interval bars, in scaled points.
-const BAR_MIN = 40;
-const BAR_MAX = 150;
-const toPct = (v: number) => Math.min(Math.max((v - BAR_MIN) / (BAR_MAX - BAR_MIN), 0), 1) * 100;
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ArrowDown, ArrowUp, ArrowUpDown, Info } from 'lucide-react';
+import { INDEX_BAR, INDICES, NO_SCORE_REASON, THETA_MEAN, formatInterval, formatMultiplier, formatScore, formatTokens, getIndexTheta, getRunType, parseParams, scaleTheta, scoreBarPct, tokenMultiplier } from '@/lib/scores';
 
 
 function formatParams(m: JoinedModelData): string {
@@ -22,15 +19,7 @@ function formatParams(m: JoinedModelData): string {
   return active && active !== total && !isNaN(active) ? `${fmt(total)} (${fmt(active)})` : fmt(total);
 }
 
-function tokenMultiplier(t: { core: number; full: number }): number | null {
-  return t.core > 0 && t.full > 0 ? t.full / t.core : null;
-}
-
-function formatMultiplier(m: number): string {
-  return m >= 10 ? Math.round(m).toString() : m.toFixed(1);
-}
-
-type SortKey = 'name' | 'coverage' | 'params' | 'tokens' | (typeof INDICES)[number]['id'];
+type SortKey = 'name' | 'org' | 'params' | 'tokens' | (typeof INDICES)[number]['id'];
 
 function TokensCell({ model }: { model: JoinedModelData }) {
   const run = getRunType(model);
@@ -54,11 +43,11 @@ function TokensCell({ model }: { model: JoinedModelData }) {
     <TableCell className="px-3 py-3" title={title}>
       <div className="flex flex-col items-end gap-1.5">
         <span className="tabular text-[13px] font-semibold text-ink whitespace-nowrap">
-          {multiplier !== null ? <>{formatMultiplier(multiplier)}× fewer</> : <>{coreEst ? '~' : ''}{formatTokens(t.core)}</>}
+          {multiplier !== null ? <>{formatMultiplier(multiplier)}×</> : <>{coreEst ? '~' : ''}{formatTokens(t.core)}</>}
         </span>
         <div className="w-full space-y-0.5" aria-hidden>
-          <div className="h-1 rounded-full bg-teal" style={{ width: `${corePct}%` }} />
-          <div className="h-1 w-full rounded-full bg-[#D5D8DD]" />
+          <div className="h-1 rounded-full bg-ink" style={{ width: `${corePct}%` }} />
+          <div className="h-1 w-full rounded-full bg-track" />
         </div>
         <span className="text-[10px] text-muted-foreground tabular whitespace-nowrap">
           {coreEst ? '~' : ''}{formatTokens(t.core)} vs {fullEst ? '~' : ''}{formatTokens(t.full)} full
@@ -69,8 +58,10 @@ function TokensCell({ model }: { model: JoinedModelData }) {
 }
 type SortState = { key: SortKey, direction: 'asc' | 'desc' };
 
-function SortableHead({ label, sortKey, sort, onSort, align = 'left', className = '' }: {
-  label: string, sortKey: SortKey, sort: SortState, onSort: (key: SortKey) => void, align?: 'left' | 'right', className?: string
+const EFFICIENCY_INFO = 'How many times fewer tokens the model uses on a core evaluation than on a full evaluation of the same benchmarks. The dark bar is the core run, the grey bar the full run. Judge models are not counted, and a tilde marks values extrapolated from the run that was actually done.';
+
+function SortableHead({ label, sortKey, sort, onSort, align = 'left', className = '', info }: {
+  label: string, sortKey: SortKey, sort: SortState, onSort: (key: SortKey) => void, align?: 'left' | 'right', className?: string, info?: string
 }) {
   const active = sort.key === sortKey;
   const Icon = !active ? ArrowUpDown : sort.direction === 'asc' ? ArrowUp : ArrowDown;
@@ -79,23 +70,36 @@ function SortableHead({ label, sortKey, sort, onSort, align = 'left', className 
       className={`h-11 px-3 text-xs font-semibold uppercase tracking-wider ${align === 'right' ? 'text-right' : ''} ${className}`}
       aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
+      <div className="inline-flex items-center">
       <button
         onClick={() => onSort(sortKey)}
-        className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-ink ${align === 'right' ? 'flex-row-reverse' : ''} ${active ? 'text-ink' : 'text-muted-foreground'}`}
+        className={`inline-flex cursor-pointer items-center gap-1 uppercase tracking-wider transition-colors hover:text-ink ${align === 'right' ? 'flex-row-reverse' : ''} ${active ? 'text-ink' : 'text-muted-foreground'}`}
       >
         {label}
         <Icon className={`w-3 h-3 ${active ? 'text-brand-strong' : 'opacity-40'}`} />
       </button>
+      {info && (
+        <Tooltip>
+          <TooltipTrigger
+            aria-label={`About ${label}`}
+            className="-my-2 -mr-1.5 inline-flex py-2 pl-2 pr-1.5 text-muted-foreground/70 transition-colors hover:text-ink"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </TooltipTrigger>
+          <TooltipContent className="normal-case tracking-normal font-normal leading-snug text-[13px]">{info}</TooltipContent>
+        </Tooltip>
+      )}
+      </div>
     </TableHead>
   );
 }
 
-export function ModelDataTable({ initialModels, initialRows, indexTabs = false }: {
+export function ModelDataTable({ initialModels, initialRows, heading }: {
   initialModels: JoinedModelData[],
+  // Rendered left of the filter box, which aligns to its bottom.
+  heading?: React.ReactNode,
   // Rows shown before "Show all"; searching always shows every match.
   initialRows?: number,
-  // Index tabs above the table that pick the ranking dimension.
-  indexTabs?: boolean,
 }) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortState>({ key: 'capability', direction: 'desc' });
@@ -110,7 +114,7 @@ export function ModelDataTable({ initialModels, initialRows, indexTabs = false }
   const sortValue = (m: JoinedModelData): number | string | null => {
     switch (sort.key) {
       case 'name': return m.metadata?.name || m.yamlId;
-      case 'coverage': return m.prediction?.coverage?.tasks_completed ?? null;
+      case 'org': return m.metadata?.organization || null;
       case 'params': return parseParams(m.metadata?.specs?.total_params) || null;
       case 'tokens': { const t = m.prediction?.usage?.tokens; return t ? tokenMultiplier(t) : null; }
       default: return getIndexTheta(m, sort.key)?.theta ?? null;
@@ -129,85 +133,59 @@ export function ModelDataTable({ initialModels, initialRows, indexTabs = false }
 
   const limited = initialRows !== undefined && !expanded && !term && sorted.length > initialRows;
   const visible = limited ? sorted.slice(0, initialRows) : sorted;
-  const activeIndex = INDICES.find(d => d.id === sort.key);
 
   const requestSort = (key: SortKey) => {
     setSort(prev => prev.key === key
       ? { key, direction: prev.direction === 'desc' ? 'asc' : 'desc' }
-      : { key, direction: key === 'name' ? 'asc' : 'desc' });
+      : { key, direction: key === 'name' || key === 'org' ? 'asc' : 'desc' });
   };
 
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {indexTabs && (
-          <div className="inline-flex bg-muted p-1 rounded-full self-start" role="tablist" aria-label="Rank by index">
-            {INDICES.map(d => {
-              const isActive = sort.key === d.id;
-              return (
-                <button
-                  key={d.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setSort({ key: d.id, direction: 'desc' })}
-                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                    isActive ? 'bg-white text-ink shadow-sm' : 'text-muted-foreground hover:text-ink'
-                  }`}
-                >
-                  {d.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        {heading}
         <Input
           type="search"
           placeholder="Filter by model or organization…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-72 h-10 px-4 rounded-full bg-white text-sm sm:ml-auto"
+          className="w-full md:w-72 h-10 px-4 rounded-full bg-card text-sm md:ml-auto shrink-0"
         />
       </div>
-      {indexTabs && activeIndex && <p className="text-sm text-muted-foreground max-w-3xl">{activeIndex.description}</p>}
 
       <div className="overflow-x-auto">
         <Table className="w-full text-sm">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <SortableHead sort={sort} onSort={requestSort} label="Model" sortKey="name" className="sticky left-0 bg-white z-10" />
-              <TableHead className="h-11 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Organization</TableHead>
-              <SortableHead sort={sort} onSort={requestSort} label="Token Savings (Eval)" sortKey="tokens" align="right" className="min-w-[130px]" />
-              <SortableHead sort={sort} onSort={requestSort} label="Benchmarks" sortKey="coverage" align="right" />
+              <SortableHead sort={sort} onSort={requestSort} label="Model" sortKey="name" className="sticky left-0 bg-card z-10" />
+              <SortableHead sort={sort} onSort={requestSort} label="Org" sortKey="org" />
               <SortableHead sort={sort} onSort={requestSort} label="Params" sortKey="params" align="right" />
+              <SortableHead sort={sort} onSort={requestSort} label="Eval Efficiency" sortKey="tokens" align="right" className="min-w-[130px]" info={EFFICIENCY_INFO} />
               {INDICES.map(d => (
-                <SortableHead sort={sort} onSort={requestSort} key={d.id} label={d.label} sortKey={d.id} align="right" className="min-w-[150px]" />
+                <SortableHead sort={sort} onSort={requestSort} key={d.id} label={d.label} sortKey={d.id} align="right" className="min-w-[150px]" info={d.description} />
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {visible.map(model => {
-              const cov = model.prediction?.coverage;
               return (
-                <TableRow key={model.id} className="group hover:bg-[#F9FAFB]">
-                  <TableCell className="px-3 py-3 font-semibold text-ink truncate max-w-[220px] sticky left-0 bg-white group-hover:bg-[#F9FAFB] transition-colors z-10">
+                <TableRow key={model.id} className="group hover:bg-hover">
+                  <TableCell className="px-3 py-3 font-semibold text-ink truncate max-w-[220px] sticky left-0 bg-card group-hover:bg-hover transition-colors z-10">
                     <Link href={`/models/${model.yamlId}`} className="hover:underline decoration-brand decoration-2 underline-offset-4">
                       {model.metadata?.name || model.yamlId}
                     </Link>
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-muted-foreground truncate max-w-[160px]">
-                    {model.metadata?.organization || '—'}
-                  </TableCell>
-                  <TokensCell model={model} />
-                  <TableCell
-                    className="px-3 py-3 text-right text-muted-foreground tabular text-xs whitespace-nowrap"
-                    title={cov ? `${cov.samples_completed.toLocaleString()} of ${cov.samples_total.toLocaleString()} core items answered` : undefined}
-                  >
-                    {cov ? `${cov.tasks_completed}/${cov.tasks_total}` : '—'}
+                  <TableCell className="px-3 py-3 text-muted-foreground max-w-[160px]">
+                    <span className="flex items-center gap-2">
+                      <ProviderLogo org={model.metadata?.organization} className="text-ink" />
+                      <span className="truncate">{model.metadata?.organization || '—'}</span>
+                    </span>
                   </TableCell>
                   <TableCell className="px-3 py-3 text-right text-muted-foreground tabular text-xs whitespace-nowrap">
                     {formatParams(model)}
                   </TableCell>
+                  <TokensCell model={model} />
                   {INDICES.map(d => {
                     const t = getIndexTheta(model, d.id);
                     if (!t) {
@@ -215,9 +193,9 @@ export function ModelDataTable({ initialModels, initialRows, indexTabs = false }
                         <TableCell key={d.id} className="px-3 py-3 text-right text-muted-foreground/60 text-xs" title={NO_SCORE_REASON}>—</TableCell>
                       );
                     }
-                    const lo = toPct(scaleTheta(t.interval[0]));
-                    const hi = toPct(scaleTheta(t.interval[1]));
-                    const point = toPct(scaleTheta(t.theta));
+                    const lo = scoreBarPct(scaleTheta(t.interval[0]));
+                    const hi = scoreBarPct(scaleTheta(t.interval[1]));
+                    const point = scoreBarPct(scaleTheta(t.theta));
                     return (
                       <TableCell
                         key={d.id}
@@ -226,14 +204,14 @@ export function ModelDataTable({ initialModels, initialRows, indexTabs = false }
                       >
                         <div className="flex flex-col items-end gap-1.5">
                           <span className="tabular text-[13px] font-semibold text-ink whitespace-nowrap">{formatScore(t.theta)}</span>
-                          <div className="relative w-full h-1.5 rounded-full bg-[#EDEFF2]">
-                            <div className="absolute inset-y-0 w-px bg-[#D5D8DD]" style={{ left: `${toPct(THETA_MEAN)}%` }} />
+                          <div className="relative w-full h-1.5 rounded-full bg-grid">
+                            <div className="absolute inset-y-0 w-px bg-track" style={{ left: `${scoreBarPct(THETA_MEAN)}%` }} />
                             <div
-                              className="absolute inset-y-0 rounded-full bg-brand/45"
+                              className={`absolute inset-y-0 rounded-full ${INDEX_BAR[d.id].band}`}
                               style={{ left: `${lo}%`, width: `${Math.max(hi - lo, 1)}%` }}
                             />
                             <div
-                              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-brand"
+                              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full ${INDEX_BAR[d.id].dot}`}
                               style={{ left: `${point}%` }}
                             />
                           </div>
@@ -252,7 +230,7 @@ export function ModelDataTable({ initialModels, initialRows, indexTabs = false }
         <div className="flex justify-center">
           <button
             onClick={() => setExpanded(true)}
-            className="rounded-full border border-border bg-white px-5 py-2 text-sm font-semibold text-ink hover:border-ink/30 transition-colors"
+            className="rounded-full border border-border bg-card px-5 py-2 text-sm font-semibold text-ink hover:border-ink/30 transition-colors"
           >
             Show all {sorted.length} models
           </button>
@@ -260,7 +238,6 @@ export function ModelDataTable({ initialModels, initialRows, indexTabs = false }
       )}
       <p className="text-xs text-muted-foreground">
         Scores use a scale where {THETA_MEAN} is the average of the evaluated models and 15 points is one standard deviation. Small numbers show the 90% interval. A dash means too few of that index&apos;s benchmarks were run to estimate a score.
-        {' '}Token savings (eval) compares the evaluated model&apos;s tokens (judge models not counted) on a core-subset run with running all items of the same benchmarks: the teal bar is the core run, the grey bar the full run. A tilde marks values extrapolated from the run that was actually done.
       </p>
     </div>
   );

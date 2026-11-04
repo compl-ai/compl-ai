@@ -34,7 +34,8 @@ const STEPS = [
 export function RunCore({ subsetItems }: { subsetItems: number | null }) {
   return (
     <section id="run-core" className="scroll-mt-24 border-t border-border bg-muted/30">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-20">
+      <div className="frame py-16 md:py-20">
+        <div className="cols-10">
         <div className="max-w-3xl">
           <Eyebrow>Run CORE</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-ink">Evaluate your own model</h2>
@@ -46,9 +47,9 @@ export function RunCore({ subsetItems }: { subsetItems: number | null }) {
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
           {STEPS.map((s, i) => (
-            <div key={s.title} className="flex min-w-0 flex-col rounded-2xl border border-border bg-white p-6">
+            <div key={s.title} className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-6">
               <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand font-mono text-xs font-semibold text-ink">{i + 1}</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand font-mono text-xs font-semibold text-navy">{i + 1}</span>
                 <h3 className="text-xl font-bold text-ink">{s.title}</h3>
               </div>
               <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{s.text}</p>
@@ -79,11 +80,12 @@ export function RunCore({ subsetItems }: { subsetItems: number | null }) {
               Check that every task runs first with a one-item smoke test: <code className="font-mono text-[13px] text-ink">complai eval openai/gpt-5-nano --smoke 1</code>. Smoke runs are never used for scores.
             </p>
             <ul className="space-y-1.5 pt-2">
-              <li><a href={README_QUICKSTART_URL} target="_blank" rel="noreferrer" className="font-semibold text-brand-strong hover:underline">Quickstart and providers on GitHub →</a></li>
-              <li><a href={README_CORE_URL} target="_blank" rel="noreferrer" className="font-semibold text-brand-strong hover:underline">CORE subset evaluation →</a></li>
-              <li><Link href="/methodology" className="font-semibold text-brand-strong hover:underline">How predictions are made →</Link></li>
+              <li><a href={README_QUICKSTART_URL} target="_blank" rel="noreferrer" className="font-semibold text-link hover:underline">Quickstart and providers on GitHub →</a></li>
+              <li><a href={README_CORE_URL} target="_blank" rel="noreferrer" className="font-semibold text-link hover:underline">CORE subset evaluation →</a></li>
+              <li><Link href="/methodology" className="font-semibold text-link hover:underline">How predictions are made →</Link></li>
             </ul>
           </div>
+        </div>
         </div>
       </div>
     </section>
