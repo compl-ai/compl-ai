@@ -22,30 +22,29 @@ from complai._cli.utils import select_subset_items
 # the task signatures by a test.
 JUDGE_DEFAULTS: dict[str, dict[str, str]] = {
     "cab": {"judge_model": "openai/gpt-5-mini-2025-08-07"},
-    "hle": {"grader_model": "openai/o3-mini-2025-01-31"},
+    "hle": {"grader_model": "openai/gpt-6-luna"},
     "mask": {
-        "binary_judge_model": "openai/gpt-4o",
-        "numeric_judge_model": "openai/o3-mini",
+        "binary_judge_model": "openai/gpt-6-luna",
+        "numeric_judge_model": "openai/gpt-6-luna",
     },
     "self_check_consistency": {
-        "argumentation_model": "openai/gpt-5-mini",
-        "judge_model": "openai/gpt-5-mini",
+        "argumentation_model": "openai/gpt-6-luna",
+        "judge_model": "openai/gpt-6-luna",
     },
-    "simpleqa_verified": {"grader_model": "openai/gpt-4.1-2025-04-14"},
-    "strong_reject": {"judge": "openai/gpt-4o-mini"},
+    "simpleqa_verified": {"grader_model": "openai/gpt-6-luna"},
+    "strong_reject": {"judge": "local"},
 }
 
 # OpenRouter equivalents of the default judges, used when only OPENROUTER_API_KEY
 # is set. OpenRouter has no dated snapshots, so dated models map to their alias.
 OPENROUTER_JUDGES: dict[str, str] = {
-    "openai/gpt-4.1-2025-04-14": "openrouter/openai/gpt-4.1",
-    "openai/o3-mini-2025-01-31": "openrouter/openai/o3-mini",
-    "openai/o3-mini": "openrouter/openai/o3-mini",
+    "openai/gpt-6-luna": "openrouter/openai/gpt-6-luna",
     "openai/gpt-5-mini-2025-08-07": "openrouter/openai/gpt-5-mini",
-    "openai/gpt-5-mini": "openrouter/openai/gpt-5-mini",
-    "openai/gpt-4o": "openrouter/openai/gpt-4o",
     "openai/gpt-4o-mini": "openrouter/openai/gpt-4o-mini",
 }
+
+# Gated base model of the local StrongREJECT judge (strong_reject judge="local")
+LOCAL_JUDGE_BASE_MODEL = "google/gemma-2b"
 
 # Gated Hugging Face datasets: access must be requested on the dataset page.
 GATED_DATASETS: dict[str, str] = {
@@ -83,7 +82,7 @@ def apply_judge_fallback(
     switched = []
     for task in task_names:
         for arg, default in JUDGE_DEFAULTS.get(task, {}).items():
-            if arg not in task_args.get(task, {}):
+            if arg not in task_args.get(task, {}) and default in OPENROUTER_JUDGES:
                 task_args.setdefault(task, {})[arg] = OPENROUTER_JUDGES[default]
                 switched.append(f"{task}:{arg}")
     return switched
@@ -156,6 +155,9 @@ def check_judges(
     """Check every judge model the tasks will call has credentials."""
     results = []
     for judge, used_by in judge_models(task_names, task_args).items():
+        if judge == "local":
+            results.append(check_local_judge(used_by))
+            continue
         try:
             get_model(judge, memoize=False)
         except Exception as exc:  # noqa: BLE001 - any failure fails the check
@@ -165,6 +167,23 @@ def check_judges(
                 CheckResult(f"judge {judge}", "ok", f"for {', '.join(used_by)}")
             )
     return results
+
+
+def check_local_judge(used_by: list[str]) -> CheckResult:
+    """Check access to the gated base model of the local StrongREJECT judge."""
+    from huggingface_hub import auth_check
+
+    try:
+        auth_check(LOCAL_JUDGE_BASE_MODEL)
+    except Exception as exc:  # noqa: BLE001 - any failure fails the check
+        return CheckResult(
+            "judge local",
+            "fail",
+            f"no access to {LOCAL_JUDGE_BASE_MODEL} ({exc.__class__.__name__}). "
+            f"Accept the license on https://huggingface.co/{LOCAL_JUDGE_BASE_MODEL} "
+            "and set HF_TOKEN.",
+        )
+    return CheckResult("judge local", "ok", f"for {', '.join(used_by)}")
 
 
 def check_gated_datasets(task_names: list[str]) -> list[CheckResult]:

@@ -24,6 +24,9 @@ from complai.utils.io import check_output_available, write_outputs
 
 app = typer.Typer(help="Maintainer tools for generating COMPL-AI Core subsets.")
 
+# cost.json is per executed sample; a strong_reject basis item runs all its jailbreak variants.
+VARIANTS_PER_BASIS = {"strong_reject": 35}
+
 @app.command("stats")
 def stats_command(
     data_dir: Annotated[Path, typer.Option("--data-dir", help="Path to subset directory.")] = Path("src/complai/data"),
@@ -205,8 +208,6 @@ def cost_command(
     import json
     import collections
 
-    VARIANTS_PER_BASIS = {"strong_reject": 35}
-
     if not cost_file.exists():
         print(f"Error: {cost_file} not found. Run 'python tools/minify/extract_cost.py' to generate it.")
         return
@@ -232,7 +233,6 @@ def cost_command(
         with open(subset_file, "r") as f:
             for line in f:
                 task = json.loads(line)["item_id"].split("::", 1)[0]
-                # cost.json is per executed sample; a strong_reject basis item runs all its jailbreak variants.
                 subset_counts[task] += VARIANTS_PER_BASIS.get(task, 1)
                 
         print(f"\n--- Estimating Cost for {target_dir.name} ---")

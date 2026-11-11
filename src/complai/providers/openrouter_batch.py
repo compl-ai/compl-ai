@@ -172,6 +172,11 @@ class OpenRouterBatchAPI(OpenRouterAPI):
         super().__init__(batch_model_name(model_name), *args, **kwargs)
         self._batcher: OpenRouterBatcher | None = None
 
+    def request_headers(self, config: GenerateConfig) -> dict[str, str]:
+        # The parent's per-sample x-session-id header would make Inspect's
+        # batcher (which groups requests by header) send one batch per sample.
+        return {}
+
     async def _generate_completion(
         self, request: dict[str, Any], config: GenerateConfig
     ) -> ChatCompletion:

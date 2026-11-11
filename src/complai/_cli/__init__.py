@@ -46,6 +46,16 @@ if (_repo_root / "tools" / "export_web").exists():
         print("Import error for export-web:", e)
 
 
+if (_repo_root / "tools" / "analyze").exists():
+    try:
+        if str(_repo_root) not in sys.path:
+            sys.path.insert(0, str(_repo_root))
+        from tools.analyze.analyze import analyze as analyze_cmd
+        app.command("analyze", help="Tag every answer in the preprocessed logs with how it went (writes sample_analysis.jsonl).")(analyze_cmd)
+    except ImportError as e:
+        print("Import error for analyze:", e)
+
+
 
 
 def main() -> None:

@@ -8,6 +8,7 @@ import tempfile
 import unicodedata
 from collections import Counter
 from collections.abc import Iterator
+from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from functools import partial
@@ -20,6 +21,8 @@ import ijson  # type: ignore[import-untyped]
 from inspect_ai.log import read_eval_log
 from inspect_ai.log import read_eval_log_sample
 from inspect_ai.log import read_eval_log_sample_summaries
+from inspect_ai.model import ChatMessage
+from pydantic import TypeAdapter
 from tqdm import tqdm
 
 from complai.utils.scores import metric_source
@@ -53,12 +56,20 @@ SMOKE_METADATA_KEY = "complai_smoke"
 # so the same model run through another provider counts as a different model.
 # This maps such names to the name used by the model's other runs. Add an entry
 # only when it really is the same model; the left side is the name in the log.
-# The two entries below are mmmu_pro runs done through OpenRouter (up to 65,536
-# output tokens, reasoning on) for models whose other tasks ran on vLLM
-# (16,384 output tokens, reasoning effort high).
+# The entries below are tasks run through OpenRouter for models whose other
+# tasks ran on vLLM: mmmu_pro for all four, plus aime_2025 and gpqa_diamond for
+# Qwen3.5-397B and gpqa_diamond for Kimi-K2.6. Nemotron-3-Ultra's OpenRouter
+# entry is its core run, which fills the tasks missing from its vLLM run.
+# gpt-oss-120b's and Nemotron-3-Nano-30B's OpenRouter entries rerun the tasks
+# their vLLM runs cut off at 16k.
 MODEL_ALIASES = {
+    "openrouter/openai/gpt-oss-120b": "openai-api/vllm/openai/gpt-oss-120b",
+    "openrouter/nvidia/nemotron-3-nano-30b-a3b": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
     "openrouter/qwen/qwen3.5-397b-a17b": "openai-api/vllm/Qwen/Qwen3.5-397B-A17B",
     "openrouter/moonshotai/kimi-k2.6": "openai-api/vllm/moonshotai/Kimi-K2.6",
+    "openrouter/mistralai/mistral-small-2603": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
+    "openrouter/mistralai/mistral-medium-3-5": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
+    "openrouter/nvidia/nemotron-3-ultra-550b-a55b": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
 }
 
 QUESTION_METADATA_KEYS = {
@@ -87,6 +98,22 @@ ANSWER_METADATA_KEYS = {
     "ground_truth",
     "formatted_ground_truth",
 }
+# Metadata read by question_hash/content_hash/logical_sample_id.
+HASHED_METADATA_KEYS = QUESTION_METADATA_KEYS | ANSWER_METADATA_KEYS | {
+    "access_code",
+    "attack",
+    "director",
+    "uid",
+}
+# Inspect's sample-summary thinning (inspect_ai/log/_util.py): metadata values over
+# 1 KB are replaced, metadata text over 1,024 characters is shortened at a word
+# boundary to a "..." placeholder (a long run without spaces leaves just "..."),
+# and input/target text is truncated with a suffix. Any hashed text ending in
+# "..." is re-read; a natural "..." only costs one extra sample read.
+SUMMARY_REMOVED_VALUE = "Key removed from summary (> 1k)"
+SUMMARY_SHORTENED_SUFFIX = "..."
+SUMMARY_TRUNCATED_SUFFIX = "...\n(content truncated)"
+_CHAT_MESSAGES: TypeAdapter[list[ChatMessage]] = TypeAdapter(list[ChatMessage])
 
 
 @dataclass(frozen=True)
@@ -143,6 +170,71 @@ class PreprocessedRecords:
         }
 
 
+@dataclass(frozen=True)
+class CombinedRecords(PreprocessedRecords):
+    """Several preprocessed sources read as one, keeping one eval per (model, task).
+
+    ``files`` holds every source's manifest rows. Where two sources both have an
+    ok eval for the same (model, task), the newest one (``created``; on a tie,
+    the later source) is kept and the other is marked ``superseded``, so its
+    samples are skipped by ``iter_samples``.
+    """
+
+    parts: tuple[PreprocessedRecords, ...] = ()
+    dropped: tuple[frozenset[str], ...] = ()
+
+    def iter_samples(self) -> Iterator[dict[str, Any]]:
+        """Yield the records of every source except those of superseded evals."""
+        for part, dropped in zip(self.parts, self.dropped, strict=True):
+            for row in part.iter_samples():
+                if row.get("file_path") not in dropped:
+                    yield row
+
+
+def combine_records(parts: list[PreprocessedRecords]) -> CombinedRecords:
+    """Combine sources, keeping the newest ok eval of each (model, task)."""
+    for part in parts[1:]:
+        if part.scorers != parts[0].scorers:
+            raise ValueError(
+                f"Scorers differ between {parts[0].manifest_path} and {part.manifest_path}"
+            )
+    rows = [
+        (index, dict(row)) for index, part in enumerate(parts) for row in part.files
+    ]
+    best: dict[tuple[str, str], tuple[int, dict[str, Any]]] = {}
+    for index, row in rows:
+        if row.get("parse_status") != "ok":
+            continue
+        key = (str(row["model"]), str(row["task"]))
+        current = best.get(key)
+        if current is None or (str(row.get("created", "")), index) >= (
+            str(current[1].get("created", "")),
+            current[0],
+        ):
+            best[key] = (index, row)
+    dropped: list[set[str]] = [set() for _ in parts]
+    for index, row in rows:
+        winner = best.get((str(row.get("model")), str(row.get("task"))))
+        if (
+            row.get("parse_status") == "ok"
+            and winner is not None
+            and winner[1] is not row
+        ):
+            row["parse_status"] = "superseded"
+            row["superseded_by"] = winner[1]["path"]
+            dropped[index].add(str(row["path"]))
+    return CombinedRecords(
+        records_path=parts[0].records_path,
+        manifest_path=parts[0].manifest_path,
+        files=tuple(row for _, row in rows),
+        digest=digest_json([part.digest for part in parts]),
+        scorers=dict(parts[0].scorers),
+        records=sum(part.records for part in parts),
+        parts=tuple(parts),
+        dropped=tuple(frozenset(paths) for paths in dropped),
+    )
+
+
 def preprocess_logs(
     log_paths: list[Path],
     scorers: dict[str, str],
@@ -159,7 +251,8 @@ def preprocess_logs(
     ``coverage`` of the reference. Benchmark metrics come from the kept eval.
 
     Evals belong to the same model when their logged model names match after
-    applying ``MODEL_ALIASES``. Folder layout and other files next to the logs
+    applying ``MODEL_ALIASES`` (``openrouter-batch/X:batch`` is read as
+    ``openrouter/X``). Folder layout and other files next to the logs
     (such as ``eval-set.json``) are ignored.
     """
     if not scorers or any(not task or not scorer for task, scorer in scorers.items()):
@@ -339,9 +432,19 @@ def _hash_key(content_hash: str) -> bytes:
     return bytes.fromhex(content_hash[:32])
 
 
-def load_records(records_path: Path) -> PreprocessedRecords:
-    """Load response records without inspecting their source logs."""
-    records_path = records_path.expanduser().resolve()
+def load_records(records_path: Path | Sequence[Path]) -> PreprocessedRecords:
+    """Load response records without inspecting their source logs.
+
+    Given several paths, their records are combined with ``combine_records``.
+    """
+    if not isinstance(records_path, (str, os.PathLike)):
+        paths = [Path(path) for path in records_path]
+        if len(paths) == 1:
+            return load_records(paths[0])
+        if not paths:
+            raise ValueError("No preprocessed records given")
+        return combine_records([load_records(path) for path in paths])
+    records_path = Path(records_path).expanduser().resolve()
     manifest_path = records_manifest_path(records_path)
     if not records_path.is_file():
         raise FileNotFoundError(f"Preprocessed records do not exist: {records_path}")
@@ -538,6 +641,11 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
         pass
 
     model = str(getattr(spec, "model", ""))
+    # Batch runs are the same model on the same provider; how it was called doesn't matter.
+    if model.startswith("openrouter-batch/"):
+        model = "openrouter/" + model.removeprefix("openrouter-batch/").removesuffix(
+            ":batch"
+        )
     return {
         "run_id": str(getattr(spec, "eval_id", "") or getattr(spec, "run_id", "")),
         "created": str(getattr(spec, "created", "")),
@@ -579,6 +687,7 @@ def _parse_log(
         raise ValueError(f"strong_reject with full=True is not supported: {path}")
     summaries = read_eval_log_sample_summaries(str(path))
     missing_choices = _read_missing_choices(path, summaries)
+    _restore_thinned_fields(path, summaries)
     samples = []
     for sample in summaries:
         epoch = int(sample.epoch or 1)
@@ -675,6 +784,197 @@ def _read_missing_choices_fully(
         if full_sample.choices is not None:
             choices[(str(sample.id), epoch)] = list(full_sample.choices)
     return choices
+
+
+def _restore_thinned_fields(path: Path, samples: list[Any]) -> None:
+    """Replace hash-relevant fields that Inspect's summaries cut or removed.
+
+    Sample summaries drop metadata values over 1 KB, shorten metadata text to
+    about 1,024 characters and truncate input/target text over 5,120
+    characters. Hashing those stand-ins merges distinct questions (llm_rules
+    keeps each conversation in a >1 KB ``test_case`` dict), so the affected
+    fields are read back from the full sample, in place, for those samples only.
+    """
+    wanted: dict[tuple[str, int], set[str]] = {}
+    ids: dict[tuple[str, int], Any] = {}
+    for sample in samples:
+        fields = _thinned_fields(sample)
+        if fields:
+            key = (str(sample.id), int(sample.epoch or 1))
+            wanted[key] = fields
+            ids[key] = sample.id
+    if not wanted or not path.is_file():
+        return
+    full = _read_full_fields(path, ids)
+    for sample in samples:
+        key = (str(sample.id), int(sample.epoch or 1))
+        values = full.get(key)
+        if values is None:
+            continue
+        for field in wanted[key]:
+            if field == "input" and "input" in values:
+                sample.input = values["input"]
+            elif field == "target" and "target" in values:
+                sample.target = values["target"]
+            elif field.startswith("metadata.") and isinstance(values.get("metadata"), dict):
+                name = field.removeprefix("metadata.")
+                if name in values["metadata"]:
+                    sample.metadata[name] = values["metadata"][name]
+    for sample in samples:
+        if _is_truncated_text(sample.input):
+            _restore_input_from_messages(path, sample)
+
+
+def _restore_input_from_messages(path: Path, sample: Any) -> None:
+    """Rebuild an input that older Inspect versions stored truncated.
+
+    Inspect before ~0.3.287 also truncated the stored sample input, so the
+    full sample cannot restore it; the messages sent to the model still hold
+    the full text. Each truncated input text is replaced by the text of the
+    first sent message with the same role that starts with the kept prefix.
+    Inputs without such a message stay truncated.
+    """
+    full = read_eval_log_sample(
+        str(path),
+        id=sample.id,
+        epoch=int(sample.epoch or 1),
+        resolve_attachments=True,
+        exclude_fields={"events", "events_data", "timelines", "store", "attachments"},
+    )
+    sent: list[tuple[str, str]] = []
+    for message in full.messages:
+        if isinstance(message.content, str):
+            sent.append((message.role, message.content))
+        else:
+            sent.extend(
+                (message.role, part.text)
+                for part in message.content
+                if isinstance(getattr(part, "text", None), str)
+            )
+
+    def restore(text: str, role: str) -> str:
+        if not text.endswith(SUMMARY_TRUNCATED_SUFFIX):
+            return text
+        prefix = text.removesuffix(SUMMARY_TRUNCATED_SUFFIX)
+        for sent_role, sent_text in sent:
+            if sent_role == role and sent_text.startswith(prefix):
+                return sent_text
+        return text
+
+    if isinstance(sample.input, str):
+        sample.input = restore(sample.input, "user")
+        return
+    messages = []
+    for message in sample.input:
+        content = message.content
+        if isinstance(content, str):
+            restored = restore(content, message.role)
+            if restored != content:
+                message = message.model_copy(update={"content": restored})
+        elif isinstance(content, list):
+            parts = []
+            for part in content:
+                text = getattr(part, "text", None)
+                if isinstance(text, str):
+                    restored = restore(text, message.role)
+                    if restored != text:
+                        part = part.model_copy(update={"text": restored})
+                parts.append(part)
+            message = message.model_copy(update={"content": parts})
+        messages.append(message)
+    sample.input = messages
+
+
+def _thinned_fields(sample: Any) -> set[str]:
+    """Return the hash-relevant fields a sample summary cut or removed."""
+    fields = set()
+    if _is_truncated_text(sample.input):
+        fields.add("input")
+    if _is_truncated_text(sample.target):
+        fields.add("target")
+    metadata = sample.metadata if isinstance(sample.metadata, dict) else {}
+    for key in HASHED_METADATA_KEYS & metadata.keys():
+        value = metadata[key]
+        if value == SUMMARY_REMOVED_VALUE or (
+            isinstance(value, str) and value.endswith(SUMMARY_SHORTENED_SUFFIX)
+        ):
+            fields.add(f"metadata.{key}")
+    return fields
+
+
+def _is_truncated_text(value: Any) -> bool:
+    """Return whether a summary input/target carries Inspect's truncation suffix."""
+    if isinstance(value, str):
+        return value.endswith(SUMMARY_TRUNCATED_SUFFIX)
+    if isinstance(value, list):
+        for item in value:
+            content = getattr(item, "content", item)
+            if isinstance(content, str) and content.endswith(SUMMARY_TRUNCATED_SUFFIX):
+                return True
+            if isinstance(content, list) and any(
+                isinstance(getattr(part, "text", None), str)
+                and part.text.endswith(SUMMARY_TRUNCATED_SUFFIX)
+                for part in content
+            ):
+                return True
+    return False
+
+
+def _read_full_fields(
+    path: Path, ids: dict[tuple[str, int], Any]
+) -> dict[tuple[str, int], dict[str, Any]]:
+    """Stream input, target and metadata of selected samples from a log."""
+    names = {"input", "target", "metadata"}
+    found: dict[tuple[str, int], dict[str, Any]] = {}
+    try:
+        with ZipFile(path) as archive:
+            for key in ids:
+                sample_id, epoch = key
+                try:
+                    with archive.open(f"samples/{sample_id}_epoch_{epoch}.json") as member:
+                        values = {}
+                        for name, value in ijson.kvitems(member, "", use_float=True):
+                            if name in names:
+                                values[name] = value
+                                if len(values) == len(names):
+                                    break
+                except KeyError:
+                    return _read_full_fields_fully(path, ids)
+                if isinstance(values.get("input"), list):
+                    values["input"] = _CHAT_MESSAGES.validate_python(values["input"])
+                found[key] = values
+            return found
+    except BadZipFile:
+        return _read_full_fields_fully(path, ids)
+
+
+def _read_full_fields_fully(
+    path: Path, ids: dict[tuple[str, int], Any]
+) -> dict[tuple[str, int], dict[str, Any]]:
+    """Fall back to Inspect's sample reader for non-ZIP log formats."""
+    excluded = {
+        "attachments",
+        "events",
+        "events_data",
+        "messages",
+        "model_usage",
+        "output",
+        "role_usage",
+        "scores",
+        "store",
+        "timelines",
+    }
+    found = {}
+    for key, sample_id in ids.items():
+        sample = read_eval_log_sample(
+            str(path), id=sample_id, epoch=key[1], exclude_fields=excluded
+        )
+        found[key] = {
+            "input": sample.input,
+            "target": sample.target,
+            "metadata": sample.metadata,
+        }
+    return found
 
 
 def _looks_like_choice_target(target: Any) -> bool:
