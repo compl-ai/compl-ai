@@ -549,10 +549,37 @@ def add_label_scores(prediction: Prediction, *, ridge: float, iterations: int) -
         subset_items = collections.Counter(
             str(items_by_id[str(row["item_id"])].get(column, UNKNOWN_LABEL)) for row in prediction.subset
         )
+        weights = label_task_weights(prediction, pools) if column == "subcategory" else None
         for model, model_result in prediction.result["models"].items():
             model_result[key] = pool_scores(
-                prediction, model, column, pools, subset_items, ridge=ridge, iterations=iterations,
+                prediction, model, column, pools, subset_items,
+                weights=weights, ridge=ridge, iterations=iterations,
             )
+
+
+def label_task_weights(
+    prediction: Prediction, pools: dict[str, list[tuple[str, int]]]
+) -> dict[str, dict[str, float]]:
+    """Weight of each member task in each label pool: its index discrimination times its population share in the pool.
+
+    A task's index weight (its fitted benchmark discrimination in
+    ``params["indices"]``) is split over the labels by the share of its own
+    population items carrying each label, so a pool counts benchmarks as the
+    index does rather than by how many items each contributes.
+    """
+    discrimination = {
+        task_name: float(calibration["discrimination"])
+        for index in prediction.params.get("indices", {}).values()
+        for task_name, calibration in index["tasks"].items()
+    }
+    weights: dict[str, dict[str, float]] = {}
+    for label, members in pools.items():
+        counts = collections.Counter(task_name for task_name, _ in members)
+        weights[label] = {
+            task_name: discrimination.get(task_name, 1.0) * count / len(prediction.populations[task_name])
+            for task_name, count in counts.items()
+        }
+    return weights
 
 
 def add_index_thetas(prediction: Prediction) -> None:
@@ -686,6 +713,7 @@ def pool_scores(
     pools: dict[str, list[tuple[str, int]]],
     subset_items: collections.Counter[str],
     *,
+    weights: dict[str, dict[str, float]] | None = None,
     ridge: float,
     iterations: int,
 ) -> dict[str, Any]:
@@ -695,9 +723,12 @@ def pool_scores(
     subset cannot measure it, so ``gap`` holds the reason (``gap_reason``) and
     the pool keeps its coverage counts but no scores. ``gap`` is None otherwise.
 
-    ``predicted_score`` is the mean of ``item_probabilities`` over the pool's
-    full population: observed responses on answered subset items, otherwise
-    the probability under each task's own or imputed ability. ``ability`` (with
+    ``predicted_score`` averages ``item_probabilities`` over the pool's full
+    population: observed responses on answered subset items, otherwise the
+    probability under each task's own or imputed ability. Without ``weights``
+    it is the plain mean over items; with ``weights`` (``label_task_weights``)
+    it is the weighted mean of each member task's mean, and ``task_weights``
+    holds the normalized weights. ``ability`` (with
     ``ability_standard_error``) is the label ability from
     ``pooled_label_abilities``: a summary of the model's standing on that label,
     and the ``index_pooled`` imputation source. It is null when the model
@@ -705,7 +736,8 @@ def pool_scores(
 
     ``score_interval`` is the ``INDEX_THETA_INTERVAL`` range of a parametric
     bootstrap of ``predicted_score`` (``pool_score_draws``); ``imputed_items``
-    counts the pool items scored from imputed task abilities.
+    counts the pool items scored from imputed task abilities and ``imputed_weight``
+    is their share of ``predicted_score``.
     """
     probabilities = prediction.item_probabilities.get(model, {})
     pooled = pooled_label_abilities(prediction, model, column, ridge=ridge, iterations=iterations)
@@ -714,35 +746,53 @@ def pool_scores(
         member_indices: dict[str, list[int]] = {}
         for task_name, index in members:
             member_indices.setdefault(task_name, []).append(index)
-        pool_probabilities: list[float] = []
+        task_means: dict[str, float] = {}
+        task_counts: dict[str, int] = {}
         imputed_items = 0
         for task_name, indices in member_indices.items():
             task_probabilities = probabilities.get(task_name)
             if task_probabilities is not None:
                 values = task_probabilities[sorted(indices)]
                 finite = values[np.isfinite(values)]
-                pool_probabilities.extend(finite.tolist())
+                if len(finite):
+                    task_means[task_name] = float(np.mean(finite))
+                    task_counts[task_name] = len(finite)
                 if (model, task_name) in prediction.imputed_thetas:
                     imputed_items += len(finite)
-        if not pool_probabilities:
+        if not task_means:
             continue
+        pool_weights = weights.get(label, {}) if weights is not None else None
+        raw = {
+            task_name: (pool_weights[task_name] if pool_weights is not None else float(count))
+            for task_name, count in task_counts.items()
+        }
+        total = sum(raw.values())
+        task_weights = {task_name: value / total for task_name, value in raw.items()}
+        point = sum(task_weights[task_name] * task_means[task_name] for task_name in task_means)
+        imputed_weight = sum(
+            share for task_name, share in task_weights.items()
+            if (model, task_name) in prediction.imputed_thetas
+        )
         observed = pooled.get(label, {})
         gap = gap_reason(subset_items[label])
         interval = None
         if not gap:
             draws = pool_score_draws(
-                prediction, model, member_indices, ridge=ridge, iterations=iterations
+                prediction, model, member_indices,
+                weights=pool_weights, ridge=ridge, iterations=iterations,
             )
             low, high = np.percentile(draws, INDEX_THETA_INTERVAL)
             interval = [float(low), float(high)]
         scores[label] = {
             "gap": gap,
-            "predicted_score": None if gap else float(np.mean(pool_probabilities)),
+            "predicted_score": None if gap else float(point),
             "score_interval": interval,
             "population_items": len(members),
             "population_tasks": len(member_indices),
             "subset_items": subset_items[label],
             "imputed_items": imputed_items,
+            "imputed_weight": float(imputed_weight),
+            **({"task_weights": task_weights} if weights is not None else {}),
             "observations": observed.get("observations", 0),
             "ability": None if gap else observed.get("ability"),
             "ability_standard_error": None if gap else observed.get("ability_standard_error"),
@@ -756,10 +806,15 @@ def pool_score_draws(
     model: str,
     member_indices: dict[str, list[int]],
     *,
+    weights: dict[str, float] | None = None,
     ridge: float,
     iterations: int,
 ) -> np.ndarray:
-    """Bootstrap draws of a label pool's ``predicted_score`` (mean item probability).
+    """Bootstrap draws of a label pool's ``predicted_score``.
+
+    Without ``weights`` the score is the mean item probability; with
+    ``weights`` it is the weighted mean of each member task's mean item
+    probability (weights renormalized over the tasks that have items).
 
     Mirrors the index theta bootstrap: each member task's ability is redrawn
     from its estimate and standard error (an imputed task uses the standard
@@ -772,7 +827,7 @@ def pool_score_draws(
     rng = np.random.default_rng(INDEX_THETA_SEED)
     totals = np.zeros(INDEX_THETA_DRAWS)
     variance = 0.0
-    count = 0
+    weight_total = 0.0
     for task_name, indices in member_indices.items():
         point = probabilities.get(task_name)
         if point is None:
@@ -810,11 +865,12 @@ def pool_score_draws(
             drawn = blend * task_result["observed_subset_score"] + (1 - blend) * drawn
             answered = np.zeros(len(indices), dtype=bool)
         drawn[:, answered] = point[answered]
-        totals += drawn.sum(axis=1)
-        variance += float(np.sum(point[~answered] * (1.0 - point[~answered])))
-        count += len(indices)
+        weight = float(len(indices)) if weights is None else weights[task_name]
+        totals += weight * drawn.mean(axis=1)
+        variance += weight**2 * float(np.sum(point[~answered] * (1.0 - point[~answered]))) / len(indices) ** 2
+        weight_total += weight
     totals += rng.normal(0.0, math.sqrt(variance), INDEX_THETA_DRAWS)
-    return np.clip(totals / count, 0.0, 1.0)
+    return np.clip(totals / weight_total, 0.0, 1.0)
 
 
 def population_item_params(
