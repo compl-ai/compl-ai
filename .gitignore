@@ -167,3 +167,6 @@ tools/label/datasets/*.jsonl
 # Minify pipeline local data
 tools/minify/data/
 
+
+# Local run outputs and analysis (never committed)
+/outputs/
