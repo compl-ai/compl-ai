@@ -228,7 +228,7 @@ def mmmu_pro_choice() -> Scorer:
     return score
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task
 def mmmu_pro(subset: MMMUProSubset = "standard_10", cot: bool = False) -> Task:
     """MMMU-Pro: A More Robust Multi-discipline Multimodal Understanding Benchmark.
 

@@ -258,7 +258,7 @@ def strong_reject_scorer(judge_name: str, full: bool = False) -> Scorer:
     return score
 
 
-@task(technical_requirement="Cyberattack Resilience")
+@task
 def strong_reject(
     full: bool = False,
     jailbreak_methods: JailbreakMethod | list[JailbreakMethod] | Literal["all"] = "all",

@@ -50,7 +50,7 @@ def get_complai_tasks(
 
 
 def get_task_infos_from_task_names(
-    task_names: list[str], tasks_to_skip: list[str], task_filter: dict[str, str] | None
+    task_names: list[str], tasks_to_skip: list[str]
 ) -> list[TaskInfo]:
     """
     Get TaskInfo objects from a list of task names.
@@ -59,7 +59,6 @@ def get_task_infos_from_task_names(
         tasks_names (list[str]): List of task names to retrieve TaskInfo for. If empty,
             all available tasks are returned.
         tasks_to_skip (list[str]): List of task names to skip.
-        task_filter (dict[str, str] | None): Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).
 
     Raises:
         typer.BadParameter: If one of the task names is not valid.
@@ -71,11 +70,6 @@ def get_task_infos_from_task_names(
     def filter(task: TaskInfo) -> bool:
         if task.name in tasks_to_skip:
             tasks_to_skip.remove(task.name)
-            return False
-
-        if task_filter and not any(
-            task.attribs.get(key) == value for key, value in task_filter.items()
-        ):
             return False
 
         return not task_names or task.name in task_names
@@ -114,7 +108,7 @@ def parse_tasks(tasks: str | None) -> list[str]:
 
 
 def get_task_infos(
-    tasks: str | None, tasks_to_skip: str | None, task_filter: dict[str, str] | None
+    tasks: str | None, tasks_to_skip: str | None
 ) -> list[TaskInfo]:
     """
     Get TaskInfo objects for the specified tasks.
@@ -122,7 +116,6 @@ def get_task_infos(
     Args:
         tasks (str | None): Comma-separated list of task names. If None, all available tasks are returned.
         tasks_to_skip (str | None): Comma-separated list of task names to skip. If None, no tasks are skipped.
-        task_filter (dict[str, str] | None): Filter tasks by attribute (e.g. `-f technical_requirement='Capabilities, Performance, and Limitations'`).
 
     Returns:
         list[TaskInfo]: List of TaskInfo objects for the specified tasks.
@@ -130,7 +123,7 @@ def get_task_infos(
     task_names = parse_tasks(tasks)
     tasks_to_skip_names = parse_tasks(tasks_to_skip)
 
-    return get_task_infos_from_task_names(task_names, tasks_to_skip_names, task_filter)
+    return get_task_infos_from_task_names(task_names, tasks_to_skip_names)
 
 
 def parse_task_args(

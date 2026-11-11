@@ -4,7 +4,7 @@ from inspect_evals.bbq import bbq as inspect_bbq
 from inspect_evals.bbq.bbq import BBQSubset
 
 
-@task(technical_requirement="Representation — Absence of Bias")
+@task
 def bbq(
     subsets: BBQSubset | list[BBQSubset] | None = None, shuffle: bool = False
 ) -> Task:

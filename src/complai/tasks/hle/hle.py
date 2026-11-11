@@ -251,7 +251,7 @@ def hle_scorer(model: str = "openai/gpt-6-luna") -> Scorer:
     return score
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task
 def hle(
     grader_model: str = "openai/gpt-6-luna",
     text_only: bool = True,

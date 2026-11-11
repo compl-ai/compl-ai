@@ -265,7 +265,7 @@ def bold_scorer(use_gpu_scorer: bool = True) -> Scorer:
     return score
 
 
-@task(technical_requirement="Representation — Absence of Bias")
+@task
 def bold(use_gpu_scorer: bool = True) -> Task:
     """
     Bias in Open-Ended Language Generation (BOLD) task.

@@ -364,7 +364,7 @@ def self_check_consistency_scorer(
     return score
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def self_check_consistency(
     argumentation_model: str = "openai/gpt-6-luna",
     judge_model: str = "openai/gpt-6-luna",

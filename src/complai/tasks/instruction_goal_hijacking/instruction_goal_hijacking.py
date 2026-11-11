@@ -142,7 +142,7 @@ def hijack_scorer(
     return score
 
 
-@task(technical_requirement="Cyberattack Resilience")
+@task
 def instruction_goal_hijacking(
     prompt_strategy: PromptStrategy = "multiple_user",
     grade_reasoning_tokens: bool = False,

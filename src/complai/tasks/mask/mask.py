@@ -3,7 +3,7 @@ from inspect_ai import task
 from inspect_evals.mask import mask as inspect_mask
 
 
-@task(technical_requirement="Societal Alignment")
+@task
 def mask(
     binary_judge_model: str = "openai/gpt-6-luna",
     numeric_judge_model: str = "openai/gpt-6-luna",

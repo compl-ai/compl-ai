@@ -257,7 +257,7 @@ def fairllm_scorer(num_recommendations: int) -> Scorer:
     return score
 
 
-@task(technical_requirement="Fairness — Absence of Discrimination")
+@task
 def fairllm(sample_size: int | None = 200, num_recommendations: int = 20) -> Task:
     """FairLLM: recommendation fairness benchmark.
 

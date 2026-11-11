@@ -8,7 +8,7 @@ from inspect_ai.model import get_model
 from inspect_evals.simpleqa import simpleqa_verified as inspect_simpleqa_verified
 
 
-@task(technical_requirement="Societal Alignment")
+@task
 def simpleqa_verified(
     scorer: Literal["tool", "original"] = "tool",
     temperature: float = 1.0,

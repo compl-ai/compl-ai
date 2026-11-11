@@ -115,7 +115,7 @@ def samples_command(
 ) -> None:
     """Write samples as JSONL."""
     task_infos: list[TaskInfo] = (
-        get_task_infos(tasks, tasks_to_skip, None)
+        get_task_infos(tasks, tasks_to_skip)
         if tasks is not None or not task_spec
         else []
     )

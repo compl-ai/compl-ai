@@ -97,7 +97,7 @@ def imdb_sentiment_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def imdb_contrast() -> Task:
     """IMDB contrast sets task.
 

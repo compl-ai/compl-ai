@@ -279,7 +279,7 @@ def mmlu_pro_robustness_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def mmlu_pro_robustness(
     categories: str | list[str] | None = None,
     num_samples: int = 200,

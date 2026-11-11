@@ -60,14 +60,6 @@ def eval_command(
             envvar="COMPLAI_TASKS_TO_SKIP",
         ),
     ] = None,
-    task_filter: Annotated[
-        list[str] | None,
-        typer.Option(
-            "-F",
-            "--task-filter",
-            help='Filter tasks by attribute (e.g. `-F technical_requirement="Capabilities, Performance, and Limitations"`).',
-        ),
-    ] = None,
     task_args: Annotated[
         list[str],
         typer.Option(
@@ -394,7 +386,6 @@ def eval_command(
             parse_tasks(tasks_to_skip),
             smoke,
             {
-                "--task-filter": task_filter,
                 "--limit": limit,
                 "--sample-id": sample_id,
             },
@@ -405,10 +396,7 @@ def eval_command(
         run_metadata[SMOKE_METADATA_KEY] = smoke
 
     # Get TaskInfo objects from task names
-    parsed_task_filters = parse_cli_config(task_filter, None)
-    task_infos: list[TaskInfo] = get_task_infos(
-        tasks, tasks_to_skip, parsed_task_filters
-    )
+    task_infos: list[TaskInfo] = get_task_infos(tasks, tasks_to_skip)
 
     # Apply display monkey patch
     patch_display_results()

@@ -319,7 +319,7 @@ def status_command(
     """
     with error_handler(debug):
         if full:
-            task_names = [info.name for info in get_task_infos(tasks, None, None)]
+            task_names = [info.name for info in get_task_infos(tasks, None)]
         else:
             task_names = list(select_subset_items(parse_tasks(tasks), [], None, {})[0])
         parsed_task_args = parse_task_args(task_args or [], task_config)
