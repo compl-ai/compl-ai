@@ -1,8 +1,10 @@
+import importlib
 import json
 import logging
 import sys
 from collections.abc import Iterable
 from pathlib import Path
+from types import ModuleType
 from typing import Literal
 
 from huggingface_hub import hf_hub_download
@@ -13,14 +15,19 @@ from complai.constants import CACHE_DIR
 # Inspect loads task files with their folder first on sys.path, where our
 # strong_reject.py would hide the installed strong_reject package.
 _task_dir = Path(__file__).parent.resolve()
-_sys_path = sys.path[:]
-sys.path[:] = [p for p in sys.path if Path(p or ".").resolve() != _task_dir]
-try:
-    from strong_reject.jailbreaks import (
-        registered_jailbreaks as strong_reject_jailbreaks,
-    )
-finally:
-    sys.path[:] = _sys_path
+
+
+def import_strong_reject(module: str) -> ModuleType:
+    """Import a module of the installed strong_reject package, e.g. "evaluate"."""
+    sys_path = sys.path[:]
+    sys.path[:] = [p for p in sys.path if Path(p or ".").resolve() != _task_dir]
+    try:
+        return importlib.import_module(f"strong_reject.{module}")
+    finally:
+        sys.path[:] = sys_path
+
+
+strong_reject_jailbreaks = import_strong_reject("jailbreaks").registered_jailbreaks
 
 
 logger = logging.getLogger(__name__)

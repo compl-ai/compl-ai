@@ -13,7 +13,7 @@ def simpleqa_verified(
     scorer: Literal["tool", "original"] = "tool",
     temperature: float = 1.0,
     max_tokens: int = 2048,
-    grader_model: str = "openai/gpt-4.1-2025-04-14",
+    grader_model: str = "openai/gpt-6-luna",
     grader_temperature: float = 1.0,
 ) -> Task:
     return task_with(

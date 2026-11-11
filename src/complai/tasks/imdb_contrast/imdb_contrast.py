@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from inspect_ai import Task
@@ -55,6 +56,8 @@ def imdb_contrastset_dataset() -> Dataset:
 
 
 def parse_sentiment(completion: str) -> str:
+    # Drop fabricated follow-up turns from models that run past their end-of-turn token
+    completion = re.split(r"\n(?:user|assistant)\n", completion, maxsplit=1)[0]
     completion = completion.strip().lower()
 
     if "positive" in completion and "negative" not in completion:

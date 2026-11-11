@@ -19,9 +19,19 @@ from inspect_ai.model import ChatMessageUser
 from inspect_ai.model import Content
 from inspect_ai.model import ContentImage
 from inspect_ai.model import ContentText
+from inspect_ai._util.answer import answer_character
+from inspect_ai._util.answer import answer_index
+from inspect_ai.scorer import accuracy
 from inspect_ai.scorer import choice
+from inspect_ai.scorer import Score
+from inspect_ai.scorer import Scorer
+from inspect_ai.scorer import scorer
+from inspect_ai.scorer import stderr
+from inspect_ai.scorer import Target
 from inspect_ai.solver import multiple_choice
 from inspect_ai.solver import prompt_template
+from inspect_ai.solver import TaskState
+from inspect_ai.solver._multiple_choice import parse_answers
 
 from complai.tasks.mmmu_pro.utils import get_images_in_order
 from complai.tasks.mmmu_pro.utils import image_to_data_uri
@@ -160,6 +170,64 @@ def mmmu_pro_dataset(subset: MMMUProSubset) -> Dataset:
     )
 
 
+# An answer line that copies the template's "$" ("ANSWER: $C"). Inspect up to
+# at least 0.3.224 accepted it; 0.3.287 does not.
+DOLLAR_ANSWER = re.compile(r"^ANSWER\s*:\s*\$([A-Z])\s*\.?\s*$", re.MULTILINE)
+# A reply that is only the option letter ("C", "(C)", "**C**", "C.") or the
+# letter followed by the option text ("C) 42 N"), on a single line.
+BARE_LETTER = re.compile(r"^\(?\**([A-Z])\**\)?\.?$")
+LEADING_LETTER = re.compile(r"^\(?\**([A-Z])\**\)\s")
+
+
+def parse_lenient_answer(completion: str, num_choices: int) -> str | None:
+    """Read an answer letter that parse_answers() rejects.
+
+    Accepts the last 'ANSWER: $C' line, or a single-line reply that is just
+    the option letter. The "direct" prompt tells the model to answer with the
+    letter directly, while the multiple_choice() template asks for
+    'ANSWER: $LETTER', so models follow either. Multi-line replies without an
+    answer line are not read, so a reply that lists the options is not taken
+    as an answer.
+    """
+    text = completion.strip()
+    dollar = DOLLAR_ANSWER.findall(text)
+    if dollar:
+        letter = dollar[-1]
+    elif "\n" in text:
+        return None
+    else:
+        match = BARE_LETTER.match(text) or LEADING_LETTER.match(text)
+        if match is None:
+            return None
+        letter = match.group(1)
+    return letter if answer_index(letter) < num_choices else None
+
+
+# Registered as "choice" so logs keep the score name the pipeline reads.
+@scorer(metrics=[accuracy(), stderr()], name="choice")
+def mmmu_pro_choice() -> Scorer:
+    """The choice() scorer, also accepting the answers parse_lenient_answer() reads.
+
+    Choices are parsed from the completion when none are marked, which is the
+    case when re-scoring a log, so live and re-scored results agree.
+    """
+    score_choice = choice()
+
+    async def score(state: TaskState, target: Target) -> Score:
+        if not any(c.correct for c in state.choices):
+            answers = parse_answers(state, multiple_correct=False)
+            if not answers:
+                letter = parse_lenient_answer(
+                    state.output.completion or "", len(state.choices)
+                )
+                answers = {letter} if letter else set()
+            for i in range(len(state.choices)):
+                state.choices.mark_choice(i, answer_character(i) in answers)
+        return await score_choice(state, target)
+
+    return score
+
+
 @task(technical_requirement="Capabilities, Performance, and Limitations")
 def mmmu_pro(subset: MMMUProSubset = "standard_10", cot: bool = False) -> Task:
     """MMMU-Pro: A More Robust Multi-discipline Multimodal Understanding Benchmark.
@@ -174,5 +242,5 @@ def mmmu_pro(subset: MMMUProSubset = "standard_10", cot: bool = False) -> Task:
     return Task(
         dataset=mmmu_pro_dataset(subset),
         solver=[prompt_template(get_prompt_template(subset, cot)), multiple_choice()],
-        scorer=choice(),
+        scorer=mmmu_pro_choice(),
     )
