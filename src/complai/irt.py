@@ -3,6 +3,7 @@
 import hashlib
 import json
 import math
+import sys
 import zlib
 from collections import Counter
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ from typing import Literal
 import numpy as np
 
 from complai.constants import (
+    INDEX_SLOPE_PRIOR_SD,
     INDEX_THETA_RIDGE,
     ITEM_COLUMNS,
     MAX_DISCRIMINATION,
@@ -173,6 +175,32 @@ def fit(
     )
 
 
+def find_subset_items(
+    tasks: dict[str, dict[str, Any]], rows: list[dict[str, Any]]
+) -> list[tuple[str, int] | None]:
+    """(task, item index) of each subset row: by item ID, else by its unique content hash in its task.
+
+    Duplicate questions in a dataset share one item, labelled by one of their
+    sample IDs; older subsets may name the other duplicate.
+    """
+    by_id: dict[str, tuple[str, int]] = {}
+    by_hash: dict[tuple[str, str], list[int]] = {}
+    for name, task in tasks.items():
+        for index, item in enumerate(task["items"]):
+            by_id[str(item["item_id"])] = (name, index)
+            by_hash.setdefault((name, str(item["content_hash"])), []).append(index)
+    matches: list[tuple[str, int] | None] = []
+    for row in rows:
+        item_id = str(row["item_id"])
+        if item_id in by_id:
+            matches.append(by_id[item_id])
+            continue
+        name = item_id.split("::", 1)[0]
+        indices = by_hash.get((name, str(row["content_hash"])), [])
+        matches.append((name, indices[0]) if len(indices) == 1 else None)
+    return matches
+
+
 def refit(
     records: PreprocessedRecords,
     params: dict[str, Any],
@@ -183,9 +211,8 @@ def refit(
     """Refit params on new records while keeping an existing subset's items.
 
     Tasks, scorers, indices, estimator, budget and seed come from the existing
-    params. Each task's allocation and eligible count are kept too, so every
-    subset item keeps its inclusion probability. Every subset item must still
-    be in the records with unchanged content.
+    params, as are each task's allocation and eligible count. Every subset item
+    must still be in the records with unchanged content.
     """
     scorers = params["task_scorers"]
     estimator = params.get("estimator", "irt")
@@ -194,18 +221,14 @@ def refit(
     for name, task in tasks.items():
         task["index"] = params["tasks"][name]["index"]
 
-    positions = {
-        item["item_id"]: (name, index, item["content_hash"])
-        for name, task in tasks.items()
-        for index, item in enumerate(task["items"])
-    }
     selected_keys: list[tuple[str, int]] = []
-    for row in sorted(subset, key=lambda row: row["rank"]):
+    ordered = sorted(subset, key=lambda row: row["rank"])
+    for row, match in zip(ordered, find_subset_items(tasks, ordered)):
         item_id = row["item_id"]
-        if item_id not in positions:
+        if match is None:
             raise ValueError(f"Subset item {item_id!r} is missing from the records")
-        name, index, content_hash = positions[item_id]
-        if content_hash != row["content_hash"]:
+        name, index = match
+        if tasks[name]["items"][index]["content_hash"] != row["content_hash"]:
             raise ValueError(f"Subset item {item_id!r} has different content in the records")
         selected_keys.append((name, index))
 
@@ -323,6 +346,10 @@ def prepare_tasks(
         scored_ids.setdefault(task, set()).add(sample_id)
         key = (file_path, str(sample_row["model"]), task, question_hash)
         epochs.setdefault(key, []).append(value)
+        if key in metadata:
+            # Duplicate questions in one eval share an item; label it by the
+            # smallest sample ID so the item ID doesn't depend on record order.
+            sample_id = min(sample_id, metadata[key]["sample_id"])
         metadata[key] = {
             "file_path": file_path,
             "created": str(sample_row["created"]),
@@ -371,6 +398,37 @@ def prepare_tasks(
         rows_by_question: dict[str, list[dict[str, Any]]] = {}
         for row in rows:
             rows_by_question.setdefault(row["question_hash"], []).append(row)
+        # A sample ID logged under several question hashes is the same dataset
+        # question hashed differently by a few runs (e.g. truncated metadata).
+        # Keep the variant most models share; the rest become missing cells.
+        hashes_by_sample: dict[str, list[str]] = {}
+        for question_hash, item_rows in rows_by_question.items():
+            latest = max(
+                item_rows,
+                key=lambda row: (row["created"], row["sample_id"], row["file_path"]),
+            )
+            hashes_by_sample.setdefault(latest["sample_id"], []).append(question_hash)
+        for sample_id, question_hashes in hashes_by_sample.items():
+            if len(question_hashes) < 2:
+                continue
+            question_hashes.sort(
+                key=lambda qh: (
+                    len({row["model"] for row in rows_by_question[qh]}),
+                    max(row["created"] for row in rows_by_question[qh]),
+                ),
+                reverse=True,
+            )
+            for dropped in question_hashes[1:]:
+                dropped_models = sorted(
+                    {row["model"] for row in rows_by_question.pop(dropped)}
+                )
+                print(
+                    f"Warning: {task_name} sample {sample_id} has a minority question "
+                    f"hash variant; treating it as missing for {', '.join(dropped_models)}",
+                    file=sys.stderr,
+                )
+        rows = [row for item_rows in rows_by_question.values() for row in item_rows]
+        models = sorted({row["model"] for row in rows})
         items = []
         for question_hash, item_rows in rows_by_question.items():
             representative = max(
@@ -486,7 +544,9 @@ def fit_indices(tasks: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     scores on at least ``MIN_INDEX_THETA_TASKS`` of the index's tasks take part,
     and an index with fewer tasks is not calibrated. The index theta is
     normalized to mean 0 and standard deviation 1 over the participating panel
-    models.
+    models. Task slopes get a log-normal penalty with standard deviation
+    ``INDEX_SLOPE_PRIOR_SD`` around their geometric mean, so no task's weight
+    collapses to zero or runs away.
     """
     by_index: dict[str, list[str]] = {}
     for name, task in tasks.items():
@@ -510,9 +570,15 @@ def fit_indices(tasks: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
         scores = scores[np.sum(np.isfinite(scores), axis=1) >= MIN_INDEX_THETA_TASKS]
         if not len(scores):
             continue
-        fit = fit_2pl(scores, ridge=INDEX_THETA_RIDGE, slope_ridge=0.01, iterations=200)
+        fit = fit_2pl(
+            scores,
+            ridge=INDEX_THETA_RIDGE,
+            slope_prior_sd=INDEX_SLOPE_PRIOR_SD,
+            iterations=200,
+        )
         output[index] = {
             "models": len(scores),
+            "slope_prior_sd": INDEX_SLOPE_PRIOR_SD,
             "tasks": {
                 name: {
                     "discrimination": float(fit.discriminations[column]),
@@ -564,10 +630,17 @@ def fit_2pl(
     *,
     ridge: float = 0.01,
     slope_ridge: float = 0.01,
+    slope_prior_sd: float | None = None,
     iterations: int = 30,
     _reset_unidentified_slopes: bool = True,
 ) -> TwoPLFit:
-    """Fit a positive-discrimination two-parameter logistic model."""
+    """Fit a positive-discrimination two-parameter logistic model.
+
+    By default each slope has a ridge penalty ``slope_ridge / 2 * (a - 1) ** 2``.
+    With ``slope_prior_sd`` (tau) the slopes instead get a log-normal penalty
+    ``(log a - mean(log a)) ** 2 / (2 * tau ** 2)``, which pulls them toward their
+    geometric mean on a ratio scale, so halving a slope costs as much as doubling it.
+    """
     values = np.asarray(scores, dtype=float)
     if values.ndim != 2:
         raise ValueError("2PL scores must be a two-dimensional model-by-item matrix")
@@ -624,11 +697,19 @@ def fit_2pl(
         residual = np.where(mask, values - predicted, 0.0)
         variance = np.where(mask, predicted * (1.0 - predicted), 0.0)
         theta = abilities[:, None]
-        g_a = np.sum(theta * residual, axis=0) - slope_regularization * (
-            discriminations - 1.0
-        )
+        if slope_prior_sd is None:
+            slope_penalty_gradient = slope_regularization * (discriminations - 1.0)
+            slope_penalty_curvature = np.full(n_items, slope_regularization)
+        else:
+            precision = 1.0 / float(slope_prior_sd) ** 2
+            log_slopes = np.log(discriminations)
+            pooled = slope_identified & observed_items
+            center = float(np.mean(log_slopes[pooled])) if np.any(pooled) else 0.0
+            slope_penalty_gradient = precision * (log_slopes - center) / discriminations
+            slope_penalty_curvature = precision / discriminations**2
+        g_a = np.sum(theta * residual, axis=0) - slope_penalty_gradient
         g_c = np.sum(residual, axis=0) - regularization * intercepts
-        h_aa = np.sum((theta**2) * variance, axis=0) + slope_regularization
+        h_aa = np.sum((theta**2) * variance, axis=0) + slope_penalty_curvature
         h_ac = np.sum(theta * variance, axis=0)
         h_cc = np.sum(variance, axis=0) + regularization
         determinant = h_aa * h_cc - h_ac * h_ac
@@ -1015,7 +1096,6 @@ def build_result(
     selected_records = []
     for rank, (task_name, index) in enumerate(selected_keys, start=1):
         item = tasks[task_name]["items"][index]
-        probability = allocation[task_name] / eligible[task_name]
         selected_records.append(
             {
                 "params_id": params_id,
@@ -1023,8 +1103,6 @@ def build_result(
                 "rank": rank,
                 "item_id": item["item_id"],
                 "content_hash": item["content_hash"],
-                "inclusion_probability": probability,
-                "design_weight": 1.0 / probability,
             }
         )
 

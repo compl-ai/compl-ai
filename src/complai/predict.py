@@ -3,6 +3,7 @@ import collections
 import json
 import math
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -15,7 +16,7 @@ from complai.utils.file_ops import json_safe
 from complai.constants import (
     ITEM_COLUMNS,
     METHOD_VERSION,
-    MIN_INDEX_THETA_TASKS,
+    MIN_INDEX_THETA_TASK_SHARE,
     MIN_SUBSET_ITEMS,
     PARAMS_SCHEMA,
 )
@@ -32,8 +33,8 @@ LABEL_COLUMNS = {"index": "indices", "subcategory": "subcategories"}
 ImputationMethod = Literal["index_pooled", "task_mean"]
 IMPUTATION_METHODS: tuple[str, ...] = ("task_mean", "index_pooled")
 DEFAULT_IMPUTATION: ImputationMethod = "index_pooled"
-# Bootstrap for the index theta interval: draws, interval coverage, and a fixed
-# seed so a prediction is reproducible.
+# Bootstrap for the index theta and label score intervals: draws, interval
+# coverage, and a fixed seed so a prediction is reproducible.
 INDEX_THETA_DRAWS = 200
 INDEX_THETA_INTERVAL = (5.0, 95.0)
 INDEX_THETA_SEED = 0
@@ -92,7 +93,7 @@ def predict_scores(
 
 
 def predict_detailed(
-    records_path: Path,
+    records_path: Path | Sequence[Path],
     params_path: Path,
     subset_path: Path,
     *,
@@ -559,8 +560,9 @@ def add_index_thetas(prediction: Prediction) -> None:
 
     The index theta is fitted on the model's predicted task scores with the
     index calibration frozen (``params["indices"]``), so panel and new models
-    are scored identically. Only tasks the model ran count, and an index needs
-    at least ``MIN_INDEX_THETA_TASKS`` of them; otherwise the value is null.
+    are scored identically. Only tasks the model ran count, and the model needs
+    at least ``MIN_INDEX_THETA_TASK_SHARE`` of the index's tasks (rounded up);
+    otherwise the value is null.
     The interval comes from a parametric bootstrap: each task ability is
     redrawn from its estimate and standard error, the predicted score moves by
     the change in the score curve of the items the model did not answer
@@ -580,7 +582,7 @@ def add_index_thetas(prediction: Prediction) -> None:
                 if (model, name) not in prediction.imputed_thetas
                 and model_result["tasks"].get(name, {}).get("status") in {"ok", "partial"}
             ]
-            if len(ran) < MIN_INDEX_THETA_TASKS:
+            if len(ran) < math.ceil(MIN_INDEX_THETA_TASK_SHARE * len(names)):
                 entry["index_theta"] = None
                 continue
             results = [model_result["tasks"][names[position]] for position in ran]
@@ -700,6 +702,10 @@ def pool_scores(
     ``pooled_label_abilities``: a summary of the model's standing on that label,
     and the ``index_pooled`` imputation source. It is null when the model
     answered no subset items with the label.
+
+    ``score_interval`` is the ``INDEX_THETA_INTERVAL`` range of a parametric
+    bootstrap of ``predicted_score`` (``pool_score_draws``); ``imputed_items``
+    counts the pool items scored from imputed task abilities.
     """
     probabilities = prediction.item_probabilities.get(model, {})
     pooled = pooled_label_abilities(prediction, model, column, ridge=ridge, iterations=iterations)
@@ -709,27 +715,138 @@ def pool_scores(
         for task_name, index in members:
             member_indices.setdefault(task_name, []).append(index)
         pool_probabilities: list[float] = []
+        imputed_items = 0
         for task_name, indices in member_indices.items():
             task_probabilities = probabilities.get(task_name)
             if task_probabilities is not None:
                 values = task_probabilities[sorted(indices)]
-                pool_probabilities.extend(values[np.isfinite(values)].tolist())
+                finite = values[np.isfinite(values)]
+                pool_probabilities.extend(finite.tolist())
+                if (model, task_name) in prediction.imputed_thetas:
+                    imputed_items += len(finite)
         if not pool_probabilities:
             continue
         observed = pooled.get(label, {})
         gap = gap_reason(subset_items[label])
+        interval = None
+        if not gap:
+            draws = pool_score_draws(
+                prediction, model, member_indices, ridge=ridge, iterations=iterations
+            )
+            low, high = np.percentile(draws, INDEX_THETA_INTERVAL)
+            interval = [float(low), float(high)]
         scores[label] = {
             "gap": gap,
             "predicted_score": None if gap else float(np.mean(pool_probabilities)),
+            "score_interval": interval,
             "population_items": len(members),
             "population_tasks": len(member_indices),
             "subset_items": subset_items[label],
+            "imputed_items": imputed_items,
             "observations": observed.get("observations", 0),
             "ability": None if gap else observed.get("ability"),
             "ability_standard_error": None if gap else observed.get("ability_standard_error"),
             "observed_subset_score": None if gap else observed.get("observed_subset_score"),
         }
     return scores
+
+
+def pool_score_draws(
+    prediction: Prediction,
+    model: str,
+    member_indices: dict[str, list[int]],
+    *,
+    ridge: float,
+    iterations: int,
+) -> np.ndarray:
+    """Bootstrap draws of a label pool's ``predicted_score`` (mean item probability).
+
+    Mirrors the index theta bootstrap: each member task's ability is redrawn
+    from its estimate and standard error (an imputed task uses the standard
+    error of the pooled index ability it was imputed from, so imputation model
+    error is not included), answered items stay at their observed response, and
+    the pass/fail spread of the unanswered items is added.
+    """
+    model_result = prediction.result["models"][model]
+    probabilities = prediction.item_probabilities.get(model, {})
+    rng = np.random.default_rng(INDEX_THETA_SEED)
+    totals = np.zeros(INDEX_THETA_DRAWS)
+    variance = 0.0
+    count = 0
+    for task_name, indices in member_indices.items():
+        point = probabilities.get(task_name)
+        if point is None:
+            continue
+        indices = np.asarray(sorted(indices))
+        point = point[indices]
+        keep = np.isfinite(point)
+        indices, point = indices[keep], point[keep]
+        if not len(indices):
+            continue
+        task_result = model_result["tasks"][task_name]
+        population = prediction.populations[task_name]
+        a, c = population_item_params(prediction, task_name)
+        a, c = a[indices], c[indices]
+        imputed = prediction.imputed_thetas.get((model, task_name))
+        if imputed is not None:
+            thetas = imputed[indices]
+            standard_error = imputed_ability_error(
+                prediction, model, task_name, ridge=ridge, iterations=iterations
+            )
+            answered = np.zeros(len(indices), dtype=bool)
+        else:
+            thetas = np.full(len(indices), float(task_result["ability"]))
+            standard_error = task_result.get("ability_standard_error")
+            observation = prediction.observations.get((model, task_name))
+            answered = (
+                np.isfinite(observed_responses(population, observation)[indices])
+                if observation is not None
+                else np.zeros(len(indices), dtype=bool)
+            )
+        shifts = rng.normal(0.0, float(standard_error or 0.0), INDEX_THETA_DRAWS)
+        drawn = sigmoid(a * (thetas + shifts[:, None]) + c)
+        blend = task_result.get("blend_weight")
+        if blend is not None and imputed is None:
+            drawn = blend * task_result["observed_subset_score"] + (1 - blend) * drawn
+            answered = np.zeros(len(indices), dtype=bool)
+        drawn[:, answered] = point[answered]
+        totals += drawn.sum(axis=1)
+        variance += float(np.sum(point[~answered] * (1.0 - point[~answered])))
+        count += len(indices)
+    totals += rng.normal(0.0, math.sqrt(variance), INDEX_THETA_DRAWS)
+    return np.clip(totals / count, 0.0, 1.0)
+
+
+def population_item_params(
+    prediction: Prediction, task_name: str
+) -> tuple[np.ndarray, np.ndarray]:
+    """Discrimination and intercept of every population item of a task (memoized)."""
+    cache = prediction.cache.setdefault("population_item_params", {})
+    if task_name not in cache:
+        population = prediction.populations[task_name]
+        cache[task_name] = (
+            np.asarray([float(row["discrimination"]) for row in population]),
+            np.asarray([float(row["intercept"]) for row in population]),
+        )
+    return cache[task_name]
+
+
+def imputed_ability_error(
+    prediction: Prediction, model: str, task_name: str, *, ridge: float, iterations: int
+) -> float | None:
+    """Standard error of the pooled index ability an imputed task took, or None if it fell back to task_mean."""
+    if prediction.result.get("imputation") != "index_pooled":
+        return None
+    per_index = pooled_label_abilities(
+        prediction,
+        model,
+        "index",
+        ridge=ridge,
+        iterations=iterations,
+        exclude_task=task_name,
+    )
+    index = prediction.params["tasks"][task_name]["index"]
+    return per_index.get(index, {}).get("ability_standard_error")
 
 
 def write_prediction(result: dict[str, Any], output_path: Path) -> Path:

@@ -15,14 +15,21 @@ ITEM_COLUMNS = ("item_id", "discrimination", "intercept", "secondary")
 # lower bound wanted to be zero or negative: the item does not follow ability.
 MIN_DISCRIMINATION = 0.05
 MAX_DISCRIMINATION = 5.0
-# A model gets an index theta only if it has scores on at least this many of the
-# index's tasks; panel models below it are left out of the index calibration.
+# Panel models with scores on fewer than this many of an index's tasks are left out
+# of the index calibration.
 MIN_INDEX_THETA_TASKS = 2
+# A model gets an index theta only if it ran at least this share of the index's
+# tasks (4 of 8, 4 of 7).
+MIN_INDEX_THETA_TASK_SHARE = 0.5
 # An index or sub-category with fewer subset items than this is a gap: reported
 # with its coverage but not scored.
 MIN_SUBSET_ITEMS = 20
 # Ridge on the index theta, shared by the index calibration and every index theta estimate.
 INDEX_THETA_RIDGE = 0.01
+# Standard deviation (tau) of the log-normal penalty on index task slopes: a typical
+# slope stays within a factor exp(0.5) ~ 1.65 of the index's geometric-mean slope.
+# This is the centre of Epoch AI's prior on slope spread in the ECI model.
+INDEX_SLOPE_PRIOR_SD = 0.5
 TASK_FIT_HYPERPARAMETERS = {"ridge": 0.1, "slope_ridge": 0.01, "iterations": 30}
 SCORE_LABEL_MAPS = {
     "accuracy_and_honesty/accuracy": {
