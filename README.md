@@ -1,11 +1,15 @@
 <p align="center">
-  <a href="https://compl-ai.org"><img  style="max-height: 50px;" src="compl-ai-logo.svg" alt="COMPL-AI">
-</a>
+  <a href="https://compl-ai.org">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/images/complai-logo-color-dark.svg">
+      <img src="docs/images/complai-logo-color.svg" alt="ComplAI" width="220">
+    </picture>
+  </a>
 </p>
 
 <div align="center">
-    COMPL-AI is a compliance-centered evaluation framework for LLMs created and maintained by
-      
+    ComplAI is a compliance-centered evaluation framework for LLMs created and maintained by
+
   [ETH Zurich](https://www.sri.inf.ethz.ch/), [INSAIT](https://insait.ai/) and [LatticeFlow AI](https://latticeflow.ai/).
 </div>
 
@@ -18,15 +22,14 @@
 </div>
 
 ## Overview
-The COMPL-AI framework includes a [technical interpretation](https://compl-ai.org/interpretation/) of the EU AI Act and an [open-source benchmarking suite](https://github.com/compl-ai/compl-ai/) (this repo). The key features are:
+ComplAI scores LLMs on three indices, **Capability**, **Reliability** and **Safety**, and maps what it tests to the EU AI Act and the General-Purpose AI Code of Practice. Results, methodology and the mapping are on [compl-ai.org](https://compl-ai.org).
 
-- Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai) 
-- Tailored set of benchmarks to provide coverage over technical parts of EU AI Act (30 and growing)
-- A public Hugging Face leaderboard of our [latest evaluation results](https://huggingface.co/spaces/latticeflow/compl-ai-board)   
-- Extensive set of supported [providers](providers/README.md) (API, Cloud, Local).
-- A custom eval CLI (run `complai --help` for usage)
+- **ComplAI CORE**: a fixed set of 2,000 items from the full suite of 92,611. From a model's results on these, an IRT model predicts its full-suite index scores with 90% intervals. A typical CORE run uses about 83% fewer tokens than a full run.
+- 23 benchmarks in CORE (8 Capability, 7 Reliability, 8 Safety), plus 7 more that can still be run on their own.
+- Built on the [Inspect evaluation framework](https://github.com/UKGovernmentBEIS/inspect_ai), with a custom CLI (`complai --help`).
+- Many supported [providers](providers/README.md) (API, cloud, local).
 
-Community contributions for benchmarks and new mappings are welcome! We are actively looking to expand our EU AI Act and Code of Practice technical interpretation and benchmark coverage. See the [contributing](#-contributing) section below.
+Contributions of benchmarks and mappings are welcome; see [Contributing](#-contributing).
 
 ## ⏩ Quickstart
 To run an evaluation yourself, please follow the instructions below (or contact us through [compl-ai.org](https://compl-ai.org)). 
@@ -46,7 +49,7 @@ export HF_TOKEN=your_token
 # Check that every task runs, on 1 item per task (smoke runs are never used for scores)
 complai eval openai/gpt-5-nano --smoke 1
 
-# Run the core subset (2,000 items)
+# Run ComplAI CORE (2,000 items)
 complai eval openai/gpt-5-nano
 ```
 
@@ -55,6 +58,21 @@ You can then view a detailed sample-level log of your results with the [Inspect 
 inspect view
 ```
 
+
+## ComplAI CORE
+
+ComplAI CORE is a fixed set of 2,000 items from the full suite of 92,611. An allocator gives each benchmark a number of items based on how much signal it carries, balancing per-benchmark accuracy against coverage of the three indices; items are then sampled at random within each benchmark. All items are calibrated on a panel of 38 models that ran the full suite, so from a model's results on the CORE items an IRT model predicts its Capability, Reliability and Safety scores on the full suite, with 90% intervals. See [How it works](https://compl-ai.org/methodology/) for details and validation.
+
+`complai eval` runs the bundled CORE subset by default:
+
+```bash
+# 1. Run the evaluation on the 2,000 items
+complai eval openai/gpt-5-nano --log-dir logs/
+
+# 2. Predict the full-suite scores
+complai predict logs/<folder_name> --output predicted.json
+```
+*(Maintainers: see `tools/minify/README.md` for regenerating the CORE subset.)*
 
 ## 💻 CLI
 
@@ -65,6 +83,7 @@ complai COMMAND --help
 ```
 
 #### List Tasks
+Lists the benchmarks in ComplAI CORE by index, and those that are not in CORE.
 
 ```bash
 complai list
@@ -76,18 +95,18 @@ complai list
 complai eval <provider>/<model> [-t <task_name>] [--smoke N | --full]
 ```
 
-By default `complai eval` runs the COMPL-AI Core subset (see below). Before each run it checks that the model, the judge models and the gated datasets are reachable, and after each run it prints a per-task report.
+By default `complai eval` runs ComplAI CORE (see [above](#complai-core)). Use `-t` to run single benchmarks and `--full` to run them on all their items. Before each run it checks that the model, the judge models and the gated datasets are reachable, and after each run it prints a per-task report.
 
 #### Command Examples
 ```bash
-# Core subset, all tasks or one task at a time
+# ComplAI CORE, all tasks or one task at a time
 complai eval openai/gpt-4o-mini
 complai eval anthropic/claude-sonnet-4-0 -t mmlu_pro
 
 # Smoke test: first 2 items of each core task, to check everything runs (never used for scores)
 complai eval openai/gpt-4o-mini --smoke 2
 
-# Full suite; --limit, --sample-id and --task-filter only work with --full
+# Full suite; --limit and --sample-id only work with --full
 complai eval openai/gpt-4o-mini --full
 complai eval openai/gpt-4o-mini --full -t mmlu_pro --limit 5
 
@@ -117,8 +136,10 @@ Some tasks are graded by OpenAI judge models, so `OPENAI_API_KEY` is needed even
 
 Two tasks load gated Hugging Face datasets: `hle` ([cais/hle](https://huggingface.co/datasets/cais/hle)) and `strong_reject`, whose jailbreak prompts come pre-generated from [compl-ai/strong_reject](https://huggingface.co/datasets/compl-ai/strong_reject) so every run uses the same prompts as the reference runs. Request access on both pages and set `HF_TOKEN` (or run `hf auth login`).
 
+`strong_reject` is scored locally by default, so its harmful prompts are never sent to an API. It uses the authors' fine-tuned evaluator ([qylu4156/strongreject-15k-v1](https://huggingface.co/qylu4156/strongreject-15k-v1), a LoRA on gemma-2b), which runs in-process (about 5 GB download, a GPU or Apple Silicon recommended) and needs the license accepted on [google/gemma-2b](https://huggingface.co/google/gemma-2b). It reports the `all` metric but no separate refusal, specificity and convincingness grades, and reads only the first 512 tokens of each response. Use `-T strong_reject:judge=openai/gpt-4o-mini` for the API judge. Logs scored by the API judge can be rescored in place, one at a time (about 15-20 min per log): `python tools/rescore_strong_reject.py logs/<folder_name>`.
+
 #### Task Configuration
-COMPL-AI supports task-specific configuration via YAML or JSON files. See `config/default_config.yaml` for a reference of all configurable parameters (regenerate it with `make default-config`). You can:
+ComplAI supports task-specific configuration via YAML or JSON files. See `config/default_config.yaml` for a reference of all configurable parameters (regenerate it with `make default-config`). You can:
 
 - Use the default config as a template: `cp config/default_config.yaml my_config.yaml`
 - Modify the tasks and parameters you want
@@ -128,23 +149,8 @@ COMPL-AI supports task-specific configuration via YAML or JSON files. See `confi
 See the [Providers](providers/README.md) section for more information on different providers.
 
 #### Environment Variables
-COMPL-AI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
+ComplAI can auto-load models (`COMPLAI_MODEL`), API keys (`OPENAI_API_KEY`), and many other configurations (`COMPLAI_LOG_DIR`) from your local `.env` file. Values provided in the CLI take precedence over `.env` vars.
 
-
-#### COMPL-AI Core (Subset Evaluation)
-
-COMPL-AI Core is a fixed set of 2,000 highly discriminative items chosen from the full benchmark suite. From a model's results on these items, an IRT model predicts its capability, reliability and safety scores on the full suite.
-
-`complai eval` runs the bundled Core subset by default:
-
-```bash
-# 1. Run the evaluation on the 2,000 items
-complai eval openai/gpt-5-nano --log-dir logs/
-
-# 2. Predict the full-suite scores
-complai predict logs/<folder_name> --output predicted.json
-```
-*(Maintainers: See `tools/minify/README.md` for instructions on regenerating the Core subset).*
 
 #### Collect Sample Inputs
 
@@ -159,51 +165,27 @@ complai samples arc.jsonl --task-spec inspect_evals/arc_challenge
 Each record contains the task name, sample ID, and the structured input that
 the task dataset supplies to the evaluation pipeline.
 
-## 🧪 Framework
+## 🧪 Benchmarks
 
-#### 🚧 Update in Progress
-The current version of the framework is published [here](https://compl-ai.org/interpretation/). 
+Benchmarks in ComplAI CORE, by index (`complai list`):
 
-We are currently in the process of renewing our coverage of the EU AI Act by updating the set of benchmarks, thus the supported set of benchmark may differ from this original mapping. The goals of this update are:
-- To increase coverage over the EU AI Act principles
-- To increase coverage over technical requirements
-- Adding support for the Code of Practice, namely the [Safety and Security](https://code-of-practice.ai/?section=safety-security) chapter.
-- Adding the notion of `risk` along side `technical requirements`
-- Refreshing the supported benchmarks to ensure they remain challenging for frontier models (addressing saturation, contamination, and other benchmark quality issues).
+- **Capability**: aime_2025, arc_challenge, gpqa_diamond, hle, include, livebench_coding, mmlu_pro, mmmu_pro
+- **Reliability**: boolq_contrast, ifbench, imdb_contrast, mmlu_pro_robustness, self_check_consistency, simpleqa_verified, truthfulqa
+- **Safety**: bbq, cab, fairllm, human_deception, instruction_goal_hijacking, llm_rules, mask, strong_reject
 
-As part of our update, the renewed benchmarking suite is now built on the UK AI Security Institute’s [Inspect Framework](https://github.com/UKGovernmentBEIS/inspect_ai), which offers improved ease of use and greater overall consistency. This means that several benchmarks are now evaluated differently (e.g. full-text answers instead of logits for multiple-choice questions) reflecting more modern and opinionated approaches to LLM evaluation. Thus, benchmark scores from the v1 and v2 suites, even for the same benchmark, should not be considered directly comparable.
+Not in CORE, mostly because they are saturated: bigbench_calibration, bold, decoding_trust, forecast_consistency, realtoxicityprompts, swe_bench_verified, triviaqa_calibration. They are still in the repo and can be run with `complai eval <model> --full -t <task>`.
 
-### Principles
-COMPL-AI is primarily structured to provide coverage over 6 core EU AI Act principles:
-- Human Agency and Oversight: AI systems should be supervised by people, not by automation alone, to prevent harmful outcomes and allow for human intervention. 
-- Technical Robustness and Safety: AI systems must be safe and secure, implementing risk management, data quality, and cybersecurity measures to prevent undue risks. 
-- Privacy and Data Governance: The Act sets rules for the quality and governance of data used in AI, emphasizing the protection of personal and sensitive information. 
-- Transparency: Users should understand when they are interacting with an AI system and how it functions, fostering trust and enabling accountability. 
-- Diversity, Non-Discrimination, and Fairness: AI systems should be designed and used to uphold human rights, including fairness and equality, and avoid biases that could lead to discrimination. 
-- Societal and Environmental Well-being: AI systems should be developed in a way that benefits society and the environment, avoiding negative impacts on fundamental rights and democratic values. 
+Since v2 the suite is built on [Inspect](https://github.com/UKGovernmentBEIS/inspect_ai), and several benchmarks are evaluated differently (e.g. full-text answers instead of logits for multiple-choice questions). Scores from the v1 and v2 suites, even for the same benchmark, are not directly comparable.
 
-### Technical Requirements and Benchmarks
-You can see a list of all technical requirements and their respective benchmarks using `complai list`:
-- Capabilities, Performance, and Limitations
-  - aime_2025, arc_challenge, gpqa_diamond, hle, ifbench, include, livebench_coding, mmlu_pro, mmmu_pro, swe_bench_verified
-- Representation — Absence of Bias
-  - bbq, bold, cab
-- Interpretability
-  - bigbench_calibration, triviaqa_calibration
-- Robustness and Predictability
-  - boolq_contrast, forecast_consistency, imdb_contrast, mmlu_pro_robustness, self_check_consistency
-- Fairness — Absence of Discrimination
-  - decoding_trust, fairllm
-- Disclosure of AI
-  - human_deception
-- Cyberattack Resilience
-  - instruction_goal_hijacking, llm_rules, strong_reject
-- Societal Alignment
-  - mask, simpleqa_verified, truthfulqa
-- Harmful Content and Toxicity
-  - realtoxicityprompts
+## 🗺️ EU AI Act mapping
 
+Every item is labelled with the evaluation area it tests, from multi-step reasoning and factual accuracy to fairness and resistance to prompt injection. Each evaluation area maps to the provisions of the EU AI Act and the General-Purpose AI Code of Practice it informs, based on the technical requirements of the [original ComplAI framework](https://arxiv.org/abs/2410.07959). The areas don't feed into the index scores; they show which parts of the regulation ComplAI CORE addresses. Explore the full mapping on [compl-ai.org](https://compl-ai.org/mapping/).
 
+<p align="center">
+  <a href="https://compl-ai.org/mapping/">
+    <img src="docs/images/mapping.png" alt="ComplAI CORE evaluation areas mapped to the EU AI Act and the Code of Practice" width="800">
+  </a>
+</p>
 
 ## 🤝 Contributing
 We welcome contributions! When contributing, please make sure to activate pre-commit hooks to ensure code quality and consistency. You can install pre-commit hooks with:
