@@ -38,6 +38,13 @@ DEFAULT_IMPUTATION: ImputationMethod = "index_pooled"
 INDEX_THETA_DRAWS = 200
 INDEX_THETA_INTERVAL = (5.0, 95.0)
 INDEX_THETA_SEED = 0
+# The bootstrap leaves out calibration and IRT model error, so its index theta
+# intervals are too narrow for some indices. Each interval is widened around the
+# point estimate by this factor: the smallest that makes 90% of the intervals
+# contain the full-run index theta in leave-one-model-out validation (core.v1,
+# 2026-11-08: raw coverage 91% Capability, 62% Reliability, 79% Safety). Never
+# below 1, so an interval is never narrowed.
+INDEX_THETA_INTERVAL_SCALE = {"reliability": 1.65, "safety": 1.55}
 # Task score curves are tabulated on this ability grid for the bootstrap.
 SCORE_CURVE_GRID = np.linspace(-10.0, 10.0, 801)
 
@@ -594,7 +601,9 @@ def add_index_thetas(prediction: Prediction) -> None:
     redrawn from its estimate and standard error, the predicted score moves by
     the change in the score curve of the items the model did not answer
     (answered items are fixed at their observed response), plus the pass/fail
-    spread of those unanswered items, and the index theta is refitted.
+    spread of those unanswered items, and the index theta is refitted. The
+    bootstrap range is then widened around ``theta`` by the index's
+    ``INDEX_THETA_INTERVAL_SCALE`` (stored as ``interval_scale``).
     """
     for index, calibration in prediction.params.get("indices", {}).items():
         names = sorted(calibration["tasks"])
@@ -631,9 +640,12 @@ def add_index_thetas(prediction: Prediction) -> None:
                 )
                 draws[:, column] = np.clip(result["predicted_score"] + shift, 0.0, 1.0)
             low, high = np.percentile(index_thetas(draws, a[ran], c[ran]), INDEX_THETA_INTERVAL)
+            scale = INDEX_THETA_INTERVAL_SCALE.get(index, 1.0)
+            low, high = theta - scale * (theta - low), theta + scale * (high - theta)
             entry["index_theta"] = {
                 "theta": theta,
                 "interval": [float(low), float(high)],
+                "interval_scale": scale,
                 "tasks": len(ran),
                 "tasks_total": len(names),
             }
