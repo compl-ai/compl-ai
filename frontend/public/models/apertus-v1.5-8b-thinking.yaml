@@ -1,0 +1,76 @@
+name: "Apertus 1.5 8B (thinking)"
+release_date: "2026-07-24"
+open_weights: true
+organization: "Swiss AI Initiative"
+license: "apache-2.0"
+
+availability:
+  - "open-source"
+  - "open-weights"
+  - "api"
+
+description: |
+  Apertus 1.5 8B is an 8-billion-parameter language model from the Swiss AI Initiative, a research collaboration of EPFL, ETH Zurich and the Swiss National Supercomputing Centre, and this card covers it with its optional thinking mode switched on, so it reasons step by step before answering. It uses the same downloadable weights as the standard Apertus 1.5 8B: thinking is a setting chosen at request time, not a separate model. The developer notes that tool calling is not supported in thinking mode.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: null
+  total_params: 8000000000
+  active_params: null
+  context: 262144
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "audio"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+
+sources:
+  - title: "Apertus"
+    url: "https://apertus-ai.org/"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/swiss-ai/Apertus-v1.5-8B"
+    type: "model-weights"
+  - title: "Apertus 1.5"
+    url: "https://apertus-ai.org/articles/2026-07-apertus-1-5/"
+    type: "announcement"
+  - title: "Inference Ecosystem"
+    url: "https://apertus-ai.org/articles/2026-09-apertus-1-5-ga/"
+    type: "announcement"
+  - title: "Apertus 1.5: From Open Text Models to Open Multimodal Reasoners"
+    url: "https://arxiv.org/abs/2610.15542"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://www.apache.org/licenses/LICENSE-2.0"
+    type: "licence-url"
+
+training:
+  tokens: 19000000000000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "publicly available, permissively licensed text, image and audio data"
+  base_model: "Apertus-v1.5-8B-base"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CH"
+
+evals:
+  - "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking"

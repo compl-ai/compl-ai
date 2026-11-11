@@ -1,22 +1,22 @@
 name: "Qwen3.8-Flash"
 release_date: "2026-08-26"
-open_weights: true
+open_weights: false
 organization: "Alibaba Cloud"
-license: "qwen-community-1.0"
+license: "proprietary"
 
 availability:
-  - "open-weights"
   - "api"
 
 description: |
-  Alibaba's multimodal reasoning model for coding, agentic workflows and visual and long-video understanding. Qwen describes it as the official API version of the open-weight Qwen3.8-Flash-Next (125B parameters, 6B active), with production features such as a 1M-token default context and built-in tools.
+  Qwen3.8-Flash is a proprietary large language model developed by Alibaba's Qwen team, featuring a sparse Mixture-of-Experts architecture with 125 billion total parameters and 6 billion active parameters. It supports a context window of up to 1 million tokens and is designed for agentic coding, long-horizon office automation, and multimodal understanding.
+
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
+  architecture: "hybrid-attention Mixture-of-Experts (MoE)"
   knowledge_cutoff: null
-  total_params: 125000000000
-  active_params: 6000000000
-  context: 1000000
+  total_params: 125_000_000_000
+  active_params: 6_000_000_000
+  context: 1_000_000
 
   modalities:
     input:
@@ -34,12 +34,12 @@ specs:
     - "tools"
 
 sources:
-  - title: "OpenRouter Model Page"
-    url: "https://openrouter.ai/qwen/qwen3.8-flash"
+  - title: "qwen3.8-flash"
+    url: "https://docs.qwencloud.com/models/qwen3-8-flash"
     type: "model-homepage"
-  - title: "Hugging Face Model Card"
-    url: "https://huggingface.co/Qwen/Qwen3.8-Flash-Next"
-    type: "model-weights"
+  - title: "On the Design of Qwen3.8-Next Architecture: Evaluation, Efficiency, and Training Stability"          
+    url: "https://arxiv.org/abs/2608.30320"
+    type: "paper-url"
 
 training:
   tokens: null
@@ -47,12 +47,12 @@ training:
   energy_kwh: null
   emissions_co2: null
   training_dataset: null
-  base_model: null
+  base_model: "Qwen3.8-Flash-Next"
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 28
+  latency_ms_per_token: 35.71
 
 region:
   region_deployable:

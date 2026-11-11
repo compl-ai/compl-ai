@@ -6,17 +6,18 @@ license: "mit"
 
 availability:
   - "open-weights"
+  - "saas-chat"
   - "api"
 
 description: |
-  Z.ai's first natively multimodal GLM-5 model (320B total, 18B active parameters), using hybrid sparse and linear attention for efficient coding and long-horizon agent tasks. Pre-trained on a 30T-token multimodal corpus.
+  GLM-5.3-Flash is a 320-billion-parameter, open-weight Mixture-of-Experts language model developed by Z.ai, with 18 billion parameters activated per token. It uses a hybrid attention architecture combining linear and sparse attention, and is designed for efficient coding and long-horizon agent tasks.
 
 specs:
-  architecture: "Mixture-of-Experts (MoE)"
+  architecture: "sparse Mixture-of-Experts (MoE) transformer"
   knowledge_cutoff: null
-  total_params: 320000000000
-  active_params: 18000000000
-  context: 1048576
+  total_params: 320_000_000_000
+  active_params: 18_000_000_000
+  context: 1_048_576
 
   modalities:
     input:
@@ -29,33 +30,35 @@ specs:
   capabilities:
     - "reasoning"
     - "coding"
-    - "multilingual"
     - "math"
     - "tools"
 
 sources:
-  - title: "OpenRouter Model Page"
-    url: "https://openrouter.ai/z-ai/glm-5.3-flash"
+  - title: "GLM-5.3-Flash: Frontier Intelligence, Flash Cost"
+    url: "https://z.ai/blog/glm-5.3-flash"
     type: "model-homepage"
   - title: "Hugging Face Model Card"
     url: "https://huggingface.co/zai-org/GLM-5.3-Flash"
     type: "model-weights"
+  - title: "GLM-5: from Vibe Coding to Agentic Engineering"          
+    url: "https://arxiv.org/abs/2602.15763"
+    type: "paper-url"
   - title: "MIT License"
-    url: "https://opensource.org/license/mit"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
     type: "licence-url"
 
 training:
-  tokens: 30000000000000
+  tokens: 30_000_000_000_000
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
+  training_dataset: "text + image + video"
   base_model: null
 
 stats:
-  inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  inference_efficiency_tokens_per_kwh: 864_000
+  throughput_tokens_per_second: 196.4
+  latency_ms_per_token: 5.09
 
 region:
   region_deployable:

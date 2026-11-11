@@ -2,21 +2,21 @@ name: "Claude Haiku 5.5"
 release_date: "2026-10-07"
 open_weights: false
 organization: "Anthropic"
-license: null
+license: "proprietary"
 
 availability:
   - "api"
   - "saas-chat"
 
 description: |
-  Anthropic's small, fast model for high-volume, cost-sensitive work such as summarization, subagents and browser use, succeeding Claude Haiku 4.5. Accepts text and image input.
+  Claude Haiku 5.5 is a proprietary AI model developed by Anthropic, designed for high-volume, cost-sensitive work such as summarization and browser use. It supports text and image inputs. generates text outputs, and has a context window of up to 1 million tokens.
 
 specs:
   architecture: null
-  knowledge_cutoff: null
+  knowledge_cutoff: "2026-06"
   total_params: null
   active_params: null
-  context: 1000000
+  context: 1_000_000
 
   modalities:
     input:
@@ -29,26 +29,31 @@ specs:
     - "reasoning"
     - "coding"
     - "multilingual"
-    - "math"
     - "tools"
 
 sources:
-  - title: "OpenRouter Model Page"
-    url: "https://openrouter.ai/anthropic/claude-haiku-5.5"
+  - title: "Claude Haiku 5.5"
+    url: "https://platform.claude.com/docs/en/models/haiku-5-5/overview"
     type: "model-homepage"
+  - title: "System Card: Claude Haiku 5.5"
+    url: "https://assets.claude.com/e1080d6bf5ae2018ea3c2f414064be03232f5be5.pdf"
+    type: "paper-url"
+  - title: "Anthropic Commercial Terms of Service"
+    url: "https://www.anthropic.com/legal/commercial-terms"
+    type: "licence-url"
 
 training:
   tokens: null
   compute_flops: null
   energy_kwh: null
   emissions_co2: null
-  training_dataset: null
+  training_dataset: "proprietary mixture of public internet data + public and private datasets + permitted user data + AI-generated synthetic data"
   base_model: null
 
 stats:
   inference_efficiency_tokens_per_kwh: null
-  throughput_tokens_per_second: null
-  latency_ms_per_token: null
+  throughput_tokens_per_second: 581
+  latency_ms_per_token: 1.72
 
 region:
   region_deployable:

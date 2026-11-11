@@ -1,0 +1,2683 @@
+{
+  "params_id": "a53e18a35696459c67905d81",
+  "subset_id": "2c5444664540135d1a8f7995",
+  "scope": "Descriptive metadata only: not used for scores or indices.",
+  "definitions": {
+    "score_histogram": "Number of models per band of predicted score on this task (0 to 1), counting the models that answered at least one of its core questions.",
+    "saturation": "Models are split into thirds by their predicted score on this task. 'saturated': the middle third averages at least 95%, so only the weakest models still separate. 'saturated_at_top': the top third averages at least 90% (and the middle third is below 95%), so the best models no longer separate but the others still do. 'not_saturated' otherwise; null with fewer than 3 models.",
+    "third_means": "Mean predicted score of the top, middle and bottom third of models on this task (with a model count not divisible by 3, the middle third takes the extra models).",
+    "benchmark_discrimination": "How sharply the task score rises with the index ability (2PL slope of the task's score within its index). Higher means the task separates models on that index more sharply; near 0 means it barely does.",
+    "item_discrimination_histogram": "Core questions per band of discrimination (2PL slope). Higher means the question separates stronger from weaker models more sharply.",
+    "bins": "Each bin covers low <= value < high; the last bin also includes its high edge."
+  },
+  "tasks": {
+    "aime_2025": {
+      "index": "capability",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 4
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 2
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 2
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 2
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 2
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 5
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 3
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 8
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 12
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 17
+        }
+      ],
+      "saturation": "saturated_at_top",
+      "third_means": {
+        "top": 0.9504,
+        "middle": 0.8048,
+        "bottom": 0.3439
+      },
+      "benchmark_discrimination": 1.3483,
+      "core_items": 28,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 0
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 0
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 1
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 2
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 6
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 5
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 5
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 4
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 5
+        }
+      ]
+    },
+    "arc_challenge": {
+      "index": "capability",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 1
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 4
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 52
+        }
+      ],
+      "saturation": "saturated",
+      "third_means": {
+        "top": 0.9834,
+        "middle": 0.9749,
+        "bottom": 0.9133
+      },
+      "benchmark_discrimination": 0.8566,
+      "core_items": 73,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 5
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 1
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 47
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 8
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 7
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 3
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 1
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 1
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "gpqa_diamond": {
+      "index": "capability",
+      "models": 54,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 2
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 1
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 4
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 4
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 7
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 12
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 16
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 8
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.8937,
+        "middle": 0.7839,
+        "bottom": 0.5244
+      },
+      "benchmark_discrimination": 0.8793,
+      "core_items": 100,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 10
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 13
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 10
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 13
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 12
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 15
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 10
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 11
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 3
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 3
+        }
+      ]
+    },
+    "hle": {
+      "index": "capability",
+      "models": 51,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 17
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 12
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 9
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 7
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 3
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 3
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 0
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 0
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 0
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.3771,
+        "middle": 0.1671,
+        "bottom": 0.0518
+      },
+      "benchmark_discrimination": 0.8982,
+      "core_items": 82,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 14
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 8
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 25
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 9
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 3
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 10
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 1
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 3
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 2
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 7
+        }
+      ]
+    },
+    "include": {
+      "index": "capability",
+      "models": 53,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 4
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 6
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 5
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 18
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 19
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 1
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.8555,
+        "middle": 0.7727,
+        "bottom": 0.5796
+      },
+      "benchmark_discrimination": 0.7226,
+      "core_items": 111,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 16
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 13
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 29
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 15
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 10
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 12
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 9
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 4
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 1
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 2
+        }
+      ]
+    },
+    "livebench_coding": {
+      "index": "capability",
+      "models": 46,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 1
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 4
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 4
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 8
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 2
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 5
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 9
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 8
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 5
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.8579,
+        "middle": 0.6534,
+        "bottom": 0.3567
+      },
+      "benchmark_discrimination": 0.84,
+      "core_items": 110,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 7
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 8
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 16
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 17
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 14
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 13
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 6
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 6
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 7
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 16
+        }
+      ]
+    },
+    "mmlu_pro": {
+      "index": "capability",
+      "models": 53,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 2
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 2
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 5
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 9
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 34
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 1
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.8759,
+        "middle": 0.83,
+        "bottom": 0.6752
+      },
+      "benchmark_discrimination": 0.766,
+      "core_items": 105,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 11
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 11
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 42
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 19
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 13
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 3
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 1
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 3
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 2
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "mmmu_pro": {
+      "index": "capability",
+      "models": 30,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 1
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 2
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 2
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 7
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 13
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 5
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 0
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.8028,
+        "middle": 0.7297,
+        "bottom": 0.5299
+      },
+      "benchmark_discrimination": 0.844,
+      "core_items": 112,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 12
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 13
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 23
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 8
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 7
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 11
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 9
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 4
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 1
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 24
+        }
+      ]
+    },
+    "boolq_contrast": {
+      "index": "reliability",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 1
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 1
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 17
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 38
+        }
+      ],
+      "saturation": "saturated_at_top",
+      "third_means": {
+        "top": 0.9344,
+        "middle": 0.9142,
+        "bottom": 0.8448
+      },
+      "benchmark_discrimination": 0.534,
+      "core_items": 97,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 9
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 8
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 48
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 12
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 4
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 2
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 11
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 2
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 1
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "ifbench": {
+      "index": "reliability",
+      "models": 56,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 1
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 5
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 5
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 7
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 12
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 18
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 7
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 1
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 0
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.7031,
+        "middle": 0.5783,
+        "bottom": 0.3524
+      },
+      "benchmark_discrimination": 0.552,
+      "core_items": 124,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 25
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 20
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 30
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 15
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 8
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 7
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 7
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 5
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 3
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 4
+        }
+      ]
+    },
+    "imdb_contrast": {
+      "index": "reliability",
+      "models": 56,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 1
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 1
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 3
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 51
+        }
+      ],
+      "saturation": "saturated",
+      "third_means": {
+        "top": 0.9896,
+        "middle": 0.9747,
+        "bottom": 0.899
+      },
+      "benchmark_discrimination": 0.5432,
+      "core_items": 78,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 8
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 5
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 40
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 10
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 4
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 6
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 3
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 2
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "mmlu_pro_robustness": {
+      "index": "reliability",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 2
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 3
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 8
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 21
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 23
+        }
+      ],
+      "saturation": "saturated_at_top",
+      "third_means": {
+        "top": 0.9405,
+        "middle": 0.8906,
+        "bottom": 0.745
+      },
+      "benchmark_discrimination": 0.6033,
+      "core_items": 74,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 11
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 28
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 19
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 10
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 4
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 0
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 0
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 1
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 1
+        }
+      ]
+    },
+    "self_check_consistency": {
+      "index": "reliability",
+      "models": 54,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 0
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 5
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 49
+        }
+      ],
+      "saturation": "saturated",
+      "third_means": {
+        "top": 0.9841,
+        "middle": 0.9716,
+        "bottom": 0.9173
+      },
+      "benchmark_discrimination": 0.595,
+      "core_items": 54,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 10
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 35
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 9
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 0
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 0
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 0
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 0
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "simpleqa_verified": {
+      "index": "reliability",
+      "models": 54,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 17
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 15
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 6
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 9
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 1
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 2
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 2
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 2
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 0
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 0
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.4517,
+        "middle": 0.1609,
+        "bottom": 0.0565
+      },
+      "benchmark_discrimination": 0.6912,
+      "core_items": 97,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 10
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 8
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 32
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 15
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 7
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 11
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 3
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 5
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 1
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 5
+        }
+      ]
+    },
+    "truthfulqa": {
+      "index": "reliability",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 2
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 4
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 6
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 16
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 17
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 7
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 3
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 1
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 1
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.661,
+        "middle": 0.5093,
+        "bottom": 0.3462
+      },
+      "benchmark_discrimination": 0.5675,
+      "core_items": 127,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 15
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 16
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 15
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 18
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 14
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 8
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 9
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 8
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 2
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 22
+        }
+      ]
+    },
+    "bbq": {
+      "index": "safety",
+      "models": 40,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 1
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 1
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 6
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 32
+        }
+      ],
+      "saturation": "saturated",
+      "third_means": {
+        "top": 0.9677,
+        "middle": 0.9531,
+        "bottom": 0.8599
+      },
+      "benchmark_discrimination": 0.6016,
+      "core_items": 96,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 18
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 15
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 41
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 1
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 2
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 16
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 1
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 1
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 1
+        }
+      ]
+    },
+    "cab": {
+      "index": "safety",
+      "models": 46,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 0
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 0
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 46
+        }
+      ],
+      "saturation": "saturated",
+      "third_means": {
+        "top": 0.9787,
+        "middle": 0.9749,
+        "bottom": 0.9559
+      },
+      "benchmark_discrimination": 0.5938,
+      "core_items": 54,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 24
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 23
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 7
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 0
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 0
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 0
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 0
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "fairllm": {
+      "index": "safety",
+      "models": 54,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 5
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 23
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 17
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 9
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 0
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 0
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 0
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.3135,
+        "middle": 0.1967,
+        "bottom": 0.1107
+      },
+      "benchmark_discrimination": 0.5212,
+      "core_items": 69,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 30
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 39
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 0
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 0
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 0
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 0
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 0
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    },
+    "human_deception": {
+      "index": "safety",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 0
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 2
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 55
+        }
+      ],
+      "saturation": "saturated",
+      "third_means": {
+        "top": 1.0,
+        "middle": 0.9933,
+        "bottom": 0.9541
+      },
+      "benchmark_discrimination": 0.6245,
+      "core_items": 39,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 2
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 2
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 28
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 2
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 3
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 1
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 0
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 1
+        }
+      ]
+    },
+    "instruction_goal_hijacking": {
+      "index": "safety",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 1
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 1
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 4
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 5
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 4
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 10
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 15
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 16
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 1
+        }
+      ],
+      "saturation": "not_saturated",
+      "third_means": {
+        "top": 0.848,
+        "middle": 0.7197,
+        "bottom": 0.4707
+      },
+      "benchmark_discrimination": 0.7032,
+      "core_items": 120,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 16
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 21
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 32
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 23
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 14
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 3
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 5
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 2
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 2
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 2
+        }
+      ]
+    },
+    "llm_rules": {
+      "index": "safety",
+      "models": 57,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 2
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 1
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 4
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 4
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 10
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 6
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 30
+        }
+      ],
+      "saturation": "saturated_at_top",
+      "third_means": {
+        "top": 0.9771,
+        "middle": 0.8853,
+        "bottom": 0.6218
+      },
+      "benchmark_discrimination": 0.8021,
+      "core_items": 76,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 3
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 3
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 18
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 8
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 13
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 11
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 7
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 4
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 4
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 5
+        }
+      ]
+    },
+    "mask": {
+      "index": "safety",
+      "models": 53,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 2
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 3
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 10
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 13
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 8
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 6
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 11
+        }
+      ],
+      "saturation": "saturated_at_top",
+      "third_means": {
+        "top": 0.9145,
+        "middle": 0.7067,
+        "bottom": 0.5283
+      },
+      "benchmark_discrimination": 0.5273,
+      "core_items": 119,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 8
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 16
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 25
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 14
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 9
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 10
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 14
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 4
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 5
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 14
+        }
+      ]
+    },
+    "strong_reject": {
+      "index": "safety",
+      "models": 42,
+      "score_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.1,
+          "count": 0
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "count": 0
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "count": 0
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "count": 0
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "count": 0
+        },
+        {
+          "low": 0.5,
+          "high": 0.6,
+          "count": 0
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "count": 0
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "count": 2
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "count": 7
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "count": 33
+        }
+      ],
+      "saturation": "saturated_at_top",
+      "third_means": {
+        "top": 0.9555,
+        "middle": 0.9196,
+        "bottom": 0.8614
+      },
+      "benchmark_discrimination": 0.5998,
+      "core_items": 55,
+      "item_discrimination_histogram": [
+        {
+          "low": 0.0,
+          "high": 0.5,
+          "count": 8
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "count": 47
+        },
+        {
+          "low": 1.0,
+          "high": 1.5,
+          "count": 0
+        },
+        {
+          "low": 1.5,
+          "high": 2.0,
+          "count": 0
+        },
+        {
+          "low": 2.0,
+          "high": 2.5,
+          "count": 0
+        },
+        {
+          "low": 2.5,
+          "high": 3.0,
+          "count": 0
+        },
+        {
+          "low": 3.0,
+          "high": 3.5,
+          "count": 0
+        },
+        {
+          "low": 3.5,
+          "high": 4.0,
+          "count": 0
+        },
+        {
+          "low": 4.0,
+          "high": 4.5,
+          "count": 0
+        },
+        {
+          "low": 4.5,
+          "high": 5.0,
+          "count": 0
+        }
+      ]
+    }
+  }
+}

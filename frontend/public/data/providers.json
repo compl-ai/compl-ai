@@ -2,12 +2,14 @@
   "_note": "Organization name (as in public/models/*.yaml) to logo files in public/assets/provider-logos. `color` is null when only a single-colour mark exists. Organizations not listed fall back to a generic icon.",
   "providers": {
     "Ai2": { "logo": "ai2.svg", "color": "ai2-color.svg" },
+    "Aleph Alpha": { "logo": "alephalpha.svg", "color": null },
     "Alibaba Cloud": { "logo": "alibabacloud.svg", "color": "alibabacloud-color.svg" },
     "Anthropic": { "logo": "anthropic.svg", "color": null },
     "ByteDance": { "logo": "bytedance.svg", "color": "bytedance-color.svg" },
     "DeepSeek": { "logo": "deepseek.svg", "color": "deepseek-color.svg" },
     "Google": { "logo": "google.svg", "color": "google-color.svg" },
     "IBM Granite": { "logo": "ibm.svg", "color": null },
+    "inclusionAI": { "logo": "ling.svg", "color": "ling-color.svg" },
     "Meta": { "logo": "meta.svg", "color": "meta-color.svg" },
     "Microsoft": { "logo": "microsoft.svg", "color": "microsoft-color.svg" },
     "MiniMax": { "logo": "minimax.svg", "color": "minimax-color.svg" },
@@ -16,6 +18,7 @@
     "NVIDIA": { "logo": "nvidia.svg", "color": "nvidia-color.svg" },
     "OpenAI": { "logo": "openai.svg", "color": null },
     "StepFun": { "logo": "stepfun.svg", "color": "stepfun-color.svg" },
+    "Swiss AI Initiative": { "logo": "swissai.png", "color": "swissai-color.png" },
     "Tencent": { "logo": "tencent.svg", "color": "tencent-color.svg" },
     "Xiaomi": { "logo": "xiaomi.svg", "color": "xiaomi-color.svg" },
     "Z.ai": { "logo": "zai.svg", "color": null }
