@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/site';
 import { getJoinedModels, getTaxonomy } from '@/lib/data';
 import { ModelCard } from '@/components/ModelCard';
 import { Eyebrow } from '@/components/layout/Eyebrow';
@@ -5,6 +7,8 @@ import { getIndexTheta, scaleTheta, type IndexId } from '@/lib/scores';
 import { paramsOf } from '@/components/home/explorer';
 import { areaStandings } from './strengths';
 import { ModelGrid, type GridItem } from './ModelGrid';
+
+export const metadata: Metadata = pageMetadata('Models', 'Every model evaluated with ComplAI CORE, with Capability, Reliability and Safety scores.');
 
 export default function ModelsPage() {
   const models = getJoinedModels();

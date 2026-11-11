@@ -63,6 +63,9 @@ type ModelParams = z.infer<typeof ModelSchema>;
 export interface IndexTheta {
   theta: number;
   interval: [number, number];
+  // Factor the bootstrap interval was widened by around theta, so that 90% of
+  // held-out models fall inside it (predict.py INDEX_THETA_INTERVAL_SCALE).
+  interval_scale?: number;
   tasks: number;
   tasks_total: number;
 }
@@ -401,7 +404,7 @@ export interface MethodCostRow {
   ratio: number;
 }
 
-type MethodIndex = 'capability' | 'reliability' | 'safety';
+export type MethodIndex = 'capability' | 'reliability' | 'safety';
 interface MethodInterval { est: number; lo: number; hi: number }
 interface MethodRatioStats { n: number; median: number; min: number; max: number }
 
@@ -483,6 +486,24 @@ interface MethodData {
 export function getMethod(): MethodData {
   const dataPath = path.join(process.cwd(), 'public', 'data', 'method.json');
   return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+}
+
+// The factor each index's published intervals are widened by, read from the predictions.
+export function getIntervalScales(): Record<MethodIndex, number> {
+  const models = Object.values(getPredictions().models ?? {}) as ModelPrediction[];
+  const scale = (index: MethodIndex) =>
+    models.map(m => m.indices?.[index]?.index_theta?.interval_scale).find(v => v != null) ?? 1;
+  return { capability: scale('capability'), reliability: scale('reliability'), safety: scale('safety') };
+}
+
+// Leave-one-model-out rows with each interval widened around the prediction as published.
+export function widenLomo(rows: MethodLomoRow[], scales: Record<MethodIndex, number>): MethodLomoRow[] {
+  return rows.map(r => {
+    const k = scales[r.index];
+    const lower = r.predicted - k * (r.predicted - r.lower);
+    const upper = r.predicted + k * (r.upper - r.predicted);
+    return { ...r, lower, upper, inside: r.observed >= lower && r.observed <= upper };
+  });
 }
 
 // Homepage results explorer (explorer.json). Model ids are prediction ids, as in JoinedModelData.id.

@@ -1,10 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getBenchmarkMeta, getEfficiency, getMethod } from '@/lib/data';
+import { getBenchmarkMeta, getEfficiency, getIntervalScales, getMethod, widenLomo } from '@/lib/data';
 import { formatPercent, formatTokens } from '@/lib/scores';
-import { README_CORE_URL, REPO_URL } from '@/lib/site';
+import { README_CORE_URL, REPO_URL, pageMetadata } from '@/lib/site';
 import { Eyebrow } from '@/components/layout/Eyebrow';
 import { CostFigure, EciFigure, LomoFigure } from '@/components/method/MethodFigures';
 import { MethodDiagram } from '@/components/method/MethodDiagram';
+
+export const metadata: Metadata = pageMetadata('How it works', 'How ComplAI CORE predicts full benchmark results from a compact set of questions, and how well the predictions hold up.');
 
 const REFERENCES = [
   {
@@ -119,6 +122,14 @@ const usd = (n: number) => `$${int(Math.round(n))}`;
 const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every(x => b.includes(x));
 const IDX = N.lomo.index;
+// Published index intervals are the bootstrap intervals widened by these factors.
+const SCALE = getIntervalScales();
+const LOMO = widenLomo(METHOD.lomo, SCALE);
+const covered = (index: keyof typeof SCALE) => {
+  const rows = LOMO.filter(r => r.index === index);
+  return rows.filter(r => r.inside).length / rows.length;
+};
+const scale = (k: number) => `${k.toFixed(2)}×`;
 const FR = N.agreement.frontier;
 const TOP3 = N.agreement.top3;
 const TOP3_SHARED = sameSet(TOP3.ours, TOP3.eci) && sameSet(TOP3.ours, TOP3.aa);
@@ -141,7 +152,7 @@ const FAQ: { id: string; q: string; a: React.ReactNode }[] = [
   {
     id: 'intervals',
     q: 'How are the 90% intervals computed?',
-    a: <>With a parametric bootstrap (200 draws): the model’s ability is redrawn given its answers, with the calibration held fixed. The intervals therefore reflect which items a model answered, but not the error of the calibration or of the IRT model itself. For models held out of calibration they contain the full-run score {pct(IDX.capability.coverage_90)} of the time for Capability, {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety (section 3), so read them as a lower bound on the uncertainty.</>,
+    a: <>With a parametric bootstrap (200 draws): the model’s ability is redrawn given its answers, with the calibration held fixed. The intervals therefore reflect which items a model answered, but not the error of the calibration or of the IRT model itself. For models held out of calibration, these raw intervals contained the full-run score {pct(IDX.capability.coverage_90)} of the time for Capability, but only {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety (section 3). We therefore widen the published Reliability intervals by {scale(SCALE.reliability)} and the Safety intervals by {scale(SCALE.safety)}, so that at least 90% of those models fall inside; Capability is left as is. The factors are fitted on the same held-out models, so expect real coverage to be slightly lower.</>,
   },
   {
     id: 'compliance',
@@ -263,19 +274,19 @@ export default function MethodologyPage() {
               On the published index scale, the MAE is {IDX.capability.score_mae.toFixed(1)} points for Capability, {IDX.reliability.score_mae.toFixed(1)} for Reliability and {IDX.safety.score_mae.toFixed(1)} for Safety, and no prediction is off by more than {Math.max(IDX.capability.score_max_ae, IDX.reliability.score_max_ae, IDX.safety.score_max_ae).toFixed(1)} points (Figure&nbsp;2). Rankings survive almost intact: predicted and full-run scores order <strong>{pct(IDX.capability.pairwise, 1)}</strong>, <strong>{pct(IDX.reliability.pairwise, 1)}</strong> and <strong>{pct(IDX.safety.pairwise, 1)}</strong> of model pairs the same way.
             </p>
             <p>
-              We also checked how often the 90% intervals contain the full-run score: {pct(IDX.capability.coverage_90)} for Capability, close to the intended 90%, but only {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety. The intervals leave out the uncertainty of the calibration and of the IRT model itself (<Faq id="intervals">FAQ</Faq>). In practice, Capability intervals are about right; Reliability and Safety intervals are too narrow, so treat close results there as ties. Only {N.panel.closed_models} closed models, with partial full runs, are part of this test.
+              We also checked how often the bootstrap 90% intervals contain the full-run score: {pct(IDX.capability.coverage_90)} for Capability, close to the intended 90%, but only {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety, because they leave out the uncertainty of the calibration and of the IRT model itself (<Faq id="intervals">FAQ</Faq>). We therefore publish Reliability intervals {scale(SCALE.reliability)} and Safety intervals {scale(SCALE.safety)} as wide, which brings their coverage in this test to {pct(covered('reliability'))} and {pct(covered('safety'))} (Figure&nbsp;2). Only {N.panel.closed_models} closed models, with partial full runs, are part of this test.
             </p>
           </div>
           <Figure
             n={2}
             wide
             title="Predicted from the core subset vs the full-suite score, for models held out of calibration"
-            caption={<>Leave-one-model-out over {N.lomo.models} models with full-suite runs ({N.panel.open_models} open-weight, {N.panel.closed_models} closed with partial full runs). Capability n&nbsp;=&nbsp;{IDX.capability.n}, Reliability n&nbsp;=&nbsp;{IDX.reliability.n}, Safety n&nbsp;=&nbsp;{IDX.safety.n}; a model missing from an index ran too few of its benchmarks for an index score. Axes are on the published index scale. Bars are 90% intervals; hollow points fall outside theirs. Dashed line: perfect prediction. Each fold rescales θ slightly (by at most {N.lomo.max_drift_theta.toFixed(2)}θ), which is why we lead with accuracy errors above.</>}
+            caption={<>Leave-one-model-out over {N.lomo.models} models with full-suite runs ({N.panel.open_models} open-weight, {N.panel.closed_models} closed with partial full runs). Capability n&nbsp;=&nbsp;{IDX.capability.n}, Reliability n&nbsp;=&nbsp;{IDX.reliability.n}, Safety n&nbsp;=&nbsp;{IDX.safety.n}; a model missing from an index ran too few of its benchmarks for an index score. Axes are on the published index scale. Bars are the published 90% intervals (Reliability widened {scale(SCALE.reliability)}, Safety {scale(SCALE.safety)}); hollow points fall outside theirs. Dashed line: perfect prediction. Each fold rescales θ slightly (by at most {N.lomo.max_drift_theta.toFixed(2)}θ), which is why we lead with accuracy errors above.</>}
           >
-            <LomoFigure rows={method.lomo} />
+            <LomoFigure rows={LOMO} />
           </Figure>
           <p className={P}>
-            <strong>In short:</strong> for a model like those in the panel, a core run lands on average within {IDX.capability.score_mae.toFixed(1)} points of its full-suite score for Capability, {IDX.reliability.score_mae.toFixed(1)} for Reliability and {IDX.safety.score_mae.toFixed(1)} for Safety, and rarely changes its order against another model. The weak spots are single benchmarks and the stated uncertainty for Reliability and Safety, which is smaller than the real one.
+            <strong>In short:</strong> for a model like those in the panel, a core run lands on average within {IDX.capability.score_mae.toFixed(1)} points of its full-suite score for Capability, {IDX.reliability.score_mae.toFixed(1)} for Reliability and {IDX.safety.score_mae.toFixed(1)} for Safety, and rarely changes its order against another model. The weak spot is single benchmarks.
           </p>
         </Section>
 

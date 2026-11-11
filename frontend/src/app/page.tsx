@@ -31,13 +31,13 @@ export default function Home() {
         <div className="mb-14">
           <Eyebrow>Results</Eyebrow>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-ink">How do today&rsquo;s AI models compare?</h2>
+          {lastUpdated && <p className="mt-2 text-sm text-faint-foreground">Model evaluation data last updated {formatDate(lastUpdated)}</p>}
           <div className="max-w-3xl">
             <p className="mt-4 text-base text-muted-foreground leading-relaxed">
               Every model gets three separate scores, one each for safety, capability, and reliability. For each category, we estimate the model&apos;s ability
               (&theta;) with item response theory, which accounts for how difficult each task is. We publish &theta; rescaled so that
               100 is the average evaluated model and 15 points is one standard deviation. Higher is better; scores are not percentages.
             </p>
-            {lastUpdated && <p className="mt-3 text-sm text-faint-foreground">Model evaluation data last updated {formatDate(lastUpdated)}</p>}
           </div>
         </div>
         <ResultsExplorer models={models} explorer={getExplorer()} />

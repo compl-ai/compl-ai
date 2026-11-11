@@ -15,7 +15,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 'over-time',
     title: 'Capability, reliability and safety over time',
-    context: e => `Every model’s score by release date. Lines track the best open-weight and best proprietary score so far. The lag is how many months later an open-weight model matches the proprietary best, based on ${e.open_lag.n_open} open and ${e.open_lag.n_closed} proprietary models.`,
+    context: e => `Every model’s score by release date (${e.open_lag.n_open} open-weight, ${e.open_lag.n_closed} proprietary). Lines track the best score so far for each.`,
   },
   {
     id: 'capability-safety',
@@ -191,7 +191,7 @@ export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Recor
   const ol = e.open_lag;
   const lag = (ix: IndexId) => `${f1(ol[ix].lag_months)} months`;
   const un = ol.safety.oldest_unmatched;
-  const overTime = `Open-weight models trail the best proprietary ones by about ${lag('capability')} on Capability and ${lag('reliability')} on Reliability. On Safety the gap appears longer, about ${lag('safety')}${un ? `, and ${name(un.id)}’s Safety score is still unmatched by an open model` : ''}.`;
+  const overTime = `Open-weight models trail the best proprietary ones by about ${lag('capability')} on Capability and ${lag('reliability')} on Reliability. On Safety the gap appears longer, about ${lag('safety')}${un ? `, and ${name(un.id)}’s Safety score is still unmatched by an open model` : ''}. These are projections from today’s gap and last year’s open-model progress, based on only ${ol.n_closed} proprietary models.`;
 
   const { trends } = paramsFit(e, byId);
   const moe = trends.true;

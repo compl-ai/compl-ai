@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/site';
 import Link from 'next/link';
 import { getBenchmarkMeta, getGrounding, type GroundingRef } from '@/lib/data';
 import { INDICES, type IndexId } from '@/lib/scores';
@@ -5,6 +7,8 @@ import { Eyebrow } from '@/components/layout/Eyebrow';
 import { IndexScope, IndexStrip, type IndexFilter, type StripStat } from '@/components/IndexStrip';
 import { AiActMap, type MapArea, type MapLink, type WholeEvaluationRef } from '@/components/AiActMap';
 import { benchmarkAnchor, getBenchmarkCatalog, getExplorerSubcategories, getIndexReferences } from '@/lib/catalog';
+
+export const metadata: Metadata = pageMetadata('AI Act mapping', 'How ComplAI CORE’s benchmarks map to the technical requirements of the EU AI Act.');
 
 export default function MappingPage() {
   const grounding = getGrounding();

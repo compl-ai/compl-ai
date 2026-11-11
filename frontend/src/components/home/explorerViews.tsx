@@ -347,8 +347,9 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
       { ...point(m, date, clip(r[kf]), full, extra(r)), id: `${r.id}:full`, hollow: false, label: labelled.has(r.id) ? shortName(m) : undefined, labelPriority: r[kf] },
       { ...point(m, date, clip(r[kc]), brand, extra(r)), id: `${r.id}:core`, hollow: false },
     ]);
-    const domain = logDomain(vals);
-    const ticks = logTicks(domain);
+    // Fixed ranges that fit the runs; full decades would leave empty space.
+    const domain: [number, number] = unit === 'usd' ? [0.3, 5000] : [3e6, 6e8];
+    const ticks = unit === 'usd' ? [0.3, 1, 3, 10, 30, 100, 300, 1000, 3000, 5000] : [3e6, 1e7, 3e7, 1e8, 3e8, 6e8];
     // The fitted exponential trends behind the "×/year" figures, drawn as short segments so they curve.
     const epoch = Date.parse(ec.trend_epoch);
     const x0 = Math.min(...rows.map(d => d.date));
@@ -369,7 +370,7 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
         y: { label: unit === 'usd' ? 'Cost per model (USD, log scale)' : 'Tokens per model (log scale)', domain, log: true, ticks, format: unit === 'usd' ? fmtUsdTick : formatTokens, width: 64 },
         refs: [
           ...rows.map(({ r, date }) => (
-            <ReferenceLine key={r.id} segment={[{ x: date, y: clip(r[kc]) }, { x: date, y: clip(r[kf]) }]} stroke="var(--color-subtle)" strokeOpacity={0.6} strokeWidth={1.5} ifOverflow="hidden" />
+            <ReferenceLine key={r.id} segment={[{ x: date, y: clip(r[kc]) }, { x: date, y: clip(r[kf]) }]} stroke="var(--color-subtle)" strokeOpacity={0.4} strokeWidth={1.5} strokeDasharray="1.5 3" strokeLinecap="round" ifOverflow="hidden" />
           )),
           ...trend(kf, full),
           ...trend(kc, brand),

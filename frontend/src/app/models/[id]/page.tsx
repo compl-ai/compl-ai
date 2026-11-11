@@ -1,5 +1,6 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { README_QUICKSTART_URL } from '@/lib/site';
+import { README_QUICKSTART_URL, pageMetadata } from '@/lib/site';
 import { Fragment } from 'react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -57,6 +58,13 @@ import {
   scoreBarPct,
   tokenMultiplier,
 } from '@/lib/scores';
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await props.params;
+  const model = getJoinedModels().find(m => m.yamlId === id);
+  const name = model?.metadata?.name || id;
+  return pageMetadata(name, `${name} on ComplAI CORE: Capability, Reliability and Safety scores with 90% intervals, by benchmark and evaluation area.`);
+}
 
 export function generateStaticParams() {
   return getJoinedModels().map((model) => ({ id: model.yamlId }));

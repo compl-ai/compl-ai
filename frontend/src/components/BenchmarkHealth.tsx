@@ -1,4 +1,5 @@
 import { OutcomeBar, OutcomeLegend } from '@/components/OutcomeBar';
+import Link from 'next/link';
 import { dataSourceUrl, type BenchmarkHealth, type BenchmarkMeta, type SampleAnalysis } from '@/lib/data';
 import { SATURATION } from '@/lib/outcomes';
 import { INDEX_TONE, INDICES, formatPercent, formatRelease } from '@/lib/scores';
@@ -118,10 +119,11 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
           <dd className="mt-1">
             <strong className="text-ink">Below 1×:</strong> it follows ability less closely and counts less.
           </dd>
+          <dd className="mt-1">Measured across all models, so a benchmark with strong signal can still be saturated among the top models.</dd>
         </div>
         <div>
           <dt className="font-semibold text-ink">Compression</dt>
-          <dd className="mt-1">How many times fewer questions CORE runs than the full benchmark. This is also the estimated token saving.</dd>
+          <dd className="mt-1">How many times fewer questions CORE runs than the full benchmark.</dd>
         </div>
         <div>
           <dt className="font-semibold text-ink">Score spread</dt>
@@ -260,14 +262,14 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
                     {b && b.areas.length > 0 && (
                       <div className="mt-auto flex items-center gap-1.5 overflow-hidden border-t border-border/60 pt-3">
                         {b.areas.slice(0, VISIBLE_AREAS).map(a => (
-                          <a
+                          <Link
                             key={a.key}
                             href={`/mapping#${a.slug}`}
                             title={`${a.items.toLocaleString()} of its questions are labelled ${a.name}`}
                             className={`${TAG} min-w-0 truncate hover:border-ink/40 hover:text-ink`}
                           >
                             {a.name}
-                          </a>
+                          </Link>
                         ))}
                         {b.areas.length > VISIBLE_AREAS && (
                           <HoverCard>
@@ -283,14 +285,14 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
                               <p className="mb-1.5 text-[11px] text-muted-foreground">Also labelled</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {b.areas.slice(VISIBLE_AREAS).map(a => (
-                                  <a
+                                  <Link
                                     key={a.key}
                                     href={`/mapping#${a.slug}`}
                                     title={`${a.items.toLocaleString()} of its questions are labelled ${a.name}`}
                                     className={`${TAG} hover:border-ink/40 hover:text-ink`}
                                   >
                                     {a.name}
-                                  </a>
+                                  </Link>
                                 ))}
                               </div>
                             </HoverCardContent>

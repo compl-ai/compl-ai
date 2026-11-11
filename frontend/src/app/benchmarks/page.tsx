@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/site';
 import Link from 'next/link';
 import { getBenchmarkHealth, getBenchmarkMeta, getPredictions, getSampleAnalysis, getTaxonomy } from '@/lib/data';
 import { INDICES, type IndexId } from '@/lib/scores';
@@ -5,6 +7,8 @@ import { Eyebrow } from '@/components/layout/Eyebrow';
 import { BenchmarkHealthGrid } from '@/components/BenchmarkHealth';
 import { IndexScope, IndexStrip, type IndexFilter, type StripStat } from '@/components/IndexStrip';
 import { getBenchmarkCatalog, type CatalogBenchmark } from '@/lib/catalog';
+
+export const metadata: Metadata = pageMetadata('Benchmarks', 'Every benchmark in ComplAI CORE: what it measures, how much it counts and how far CORE compresses it.');
 
 export default function BenchmarksPage() {
   const taxonomy = getTaxonomy();

@@ -68,9 +68,6 @@ export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[
             );
           })}
         </ol>
-        <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground leading-relaxed">
-          Findings are computed from all evaluated models and ignore the chart controls.
-        </p>
       </div>
 
       <div ref={columnRef} id="results-explorer-chart" className="font-plex min-w-0 xl:flex xl:flex-col xl:[grid-area:1/1]">
