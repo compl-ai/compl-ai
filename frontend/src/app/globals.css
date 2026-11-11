@@ -1,9 +1,16 @@
 @import "tailwindcss";
 
-/* Dark mode follows the system setting. It only applies when <html> has data-dark-mode (see DARK_MODE in layout.tsx),
+/* Print keeps the tablet-and-up (md) layout on paper, which is narrower than the md breakpoint. */
+@custom-variant md {
+  @media print, (width >= 48rem) {
+    @slot;
+  }
+}
+
+/* Dark mode follows the system setting (screen only; print is always light). It only applies when <html> has data-dark-mode (see DARK_MODE in layout.tsx),
    so removing that attribute turns it off everywhere. */
 @custom-variant dark {
-  @media (prefers-color-scheme: dark) {
+  @media screen and (prefers-color-scheme: dark) {
     &:where([data-dark-mode], [data-dark-mode] *) {
       @slot;
     }
@@ -22,6 +29,8 @@
   --color-brand-soft: var(--brand-soft);
   --color-link: var(--link); /* links; quieter than the brand orange used for eyebrows */
   --color-teal: #80DDDA;
+  --color-success: #6CBC7D;
+  --color-failure: #DBCB3C; /* answers that did not finish */
   --color-teal-strong: var(--teal-strong);
   --color-teal-soft: var(--teal-soft);
   --color-lavender: #8A90D1;
@@ -124,7 +133,7 @@
   --radius: 0.75rem;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root[data-dark-mode] {
     color-scheme: dark;
 
@@ -216,5 +225,53 @@
 @utility punch-10 {
   @media (width >= 64rem) {
     margin-inline: calc((100% + var(--grid-gutter)) / -8);
+  }
+}
+
+/* Index filter (IndexScope): content tagged with data-index is hidden unless it belongs to the selected index. */
+[data-index-filter="capability"] [data-index]:not([data-index="capability"]),
+[data-index-filter="reliability"] [data-index]:not([data-index="reliability"]),
+[data-index-filter="safety"] [data-index]:not([data-index="safety"]) {
+  display: none;
+}
+
+/* Print: a plain report. Navigation, the contents list and inactive tabs are dropped; pages break between blocks. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html {
+    zoom: 0.8;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: #fff;
+  }
+  .frame {
+    max-width: none;
+    padding-inline: 0;
+  }
+  .sticky {
+    position: static !important;
+  }
+  [role="tablist"] {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  [role="tab"][aria-selected="false"],
+  [data-slot="tooltip-content"] {
+    display: none !important;
+  }
+  h1, h2, h3, h4 {
+    break-after: avoid;
+  }
+  tr, li, figure, [data-print-block] {
+    break-inside: avoid;
   }
 }
