@@ -7,7 +7,7 @@ import { REPO_URL } from '@/lib/site';
 export function SiteFooter() {
   const lastUpdated = getLastUpdated();
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-border bg-card print:hidden">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between frame py-8 text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
           <BrandMark size="sm" />

@@ -9,14 +9,19 @@ export function HomeHero({ benchmarks }: { benchmarks: number | null }) {
     <section className="frame pt-16 md:pt-28 pb-16 md:pb-24">
       <div className="cols-10 grid gap-10 md:grid-cols-[1fr_auto] md:items-center">
       <div>
+        {/* Previous subtext:
+              Comprehensive AI evaluation at a fraction of the cost.<br />
+              Evaluate AI models on a compact set of calibrated tasks and predict their performance
+              on {benchmarks ?? 'the'} established benchmarks across capability, safety, and reliability.
+            Previous h1: Run fewer tests.<br />Measure more.
+        */}
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-ink leading-[1.02]">
-          Run fewer tests.<br />Measure more.
+          Efficient, open, and<br /> reproducible AI evaluation.
         </h1>
         <p className="mt-8 font-plex text-[20px] text-muted-foreground max-w-[780px] leading-relaxed">
-          Comprehensive AI evaluation at a fraction of the cost.
-          <br />
-          Evaluate AI models on a compact set of calibrated tasks and predict their performance
-          on {benchmarks ?? 'the'} established benchmarks across capability, safety, and reliability.
+          ComplAI CORE lets you evaluate AI models with far fewer questions. Predict performance
+          across {benchmarks ?? 'the'} established benchmarks spanning capability, safety, and reliability.
+          Reproduce results or evaluate your own models at a fraction of the cost.
         </p>
         <div className="mt-10 flex flex-wrap gap-3">
           <a href="#run-core" className={`${BUTTON} border border-ink bg-ink text-background hover:bg-ink/85`}>Run CORE</a>

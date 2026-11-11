@@ -9,6 +9,7 @@ const NAV = [
   { href: '/#results', label: 'Results', match: '/' },
   { href: '/models', label: 'Models', match: '/models' },
   { href: '/benchmarks', label: 'Benchmarks', match: '/benchmarks' },
+  { href: '/mapping', label: 'AI Act mapping', match: '/mapping' },
   { href: '/methodology', label: 'How it Works', match: '/methodology' },
 ];
 
@@ -33,7 +34,7 @@ export function SiteHeader() {
   ));
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-card/90 backdrop-blur pt-3 md:pt-4">
+    <header className="sticky top-0 z-50 w-full bg-card/90 backdrop-blur pt-3 md:pt-4 print:pt-0 print:bg-transparent print:backdrop-blur-none">
       <div className="frame h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6">
         <div className="flex items-center gap-2.5">
           <Link href="/" aria-label="ComplAI CORE home" className="flex shrink-0"><BrandMark /></Link>
@@ -46,9 +47,9 @@ export function SiteHeader() {
           </span>
         </div>
 
-        <nav className="hidden md:flex justify-center gap-8 lg:gap-14 text-[17px]" aria-label="Main">{navLinks}</nav>
+        <nav className="hidden md:flex print:hidden justify-center gap-6 lg:gap-10 text-[17px]" aria-label="Main">{navLinks}</nav>
 
-        <div className="flex items-center justify-end gap-5">
+        <div className="flex items-center justify-end gap-5 print:hidden">
           <p className="hidden xl:block font-plex text-[11px] font-medium text-ink">
             Created by{' '}
             {CREATORS.map((c, i) => (
@@ -69,7 +70,7 @@ export function SiteHeader() {
           </a>
         </div>
       </div>
-      <nav className="md:hidden flex gap-6 overflow-x-auto px-4 pb-3 text-[15px]" aria-label="Main">{navLinks}</nav>
+      <nav className="md:hidden print:hidden flex gap-6 overflow-x-auto px-4 pb-3 text-[15px]" aria-label="Main">{navLinks}</nav>
     </header>
   );
 }

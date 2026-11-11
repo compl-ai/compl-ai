@@ -1,16 +1,15 @@
-import { getEfficiency, getJoinedModels, getLastUpdated } from '@/lib/data';
+import { getEfficiency, getExplorer, getJoinedModels, getLastUpdated } from '@/lib/data';
 import { formatDate } from '@/lib/scores';
 import { CoreStats, HomeHero } from '@/components/home/HomeHero';
 import { ResultsExplorer } from '@/components/home/ResultsExplorer';
-import { computeFindings } from '@/components/home/explorer';
 import { RunCore } from '@/components/home/RunCore';
 import { ModelDataTable } from '@/components/ModelDataTable';
 import { Eyebrow } from '@/components/layout/Eyebrow';
 
-function SectionHeading({ eyebrow, title, children, className = 'mb-8' }: { eyebrow: string; title: string; children?: React.ReactNode; className?: string }) {
+function SectionHeading({ eyebrow, title, children, className = 'mb-8' }: { eyebrow?: string; title: string; children?: React.ReactNode; className?: string }) {
   return (
     <div className={`max-w-3xl ${className}`}>
-      <Eyebrow>{eyebrow}</Eyebrow>
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-ink">{title}</h2>
       {children && <p className="mt-4 text-base text-muted-foreground leading-relaxed">{children}</p>}
     </div>
@@ -27,7 +26,7 @@ export default function Home() {
       <HomeHero benchmarks={efficiency?.tasks ? Object.keys(efficiency.tasks).length : null} />
       {efficiency && <CoreStats efficiency={efficiency} />}
 
-      <section id="results" className="scroll-mt-24 frame pt-8 md:pt-14 pb-16">
+      <section id="results" className="scroll-mt-24 frame pt-8 md:pt-14 pb-20">
         <div className="cols-10">
         <div className="mb-14">
           <Eyebrow>Results</Eyebrow>
@@ -41,21 +40,16 @@ export default function Home() {
             {lastUpdated && <p className="mt-3 text-sm text-faint-foreground">Model evaluation data last updated {formatDate(lastUpdated)}</p>}
           </div>
         </div>
-        <ResultsExplorer models={models} findings={computeFindings(models)} />
-        </div>
-      </section>
-
-      <section id="rankings" className="scroll-mt-24 frame pt-8 md:pt-14 pb-20">
-        <div className="cols-10">
+        <ResultsExplorer models={models} explorer={getExplorer()} />
+        <div id="rankings" className="scroll-mt-24 mt-12 md:mt-16">
         <ModelDataTable
           initialModels={models}
           initialRows={15}
           heading={
-            <SectionHeading eyebrow="Rankings" title="Model rankings" className="">
-              Click a column header to re-rank. Click a model for its evaluation-area and benchmark breakdown.
-            </SectionHeading>
+            <SectionHeading title="Model rankings" className="" />
           }
         />
+        </div>
         </div>
       </section>
 

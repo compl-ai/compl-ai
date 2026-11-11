@@ -1,3 +1,8 @@
+import type { MethodNumbers } from '@/lib/data';
+
+type Panel = MethodNumbers['panel'];
+const int = (n: number) => n.toLocaleString('en-US');
+
 const INK = 'var(--color-ink)';
 const WRONG = 'var(--color-track)';
 const EMPTY = 'var(--color-grid)';
@@ -101,7 +106,7 @@ function SelectionGlyph() {
   );
 }
 
-function AnswersGlyph() {
+function AnswersGlyph({ panel }: { panel: Panel }) {
   return (
     <Glyph label="The new model answers only the core items">
       {stripCells().map(s =>
@@ -113,7 +118,7 @@ function AnswersGlyph() {
           <rect key={cellKey(s.b, s.r, s.c)} x={s.x} y={s.y} width={CELL} height={CELL} fill="none" stroke={WRONG} strokeWidth={0.6} strokeDasharray="1 1" />
         ),
       )}
-      <text x={0} y={12} fontSize={7} fill="var(--muted-foreground)">2,000 of 92,210 items</text>
+      <text x={0} y={12} fontSize={7} fill="var(--muted-foreground)">{int(panel.core_items)} of {int(panel.items)} items</text>
     </Glyph>
   );
 }
@@ -196,12 +201,12 @@ function Lane({ title, note, tone, children }: { title: string; note: string; to
   );
 }
 
-export function MethodDiagram() {
+export function MethodDiagram({ panel }: { panel: Panel }) {
   return (
     <div data-figure="method">
-      <Lane title="Done once: calibration" note="full-suite runs of 41 open-weight models" tone="muted">
+      <Lane title="Done once: calibration" note={`full-suite runs of ${panel.models} models (${panel.open_models} open-weight, ${panel.closed_models} closed)`} tone="muted">
         <Tile n="A1" title="Calibration panel" glyph={<PanelGlyph />}>
-          41 models × 23 benchmarks, 92,210 items, about 2.04M scored responses. Not every model ran every benchmark (dashed).
+          {panel.models} models × {panel.benchmarks} benchmarks, {int(panel.items)} items, about {(panel.responses / 1e6).toFixed(2)}M scored responses. Not every model ran every benchmark (dashed).
         </Tile>
         <Arrow />
         <Tile n="A2" title="Fit item parameters" glyph={<IccGlyph />}>
@@ -216,7 +221,7 @@ export function MethodDiagram() {
       <div className="flex flex-col items-center py-2">
         <div className="h-3 w-px bg-ink/30" />
         <div className="rounded-full border border-ink/15 bg-card px-3 py-1 text-center text-[11px] font-semibold text-ink">
-          Frozen and public: α, β for all 92,210 items · the 2,000-item core list
+          Frozen and public: α, β for all {int(panel.items)} items · the {int(panel.core_items)}-item core list
         </div>
         <svg viewBox="0 0 12 14" className="h-3.5 w-3 text-ink/40" aria-hidden>
           <path d="M6 0v12M2 8l4 4 4-4" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
@@ -224,12 +229,12 @@ export function MethodDiagram() {
       </div>
 
       <Lane title="Every new model: evaluation" note="core run only, about 2% of the items" tone="brand">
-        <Tile n="B1" title="Run the core" glyph={<AnswersGlyph />} accent>
+        <Tile n="B1" title="Run the core" glyph={<AnswersGlyph panel={panel} />} accent>
           The model answers only the 2,000 core items (filled: correct, hollow: wrong).
         </Tile>
         <Arrow />
         <Tile n="B2" title="Predict the full suite" glyph={<PredictGlyph />} accent>
-          Its ability θ per benchmark, with the frozen α and β, gives the chance of a correct answer on the other 90,210 items.
+          Its ability θ per benchmark, with the frozen α and β, gives the chance of a correct answer on the other {int(panel.items - panel.core_items)} items.
         </Tile>
         <Arrow />
         <Tile n="B3" title="Three indices" glyph={<IndicesGlyph />} accent>

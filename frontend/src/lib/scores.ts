@@ -101,6 +101,18 @@ export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
+// The span of a set of ISO dates, e.g. "Nov 5–6, 2026" or "Mar 20 – Apr 13, 2026".
+export function formatDateRange(isos: string[]): string {
+  if (!isos.length) return '—';
+  const days = isos.map(d => d.slice(0, 10)).sort();
+  const [first, last] = [days[0], days[days.length - 1]];
+  if (first === last) return formatDate(first);
+  const part = (iso: string, opts: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-US', { ...opts, timeZone: 'UTC' });
+  if (first.slice(0, 7) === last.slice(0, 7)) return `${part(first, { month: 'short', day: 'numeric' })}–${part(last, { day: 'numeric' })}, ${first.slice(0, 4)}`;
+  if (first.slice(0, 4) === last.slice(0, 4)) return `${part(first, { month: 'short', day: 'numeric' })} – ${formatDate(last)}`;
+  return `${formatDate(first)} – ${formatDate(last)}`;
+}
+
 // How many times fewer tokens CORE uses than the full suite.
 export function tokenMultiplier(t: { core: number; full: number }): number | null {
   return t.core > 0 && t.full > 0 ? t.full / t.core : null;
@@ -169,3 +181,12 @@ export const TASK_STATUS: Record<TaskStatus, { label: string; description: strin
     className: 'bg-muted text-muted-foreground border-border',
   },
 };
+
+// A YYYY-MM-DD date as "Nov '23", as on the model cards.
+export function formatRelease(date: string, long = false): string {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  if (long) return `Released ${parsed.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
+  const month = parsed.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+  return `${month} '${String(parsed.getUTCFullYear()).slice(-2)}`;
+}

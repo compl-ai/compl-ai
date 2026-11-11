@@ -1,7 +1,7 @@
-import type { JoinedModelData } from '@/lib/data';
-import { INDICES, type IndexId, getIndexTheta, getRunType, scaleTheta, formatTokens, formatPercent, parseParams } from '@/lib/scores';
+import type { ExplorerData, JoinedModelData } from '@/lib/data';
+import { INDICES, type IndexId, getIndexTheta, parseParams, scaleTheta } from '@/lib/scores';
 
-export type QuestionId = 'capability-safety' | 'frontier' | 'small-vs-large' | 'open-vs-proprietary' | 'reliability-safety' | 'cost';
+export type QuestionId = 'capability-safety' | 'manipulation' | 'over-time' | 'parameters' | 'labs' | 'eval-cost';
 
 export interface Question {
   id: QuestionId;
@@ -12,33 +12,33 @@ export interface Question {
 export const QUESTIONS: Question[] = [
   {
     id: 'capability-safety',
-    title: 'Are the most capable models also the safest?',
-    context: 'Each model’s Capability score against its Safety score. Models in the top right are above the panel average on both.',
+    title: 'Is the most capable model the safest?',
+    context: 'Each model’s Capability score against its Safety or Reliability score. Labelled models sit furthest from the trend, or at the top.',
   },
   {
-    id: 'frontier',
-    title: 'How are frontier models progressing?',
-    context: 'Capability by release date. The orange line tracks the best score released so far; dot area shows total parameters where they are published.',
+    id: 'manipulation',
+    title: 'Scaling up makes models harder to manipulate, but not more honest and fair',
+    context: 'How closely each safety area tracks Capability, with release date held fixed. Click a bar to see its models.',
   },
   {
-    id: 'small-vs-large',
-    title: 'Which smaller models compete with larger ones?',
-    context: 'Capability against total parameter count, on a log scale. Only models with a published parameter count are shown, so proprietary models are excluded.',
+    id: 'over-time',
+    title: 'Capability, reliability and safety over time',
+    context: 'Every model’s score by release date. Lines track the best open-weight and best proprietary score so far.',
   },
   {
-    id: 'open-vs-proprietary',
-    title: 'How do open-weight and proprietary models compare?',
-    context: 'Every model’s score on each index, split into open-weight and proprietary. Short bars mark each group’s median.',
+    id: 'parameters',
+    title: 'Total or active parameters: which buys capability?',
+    context: 'Capability against active or total parameter count for open-weight models, on a log scale. Mixture-of-experts (MoE) models only use part of their parameters per token. Lines are the trend within each architecture.',
   },
   {
-    id: 'reliability-safety',
-    title: 'Where do models differ in reliability and safety?',
-    context: 'Reliability against Safety. Models can be factual and consistent without avoiding harmful behaviour, and the reverse.',
+    id: 'labs',
+    title: 'How do labs compare on safety?',
+    context: 'How far each model’s score sits above or below what its Capability and release date predict, grouped by lab. Ticks mark each lab’s median.',
   },
   {
-    id: 'cost',
-    title: 'How much does it cost to evaluate a model with CORE?',
-    context: 'Tokens used on the full suite against tokens used on CORE, per model, on log scales. Dollar costs need per-model prices, which are not published yet.',
+    id: 'eval-cost',
+    title: 'The rising cost of evaluation',
+    context: 'What one full-suite run and one CORE run cost for each model, by release date.',
   },
 ];
 
@@ -50,10 +50,16 @@ export const weightsOf = (m: JoinedModelData): Weights =>
 // Models without a metadata YAML fall back to their evaluation ID (e.g. gpt-6.1-terra), not the mangled yamlId.
 export const nameOf = (m: JoinedModelData) => m.metadata?.name || m.id.split('/').pop() || m.yamlId;
 
+// Compact chart label: drops vendor prefixes and packaging suffixes that add width but not identity.
+export const shortName = (m: JoinedModelData) =>
+  nameOf(m).replace(/^NVIDIA-/, '').replace(/[- ](Instruct|it)( \d{4})?$/i, '').replace(/-BF16$/, '');
+
 export const indexScore = (m: JoinedModelData, idx: IndexId): number | null => {
   const t = getIndexTheta(m, idx);
   return t ? scaleTheta(t.theta) : null;
 };
+
+export const indexLabel = (id: IndexId) => INDICES.find(i => i.id === id)!.label;
 
 export const paramsOf = (m: JoinedModelData): number | null => {
   const p = parseParams(m.metadata?.specs?.total_params);
@@ -79,146 +85,92 @@ export const releaseOf = (m: JoinedModelData): number | null => {
   return isNaN(d) ? null : d;
 };
 
-// Tokens are measured for the run the model actually did; the other side is estimated
-// from per-item medians, so the source is reported alongside the numbers.
-export const tokensOf = (m: JoinedModelData) => {
-  const t = m.prediction?.usage?.tokens;
-  if (!t || !(t.core > 0) || !(t.full > 0)) return null;
-  const run = getRunType(m);
-  return { core: t.core, full: t.full, reduction: t.reduction ?? 1 - t.core / t.full, measured: run === 'core' ? 'core' as const : run === 'full' ? 'full' as const : null };
-};
-
 export function median(values: number[]): number {
   const s = [...values].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-function ranks(values: number[]): number[] {
-  const order = values.map((v, i) => [v, i] as const).sort((a, b) => a[0] - b[0]);
-  const r = new Array<number>(values.length);
-  for (let i = 0; i < order.length;) {
-    let j = i;
-    while (j + 1 < order.length && order[j + 1][0] === order[i][0]) j++;
-    for (let k = i; k <= j; k++) r[order[k][1]] = (i + j) / 2 + 1;
-    i = j + 1;
-  }
-  return r;
-}
+export const fmtParams = (p: number) => p >= 1e12 ? `${+(p / 1e12).toFixed(1)}T` : p >= 1e9 ? `${+(p / 1e9).toPrecision(3)}B` : `${+(p / 1e6).toPrecision(3)}M`;
+export const fmtMonth = (t: number | string) => new Date(t).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+export const fmtUsd = (v: number) => v >= 100 ? `$${Math.round(v).toLocaleString('en-US')}` : v >= 10 ? `$${v.toFixed(0)}` : `$${v.toFixed(2)}`;
+const f1 = (v: number) => v.toFixed(1);
+const f2 = (v: number) => v.toFixed(2);
+const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${f1(Math.abs(v))}`;
 
-function spearman(xs: number[], ys: number[]): number {
-  const rx = ranks(xs);
-  const ry = ranks(ys);
-  const mx = rx.reduce((a, b) => a + b, 0) / rx.length;
-  const my = ry.reduce((a, b) => a + b, 0) / ry.length;
-  let num = 0, dx = 0, dy = 0;
-  for (let i = 0; i < rx.length; i++) {
-    num += (rx[i] - mx) * (ry[i] - my);
-    dx += (rx[i] - mx) ** 2;
-    dy += (ry[i] - my) ** 2;
-  }
-  return num / Math.sqrt(dx * dy);
-}
-
-function strength(rho: number): string {
-  const a = Math.abs(rho);
-  if (a < 0.2) return 'barely related';
-  const word = a < 0.4 ? 'weakly' : a < 0.6 ? 'moderately' : 'strongly';
-  return `${word} ${rho > 0 ? 'positively' : 'negatively'} related`;
-}
-
-const fmtDate = (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-export const fmtParams = (p: number) => p >= 1e12 ? `${(p / 1e12).toFixed(1)}T` : `${Math.round(p / 1e9)}B`;
-const r0 = (v: number) => Math.round(v).toString();
-
-function pairFinding(models: JoinedModelData[], a: IndexId, b: IndexId): string | null {
-  const pairs = models.flatMap(m => {
-    const x = indexScore(m, a);
-    const y = indexScore(m, b);
-    return x !== null && y !== null ? [{ m, x, y }] : [];
-  });
-  if (pairs.length < 8) return null;
-  const rho = spearman(pairs.map(p => p.x), pairs.map(p => p.y));
-  const n = Math.min(10, Math.floor(pairs.length / 4));
-  const topA = new Set([...pairs].sort((p, q) => q.x - p.x).slice(0, n).map(p => p.m.id));
-  const overlap = [...pairs].sort((p, q) => q.y - p.y).slice(0, n).filter(p => topA.has(p.m.id)).length;
-  const [la, lb] = [a, b].map(id => INDICES.find(i => i.id === id)!.label);
-  return `Across ${pairs.length} models, ${la} and ${lb} are ${strength(rho)} (Spearman ρ = ${rho.toFixed(2)}). ${overlap} of the ${n} highest-${la} models are also in the top ${n} for ${lb}.`;
-}
-
-interface FrontierStep { id: string; name: string; date: number; score: number }
-
-export function capabilityFrontier(models: JoinedModelData[]): FrontierStep[] {
-  const dated = models.flatMap(m => {
-    const date = releaseOf(m);
-    const score = indexScore(m, 'capability');
-    return date !== null && score !== null ? [{ id: m.yamlId, name: nameOf(m), date, score }] : [];
-  }).sort((p, q) => p.date - q.date || q.score - p.score);
-  const steps: FrontierStep[] = [];
-  for (const p of dated) if (!steps.length || p.score > steps[steps.length - 1].score) steps.push(p);
+// Best score released up to each date: each step is a model that set a new high.
+export function frontierSteps<T extends { date: number; score: number }>(points: T[]): T[] {
+  const sorted = [...points].sort((a, b) => a.date - b.date || b.score - a.score);
+  const steps: T[] = [];
+  for (const p of sorted) if (!steps.length || p.score > steps[steps.length - 1].score) steps.push(p);
   return steps;
 }
 
-function frontierFinding(models: JoinedModelData[]): string | null {
-  const steps = capabilityFrontier(models);
-  if (steps.length < 2) return null;
-  const first = steps[0];
-  const last = steps[steps.length - 1];
-  return `Among the models evaluated, the best Capability score rose from ${r0(first.score)} (${first.name}, ${fmtDate(first.date)}) to ${r0(last.score)} (${last.name}, ${fmtDate(last.date)}). ${steps.length} models set a new high along the way.`;
-}
+export type ModelLookup = Map<string, JoinedModelData>;
+export const lookupModels = (models: JoinedModelData[]): ModelLookup => new Map(models.map(m => [m.id, m]));
 
-export const LARGE_PARAMS = 100e9;
+// Display name for an explorer id; ids without a joined model fall back to their last path segment.
+export const nameFor = (byId: ModelLookup, id: string) => {
+  const m = byId.get(id);
+  return m ? nameOf(m) : id.split('/').pop() ?? id;
+};
 
-function sizeFinding(models: JoinedModelData[]): string | null {
-  const sized = models.flatMap(m => {
-    const p = paramsOf(m);
+export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Record<QuestionId, string> {
+  const byId = lookupModels(models);
+  const name = (id: string) => nameFor(byId, id);
+
+  const cs = e.capability_safety;
+  const scored = models.flatMap(m => {
     const c = indexScore(m, 'capability');
-    return p !== null && c !== null ? [{ m, p, c }] : [];
+    const s = indexScore(m, 'safety');
+    return c !== null && s !== null ? [{ m, c, s }] : [];
   });
-  const large = sized.filter(d => d.p >= LARGE_PARAMS);
-  const small = sized.filter(d => d.p < LARGE_PARAMS);
-  if (large.length < 3 || small.length < 3) return null;
-  const bar = median(large.map(d => d.c));
-  const competitive = small.filter(d => d.c >= bar).sort((a, b) => a.p - b.p);
-  const best = [...small].sort((a, b) => b.c - a.c)[0];
-  if (competitive.length === 0) {
-    return `None of the ${small.length} models under 100B parameters reaches the median Capability of the ${large.length} larger models (${r0(bar)}). The closest is ${nameOf(best.m)} (${fmtParams(best.p)}) at ${r0(best.c)}.`;
-  }
-  const smallest = competitive[0];
-  return `${competitive.length} of ${small.length} models under 100B parameters score at or above the median Capability of the ${large.length} larger models (${r0(bar)}). The smallest is ${nameOf(smallest.m)} at ${fmtParams(smallest.p)} (${r0(smallest.c)}).`;
-}
+  const topCap = scored.reduce((a, b) => (b.c > a.c ? b : a));
+  const topSafe = scored.reduce((a, b) => (b.s > a.s ? b : a));
+  const safeRank = [...scored].sort((a, b) => b.s - a.s).findIndex(d => d.m.id === topCap.m.id) + 1;
+  const capRank = [...scored].sort((a, b) => b.c - a.c).findIndex(d => d.m.id === topSafe.m.id) + 1;
+  const capabilitySafety = topCap.m.id === topSafe.m.id
+    ? `Mostly. ${nameOf(topCap.m)} leads both, and across ${cs.safety.n} models Capability and Safety rank-correlate at ρ = ${f2(cs.safety.rho_release)} with release date held fixed.`
+    : `No. The most capable model, ${nameOf(topCap.m)}, ranks ${ordinal(safeRank)} of ${scored.length} on Safety, and the safest, ${nameOf(topSafe.m)}, ranks ${ordinal(capRank)} on Capability. With release date held fixed, Capability predicts Safety (ρ = ${f2(cs.safety.rho_release)}) less well than it predicts Reliability (ρ = ${f2(cs.reliability.rho_release)}), and ${cs.safety.top10_overlap} of the 10 most capable models make the Safety top 10.`;
 
-function groupFinding(models: JoinedModelData[]): string | null {
-  const parts: string[] = [];
-  let nProp = 0;
-  let nOpen = 0;
-  for (const idx of INDICES) {
-    const open = models.filter(m => weightsOf(m) === 'open').map(m => indexScore(m, idx.id)).filter(v => v !== null);
-    const prop = models.filter(m => weightsOf(m) === 'proprietary').map(m => indexScore(m, idx.id)).filter(v => v !== null);
-    if (!open.length || !prop.length) continue;
-    nOpen = Math.max(nOpen, open.length);
-    nProp = Math.max(nProp, prop.length);
-    parts.push(`${idx.label} ${r0(median(prop))} vs ${r0(median(open))}`);
-  }
-  if (!parts.length) return null;
-  return `Median scores, proprietary vs open-weight: ${parts.join('; ')}. Only ${nProp} proprietary models are evaluated against ${nOpen} open-weight models, so treat the gaps as indicative.`;
-}
+  const mp = e.manipulation;
+  const attack = mp.bars.filter(b => b.group === 'attack');
+  const behaviour = mp.bars.filter(b => b.group === 'behaviour');
+  const list = (bars: typeof attack) => bars.map(b => `${b.name.toLowerCase()} ${f2(b.rho_release)}`).join(', ');
+  const manipulation = `With release date held fixed, more capable models are much better at resisting attacks (${list(attack)}; mean ρ = ${f2(mp.mean.attack)}) than at behaving well unprompted (${list(behaviour)}; mean ρ = ${f2(mp.mean.behaviour)}). Capability buys robustness more than it buys honesty, fairness or refusal.`;
 
-function costFinding(models: JoinedModelData[]): string | null {
-  const t = models.map(tokensOf).filter(v => v !== null);
-  if (t.length < 3) return null;
-  const red = t.map(v => v.reduction);
-  const coreMeasured = t.filter(v => v.measured === 'core').length;
-  return `Across ${t.length} models, CORE uses a median of ${formatPercent(median(red))} fewer tokens than the full suite (${formatPercent(Math.min(...red))}–${formatPercent(Math.max(...red))}), typically ${formatTokens(median(t.map(v => v.core)))} instead of ${formatTokens(median(t.map(v => v.full)))}. CORE tokens are measured for the ${coreMeasured} models that ran CORE and estimated for the rest.`;
-}
+  const ol = e.open_lag;
+  const fr = e.frontier;
+  const lag = (ix: IndexId) => `${f1(ol[ix].lag_months)} months`;
+  const un = ol.safety.oldest_unmatched;
+  const overTime = `Open-weight models trail the best proprietary ones by about ${lag('capability')} on Capability and ${lag('reliability')} on Reliability, but ${lag('safety')} on Safety, ${ol.safety.lag_months >= 2 * Math.max(ol.capability.lag_months, ol.reliability.lag_months) ? 'more than twice as long' : 'longer'}. Safety is also where the whole field moves slowest: from ${fmtMonth(fr.window.from)} to ${fmtMonth(fr.window.to)} the best score rose ${signed(fr.capability.delta)} points on Capability and ${signed(fr.reliability.delta)} on Reliability, but only ${signed(fr.safety.delta)} on Safety. The best open Safety score climbs ${f2(ol.safety.open_slope)} points a month, against ${f2(ol.capability.open_slope)} for Capability, so that gap closes slowly.${un ? ` ${name(un.id)}’s Safety score is still unmatched by any open model ${f1(un.months)} months after its release.` : ''} Based on ${ol.n_open} open and ${ol.n_closed} proprietary models.`;
 
-export function computeFindings(models: JoinedModelData[]): Record<QuestionId, string | null> {
+  const pf = e.params.fit;
+  const parameters = `With release date held fixed, each 10× in total parameters goes with ${signed(pf.per_10x_total)} Capability points, while 10× in active parameters adds ${signed(pf.per_10x_active)} once total size is accounted for. Active size alone predicts ${signed(pf.per_10x_active_alone)} per 10×, mostly because it tracks total size. Based on ${pf.n} open models, ${pf.n_moe} of them MoE; MoE models are also newer (median ${fmtMonth(pf.median_release_moe)} vs ${fmtMonth(pf.median_release_dense)}).`;
+
+  const ec = e.eval_cost;
+  const months = Math.round((Math.log(ec.ratio_usd) / Math.log(ec.trend.full_usd.x_per_year)) * 12);
+  const sc = ec.size_control;
+  const coreMax = Math.max(...ec.rows.map(r => r.core_usd));
+  const evalCost = `Evaluating a newly released model on the full suite costs about ${f1(ec.trend.full_usd.x_per_year)}× more each year. That is not just bigger models: among ${sc.n} open models, with total parameters held fixed, the rise is still ${f1(sc.x_per_year)}× a year, because newer models write more tokens (${f1(ec.trend.full_tokens.x_per_year)}× a year) at higher prices per token. CORE cuts every run by ${f1(ec.ratio_usd)}× (${fmtUsd(ec.totals.core_usd)} vs ${fmtUsd(ec.totals.full_usd)} across ${ec.n} models), about ${months} months of that growth: no CORE run here costs more than ${fmtUsd(coreMax)}, so every new release can be checked as it lands. CORE costs rise too, so keeping evaluation cheap is ongoing work.`;
+
+  const ls = e.labs.safety.labs.filter(l => l.lab !== 'Other').sort((a, b) => b.median - a.median);
+  const top = ls.slice(0, 2);
+  const bottom = ls.at(-1)!;
+  const labs = `Relative to what Capability and release date predict, ${top.map(l => `${l.lab} (median ${signed(l.median)}, ${l.n} models)`).join(' and ')} score highest on Safety and ${bottom.lab} (${signed(bottom.median)}, ${bottom.n} models) lowest. Most labs have only 2–8 models here, so treat this as exploratory.`;
+
   return {
-    'capability-safety': pairFinding(models, 'capability', 'safety'),
-    'frontier': frontierFinding(models),
-    'small-vs-large': sizeFinding(models),
-    'open-vs-proprietary': groupFinding(models),
-    'reliability-safety': pairFinding(models, 'reliability', 'safety'),
-    'cost': costFinding(models),
+    'capability-safety': capabilitySafety,
+    manipulation,
+    'over-time': overTime,
+    parameters,
+    labs,
+    'eval-cost': evalCost,
   };
+}
+
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`;
 }

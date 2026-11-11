@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getEfficiency, getMethod } from '@/lib/data';
+import { getBenchmarkMeta, getEfficiency, getMethod } from '@/lib/data';
 import { formatPercent, formatTokens } from '@/lib/scores';
 import { README_CORE_URL, REPO_URL } from '@/lib/site';
 import { Eyebrow } from '@/components/layout/Eyebrow';
@@ -39,7 +39,7 @@ const REFERENCES = [
   },
   {
     id: 'ref-prices',
-    text: 'List prices pulled 2026-11-02 from OpenRouter (openrouter.ai/api/v1/models) and the Anthropic, OpenAI and Google API pricing pages.',
+    text: `List prices pulled ${getMethod()._meta.prices_pulled} from OpenRouter (openrouter.ai/api/v1/models) and the Anthropic, OpenAI and Google API pricing pages.`,
     url: 'https://openrouter.ai/models',
     link: 'openrouter.ai',
   },
@@ -106,41 +106,42 @@ function Figure({ id, n, title, caption, wide = false, children }: { id?: string
   );
 }
 
+// All experiment numbers come from method.json (numbers + figure rows), so a refit only needs a regenerated file.
+const METHOD = getMethod();
+const N = METHOD.numbers;
+const BENCHMARKS = getBenchmarkMeta();
+const task = (id: string) => BENCHMARKS[id]?.name ?? id;
+const pct = (share: number, digits = 0) => `${(share * 100).toFixed(digits)}%`;
+const ci = ({ lo, hi }: { lo: number; hi: number }) => `${Math.round(lo * 100)}–${Math.round(hi * 100)}`;
+const times = (ratio: number) => `${ratio.toFixed(1)}×`;
+const int = (n: number) => n.toLocaleString('en-US');
+const usd = (n: number) => `$${int(Math.round(n))}`;
+const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every(x => b.includes(x));
+const IDX = N.lomo.index;
+const FR = N.agreement.frontier;
+const TOP3 = N.agreement.top3;
+const TOP3_SHARED = sameSet(TOP3.ours, TOP3.eci) && sameSet(TOP3.ours, TOP3.aa);
+const TOP3_COMMON = TOP3.ours.filter(m => TOP3.eci.includes(m) && TOP3.aa.includes(m));
+const rest = (xs: string[]) => andList(xs.filter(m => !TOP3_COMMON.includes(m)));
+const FRACTION = ['', '', 'half', 'third', 'quarter', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
+const LEAD_GAP_POINTS = 15 * Math.abs(N.agreement.top3_theta[TOP3.ours[0]] - (N.agreement.top3_theta[TOP3.eci[0]] ?? N.agreement.top3_theta[TOP3.ours[0]]));
+
 const FAQ: { id: string; q: string; a: React.ReactNode }[] = [
-  {
-    id: 'why-2000',
-    q: 'Why 2,000 items?',
-    a: <>Earlier subset-size sweeps showed accuracy improving quickly up to about 2,000 items and then flattening, while cost keeps growing linearly with the number of items. 2,000 is the knee of that curve: the most accuracy per item asked.</>,
-  },
   {
     id: 'rank-agreement',
     q: 'What does “rank agreement” mean?',
     a: <>Take every pair of models and check whether two rankings put them in the same order. Rank (pairwise) agreement is the share of pairs where they do. 50% is chance, 100% is an identical ranking; it equals (Kendall&nbsp;τ&nbsp;+&nbsp;1)/2. We report it because it answers the question most readers care about: “is model A ahead of model B?”</>,
   },
   {
-    id: 'judge-tokens',
-    q: 'Why do you exclude judge tokens?',
-    a: <>Some benchmarks are graded by a judge model. Judges are typically much cheaper models than the ones being evaluated, so their tokens are a different kind of cost: counting them alongside the evaluated model’s tokens would make the saving look smaller than it is in dollars. They are excluded on both the core and the full side.</>,
-  },
-  {
-    id: 'closed-models',
-    q: 'Are predictions for closed models validated?',
-    a: <>Not directly. The leave-one-out test needs a full-suite run to compare against, and all 41 models with full runs are open-weight. Closed frontier models were run on the core subset only, and they sit at or above the top of the calibration range, where there is least data. Their agreement with external leaderboards (section 4) is the best evidence we have so far.</>,
+    id: 'tokens',
+    q: 'How do you count tokens?',
+    a: <>From the evaluation logs: the evaluated model’s input, output and reasoning tokens on every item it ran. The side of a run we did not do (the full suite for a core run, the core subset for a full run) is estimated per benchmark from the measured tokens per item and marked with a tilde (~). Costs are these token counts at list prices. Tokens used by judge models, which grade some benchmarks, are not counted on either side: judges are typically much cheaper models, so counting their tokens would understate the saving in dollars.</>,
   },
   {
     id: 'intervals',
-    q: 'Why are the intervals too narrow?',
-    a: <>The 90% intervals come from a parametric bootstrap (200 draws) of the model’s ability given its answers, with the calibration held fixed. They do not include the error of the calibration itself. For models held out of calibration they contain the full-run score 91% of the time for Capability but only 83% for Reliability and 81% for Safety, short of the 90% they should. Read them as a lower bound on the uncertainty, and treat small overlaps with care.</>,
-  },
-  {
-    id: 'old-benchmarks',
-    q: 'Why do older benchmarks still rank models well?',
-    a: <>Because each benchmark counts by how well it separates models. When every model scores about the same on a saturated benchmark, its fitted discrimination is low and it barely moves the index. The benchmarks that still spread the frontier apart carry most of the weight. This is likely part of why our ranking agrees with ECI and Artificial Analysis despite a suite that includes older benchmarks.</>,
-  },
-  {
-    id: 'distinct',
-    q: 'Aren’t reliability and safety just capability again?',
-    a: <>Partly, across today’s model range. Our reliability index correlates with ECI at ρ&nbsp;=&nbsp;0.84 (n&nbsp;=&nbsp;31) and safety at ρ&nbsp;=&nbsp;0.72 (n&nbsp;=&nbsp;24). Stronger models tend to do better on both, so a “different dimension” claim cannot rest on a global correlation. The value of the separate indices is in the individual cases where they diverge, which the model pages show.</>,
+    q: 'How are the 90% intervals computed?',
+    a: <>With a parametric bootstrap (200 draws): the model’s ability is redrawn given its answers, with the calibration held fixed. The intervals therefore reflect which items a model answered, but not the error of the calibration or of the IRT model itself. For models held out of calibration they contain the full-run score {pct(IDX.capability.coverage_90)} of the time for Capability, {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety (section 3), so read them as a lower bound on the uncertainty.</>,
   },
   {
     id: 'compliance',
@@ -163,7 +164,7 @@ const P = 'space-y-4 text-[15px] leading-relaxed text-ink/85';
 
 export default function MethodologyPage() {
   const efficiency = getEfficiency();
-  const method = getMethod();
+  const method = METHOD;
   return (
     <article className="frame pt-22 pb-12">
       <div className="cols-8">
@@ -173,9 +174,9 @@ export default function MethodologyPage() {
         <p className="mt-3 font-serif text-xl text-ink/80">Regulation-grounded LLM evaluation, predicted from a 2,000-item core.</p>
         <div className={`mt-8 ${P}`}>
           <p>
-            In 2024 we published COMPL-AI<Cite ids={['ref-complai']} />, the first technical interpretation of the EU AI Act for large language models: it translated the Act’s broad principles into measurable requirements and a benchmark suite to test them. ComplAI CORE is the follow-up. It keeps the same regulatory roots and runs 23 benchmarks through one open harness, but a new model only has to answer a 2,000-item core subset. From those answers we predict how it would do on the full 92,210-item suite, at a fraction of the cost.
+            In 2024 we published COMPL-AI<Cite ids={['ref-complai']} />, the first technical interpretation of the EU AI Act for large language models: it translated the Act’s broad principles into measurable requirements and a benchmark suite to test them. ComplAI CORE is the follow-up to this work. It keeps the same regulatory roots and runs {N.panel.benchmarks} benchmarks ({int(N.panel.items)} items) through one open harness, but any new model only has to answer a {int(N.panel.core_items)}-item core subset. From those answers (and our prior collection of full runs), we can then predict how it would do on the full suite, at a fraction of the cost.
           </p>
-          <p>This page explains why we built it, how it works, and how well it holds up.</p>
+          <p>Next, we explain why we decided to build ComplAI CORE, how the benchmark reduction works, and how well it holds up.</p>
         </div>
       </header>
 
@@ -186,25 +187,25 @@ export default function MethodologyPage() {
         title="How CORE works: calibrate once on full runs, then score each new model from the core alone"
         caption={<>Schematic; the small grids and bars are illustrative, not data. Top: the calibration panel’s full runs are used once to fit item parameters and choose the core. Bottom: a new model only runs the core; its full-suite performance and index scores are predicted from those answers and the frozen parameters. Details in section 2.</>}
       >
-        <MethodDiagram />
+        <MethodDiagram panel={N.panel} />
       </Figure>
 
       <div className="mt-14 space-y-14">
-        <Section id="why" n={1} title="Why we built it">
+        <Section id="why" n={1} title="Why ComplAI CORE">
           <div className={P}>
-            <p>Evaluating language models well is getting harder for four reasons, and each shaped a design choice.</p>
+            <p>As we see it, evaluating language models well is getting harder for four reasons:</p>
             <ul className="space-y-3 pl-5 list-disc marker:text-brand">
               <li>
-                <strong>Cost and scale.</strong> New models arrive every week, and running a full suite on each is expensive: all 92,210 items on Claude Opus 5.5 cost about $1,028 at list prices, the core subset $138.
+                <strong>Cost and scale.</strong> New models arrive every week, and running a full suite on each is expensive: all {int(N.panel.items)} items on Claude Opus 5.5 cost about {usd(N.cost.opus.full)} at list prices, the core subset {usd(N.cost.opus.core)}.
               </li>
               <li>
                 <strong>Reproducibility.</strong> Leaderboards often mix vendor-reported numbers from different prompts, settings and harnesses. Every CORE model runs through the same open, Inspect-based<Cite ids={['ref-inspect']} /> harness, with a public core list and calibration (<Faq id="reproduce">FAQ</Faq>).
               </li>
               <li>
-                <strong>Benchmark weighting.</strong> A plain average counts a saturated or noisy benchmark as much as an informative one. With item response theory (IRT), each benchmark counts by how well it separates models.
+                <strong>Benchmark weighting.</strong> A plain average counts a saturated or noisy benchmark as much as an informative one (resulting in frequent and somewhat arbitrary reweightings of leaderboards). Using item response theory (IRT), CORE weights each benchmark by how well it separates models.
               </li>
               <li>
-                <strong>Regulatory grounding.</strong> The EU AI Act requires providers of general-purpose models with systemic risk to “perform model evaluation in accordance with standardised protocols and tools reflecting the state of the art” (Art.&nbsp;55(1)(a))<Cite ids={['ref-aiact']} />, and the Code of Practice<Cite ids={['ref-cop']} /> spells out what that involves. Most leaderboards connect to neither (section 6).
+                <strong>Regulatory grounding.</strong> The EU AI Act requires providers of general-purpose models with systemic risk to “perform model evaluation in accordance with standardised protocols and tools reflecting the state of the art” (Art.&nbsp;55(1)(a))<Cite ids={['ref-aiact']} />, and the Code of Practice<Cite ids={['ref-cop']} /> provides some details of what that involves. Most leaderboards connect to neither (section 6).
               </li>
             </ul>
           </div>
@@ -216,11 +217,14 @@ export default function MethodologyPage() {
               The method has two stages (Figure&nbsp;1). Calibration happens once, on models we ran on the full suite. After that, each new model only runs the core.
             </p>
             <p>
-              <strong>Pool and panel.</strong> The suite has 23 benchmarks with 92,210 items in total. We ran them in full on a panel of 41 open-weight models, about 2.04 million scored responses. Coverage is incomplete: not every model ran every benchmark. The number of panel models per benchmark ranges from 8 (MMMU-Pro) to all 41, with a median of 38.
+              <strong>Pool and panel.</strong> The suite has {N.panel.benchmarks} benchmarks with {int(N.panel.items)} items in total. We ran them in full on a panel of {N.panel.models} models, {N.panel.open_models} open-weight and {N.panel.closed_models} closed ({andList(N.panel.closed_names)}), resulting in about {(N.panel.responses / 1e6).toFixed(2)} million scored responses. We note that coverage is (partly) incomplete, i.e., not every model ran every benchmark; the closed models in particular ran only some benchmarks in full. The number of panel models per benchmark ranges from {N.panel.models_per_benchmark.min} ({task(N.panel.models_per_benchmark.min_task)}) to all {N.panel.models_per_benchmark.max}, with a median of {N.panel.models_per_benchmark.median}.
             </p>
             <p>
-              <strong>Calibration.</strong> For each benchmark we fit a two-parameter logistic (2PL) IRT model<Cite ids={['ref-irt']} />. It gives the probability that a model answers an item correctly from three numbers:
+              <strong>Calibration.</strong> For each benchmark we fit a two-parameter logistic (2PL) IRT model<Cite ids={['ref-irt']} />, giving the probability that a model answers an item correctly from three numbers:
             </p>
+            <div className="my-5 flex items-center justify-center gap-x-2 font-serif text-lg text-ink">
+              <span><i>P</i>(correct)&nbsp;=&nbsp;<i>σ</i>(<i>α</i>&thinsp;(<i>θ</i>&nbsp;−&nbsp;<i>β</i>))</span>
+            </div>
             <dl className="grid grid-cols-[2rem_1fr] gap-x-3 gap-y-1.5 pl-1">
               <dt className="font-serif text-lg font-extrabold leading-snug text-brand-strong">θ</dt>
               <dd><strong>Model ability.</strong> Higher θ, more items answered correctly.</dd>
@@ -230,118 +234,132 @@ export default function MethodologyPage() {
               <dd><strong>Item discrimination.</strong> How sharply the item separates models just below that point from those just above.</dd>
             </dl>
             <p>
-              <strong>The core subset.</strong> Each benchmark <i>b</i> gets a target <i>t</i><sub><i>b</i></sub>&nbsp;∝&nbsp;<i>σ</i><sub><i>b</i></sub><sup>2/3</sup>, where <i>σ</i><sub><i>b</i></sub> is how much models differ on it (with a minimum per benchmark). A joint allocator then hands out the 2,000 items one at a time, each to the benchmark maximising <span className="whitespace-nowrap"><i>t</i><sub><i>b</i></sub>&nbsp;/&nbsp;((<i>n</i><sub><i>b</i></sub>+1)(<i>n</i><sub><i>I</i></sub>+1))</span>, where <i>n</i><sub><i>b</i></sub> and <i>n</i><sub><i>I</i></sub> count the items already given to the benchmark and its index. This keeps the three indices balanced. Items within a benchmark are drawn by seeded random sampling, and the set is fixed, so every model answers the same items.
+              <strong>The core subset.</strong> Our goal is to predict how a model would do on all {int(N.panel.items)} items while running only a small, fixed core, to cut cost and evaluation time. We do <em>not</em> simply average the model’s score on the core. Instead, we use its core answers to estimate its ability θ on each benchmark, and from θ we predict its result on every item of the full suite. The core therefore needs items where models differ most, spread fairly across the three indices. Each benchmark <i>b</i> gets a target <i>t</i><sub><i>b</i></sub>&nbsp;∝&nbsp;<i>σ</i><sub><i>b</i></sub><sup>2/3</sup>, where <i>σ</i><sub><i>b</i></sub> is how much models differ on it (with a minimum per benchmark). To keep the allocation balanced across benchmarks and indices, a joint allocator then hands out the 2,000 items one at a time, each to the benchmark maximising <span className="whitespace-nowrap"><i>t</i><sub><i>b</i></sub>&nbsp;/&nbsp;((<i>n</i><sub><i>b</i></sub>+1)(<i>n</i><sub><i>I</i></sub>+1))</span>, where <i>n</i><sub><i>b</i></sub> and <i>n</i><sub><i>I</i></sub> count the items already given to the benchmark and its index. Items within a benchmark are drawn by seeded random sampling, and the set is fixed, so every model answers the same items.
             </p>
             <p>
-              <strong>Scoring a new model.</strong> A model answers the core items and we estimate its ability on each benchmark. Its predicted benchmark score combines its real answers on the core items with the predicted probability of a correct answer on every other item.
+              <strong>Scoring a new model.</strong> A model answers the core items, and we estimate its ability on each benchmark. Its predicted benchmark score combines its real answers on the core items with the predicted probability of a correct answer on every other item: <span className="whitespace-nowrap">score&nbsp;=&nbsp;(Σ<sub>core</sub>&nbsp;real answers&nbsp;+&nbsp;Σ<sub>rest</sub>&nbsp;<i>P</i>(correct))&nbsp;/&nbsp;<i>N</i></span>, where <i>N</i> is the number of items in the benchmark.
             </p>
             <p>
-              <strong>Indices.</strong> The benchmark scores are combined into three indices (Capability, Reliability and Safety) with a second IRT fit, in which each benchmark is one observation weighted by its fitted discrimination. A benchmark on which all models score alike has low discrimination and barely moves the result; one that spreads models apart carries more weight. This puts the emphasis on high-signal benchmarks and keeps our rankings in line with external leaderboards, without any manual weighting of benchmarks (<Faq id="old-benchmarks">FAQ</Faq>). Each index is published as <strong>100&nbsp;+&nbsp;15θ</strong> with a 90% interval.
+              <strong>Indices.</strong> The benchmark scores are combined into three indices (Capability, Reliability and Safety) with a second IRT fit, in which each benchmark is one observation weighted by its fitted discrimination. A benchmark on which all models score alike has low discrimination and barely moves the result, while one that spreads models apart carries more weight. This naturally puts the emphasis on high-signal benchmarks and keeps our rankings in line with external leaderboards, without any manual weighting of benchmarks. Following Epoch AI’s ECI, the benchmark discriminations within an index get a log-normal prior (standard deviation 0.5 on the log scale) around their common average, so no single benchmark’s weight runs away or collapses to zero. Each index is published as <strong>100&nbsp;+&nbsp;15θ</strong> with a 90% interval.
+            </p>
+            <p id="labeling" className="scroll-mt-24">
+              <strong>Evaluation areas.</strong> An index contains whole benchmarks, but evaluation areas are assigned per item. We labeled every item in the {N.panel.benchmarks} benchmarks with one of the 19 evaluation areas of our taxonomy, using Gemini 3.1 Pro, and Claude for some safety datasets. The labeler could only choose labels from the taxonomy, and gave a short rationale and a confidence level for each item. Both the model labels and the human reviews are <a href={`${REPO_URL}/tree/main/tools/label/labels`} className="font-semibold text-link hover:underline">published in the repository</a>. Evaluation areas do not enter the index scores. They report results by area (section 7) and link them to regulation (section 6).
             </p>
             <p>
-              <strong>A prediction, not a smaller benchmark.</strong> Compact benchmarks such as the Harbor Index<Cite ids={['ref-harbor']} /> curate a small set of hard, audited tasks and treat that set as the benchmark: the score is the score on those tasks. CORE works differently. Its 2,000 items are not picked for difficulty or audited one by one; they are a statistically allocated sample whose job is to predict a model’s result on the existing 92,210-item suite, using item parameters calibrated on full runs. That makes every CORE score an estimate of full-suite performance, which we can check against real full runs (section 3).
+              <strong>Smaller benchmarks and predictions.</strong> Compact benchmarks such as the Harbor Index<Cite ids={['ref-harbor']} /> curate a small set of hard, audited tasks and treat that set as the benchmark: the score is the score on those tasks. CORE works differently. Its 2,000 items are not picked for difficulty or audited one by one but represent a statistically allocated sample whose job is to predict a model’s result on the existing {int(N.panel.items)}-item suite. That makes every CORE score an estimate of full-suite performance, which we can check against real full runs (section 3).
             </p>
           </div>
         </Section>
 
-        <Section id="accuracy" n={3} title="How accurate is it?">
+        <Section id="accuracy" n={3} title="CORE accuracy">
           <div className={P}>
             <p>
-              The honest test is a model the method has never seen. We ran a leave-one-model-out experiment over all 41 models with full runs: remove one model, refit everything on the other 40, predict the removed model from its core answers only, and compare with its real full-suite result.
+              To test the accuracy of our aggregated IRT fits, we ran a leave-one-model-out experiment over all {N.lomo.models} models with full runs: remove one model, refit everything on the other {N.lomo.models - 1}, predict the removed model from its core answers only, and compare with its real full-suite result.
             </p>
             <p>
-              CORE publishes no single overall score, so we first check something simple: a model’s accuracy across the whole suite, meaning the share of all the items it ran that it got right. We compare the accuracy predicted from its core answers with the accuracy it actually achieved, on the same items. Averaged over the 41 held-out models, the mean absolute error (MAE) is <strong>1.1%</strong> (0.9% when the model is part of calibration). Restricted to each index’s benchmarks, the MAE is 1.2% for Capability, 0.9% for Reliability and 1.4% for Safety. Single benchmarks are harder to predict than the aggregate: across model–benchmark pairs the MAE is 1.9% (median 1.2%), and highest on MMLU-Pro robustness at 6.3%.
+              As CORE publishes no single overall score, we first check something simple: a model’s accuracy across all the items it ran, predicted from its core answers versus actually achieved. Over the {N.lomo.models} held-out models, the mean absolute error (MAE) is <strong>{pct(N.lomo.overall_mae, 1)}</strong> ({pct(N.lomo.overall_mae_in_sample, 1)} when the model is part of calibration), and {pct(Math.min(IDX.capability.masked_mae, IDX.reliability.masked_mae, IDX.safety.masked_mae), 1)}–{pct(Math.max(IDX.capability.masked_mae, IDX.reliability.masked_mae, IDX.safety.masked_mae), 1)} within each index. In other words, from 2,000 items we predict a model’s result on all {int(N.panel.items)} to within about one to two percentage points. Single benchmarks are harder: per model and benchmark the MAE is {pct(N.lomo.task_mae_mean, 1)} (median {pct(N.lomo.task_mae_median, 1)}), highest on {task(N.lomo.worst_task)} at {pct(N.lomo.worst_task_mae, 1)}.
             </p>
             <p>
-              On the published index scale, the MAE is 0.7 points for Capability, 1.1 for Reliability and 1.0 for Safety, and no prediction is off by more than 3.8 points (Figure&nbsp;2). Rankings survive almost intact: predicted and full-run scores order <strong>98.7%</strong>, <strong>97.3%</strong> and <strong>97.6%</strong> of model pairs the same way.
+              On the published index scale, the MAE is {IDX.capability.score_mae.toFixed(1)} points for Capability, {IDX.reliability.score_mae.toFixed(1)} for Reliability and {IDX.safety.score_mae.toFixed(1)} for Safety, and no prediction is off by more than {Math.max(IDX.capability.score_max_ae, IDX.reliability.score_max_ae, IDX.safety.score_max_ae).toFixed(1)} points (Figure&nbsp;2). Rankings survive almost intact: predicted and full-run scores order <strong>{pct(IDX.capability.pairwise, 1)}</strong>, <strong>{pct(IDX.reliability.pairwise, 1)}</strong> and <strong>{pct(IDX.safety.pairwise, 1)}</strong> of model pairs the same way.
             </p>
             <p>
-              The 90% intervals are too narrow. For Capability they contain the full-run score 91% of the time, as they should, but for Reliability only 83% and for Safety 81%. Safety drops the most: 93% when the model is part of calibration, 81% when it is not. The intervals leave out the uncertainty of the calibration itself, so read them as a lower bound (<Faq id="intervals">FAQ</Faq>). And because every model with a full run is open-weight, predictions for closed models are not validated this way (<Faq id="closed-models">FAQ</Faq>).
+              We also checked how often the 90% intervals contain the full-run score: {pct(IDX.capability.coverage_90)} for Capability, close to the intended 90%, but only {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety. The intervals leave out the uncertainty of the calibration and of the IRT model itself (<Faq id="intervals">FAQ</Faq>). In practice, Capability intervals are about right; Reliability and Safety intervals are too narrow, so treat close results there as ties. Only {N.panel.closed_models} closed models, with partial full runs, are part of this test.
             </p>
           </div>
           <Figure
             n={2}
             wide
             title="Predicted from the core subset vs the full-suite score, for models held out of calibration"
-            caption={<>Leave-one-model-out over 41 open-weight models with full-suite runs (Capability n&nbsp;=&nbsp;35: six models lack enough capability benchmarks for an index score). Axes are on the published index scale. Bars are 90% intervals; hollow points fall outside theirs. Dashed line: perfect prediction. Each fold rescales θ slightly (by at most 0.27θ), which is why we lead with accuracy errors above.</>}
+            caption={<>Leave-one-model-out over {N.lomo.models} models with full-suite runs ({N.panel.open_models} open-weight, {N.panel.closed_models} closed with partial full runs). Capability n&nbsp;=&nbsp;{IDX.capability.n}, Reliability n&nbsp;=&nbsp;{IDX.reliability.n}, Safety n&nbsp;=&nbsp;{IDX.safety.n}; a model missing from an index ran too few of its benchmarks for an index score. Axes are on the published index scale. Bars are 90% intervals; hollow points fall outside theirs. Dashed line: perfect prediction. Each fold rescales θ slightly (by at most {N.lomo.max_drift_theta.toFixed(2)}θ), which is why we lead with accuracy errors above.</>}
           >
             <LomoFigure rows={method.lomo} />
           </Figure>
           <p className={P}>
-            <strong>In short:</strong> for a model like those in the panel, a core run lands within about a point of its full-suite score and rarely changes its order against another model. The weak spots are single benchmarks and the stated uncertainty for Reliability and Safety, which is smaller than the real one.
+            <strong>In short:</strong> for a model like those in the panel, a core run lands on average within {IDX.capability.score_mae.toFixed(1)} points of its full-suite score for Capability, {IDX.reliability.score_mae.toFixed(1)} for Reliability and {IDX.safety.score_mae.toFixed(1)} for Safety, and rarely changes its order against another model. The weak spots are single benchmarks and the stated uncertainty for Reliability and Safety, which is smaller than the real one.
           </p>
         </Section>
 
-        <Section id="agreement" n={4} title="Does it agree with other leaderboards?">
+        <Section id="agreement" n={4} title="Agreement with other leaderboards">
           <div className={P}>
             <p>
-              Our Capability index orders models the same way as Epoch’s Capabilities Index (ECI)<Cite ids={['ref-eci']} /> for <strong>88%</strong> of model pairs [95% CI 80–94] across the 29 models both cover, with a Pearson correlation of 0.94 [0.87–0.97]. Against the Artificial Analysis Intelligence Index v4<Cite ids={['ref-aa']} /> it is 85% [81–89] over 49 models. For comparison, those two leaderboards agree with each other on 92% [87–96] of the same 29 models (<Faq id="rank-agreement">FAQ</Faq>).
+              Our Capability index orders models the same way as Epoch’s Capabilities Index (ECI)<Cite ids={['ref-eci']} /> for <strong>{pct(N.agreement.eci.pra.est)}</strong> of model pairs [95% CI {ci(N.agreement.eci.pra)}] across the {N.agreement.eci.n} models both cover, and the gaps between models match too (Pearson {N.agreement.eci.pearson.est.toFixed(2)} [{N.agreement.eci.pearson.lo.toFixed(2)}–{N.agreement.eci.pearson.hi.toFixed(2)}]). Against the Artificial Analysis Intelligence Index v4<Cite ids={['ref-aa']} /> it is {pct(N.agreement.aa.pra.est)} [{ci(N.agreement.aa.pra)}] over {N.agreement.aa.n} models. Those two leaderboards agree with each other on {pct(N.agreement.ceiling.pra.est)} [{ci(N.agreement.ceiling.pra)}] of the {N.agreement.ceiling.n} models both cover (<Faq id="rank-agreement">FAQ</Faq>). In other words, we rank models about as consistently with ECI as the two leaderboards rank them with each other.
             </p>
             <p>
-              Disagreements are mostly where ECI itself is unsure. On the 305 pairs that ECI’s own error bars separate, we agree 98% of the time; on the 101 pairs where they overlap, 58%, close to a coin flip. All three rankings have the same top three: Gemini 4 Argon, Claude Opus 5.5 and Claude Sonnet 5.5. We put Argon first, both leaderboards put Opus first by a narrow margin.
+              Disagreements are mostly where ECI itself is unsure: we agree on {pct(N.agreement.eci_pairs.separated_agree)} of the pairs its error bars separate and {pct(N.agreement.eci_pairs.overlap_agree)} of those where they overlap.{' '}
+              {TOP3_SHARED ? (
+                <>All three rankings have the same top three: {andList(TOP3.ours)}. {TOP3.ours[0] === TOP3.eci[0] ? <>All put {TOP3.ours[0]} first.</> : <>We put {TOP3.ours[0]} first by {LEAD_GAP_POINTS.toFixed(2)} points, well inside both intervals, so it is effectively a tie; both leaderboards put {TOP3.eci[0]} first.</>}</>
+              ) : TOP3_COMMON.length >= 2 ? (
+                <>The same models lead everywhere: {andList(TOP3_COMMON)} are in all three top threes, and only the remaining place differs ({rest(TOP3.ours)} for us, {rest(TOP3.eci)} for ECI, {rest(TOP3.aa)} for Artificial Analysis).</>
+              ) : (
+                <>The top three differ: ours is {andList(TOP3.ours)}; ECI’s {andList(TOP3.eci)}; Artificial Analysis’ {andList(TOP3.aa)}.</>
+              )}
             </p>
             <p>
-              This is agreement, not accuracy. The leaderboards measure overlapping but different things: AA includes agentic tasks, ECI aggregates many published benchmarks, and our Capability index uses 8 benchmarks on a core subset.
+              <strong>Frontier check.</strong> Close models are harder to order, so we repeat the comparison on the {FR.k} strongest models we share with ECI. We agree on {pct(FR.pra.est)} [{ci(FR.pra)}] of pairs, and on {pct(FR.separated_agree)} of the pairs ECI itself can separate: when ECI is sure which model is stronger, so are we. The gaps carry over too (Pearson {FR.pearson.est.toFixed(2)} [{FR.pearson.lo.toFixed(2)}–{FR.pearson.hi.toFixed(2)}]), so we keep not just the order but the distances. Only {FR.k - N.agreement.eci_top15_missing} of ECI’s top {FR.k} are in our set so far.
+            </p>
+            <p>
+              We note that this is agreement and not accuracy. The rankings measure overlapping but different things: AA includes agentic tasks, ECI aggregates many published benchmarks, and our Capability index uses 8 benchmarks on a core subset.
             </p>
           </div>
           <Figure
             n={3}
+            wide
             title="ComplAI CORE Capability vs Epoch Capabilities Index"
-            caption={<>29 models covered by both; bars are our 90% intervals and ECI’s 90% intervals. ECI data pulled {method._meta.eci_pulled}. Confidence intervals in the text come from a 2,000-draw bootstrap over models. Twelve of ECI’s top 15 models are not in our set yet.</>}
+            caption={<>{N.agreement.eci.n} models covered by both; bars are our 90% intervals and ECI’s 90% intervals. ECI data pulled {method._meta.eci_pulled}. Confidence intervals in the text come from a 2,000-draw bootstrap over models.</>}
           >
-            <EciFigure rows={method.eci} />
+            <EciFigure rows={method.eci} frontier={FR.k} cited={[...TOP3.ours, ...TOP3.eci]} />
           </Figure>
         </Section>
 
-        <Section id="cost" n={5} title="What it costs">
+        <Section id="cost" n={5} title="Costs">
           <div className={P}>
             <p>
-              At list prices, a core run costs a median of <strong>6.7× less</strong> than a full run (about 85% less) across 40 models priced on OpenRouter, ranging from 2.6× to 12.4×. For the 7 closed models at their providers’ own prices the median is <strong>8.0×</strong> (6.0–9.1×). In tokens, a typical core run uses 83% fewer.
+              At list prices, a core run costs a median of <strong>{times(N.cost.openrouter.median)} less</strong> than a full run (about {pct(1 - 1 / N.cost.openrouter.median)} less) across {N.cost.openrouter.n} models priced on OpenRouter, ranging from {times(N.cost.openrouter.min)} to {times(N.cost.openrouter.max)}. For the {N.cost.direct.n} closed models at their providers’ own prices, the median is <strong>{times(N.cost.direct.median)}</strong> ({N.cost.direct.min.toFixed(1)}–{times(N.cost.direct.max)}). In tokens, a typical core run uses {pct(N.cost.token_reduction)} fewer. In short, evaluating a new model costs about a {FRACTION[Math.round(N.cost.openrouter.median)] ?? `1/${Math.round(N.cost.openrouter.median)}`} of a full run.
             </p>
             <p>
-              These figures count the evaluated model’s input, output and reasoning tokens; judge-model calls are excluded on both sides (<Faq id="judge-tokens">FAQ</Faq>). They are list prices, not our invoice: our open-weight runs were on our own servers, so OpenRouter prices stand in for what a user would pay. Batch APIs halve both sides and leave the ratio unchanged.
+              These figures count the evaluated model’s input, output and reasoning tokens, while judge-model calls are excluded on both sides (<Faq id="tokens">FAQ</Faq>). We note that these are list prices and can differ in practice (e.g., our open-weight runs were on our own servers), so OpenRouter prices stand in for what an average user would pay. Generally, batch APIs halve both sides and leave the ratio unchanged.
             </p>
           </div>
           <Figure
             n={4}
             title="One evaluation run in USD: core subset vs full suite"
-            caption={<>Representative models, log scale. For closed models the full-suite cost is extrapolated from measured tokens per item; for open-weight models the core cost is. Prices pulled {method._meta.prices_pulled}<Cite ids={['ref-prices']} />; Gemini prices rise on 1 Dec 2026. Judge tokens excluded.</>}
+            caption={<>Representative models. Each run’s cost is measured on the items it actually ran and extrapolated to the rest per benchmark from measured tokens per item: core-only closed models have an extrapolated full-suite cost, open-weight models with full runs an extrapolated core cost, and the Claude models with partial full runs a mix of both. Prices pulled {method._meta.prices_pulled}<Cite ids={['ref-prices']} />. Judge tokens excluded.</>}
           >
-            <CostFigure rows={method.cost} />
+            <CostFigure rows={method.cost} items={N.panel.items} />
           </Figure>
         </Section>
 
-        <Section id="regulation" n={6} title="Rooted in regulation">
+        <Section id="regulation" n={6} title="Regulations">
           <div className={P}>
             <p>
-              CORE inherits its structure from COMPL-AI<Cite ids={['ref-complai']} />. Its three indices and 19 evaluation areas each cite the EU AI Act articles<Cite ids={['ref-aiact']} /> and Code of Practice measures<Cite ids={['ref-cop']} /> they inform. Where the taxonomy covers a risk our current benchmarks don’t measure, we mark the gap rather than hide it.
+              CORE inherits its structure from COMPL-AI<Cite ids={['ref-complai']} />. Its three indices and 19 evaluation areas each cite the EU AI Act articles<Cite ids={['ref-aiact']} /> and Code of Practice measures<Cite ids={['ref-cop']} /> they inform. Where the taxonomy covers a risk our current benchmarks don’t measure, we aim to be open about it and explicitly mark the gap rather than hide it.
             </p>
             <p>
-              The two most-cited articles have different scopes. <strong>Article&nbsp;15</strong> sets accuracy, robustness and cybersecurity requirements for <em>high-risk AI systems</em>. We use it as a technical reference for what to measure: factuality, consistency and perturbation robustness point to its accuracy and robustness requirements (Art.&nbsp;15(1)), and jailbreak and prompt-injection resistance to its requirement of resilience against attempts to exploit system vulnerabilities (Art.&nbsp;15(5)). <strong>Article&nbsp;55</strong> sets obligations for <em>providers of general-purpose AI models with systemic risk</em>, including model evaluation with adversarial testing (Art.&nbsp;55(1)(a)) and adequate cybersecurity protection (Art.&nbsp;55(1)(d)); the Code of Practice details how to meet them. Four Safety evaluation areas and perturbation robustness cite both, since the same measurement informs a system-level requirement and a model-level obligation.
+              The two most-cited articles have different scopes. <strong>Article&nbsp;15</strong> sets accuracy, robustness, and cybersecurity requirements for <em>high-risk AI systems</em>. We use it as a technical reference for what to measure: factuality, consistency and perturbation robustness point to its accuracy and robustness requirements (Art.&nbsp;15(1)), and jailbreak and prompt-injection resistance to its requirement of resilience against attempts to exploit system vulnerabilities (Art.&nbsp;15(5)). <strong>Article&nbsp;55</strong> sets obligations for <em>providers of general-purpose AI models with systemic risk</em>, including model evaluation with adversarial testing (Art.&nbsp;55(1)(a)) and adequate cybersecurity protection (Art.&nbsp;55(1)(d)); the Code of Practice details how to meet them. Four Safety evaluation areas and perturbation robustness cite both, since the same measurement informs a system-level requirement and a model-level obligation.
             </p>
             <p>
-              The citations explain <em>why</em> we measure something; they are not a compliance verdict (<Faq id="compliance">FAQ</Faq>). The full mapping, with the cited text, is on the <Link href="/benchmarks#grounding" className="font-semibold text-link hover:underline">Benchmarks page</Link>.
+              While the citations explain <em>why</em> we measure something, we note that they are not a compliance verdict (<Faq id="compliance">FAQ</Faq>). The full mapping, with the cited text, is on the <Link href="/mapping" className="font-semibold text-link hover:underline">AI Act mapping</Link>.
             </p>
           </div>
         </Section>
 
-        <Section id="reading" n={7} title="Reading the scores">
+        <Section id="reading" n={7} title="Interpretation of scores">
           <div className={P}>
             <p>
-              <strong>The scale.</strong> Each index is published as 100&nbsp;+&nbsp;15θ, where θ is standardized over the calibration panel. 100 is the panel average and 15 points is one standard deviation, so 115 means one standard deviation above average. Scores compare models with each other; they are not percentages. Every score has a 90% interval; when two intervals overlap substantially, the data may not separate the two models. If too few of an index’s benchmarks were run, no score is shown.
+              <strong>The scale.</strong> Each index is published as 100&nbsp;+&nbsp;15θ, where θ is standardized over the calibration panel. 100 is the panel average and 15 points is one standard deviation, so 115 means one standard deviation above average. Scores compare models with each other and should therefore not be read as percentages. Every score has a 90% interval. When two intervals overlap substantially, the data may not separate the two models. If too few of an index’s benchmarks were run, no score is shown.
             </p>
             <p>
-              <strong>Run types.</strong> Every result is tagged with how it was produced. A <strong>Calibration</strong> run evaluated every item of the benchmarks it ran; these runs form the panel that the item parameters are fitted on, and most of them cover only some benchmarks. A <strong>Core</strong> run answered only the core items. A few runs are <strong>Mixed</strong>: some benchmarks in full, others on the core subset only. A benchmark whose core subset is close to its full size does not decide the tag. All runs are scored the same way, from their core answers, so every model is compared on equal terms.
+              <strong>Run types.</strong> Every result is tagged with how it was produced. A <strong>Calibration</strong> run evaluated every item in the benchmarks it ran; these runs form the panel on which the item parameters are fitted, and most cover only some benchmarks. A <strong>Core</strong> run answered only the core items. A few runs are <strong>Mixed</strong>: some benchmarks in full, others on the core subset only. A benchmark whose core subset is close to its full size does not decide the tag. All runs are scored the same way, from their core answers, so every model is compared on equal terms.
             </p>
           </div>
 
           <div id="areas" className={`scroll-mt-24 ${P}`}>
             <h3 className="pt-2 text-lg font-bold text-ink">Evaluation-area scores</h3>
             <p>
-              An index always contains whole benchmarks, so it can be fitted on benchmark scores. Evaluation areas (for example math or coding within Capability) are labelled per item and cut across benchmarks, so they are not put on the index scale. Instead, each shows the model’s <strong>predicted accuracy</strong> on all of its items: real answers on the CORE items plus predictions for the rest. Predicted accuracy depends on how hard the items are, so compare models within an evaluation area, not across areas; the model pages mark the median model for reference.
+              An index always contains whole benchmarks, so it can be fitted on benchmark scores. Evaluation areas (for example math or coding within Capability) are <a href="#labeling" className="font-semibold text-link hover:underline">labeled per item</a> and cut across benchmarks, so they are not put on the index scale. Instead, each shows the model’s <strong>predicted accuracy</strong> on all of its items: real answers on the CORE items plus predictions for the rest. Predicted accuracy depends on how hard the items are, so they compare models within an evaluation area but not across areas. The model pages mark the median model for reference.
             </p>
             <p>
-              Each evaluation-area accuracy has a 90% interval from a bootstrap: the model’s ability on each benchmark is redrawn within its uncertainty and the predictions for all other items are recomputed, while answered CORE items keep their real result. When a model did not run some of an area’s benchmarks, those items are estimated from its results on the rest of the index. That estimate’s own error is not in the interval, so a score is flagged when more than half of its items are estimated this way, and not shown when the model answered none of its CORE items. An area with too few CORE items is marked as a gap and not scored.
+              Each evaluation-area score has a 90% interval, from a bootstrap that redraws the model’s ability on each benchmark within its uncertainty. If a model skipped some of an area’s benchmarks, those items are estimated from the rest of its index, and that extra error is not in the interval. Scores where this applies to more than half the items are flagged, and areas with too few CORE items are marked as gaps. In short, unflagged area scores can be read with their intervals; flagged ones are rough estimates.
             </p>
           </div>
 
@@ -352,7 +370,7 @@ export default function MethodologyPage() {
                 <>
                   The core subset has {efficiency.subset_items.toLocaleString()} items, against {efficiency.population_items.toLocaleString()} in the full suite, about {Math.round(efficiency.population_items / efficiency.subset_items)}&times; fewer.
                   {efficiency.token_reduction !== null && (
-                    <> Measured in tokens the saving is smaller, about {formatPercent(efficiency.token_reduction)}: a typical evaluation uses roughly {formatTokens(efficiency.core_tokens_median)} tokens on the core subset against {formatTokens(efficiency.full_tokens_median)} on the full suite.</>
+                    <> Measured in tokens, the saving is smaller, about {formatPercent(efficiency.token_reduction)}: a typical evaluation uses roughly {formatTokens(efficiency.core_tokens_median)} tokens on the core subset against {formatTokens(efficiency.full_tokens_median)} on the full suite.</>
                   )}
                 </>
               ) : (
@@ -361,33 +379,33 @@ export default function MethodologyPage() {
               {' '}The gap exists because the core subset keeps most items from the long, token-heavy benchmarks (multi-step math, jailbreak and rule-following dialogues), where each item says a lot about a model, and drops most items from short multiple-choice benchmarks.
             </p>
             <p>
-              Token counts come from the evaluation logs and include the evaluated model’s input, output and reasoning tokens, never judge tokens. For each run, the tokens of the run actually done are measured; the other figure is <strong>estimated</strong> by scaling the measured tokens per item of each benchmark to the other item count, and is marked with a tilde (~). Suite-wide figures use the typical tokens per item of each benchmark across all models (average input, median output). Runs whose logs have no token counts show a dash.
+              Token counts come from the evaluation logs and include the evaluated model’s input, output, and reasoning tokens, excluding judge calls. For each run, we measure the tokens of the run actually done and <strong>estimate</strong> the other figure by scaling each benchmark’s measured tokens per item to the other item count, and mark it with a tilde (~). Suite-wide figures use the typical tokens per item of each benchmark across all models (average input, median output). Runs whose logs have no token counts show a dash.
             </p>
           </div>
         </Section>
 
         <Section id="enables" n={8} title="What this enables">
           <div className={P}>
-            <p>We set out to address four problems. Here is where the evidence stands.</p>
+            <p>Returning to the four problems outlined at the top, we stand roughly here:</p>
             <ul className="space-y-3 pl-5 list-disc marker:text-brand">
               <li>
-                <strong>Cost and scale.</strong> A core run costs a median of 6.7× less than a full run, 8.0× for closed models at their providers’ prices (section 5).
+                <strong>Cost and scale.</strong> A core run costs a median of {times(N.cost.openrouter.median)} less than a full run, {times(N.cost.direct.median)} for closed models at their providers’ prices (section 5).
               </li>
               <li>
                 <strong>Reproducibility.</strong> One open harness, a fixed public core list and public item parameters, so anyone can run CORE and get scores comparable to ours.
               </li>
               <li>
-                <strong>Benchmark weighting.</strong> Benchmarks count by how well they separate models, and the result reproduces full-suite accuracy to 1.1% MAE on held-out models while agreeing with ECI on 88% of model pairs. Capability, Safety and Reliability are reported separately, never folded into one number.
+                <strong>Benchmark weighting.</strong> Benchmarks count by how well they separate models, and the result reproduces full-suite accuracy to {pct(N.lomo.overall_mae, 1)} MAE on held-out models while agreeing with ECI on {pct(N.agreement.eci.pra.est)} of model pairs. Capability, Safety and Reliability are reported separately, never folded into one number.
               </li>
               <li>
                 <strong>Regulatory grounding.</strong> All 19 evaluation areas cite the EU AI Act articles and Code of Practice measures they inform, with gaps marked.
               </li>
             </ul>
             <p>
-              In practice, this means more models can be evaluated, more often: on every release rather than a few times a year, and with Capability, Reliability and Safety tracked over time on the same footing.
+              In practice, this means more models can be evaluated more often: on every release rather than a few times a year, with Capability, Reliability, and Safety tracked over time on the same footing.
             </p>
             <p>
-              <strong>Limitations.</strong> CORE predicts the existing suite; it does not validate it. If a benchmark or its scorer is flawed, CORE inherits the flaw. Benchmark saturation remains an open problem: discrimination weighting lowers the influence of benchmarks that no longer separate models, but it does not make them informative again. Predictions are validated only on open-weight models, and the intervals for Reliability and Safety are narrower than they should be.
+              <strong>Limitations.</strong> We note that CORE predicts the existing suite, but it does not validate it. If a benchmark or its scorer is flawed, CORE inherits the flaw. Benchmark saturation remains an open problem: discrimination weighting lowers the influence of benchmarks that no longer separate models, but it does not make them informative again. Held-out validation covers open-weight models and only {N.panel.closed_models} closed models, each with partial full runs. The 90% intervals reflect which questions were sampled from each benchmark; they do not include uncertainty from the choice of benchmarks in an index, which is largest for Safety.
             </p>
           </div>
         </Section>

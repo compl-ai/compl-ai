@@ -5,11 +5,13 @@ import { Eyebrow } from '@/components/layout/Eyebrow';
 
 // Commands are copied from the repository README; keep them in sync with it.
 const INSTALL = [
+  '# requires uv',
   'git clone https://github.com/compl-ai/compl-ai.git',
   'cd compl-ai',
   'uv sync',
   'source .venv/bin/activate',
   'export OPENAI_API_KEY=your_key',
+  '# needs access to the gated benchmark datasets',
   'export HF_TOKEN=your_token',
 ];
 
@@ -69,10 +71,7 @@ export function RunCore({ subsetItems }: { subsetItems: number | null }) {
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start">
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-ink">Install</h3>
-            <p className="mt-1 mb-3 text-sm text-muted-foreground">
-              Requires <code className="font-mono text-[13px]">uv</code>. <code className="font-mono text-[13px]">HF_TOKEN</code> needs access to the gated benchmark datasets.
-            </p>
+            <h3 className="mb-3 text-lg font-bold text-ink">Install</h3>
             <CopyCommand lines={INSTALL} />
           </div>
           <div className="lg:pt-9 space-y-2 text-sm">

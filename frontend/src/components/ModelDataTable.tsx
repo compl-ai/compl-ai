@@ -96,7 +96,7 @@ function SortableHead({ label, sortKey, sort, onSort, align = 'left', className 
 
 export function ModelDataTable({ initialModels, initialRows, heading }: {
   initialModels: JoinedModelData[],
-  // Rendered left of the filter box, which aligns to its bottom.
+  // Rendered above the filter row.
   heading?: React.ReactNode,
   // Rows shown before "Show all"; searching always shows every match.
   initialRows?: number,
@@ -143,15 +143,18 @@ export function ModelDataTable({ initialModels, initialRows, heading }: {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        {heading}
+      {heading}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <Input
           type="search"
           placeholder="Filter by model or organization…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-72 h-10 px-4 rounded-full bg-card text-sm md:ml-auto shrink-0"
+          className="h-10 w-full rounded-full bg-card px-4 text-sm md:w-72"
         />
+        <p className="text-sm tabular-nums text-muted-foreground md:ml-auto">
+          {filtered.length === initialModels.length ? `${initialModels.length} models` : `${filtered.length} of ${initialModels.length} models`}
+        </p>
       </div>
 
       <div className="overflow-x-auto">

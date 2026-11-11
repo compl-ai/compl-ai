@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import type { JoinedModelData } from '@/lib/data';
-import { INDICES, formatInterval, formatScore, getIndexTheta } from '@/lib/scores';
+import { INDICES, formatInterval, formatRelease, formatScore, getIndexTheta } from '@/lib/scores';
 import type { AreaStanding } from '@/app/models/strengths';
 import { paramsOf } from '@/components/home/explorer';
 import { ProviderLogo } from '@/components/ProviderLogo';
+import { MicroLabel, Stat, StatGrid, baseCardClass } from '@/components/ui/base-card';
 
 function formatSize(n: number): string {
   return n >= 1e12 ? `${+(n / 1e12).toFixed(1)}T` : `${Math.round(n / 1e9)}B`;
@@ -18,22 +19,14 @@ function WeightsTag({ open }: { open: boolean }) {
   );
 }
 
-function formatRelease(date: string): string {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return date;
-  const month = parsed.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
-  return `${month} '${String(parsed.getUTCFullYear()).slice(-2)}`;
-}
-
 function StandingList({ label, items, tone }: { label: string; items: AreaStanding[]; tone: 'strong' | 'weak' }) {
   const Icon = tone === 'strong' ? ArrowUpRight : ArrowDownRight;
   return (
     <div>
-      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.02em] text-muted-foreground">
-        <Icon className={`size-3.5 shrink-0 ${tone === 'strong' ? 'text-[#6CBC7D]' : 'text-brand'}`} strokeWidth={2.5} aria-hidden />
+      <MicroLabel icon={<Icon className={`size-3.5 shrink-0 ${tone === 'strong' ? 'text-success' : 'text-brand'}`} strokeWidth={2.5} aria-hidden />}>
         {label}
-      </div>
-      <p className="mt-0.5 text-[13px] leading-snug text-ink">
+      </MicroLabel>
+      <p className="mt-0.5 text-xs leading-snug text-ink">
         {items.map((s, i) => (
           <span key={s.key} title={`Rank ${s.rank} of ${s.of} models in this evaluation area`}>
             {s.name}
@@ -46,15 +39,29 @@ function StandingList({ label, items, tone }: { label: string; items: AreaStandi
 }
 
 /** Org logo · release · size · Open/Proprietary, shared by the card and the model page. */
-export function ModelMeta({ model, className = '', logoClassName = '' }: { model: JoinedModelData; className?: string; logoClassName?: string }) {
+export function ModelMeta({
+  model,
+  className = '',
+  logoClassName = '',
+  showActive = false,
+  longDate = false,
+}: {
+  model: JoinedModelData;
+  className?: string;
+  logoClassName?: string;
+  /** Spell out active parameters for mixture-of-experts models, e.g. "8B (5B active)". */
+  showActive?: boolean;
+  /** "Released July 2026" instead of "Jul '26". */
+  longDate?: boolean;
+}) {
   const meta = model.metadata;
   const total = paramsOf(model);
   const active = meta?.specs?.active_params;
   const parts: { key: string; text: string; title?: string }[] = [
     { key: 'org', text: meta?.organization || 'Unknown organization' },
-    ...(meta?.release_date ? [{ key: 'release', text: formatRelease(meta.release_date) }] : []),
+    ...(meta?.release_date ? [{ key: 'release', text: formatRelease(meta.release_date, longDate) }] : []),
     ...(total
-      ? [{ key: 'size', text: formatSize(total), title: active && active !== total ? `${formatSize(total)} total, ${formatSize(active)} active parameters` : `${formatSize(total)} parameters` }]
+      ? [{ key: 'size', text: showActive && active && active !== total ? `${formatSize(total)} (${formatSize(active)} active)` : formatSize(total), title: active && active !== total ? `${formatSize(total)} total, ${formatSize(active)} active parameters` : `${formatSize(total)} parameters` }]
       : []),
   ];
   // Each part is its own flex item so a narrow card wraps between parts, never inside one.
@@ -77,35 +84,28 @@ export function ModelCard({ model, strong, weak }: { model: JoinedModelData; str
   return (
     <Link
       href={`/models/${model.yamlId}`}
-      className="group flex w-full flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-ink/30"
+      className={`group w-full transition-colors hover:border-ink/30 ${baseCardClass}`}
     >
-      <h2 className="font-serif text-lg font-extrabold leading-tight tracking-tight text-ink group-hover:text-link transition-colors">{name}</h2>
-      <ModelMeta model={model} className="mt-2 gap-1.5 text-xs" />
+      <h2 className="font-serif text-base font-bold leading-tight tracking-tight text-ink group-hover:text-link transition-colors">{name}</h2>
+      <ModelMeta model={model} className="mt-1.5 gap-1.5 text-xs" />
 
-      <div className="mt-6 grid grid-cols-3 gap-2">
+      <StatGrid className="mt-4">
         {INDICES.map(index => {
           const theta = getIndexTheta(model, index.id);
           return (
-            <div key={index.id} className="min-w-0" title={index.description}>
-              <div className="truncate text-[10px] font-semibold uppercase tracking-[0.02em] text-muted-foreground">{index.label}</div>
-              {theta ? (
-                <>
-                  <div className="mt-0.5 font-serif text-xl font-extrabold tracking-tight tabular text-ink">{formatScore(theta.theta)}</div>
-                  <div className="text-[11px] text-muted-foreground tabular whitespace-nowrap">{formatInterval(theta.interval)}</div>
-                </>
-              ) : (
-                <>
-                  <div className="mt-0.5 font-serif text-xl font-extrabold tracking-tight text-muted-foreground/50">—</div>
-                  <div className="text-[11px] text-muted-foreground">No score</div>
-                </>
-              )}
-            </div>
+            <Stat
+              key={index.id}
+              title={index.description}
+              label={index.label}
+              value={theta ? formatScore(theta.theta) : <span className="text-muted-foreground/50">—</span>}
+              sub={theta ? formatInterval(theta.interval) : 'No score'}
+            />
           );
         })}
-      </div>
+      </StatGrid>
 
       {(strong.length > 0 || weak.length > 0) && (
-        <div className="mt-5 space-y-2.5">
+        <div className="mt-4 space-y-2">
           {strong.length > 0 && <StandingList label="Excels at" items={strong} tone="strong" />}
           {weak.length > 0 && <StandingList label="Falls behind on" items={weak} tone="weak" />}
         </div>
