@@ -1,34 +1,36 @@
 import type { ExplorerData, JoinedModelData } from '@/lib/data';
 import { INDICES, type IndexId, getIndexTheta, parseParams, scaleTheta } from '@/lib/scores';
 
-export type QuestionId = 'capability-safety' | 'manipulation' | 'over-time' | 'parameters' | 'labs' | 'eval-cost';
+export type QuestionId = 'capability-safety' | 'safety-areas' | 'over-time' | 'parameters' | 'labs' | 'eval-cost';
 
 export interface Question {
   id: QuestionId;
   title: string;
-  context: string;
+  context: string | ((e: ExplorerData) => string);
 }
+
+export const contextOf = (q: Question, e: ExplorerData) => (typeof q.context === 'function' ? q.context(e) : q.context);
 
 export const QUESTIONS: Question[] = [
   {
-    id: 'capability-safety',
-    title: 'Is the most capable model the safest?',
-    context: 'Each model’s Capability score against its Safety or Reliability score. Labelled models sit furthest from the trend, or at the top.',
-  },
-  {
-    id: 'manipulation',
-    title: 'Scaling up makes models harder to manipulate, but not more honest and fair',
-    context: 'How closely each safety area tracks Capability, with release date held fixed. Click a bar to see its models.',
-  },
-  {
     id: 'over-time',
     title: 'Capability, reliability and safety over time',
-    context: 'Every model’s score by release date. Lines track the best open-weight and best proprietary score so far.',
+    context: e => `Every model’s score by release date. Lines track the best open-weight and best proprietary score so far. The lag is how many months later an open-weight model matches the proprietary best, based on ${e.open_lag.n_open} open and ${e.open_lag.n_closed} proprietary models.`,
+  },
+  {
+    id: 'capability-safety',
+    title: 'Is the most capable model the safest?',
+    context: 'Each model’s Capability score against its Safety or Reliability score.',
+  },
+  {
+    id: 'safety-areas',
+    title: 'Which parts of safety are improving?',
+    context: 'Predicted accuracy by release date for three groups of safety areas, each with a linear trend. Areas that tend to move together are grouped.',
   },
   {
     id: 'parameters',
     title: 'Total or active parameters: which buys capability?',
-    context: 'Capability against active or total parameter count for open-weight models, on a log scale. Mixture-of-experts (MoE) models only use part of their parameters per token. Lines are the trend within each architecture.',
+    context: 'Mixture-of-experts (MoE) models only use part of their parameters per token. Lines are the trend within each architecture, on a log scale.',
   },
   {
     id: 'labs',
@@ -115,6 +117,53 @@ export const nameFor = (byId: ModelLookup, id: string) => {
   return m ? nameOf(m) : id.split('/').pop() ?? id;
 };
 
+export const ols = (xs: number[], ys: number[]) => {
+  const n = xs.length;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let sxy = 0;
+  let sxx = 0;
+  xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) ** 2; });
+  const b = sxx ? sxy / sxx : 0;
+  return { a: my - b * mx, b };
+};
+
+// Per-year slope of y on date, with log size held fixed (two-regressor OLS).
+function dateSlope(logSize: number[], years: number[], ys: number[]) {
+  const mean = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
+  const [ms, mt, my] = [mean(logSize), mean(years), mean(ys)];
+  let sss = 0, stt = 0, sst = 0, ssy = 0, sty = 0;
+  ys.forEach((y, i) => {
+    const s = logSize[i] - ms, t = years[i] - mt, d = y - my;
+    sss += s * s; stt += t * t; sst += s * t; ssy += s * d; sty += t * d;
+  });
+  const det = sss * stt - sst * sst;
+  return det ? (sss * sty - sst * ssy) / det : 0;
+}
+
+const YEAR = 365.25 * 864e5;
+
+// Capability shifted to the median release date along the pooled date trend (size held fixed),
+// so older models are not mistaken for weaker architectures; then a log10(total) trend per architecture.
+export function paramsFit(e: ExplorerData, byId: ModelLookup) {
+  const base = e.params.points.flatMap(p => {
+    const m = byId.get(p.id);
+    const d = m ? releaseOf(m) : null;
+    return m && d !== null ? [{ m, ...p, date: d }] : [];
+  });
+  const dates = base.map(r => r.date).sort((a, b) => a - b);
+  const refDate = dates[Math.floor(dates.length / 2)];
+  const perYear = dateSlope(base.map(r => Math.log10(r.total)), base.map(r => r.date / YEAR), base.map(r => r.capability));
+  const rows = base.map(r => ({ ...r, x: r.total, raw: r.capability, capability: r.capability - (perYear * (r.date - refDate)) / YEAR }));
+  const trend = (moe: boolean) => {
+    const g = rows.filter(r => r.moe === moe);
+    if (g.length < 3) return null;
+    const { a, b } = ols(g.map(r => Math.log10(r.x)), g.map(r => r.capability));
+    return { a, b, n: g.length, x0: Math.min(...g.map(r => r.x)), x1: Math.max(...g.map(r => r.x)) };
+  };
+  return { rows, refDate, perYear, dMin: dates[0], dMax: dates[dates.length - 1], trends: { true: trend(true), false: trend(false) } };
+}
+
 export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Record<QuestionId, string> {
   const byId = lookupModels(models);
   const name = (id: string) => nameFor(byId, id);
@@ -130,38 +179,45 @@ export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Recor
   const safeRank = [...scored].sort((a, b) => b.s - a.s).findIndex(d => d.m.id === topCap.m.id) + 1;
   const capRank = [...scored].sort((a, b) => b.c - a.c).findIndex(d => d.m.id === topSafe.m.id) + 1;
   const capabilitySafety = topCap.m.id === topSafe.m.id
-    ? `Mostly. ${nameOf(topCap.m)} leads both, and across ${cs.safety.n} models Capability and Safety rank-correlate at ρ = ${f2(cs.safety.rho_release)} with release date held fixed.`
-    : `No. The most capable model, ${nameOf(topCap.m)}, ranks ${ordinal(safeRank)} of ${scored.length} on Safety, and the safest, ${nameOf(topSafe.m)}, ranks ${ordinal(capRank)} on Capability. With release date held fixed, Capability predicts Safety (ρ = ${f2(cs.safety.rho_release)}) less well than it predicts Reliability (ρ = ${f2(cs.reliability.rho_release)}), and ${cs.safety.top10_overlap} of the 10 most capable models make the Safety top 10.`;
+    ? `Mostly. ${nameOf(topCap.m)} leads both, and across ${cs.safety.n} models Capability and Safety rank-correlate at ρ = ${f2(cs.safety.rho_release)}.`
+    : `No, the most capable model is not the safest. ${nameOf(topCap.m)} ranks ${ordinal(safeRank)} of ${scored.length} on Safety, and the safest, ${nameOf(topSafe.m)}, ranks ${ordinal(capRank)} on Capability. Capability predicts Safety (ρ = ${f2(cs.safety.rho_release)}) less well than it predicts Reliability (ρ = ${f2(cs.reliability.rho_release)}), and ${cs.safety.top10_overlap} of the 10 most capable models make the Safety top 10.`;
 
-  const mp = e.manipulation;
-  const attack = mp.bars.filter(b => b.group === 'attack');
-  const behaviour = mp.bars.filter(b => b.group === 'behaviour');
-  const list = (bars: typeof attack) => bars.map(b => `${b.name.toLowerCase()} ${f2(b.rho_release)}`).join(', ');
-  const manipulation = `With release date held fixed, more capable models are much better at resisting attacks (${list(attack)}; mean ρ = ${f2(mp.mean.attack)}) than at behaving well unprompted (${list(behaviour)}; mean ρ = ${f2(mp.mean.behaviour)}). Capability buys robustness more than it buys honesty, fairness or refusal.`;
+  const sg = Object.fromEntries(e.safety_areas.groups.map(g => [g.id, g]));
+  const ppy = (g: { pp_per_year: number }) => `${signed(g.pp_per_year)} percentage points a year`;
+  const trendPct = (g: { trend: { y: number }[] }, k: number) => `${Math.round(g.trend[k].y)}%`;
+  const inj = sg.injection, ref = sg.refusal, fair = sg.fairness;
+  const safetyAreas = `Resistance to injection attacks is improving fastest, ${ppy(inj)}, from ${trendPct(inj, 0)} on trend in ${fmtMonth(inj.trend[0].date)} to ${trendPct(inj, 1)} in ${fmtMonth(inj.trend[1].date)}. Refusal and honesty (${signed(ref.pp_per_year)}) and fairness (${signed(fair.pp_per_year)}) improve far more slowly.`;
 
   const ol = e.open_lag;
-  const fr = e.frontier;
   const lag = (ix: IndexId) => `${f1(ol[ix].lag_months)} months`;
   const un = ol.safety.oldest_unmatched;
-  const overTime = `Open-weight models trail the best proprietary ones by about ${lag('capability')} on Capability and ${lag('reliability')} on Reliability, but ${lag('safety')} on Safety, ${ol.safety.lag_months >= 2 * Math.max(ol.capability.lag_months, ol.reliability.lag_months) ? 'more than twice as long' : 'longer'}. Safety is also where the whole field moves slowest: from ${fmtMonth(fr.window.from)} to ${fmtMonth(fr.window.to)} the best score rose ${signed(fr.capability.delta)} points on Capability and ${signed(fr.reliability.delta)} on Reliability, but only ${signed(fr.safety.delta)} on Safety. The best open Safety score climbs ${f2(ol.safety.open_slope)} points a month, against ${f2(ol.capability.open_slope)} for Capability, so that gap closes slowly.${un ? ` ${name(un.id)}’s Safety score is still unmatched by any open model ${f1(un.months)} months after its release.` : ''} Based on ${ol.n_open} open and ${ol.n_closed} proprietary models.`;
+  const overTime = `Open-weight models trail the best proprietary ones by about ${lag('capability')} on Capability and ${lag('reliability')} on Reliability. On Safety the gap appears longer, about ${lag('safety')}${un ? `, and ${name(un.id)}’s Safety score is still unmatched by an open model` : ''}.`;
 
-  const pf = e.params.fit;
-  const parameters = `With release date held fixed, each 10× in total parameters goes with ${signed(pf.per_10x_total)} Capability points, while 10× in active parameters adds ${signed(pf.per_10x_active)} once total size is accounted for. Active size alone predicts ${signed(pf.per_10x_active_alone)} per 10×, mostly because it tracks total size. Based on ${pf.n} open models, ${pf.n_moe} of them MoE; MoE models are also newer (median ${fmtMonth(pf.median_release_moe)} vs ${fmtMonth(pf.median_release_dense)}).`;
+  const { trends } = paramsFit(e, byId);
+  const moe = trends.true;
+  const dense = trends.false;
+  let parameters = '';
+  if (moe && dense) {
+    const at = (t: typeof moe, x: number) => t.a + t.b * Math.log10(x);
+    const REF = 30e9;
+    const gap = at(dense, REF) - at(moe, REF);
+    const cross = moe.b !== dense.b ? 10 ** ((dense.a - moe.a) / (moe.b - dense.b)) : null;
+    parameters = `MoE models gain more from scale: each 10× in total parameters adds ${signed(moe.b)} Capability points, against ${signed(dense.b)} for dense models, while using only part of those parameters per token. In absolute terms MoE still trails at the same total size: about ${f1(Math.abs(gap))} points ${gap > 0 ? 'behind' : 'ahead'} at ${fmtParams(REF)}${cross && cross > dense.x1 ? `, with the trends meeting only around ${fmtParams(+cross.toPrecision(1))}, beyond the largest dense model here (${fmtParams(dense.x1)})` : ''}.`;
+  }
 
   const ec = e.eval_cost;
-  const months = Math.round((Math.log(ec.ratio_usd) / Math.log(ec.trend.full_usd.x_per_year)) * 12);
-  const sc = ec.size_control;
-  const coreMax = Math.max(...ec.rows.map(r => r.core_usd));
-  const evalCost = `Evaluating a newly released model on the full suite costs about ${f1(ec.trend.full_usd.x_per_year)}× more each year. That is not just bigger models: among ${sc.n} open models, with total parameters held fixed, the rise is still ${f1(sc.x_per_year)}× a year, because newer models write more tokens (${f1(ec.trend.full_tokens.x_per_year)}× a year) at higher prices per token. CORE cuts every run by ${f1(ec.ratio_usd)}× (${fmtUsd(ec.totals.core_usd)} vs ${fmtUsd(ec.totals.full_usd)} across ${ec.n} models), about ${months} months of that growth: no CORE run here costs more than ${fmtUsd(coreMax)}, so every new release can be checked as it lands. CORE costs rise too, so keeping evaluation cheap is ongoing work.`;
+  const evalCost = `Evaluation gets about ${Math.round(ec.trend.full_usd.x_per_year)}× more expensive every year, and CORE cuts each run by about ${Math.round(ec.ratio_usd)}×. Newer models write more tokens at higher prices, so a full-suite run keeps climbing while CORE rises from a far lower level, keeping evaluation of new foundation models cheap, feasible and reproducible.`;
 
   const ls = e.labs.safety.labs.filter(l => l.lab !== 'Other').sort((a, b) => b.median - a.median);
   const top = ls.slice(0, 2);
   const bottom = ls.at(-1)!;
-  const labs = `Relative to what Capability and release date predict, ${top.map(l => `${l.lab} (median ${signed(l.median)}, ${l.n} models)`).join(' and ')} score highest on Safety and ${bottom.lab} (${signed(bottom.median)}, ${bottom.n} models) lowest. Most labs have only 2–8 models here, so treat this as exploratory.`;
+  const lr = e.labs.reliability.labs.filter(l => l.lab !== 'Other');
+  const near = lr.filter(l => Math.abs(l.median) <= 5).length;
+  const labs = `${top.map(l => l.lab).join(' and ')} lead on Safety, ${bottom.lab} trails. Medians: ${[...top, bottom].map(l => `${l.lab} ${signed(l.median)} (${l.n} models)`).join(', ')}. Our findings are limited to 2–8 models per lab currently. Reliability shows a less clear pattern: ${near} of ${lr.length} labs sit within ±5 points, and the Safety leaders do not carry over (${top.map(l => `${l.lab} ${signed(lr.find(r => r.lab === l.lab)?.median ?? 0)}`).join(', ')}).`;
 
   return {
     'capability-safety': capabilitySafety,
-    manipulation,
+    'safety-areas': safetyAreas,
     'over-time': overTime,
     parameters,
     labs,

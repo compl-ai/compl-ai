@@ -7,9 +7,8 @@ import { Eyebrow } from '@/components/layout/Eyebrow';
 const INSTALL = [
   '# requires uv',
   'git clone https://github.com/compl-ai/compl-ai.git',
-  'cd compl-ai',
-  'uv sync',
-  'source .venv/bin/activate',
+  'cd compl-ai && uv sync && source .venv/bin/activate',
+  '# for the judge models that grade some tasks',
   'export OPENAI_API_KEY=your_key',
   '# needs access to the gated benchmark datasets',
   'export HF_TOKEN=your_token',
@@ -19,7 +18,7 @@ const STEPS = [
   {
     title: 'Evaluate',
     text: 'Run your model on the CORE tasks. This is the default for complai eval.',
-    lines: ['complai eval openai/gpt-5-nano --log-dir logs/'],
+    lines: ['complai eval openai/gpt-5-nano'],
   },
   {
     title: 'Predict',

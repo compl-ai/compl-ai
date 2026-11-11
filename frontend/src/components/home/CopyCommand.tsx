@@ -12,7 +12,7 @@ export function CopyCommand({ lines }: { lines: string[] }) {
   };
   return (
     <div className="relative min-w-0 rounded-xl bg-navy text-white dark:ring-1 dark:ring-border">
-      <pre className="overflow-x-auto px-4 py-3.5 pr-12 font-mono text-[13px] leading-relaxed">
+      <pre className="overflow-x-auto px-4 py-3.5 pr-12 font-mono text-[12px] leading-relaxed">
         {lines.map((l, i) => (
           <div key={i} className={l.startsWith('#') ? 'text-white/50' : ''}>{l}</div>
         ))}

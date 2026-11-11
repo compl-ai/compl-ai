@@ -69,7 +69,7 @@ export interface IndexTheta {
 
 // Scores are null when gap is set: the reason too few subset items cover the label.
 // score_interval is a 90% bootstrap interval of predicted_score. It does not cover the
-// error of imputing benchmarks the model did not run (imputed_items of population_items).
+// error of imputing benchmarks the model did not run (imputed_items of population_items, imputed_weight of the score).
 export interface LabelScore {
   gap: string | null;
   predicted_score: number | null;
@@ -78,10 +78,13 @@ export interface LabelScore {
   population_tasks: number;
   subset_items: number;
   imputed_items: number;
+  imputed_weight?: number;
   observations: number;
   ability: number | null;
   ability_standard_error: number | null;
   observed_subset_score: number | null;
+  // Areas only: each benchmark's weight in predicted_score (its discrimination × its share of its own questions in the area, normalised).
+  task_weights?: Record<string, number>;
   index_theta?: IndexTheta | null;
 }
 
@@ -517,6 +520,17 @@ export interface ExplorerLabStats {
   labs: { lab: string; mean: number; median: number; n: number }[];
 }
 
+export interface ExplorerSafetyGroup {
+  id: 'injection' | 'refusal' | 'fairness';
+  name: string;
+  n: number;
+  members: { id: string; name: string; pp_per_year: number }[];
+  pp_per_year: number;
+  pp_per_year_ci90: [number, number];
+  trend: { date: string; y: number }[];
+  points: { id: string; date: string; y: number }[];
+}
+
 export interface ExplorerData {
   _meta: Record<string, string | number>;
   capability_safety: {
@@ -524,10 +538,9 @@ export interface ExplorerData {
     safety: { rho: number; rho_release: number; n: number; top10_overlap: number };
     reliability: { rho: number; rho_release: number; n: number; top10_overlap: number };
   };
-  manipulation: {
-    bars: { id: string; name: string; group: 'attack' | 'behaviour'; rho: number; rho_release: number; n: number }[];
-    points: Record<string, { id: string; x: number; y: number }[]>;
-    mean: { attack: number; behaviour: number };
+  safety_areas: {
+    groups: ExplorerSafetyGroup[];
+    boot: number;
   };
   open_lag: Record<'capability' | 'reliability' | 'safety', ExplorerLag> & { n_open: number; n_closed: number; as_of: string };
   params: {

@@ -140,6 +140,7 @@ export function hasMeasuredScore(score: LabelScore | undefined): score is LabelS
 }
 
 export function imputedShare(score: LabelScore): number {
+  if (score.imputed_weight !== undefined) return score.imputed_weight;
   return score.population_items > 0 ? score.imputed_items / score.population_items : 0;
 }
 

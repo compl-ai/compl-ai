@@ -1,11 +1,11 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { ReferenceLine } from 'recharts';
-import type { JoinedModelData } from '@/lib/data';
+import type { ExplorerSafetyGroup, JoinedModelData } from '@/lib/data';
 import { type IndexId, INDICES, THETA_MEAN, formatTokens, getIndexTheta, scaleTheta } from '@/lib/scores';
 import {
-  type QuestionId, fmtParams, fmtUsd,
-  indexLabel, indexScore, nameFor, nameOf, releaseOf, shortName, weightsOf,
+  type QuestionId, fmtMonth, fmtParams, fmtUsd,
+  indexLabel, ols, paramsFit, indexScore, nameFor, nameOf, releaseOf, shortName, weightsOf,
 } from './explorer';
 import { type ChartSpec, type Point, ScatterPlot, dateAxis, jitter, logDomain, logTicks, scoreAxis, scoreDomain, scoreTicks } from './ScatterPlot';
 import {
@@ -28,16 +28,6 @@ const scaledInterval = (m: JoinedModelData, idx: IndexId): [number, number] | un
   return t ? [scaleTheta(t.interval[0]), scaleTheta(t.interval[1])] : undefined;
 };
 
-function ols(xs: number[], ys: number[]) {
-  const n = xs.length;
-  const mx = xs.reduce((a, b) => a + b, 0) / n;
-  const my = ys.reduce((a, b) => a + b, 0) / n;
-  let sxy = 0;
-  let sxx = 0;
-  xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) ** 2; });
-  const b = sxx ? sxy / sxx : 0;
-  return { a: my - b * mx, b };
-}
 
 const trendLine = (key: string, xs: number[], ys: number[], [x0, x1]: [number, number], color = 'var(--color-subtle)') => {
   const { a, b } = ols(xs, ys);
@@ -61,7 +51,7 @@ function stepLines(key: string, steps: { date: number; score: number }[], end: n
   return lines;
 }
 
-// 1. Capability against Safety or Reliability.
+// 2. Capability against Safety or Reliability.
 function CapabilitySafetyView({ e, models, inset }: ViewProps) {
   const [y, setY] = useState<'safety' | 'reliability'>('safety');
   const [ci, setCi] = useState(false);
@@ -86,27 +76,27 @@ function CapabilitySafetyView({ e, models, inset }: ViewProps) {
       labels = new Set([...new Set(ids)].slice(0, 10));
     }
     const points = rows.map(({ m, c, s }) => ({
-      ...point(m, c, s, color),
+      ...point(m, s, c, color),
       label: labels.has(m.id) ? nameOf(m) : undefined,
-      xCi: scaledInterval(m, 'capability'),
-      yCi: scaledInterval(m, y),
+      xCi: scaledInterval(m, y),
+      yCi: scaledInterval(m, 'capability'),
     }));
     // Labelled points go last so they draw on top.
     points.sort((p, q) => Number(!!p.label) - Number(!!q.label));
-    const x = scoreAxis('Capability', rows.map(r => r.c));
-    const yAxis = scoreAxis(indexLabel(y), rows.map(r => r.s));
+    const x = scoreAxis(indexLabel(y), rows.map(r => r.s));
+    const yAxis = scoreAxis('Capability', rows.map(r => r.c));
     return {
       points,
       x,
       y: yAxis,
-      refs: [avgLine('ax', 'x'), avgLine('ay', 'y'), trendLine('trend', rows.map(r => r.c), rows.map(r => r.s), x.domain)],
+      refs: [avgLine('ax', 'x'), avgLine('ay', 'y'), trendLine('trend', rows.map(r => r.s), rows.map(r => r.c), x.domain)],
     };
   }, [e, models, y, color]);
 
   return (
     <ViewFrame
       controls={<>
-        <Segmented label="Vertical axis" value={y} onChange={setY} options={[{ id: 'safety', label: 'Safety' }, { id: 'reliability', label: 'Reliability' }]} />
+        <Segmented label="Horizontal axis" value={y} onChange={setY} options={[{ id: 'safety', label: 'Safety' }, { id: 'reliability', label: 'Reliability' }]} />
         <Switch label="90% intervals" checked={ci} onChange={setCi} />
       </>}
       status={<>Rank correlation ρ = {f2(stats.rho)} across {stats.n} models, {f2(stats.rho_release)} with release date held fixed. {stats.top10_overlap} of the 10 most capable models are in the {indexLabel(y)} top 10.</>}
@@ -123,91 +113,75 @@ function CapabilitySafetyView({ e, models, inset }: ViewProps) {
   );
 }
 
-// 2. Which safety areas rise with Capability.
-function ManipulationView({ e, byId, inset }: ViewProps) {
-  const mp = e.manipulation;
-  const [sel, setSel] = useState(mp.bars[0].id);
-  const bar = mp.bars.find(b => b.id === sel)!;
-  const color = INDEX_COLOR.safety;
-  const maxRho = Math.max(0.8, ...mp.bars.map(b => b.rho_release));
+// 3. The scored safety areas in three groups by release date: one group's models, every group's trend.
+const GROUP_STYLE: Record<ExplorerSafetyGroup['id'], { color: string; dash?: string }> = {
+  injection: { color: 'var(--color-lavender-strong)' },
+  refusal: { color: 'var(--color-lavender)', dash: '5 4' },
+  fairness: { color: 'var(--muted-foreground)', dash: '1 3' },
+};
+const pp = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${f1(Math.abs(v))}`;
+
+function SafetyAreasView({ e, byId, inset }: ViewProps) {
+  const groups = e.safety_areas.groups;
+  const [sel, setSel] = useState(groups[0].id);
+  const group = groups.find(g => g.id === sel)!;
+  const style = GROUP_STYLE[group.id];
 
   const chart = useMemo<ChartSpec>(() => {
-    const rows = (mp.points[sel] ?? []).flatMap(p => {
+    const points = group.points.flatMap(p => {
       const m = byId.get(p.id);
-      return m ? [{ m, ...p }] : [];
+      return m ? [{ ...point(m, Date.parse(p.date), p.y, style.color, [[group.name, `${f1(p.y)}%`]]), opacity: 0.75 }] : [];
     });
-    const top = [...rows].sort((a, b) => b.y - a.y);
-    const labels = new Set([...top.slice(0, 2), ...top.slice(-2)].map(r => r.id));
-    const x = scoreAxis('Capability', rows.map(r => r.x));
-    return {
-      points: rows.map(r => ({ ...point(r.m, r.x, r.y, color, [[bar.name, f1(r.y)]]), label: labels.has(r.id) ? nameOf(r.m) : undefined })),
-      x,
-      y: scoreAxis(bar.name, rows.map(r => r.y)),
-      refs: [avgLine('ay', 'y'), trendLine('trend', rows.map(r => r.x), rows.map(r => r.y), x.domain)],
+    const line = (g: ExplorerSafetyGroup, selected: boolean) => {
+      const [a, b] = g.trend;
+      const st = GROUP_STYLE[g.id];
+      return (
+        <ReferenceLine
+          key={g.id}
+          segment={[{ x: Date.parse(a.date), y: a.y }, { x: Date.parse(b.date), y: b.y }]}
+          stroke={st.color}
+          strokeWidth={selected ? 2.5 : 1.5}
+          strokeOpacity={selected ? 1 : 0.45}
+          strokeDasharray={st.dash}
+          ifOverflow="hidden"
+        />
+      );
     };
-  }, [mp, sel, byId, bar.name, color]);
+    // Groups share one 0–100% axis so their trends are comparable.
+    return {
+      points,
+      x: dateAxis(points.map(p => p.x), 6),
+      y: { label: `${group.name} (%)`, domain: [0, 100], ticks: [0, 20, 40, 60, 80, 100], format: (v: number) => `${v}%` },
+      refs: [...groups.filter(g => g.id !== sel).map(g => line(g, false)), line(group, true)],
+    };
+  }, [groups, sel, group, style, byId]);
 
-  const group = (g: 'attack' | 'behaviour', title: string) => (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        <span>{title}</span>
-        <span className="tabular normal-case tracking-normal font-normal">mean ρ {f2(mp.mean[g])}</span>
-      </div>
-      <ul className="grid gap-1">
-        {mp.bars.filter(b => b.group === g).map(b => (
-          <li key={b.id}>
-            <button
-              type="button"
-              onClick={() => setSel(b.id)}
-              aria-pressed={b.id === sel}
-              className={`w-full cursor-pointer rounded-lg px-2 py-1.5 text-left transition-colors ${b.id === sel ? 'bg-lavender-soft' : 'hover:bg-hover'}`}
-            >
-              <div className="flex justify-between gap-3 text-xs">
-                <span className={b.id === sel ? 'font-semibold text-ink' : 'text-ink'}>{b.name}</span>
-                <span className="tabular font-semibold text-ink">{f2(b.rho_release)}</span>
-              </div>
-              <div className="mt-1 h-2 rounded-full bg-track">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${(Math.max(0, b.rho_release) / maxRho) * 100}%`, backgroundColor: color, opacity: g === 'attack' ? 1 : 0.5 }}
-                />
-              </div>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
+  const [t0, t1] = group.trend;
   return (
     <ViewFrame
-      status={<>{bar.name}: ρ = {f2(bar.rho_release)} with Capability, release date held fixed ({f2(bar.rho)} without), across {bar.n} models.</>}
-      legend={<>
-        <Key kind="bar" color={color}>Resisting attacks</Key>
-        <Key kind="bar" color="color-mix(in srgb, var(--color-lavender-strong) 50%, transparent)">Behaving well</Key>
-        <Key kind="dash">Trend</Key>
-        <KeySep />
-        <ScaleKey />
+      controls={<Segmented label="Safety group" value={sel} onChange={setSel} options={groups.map(g => ({ id: g.id, label: g.name }))} />}
+      summary={<>
+        <span className="font-semibold text-ink">{pp(group.pp_per_year)} pp/yr</span>,
+        {' '}{f1(t0.y)}% in {fmtMonth(t0.date)} to {f1(t1.y)}% in {fmtMonth(t1.date)} on trend, {group.n} models
       </>}
-      plotClassName="xl:flex-1 xl:min-h-[520px]"
+      status={<>
+        Each group averages its areas: {groups.filter(g => g.members.length > 1).map((g, k) => (
+          <span key={g.id}>{k > 0 && '; '}<span className="text-ink">{g.name.toLowerCase()}</span> = {g.members.map(m => m.name.toLowerCase()).join(', ')}</span>
+        ))}. One fairness benchmark (FairLLM) is hard for every model, which lowers the fairness level.
+        {' '}Accuracy on our benchmarks, not real-world safety; jailbreak resistance is not scored yet.
+      </>}
+      legend={<>
+        <WeightKeys color={style.color} />
+        <Key kind={style.dash ? 'dash' : 'line'} color={style.color}>Trend</Key>
+        <Key kind="line" color="var(--color-subtle)">Other groups’ trends</Key>
+      </>}
     >
-      <div className="flex flex-col gap-4 xl:absolute xl:inset-0" style={{ paddingLeft: inset }}>
-        <div>
-          <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-            {group('attack', 'Resisting attacks')}
-            {group('behaviour', 'Behaving well')}
-          </div>
-          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">Bars: rank correlation with Capability, release date held fixed. Pick a bar to plot its scores.</p>
-        </div>
-        <div className="relative h-[360px] xl:h-auto xl:min-h-0 xl:flex-1">
-          <ScatterPlot chart={chart} className="absolute inset-0" />
-        </div>
-      </div>
+      <ScatterPlot chart={chart} inset={inset} className="absolute inset-0" />
     </ViewFrame>
   );
 }
 
-// 3. Every model on one index by release date, with the best open-weight and best proprietary score so far.
+// 1. Every model on one index by release date, with the best open-weight and best proprietary score so far.
 function OverTimeView({ e, models, byId, inset }: ViewProps) {
   const [ix, setIx] = useState<IndexId>('safety');
   const [ci, setCi] = useState(false);
@@ -259,18 +233,6 @@ function OverTimeView({ e, models, byId, inset }: ViewProps) {
       controls={<>
         <Segmented label="Index" value={ix} onChange={setIx} options={INDEX_OPTIONS} />
         <Switch label="90% intervals" checked={ci} onChange={setCi} />
-        <div className="flex basis-full flex-wrap items-baseline gap-x-5 gap-y-1 pt-2 text-xs text-muted-foreground">
-          <span className="font-semibold uppercase tracking-[0.08em] text-ink">Open-weight lag</span>
-          {INDEX_OPTIONS.map(({ id }) => (
-            <button key={id} type="button" onClick={() => setIx(id)} className={`inline-flex items-baseline gap-1.5 ${id === ix ? 'text-ink' : ''}`}>
-              {indexLabel(id)}
-              <span className={`font-serif leading-none ${id === ix ? 'text-2xl' : 'text-lg'}`} style={{ color: INDEX_COLOR[id] }}>
-                ≈ {f1(ol[id].lag_months)}
-              </span>
-              months
-            </button>
-          ))}
-        </div>
       </>}
       status={<>
         Lag: today’s gap ÷ how fast the best open score rose over the past year. Best open: {nameFor(byId, lag.best_open.id)}; best proprietary: {nameFor(byId, lag.best_closed.id)}.
@@ -290,59 +252,57 @@ function OverTimeView({ e, models, byId, inset }: ViewProps) {
   );
 }
 
-// 4. Capability against active or total parameters (open-weight models), MoE and dense coloured apart.
+// 4. Capability against total parameters (open-weight models), MoE and dense coloured apart.
 const DENSE_COLOR = 'var(--color-ink)';
 
+// Capability ~ log10(total) + years, both regressors centred; returns the per-year slope.
+
 function ParametersView({ e, byId, inset }: ViewProps) {
-  const [by, setBy] = useState<'active' | 'total'>('active');
   const pf = e.params.fit;
   const moeColor = INDEX_COLOR.capability;
 
-  const chart = useMemo<ChartSpec>(() => {
-    const rows = e.params.points.flatMap(p => {
-      const m = byId.get(p.id);
-      return m ? [{ m, ...p, x: by === 'total' ? p.total : p.active }] : [];
-    });
+  const { chart, perMonth, refDate } = useMemo(() => {
+    const { rows, refDate, perYear, dMin, dMax, trends } = paramsFit(e, byId);
     const byCap = [...rows].sort((a, b) => b.capability - a.capability).slice(0, 3);
     const bySize = [...rows].sort((a, b) => b.x - a.x).slice(0, 2);
     const labels = new Set([...byCap, ...bySize].map(r => r.id));
     const domain = logDomain(rows.map(r => r.x));
-    // Trend per architecture, fitted on log10 size so it is straight on the log axis.
     const groupTrend = (moe: boolean, color: string) => {
-      const g = rows.filter(r => r.moe === moe);
-      if (g.length < 3) return [];
-      const { a, b } = ols(g.map(r => Math.log10(r.x)), g.map(r => r.capability));
-      const x0 = Math.min(...g.map(r => r.x));
-      const x1 = Math.max(...g.map(r => r.x));
-      const at = (x: number) => a + b * Math.log10(x);
-      return [<ReferenceLine key={`t${moe}`} segment={[{ x: x0, y: at(x0) }, { x: x1, y: at(x1) }]} stroke={color} strokeWidth={2} strokeOpacity={0.75} strokeDasharray="6 4" ifOverflow="hidden" />];
+      const t = trends[String(moe) as 'true' | 'false'];
+      if (!t) return [];
+      const at = (x: number) => t.a + t.b * Math.log10(x);
+      return [<ReferenceLine key={`t${moe}`} segment={[{ x: t.x0, y: at(t.x0) }, { x: t.x1, y: at(t.x1) }]} stroke={color} strokeWidth={2} strokeOpacity={0.75} strokeDasharray="6 4" ifOverflow="hidden" />];
     };
-    return {
+    const chart = {
       points: rows.map(r => ({
         ...point(r.m, r.x, r.capability, r.moe ? moeColor : DENSE_COLOR, [
+          ['Capability', f1(r.raw)],
+          ['At ' + fmtMonth(refDate), f1(r.capability)],
+          ['Released', fmtMonth(r.date)],
           ['Total parameters', fmtParams(r.total)],
           ['Active parameters', fmtParams(r.active)],
           ['Architecture', r.moe ? 'Mixture of experts' : 'Dense'],
         ]),
         hollow: false,
+        // Paler = older release.
+        opacity: dMax > dMin ? 0.35 + (0.65 * (r.date - dMin)) / (dMax - dMin) : 1,
         label: labels.has(r.id) ? nameOf(r.m) : undefined,
       })),
-      x: { label: by === 'total' ? 'Total parameters (log scale)' : 'Active parameters per token (log scale)', domain, log: true, ticks: logTicks(domain), format: fmtParams },
-      y: scoreAxis('Capability', rows.map(r => r.capability)),
+      x: { label: 'Total parameters (log scale)', domain, log: true, ticks: logTicks(domain), format: fmtParams },
+      y: scoreAxis(`Capability at ${fmtMonth(refDate)} release`, rows.map(r => r.capability)),
       refs: [avgLine('ay', 'y'), ...groupTrend(false, DENSE_COLOR), ...groupTrend(true, moeColor)],
-    };
-  }, [e, byId, by, moeColor]);
+    } as ChartSpec;
+    return { chart, perMonth: perYear / 12, refDate };
+  }, [e, byId, moeColor]);
 
   return (
     <ViewFrame
-      controls={<Segmented label="Horizontal axis" value={by} onChange={setBy} options={[{ id: 'active', label: 'Active parameters' }, { id: 'total', label: 'Total parameters' }]} />}
-      status={by === 'active'
-        ? <>At the same active size, MoE models score higher than dense ones (they are also newer on average). With release date held fixed, 10× more total parameters goes with {signed(pf.per_10x_total)} Capability points; 10× more active parameters with {signed(pf.per_10x_active)} at the same total size ({pf.n} open models).</>
-        : <>By total size, MoE and dense models fall on much the same trend. With release date held fixed, 10× more total parameters goes with {signed(pf.per_10x_total)} Capability points; 10× more active parameters with {signed(pf.per_10x_active)} at the same total size ({pf.n} open models).</>}
+      status={<>Scores are shifted to a common {fmtMonth(refDate)} release using the overall date trend ({signed(perMonth)} per month at the same size); paler dots are older models. Trends fitted per architecture on {pf.n} open models ({pf.n_moe} MoE).</>}
       legend={<>
         <Key kind="dot" color={moeColor}>Mixture of experts ({e.params.n_points_moe})</Key>
         <Key kind="dot" color={DENSE_COLOR}>Dense ({e.params.n_points - e.params.n_points_moe})</Key>
         <Key kind="dash" color="var(--muted-foreground)">Trend per architecture</Key>
+        <Key kind="dot" color="color-mix(in srgb, var(--color-ink) 35%, transparent)">Paler = older</Key>
         <KeySep />
         <ScaleKey />
       </>}
@@ -352,12 +312,11 @@ function ParametersView({ e, byId, inset }: ViewProps) {
   );
 }
 
+const fmtUsdTick = (v: number) => (v < 10 ? `$${+v.toPrecision(1)}` : fmtUsd(v));
+
 // 6. What one evaluation of each model costs, full suite against CORE, by release date.
 const fmtCost = (unit: 'usd' | 'tokens') => (v: number) =>
   v === 0 ? (unit === 'usd' ? '$0' : '0') : unit === 'usd' ? fmtUsd(v) : formatTokens(v);
-
-// Log-axis ticks are 1-3-10 steps; show $0.3 and $3 rather than $0.30 and $3.00.
-const fmtUsdTick = (v: number) => (v < 10 ? `$${+v.toPrecision(1)}` : fmtUsd(v));
 
 function EvalCostView({ e, byId, inset }: ViewProps) {
   const [unit, setUnit] = useState<'usd' | 'tokens'>('usd');
@@ -380,31 +339,40 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
       ['CORE run', fmt(r[kc])],
       ['CORE is', `${f1(r[kf] / r[kc])}× cheaper`],
     ];
+    // Log scale: a constant ×/year growth is a straight line, and cheap CORE runs stay visible.
+    const vals = rows.flatMap(d => [d.r[kc], d.r[kf]]).filter(v => v > 0);
+    const floor = Math.min(...vals);
+    const clip = (v: number) => Math.max(v, floor);
     const points: Point[] = rows.flatMap(({ m, r, date }) => [
-      { ...point(m, date, r[kf], full, extra(r)), id: `${r.id}:full`, hollow: false, label: labelled.has(r.id) ? shortName(m) : undefined, labelPriority: r[kf] },
-      { ...point(m, date, r[kc], brand, extra(r)), id: `${r.id}:core`, hollow: false },
+      { ...point(m, date, clip(r[kf]), full, extra(r)), id: `${r.id}:full`, hollow: false, label: labelled.has(r.id) ? shortName(m) : undefined, labelPriority: r[kf] },
+      { ...point(m, date, clip(r[kc]), brand, extra(r)), id: `${r.id}:core`, hollow: false },
     ]);
-    const domain = logDomain(rows.flatMap(d => [d.r[kc], d.r[kf]]));
-    // The fitted exponential trends behind the "×/year" figures, straight on the log axis.
+    const domain = logDomain(vals);
+    const ticks = logTicks(domain);
+    // The fitted exponential trends behind the "×/year" figures, drawn as short segments so they curve.
     const epoch = Date.parse(ec.trend_epoch);
     const x0 = Math.min(...rows.map(d => d.date));
     const x1 = Math.max(...rows.map(d => d.date));
     const trend = (key: typeof kc | typeof kf, color: string) => {
       const { log10_intercept: a, log10_per_year: b } = ec.trend[key];
       const at = (x: number) => 10 ** (a + (b * (x - epoch)) / (365.25 * 864e5));
-      return <ReferenceLine key={`trend:${key}`} segment={[{ x: x0, y: at(x0) }, { x: x1, y: at(x1) }]} stroke={color} strokeWidth={2} strokeOpacity={0.75} strokeDasharray="6 4" ifOverflow="hidden" />;
+      const n = 60;
+      const xs = Array.from({ length: n + 1 }, (_, i) => x0 + ((x1 - x0) * i) / n);
+      return xs.slice(1).map((x, i) => (
+        <ReferenceLine key={`trend:${key}:${i}`} segment={[{ x: xs[i], y: at(xs[i]) }, { x, y: at(x) }]} stroke={color} strokeWidth={2} strokeOpacity={0.75} ifOverflow="hidden" />
+      ));
     };
     return {
       chart: {
         points,
         x: dateAxis(rows.map(d => d.date)),
-        y: { label: unit === 'usd' ? 'Cost per model (USD, log scale)' : 'Tokens per model (log scale)', domain, log: true, ticks: logTicks(domain), format: unit === 'usd' ? fmtUsdTick : formatTokens, width: 64 },
+        y: { label: unit === 'usd' ? 'Cost per model (USD, log scale)' : 'Tokens per model (log scale)', domain, log: true, ticks, format: unit === 'usd' ? fmtUsdTick : formatTokens, width: 64 },
         refs: [
           ...rows.map(({ r, date }) => (
-            <ReferenceLine key={r.id} segment={[{ x: date, y: r[kc] }, { x: date, y: r[kf] }]} stroke="var(--color-subtle)" strokeOpacity={0.6} strokeWidth={1.5} ifOverflow="hidden" />
+            <ReferenceLine key={r.id} segment={[{ x: date, y: clip(r[kc]) }, { x: date, y: clip(r[kf]) }]} stroke="var(--color-subtle)" strokeOpacity={0.6} strokeWidth={1.5} ifOverflow="hidden" />
           )),
-          trend(kf, full),
-          trend(kc, brand),
+          ...trend(kf, full),
+          ...trend(kc, brand),
         ],
       } as ChartSpec,
       shown: rows.length,
@@ -417,12 +385,12 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
       controls={<Segmented label="Measure" value={unit} onChange={setUnit} options={[{ id: 'usd', label: 'Cost' }, { id: 'tokens', label: 'Tokens' }]} />}
       status={<>
         {shown} models. All runs together: {unit === 'usd' ? `${fmtUsd(t.full_usd)} for the full suite, ${fmtUsd(t.core_usd)} for CORE.` : `${formatTokens(t.full_tokens)} tokens for the full suite, ${formatTokens(t.core_tokens)} for CORE.`}
-        {unit === 'usd' ? ` ${ec.price_note}` : ''}
+        {unit === 'usd' ? ` With model size held fixed (${ec.size_control.n} models of known size), the full-suite cost still rises about ${Math.round(ec.size_control.x_per_year)}× a year. ${ec.price_note}` : ''}
       </>}
       legend={<>
         <Key kind="dot" color={full}>Full suite</Key>
         <Key kind="dot" color={brand}>CORE</Key>
-        <Key kind="dash">Trend</Key>
+        <Key kind="line" color="var(--muted-foreground)">Exponential trend</Key>
       </>}
     >
       <ScatterPlot chart={chart} inset={inset} className="absolute inset-0" />
@@ -505,7 +473,7 @@ function LabsView({ e, byId, inset }: ViewProps) {
 
 export const VIEWS: Record<QuestionId, (p: ViewProps) => React.ReactNode> = {
   'capability-safety': CapabilitySafetyView,
-  manipulation: ManipulationView,
+  'safety-areas': SafetyAreasView,
   'over-time': OverTimeView,
   parameters: ParametersView,
   labs: LabsView,

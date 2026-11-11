@@ -17,11 +17,9 @@ export const INDEX_SOFT: Record<IndexId, string> = {
 
 export type ViewProps = { e: ExplorerData; models: JoinedModelData[]; byId: ModelLookup; inset: number };
 
-// Rows beside the floating question card on wide screens keep clear of it.
-const BESIDE_CARD = 'xl:justify-end xl:pl-[418px]';
-
-export function ViewFrame({ controls, status, legend, plotClassName, children }: {
+export function ViewFrame({ controls, summary, status, legend, plotClassName, children }: {
   controls?: React.ReactNode;
+  summary?: React.ReactNode;
   status: React.ReactNode;
   legend?: React.ReactNode;
   plotClassName?: string;
@@ -29,10 +27,14 @@ export function ViewFrame({ controls, status, legend, plotClassName, children }:
 }) {
   return (
     <>
-      <div className={`flex min-h-[34px] flex-wrap items-center gap-2 ${BESIDE_CARD}`}>{controls}</div>
-      <p className="mt-3 min-h-[2.5em] text-xs text-muted-foreground leading-snug xl:ml-auto xl:max-w-[min(560px,calc(100%-418px))] xl:text-right">{status}</p>
-      <div className={`relative mt-1 ${plotClassName ?? 'h-[400px] md:h-[520px] xl:h-auto xl:min-h-[520px] xl:flex-1'}`}>{children}</div>
-      <div className={`mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground ${BESIDE_CARD}`}>{legend}</div>
+      {/* Clears the floating question card on wide screens. */}
+      {(controls || legend) && <div className="mb-1 flex flex-col gap-x-6 gap-y-2 md:flex-row md:items-start xl:pl-[418px]">
+        {controls && <div className="flex shrink-0 flex-wrap items-center gap-2">{controls}</div>}
+        <div className="flex min-w-0 flex-1 flex-wrap content-start items-center gap-x-5 gap-y-1 text-xs text-muted-foreground md:min-h-[34px] md:justify-end md:pt-[9px]">{legend}</div>
+      </div>}
+      {summary && <p className="mt-2 mb-3 pl-1 text-xs text-muted-foreground xl:pl-[422px]">{summary}</p>}
+      <div className={`relative ${plotClassName ?? 'h-[400px] md:h-[520px] xl:h-auto xl:min-h-[520px] xl:flex-1'}`}>{children}</div>
+      <p className="mt-3 text-xs text-muted-foreground leading-snug xl:pl-[418px]">{status}</p>
     </>
   );
 }

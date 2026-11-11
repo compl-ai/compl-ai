@@ -75,9 +75,9 @@ export default function BenchmarksPage() {
           <Eyebrow>Benchmark health</Eyebrow>
           <h2 id="health-heading" className="text-3xl font-extrabold tracking-tight text-ink">How the benchmarks behave</h2>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Older benchmarks lose their value once most models score near the top. Each card shows how the models’ answers
-            ended, how much signal the benchmark gives about a model’s ability, how much CORE shortens it and how the
-            models’ scores are spread.
+            Each card shows how the models’ answers ended, how much signal the benchmark gives about a model’s ability,
+            how much CORE shortens it and how the models’ scores are spread. Older benchmarks lose their value once most
+            models score near the top.
           </p>
         </div>
         <BenchmarkHealthGrid health={getBenchmarkHealth()} analysis={getSampleAnalysis()} scores={healthScores} catalog={catalog} meta={getBenchmarkMeta()} />

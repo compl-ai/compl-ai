@@ -11,7 +11,7 @@ export function SiteFooter() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between frame py-8 text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
           <BrandMark size="sm" />
-          <span>Open, reproducible and efficient AI evaluation.</span>
+          <span>Efficient, open, and reproducible AI evaluation.</span>
         </div>
         <div className="flex items-center gap-6">
           {lastUpdated && <span>Last updated {formatDate(lastUpdated)}</span>}

@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DARK_MODE } from "@/lib/theme";
 
 export const metadata: Metadata = {
-  title: "ComplAI CORE - Open, reproducible and efficient AI evaluation.",
+  title: "ComplAI CORE - Efficient, open, and reproducible AI evaluation",
   description: "Open, calibrated AI evaluations that predict broad benchmark performance from a compact set of tasks.",
 };
 

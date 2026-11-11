@@ -325,32 +325,37 @@ function BenchmarkRow({ task, name, tests, t, view, usage, field, tone }: {
   );
 }
 
-interface AreaSource { task: string; name: string; ownShare: number; areaShare: number }
+interface AreaSource { task: string; name: string; items: number; ownShare: number; areaShare: number; weight: number }
 
 export type AreaStandout = 'best' | 'worst' | null;
 
 const SOURCE_SHADES = ['bg-ink/70', 'bg-ink/45', 'bg-ink/30', 'bg-ink/20'];
 
-// Where an area's questions come from, as one stacked bar with a key underneath.
-function SourceStack({ shown, rest, prediction, answered }: {
+// What an area's score is made of: each benchmark's weight in it, as one stacked bar with a key underneath.
+function SourceStack({ shown, rest, prediction }: {
   shown: AreaSource[];
   rest: number;
   prediction: Prediction;
-  answered: string;
 }) {
   const pct = (v: number) => (v < 0.005 ? '<1%' : `${Math.round(v * 100)}%`);
   const segments = [
-    ...shown.map((s, i) => ({ key: s.task, share: s.areaShare, shade: SOURCE_SHADES[Math.min(i, SOURCE_SHADES.length - 1)], source: s })),
+    ...shown.map((s, i) => ({ key: s.task, share: s.weight, shade: SOURCE_SHADES[Math.min(i, SOURCE_SHADES.length - 1)], source: s })),
     ...(rest >= 0.005 ? [{ key: 'other', share: rest, shade: 'bg-track', source: null }] : []),
   ];
   return (
     <div className="mt-7 max-w-xl">
-      <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-        <span>Where the questions come from</span>
-        <span className="tabular">{answered}</span>
-      </div>
+      <div className="text-xs text-muted-foreground">What benchmark scores inform this area and how do we weigh them?</div>
       <div className="mt-1 flex h-1.5 w-full gap-[2px] overflow-hidden rounded-full">
-        {segments.map(seg => <span key={seg.key} className={`basis-0 ${seg.shade}`} style={{ flexGrow: seg.share }} />)}
+        {segments.map(seg => (
+          <span
+            key={seg.key}
+            className={`basis-0 ${seg.shade}`}
+            style={{ flexGrow: seg.share }}
+            title={seg.source
+              ? `${seg.source.name}: ${pct(seg.share)} of the score · ${seg.source.items.toLocaleString()} questions in this area`
+              : `Other benchmarks: ${pct(seg.share)} of the score`}
+          />
+        ))}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         {segments.map(seg => (
@@ -449,13 +454,15 @@ function AreaBlock({ areaKey, name, description, refs, sources, prediction, scor
   standout: AreaStandout;
   indexLabel: string;
 }) {
-  // Benchmarks holding at least 5% of the area's questions, or most of their own questions in it; the rest are grouped.
-  const shown = sources.filter(s => s.areaShare >= 0.05 || s.ownShare >= 0.5).sort((x, y) => y.areaShare - x.areaShare);
-  const rest = 1 - shown.reduce((sum, s) => sum + s.areaShare, 0);
+  // Each benchmark's weight in the score (item share when an older export has no weights). Benchmarks with at
+  // least 5% of the weight, or most of their own questions in the area, are shown; the rest are grouped.
+  const weighted = sources.map(s => ({ ...s, weight: score.task_weights ? score.task_weights[s.task] ?? 0 : s.areaShare }));
+  const shown = weighted.filter(s => s.weight >= 0.05 || s.ownShare >= 0.5).sort((x, y) => y.weight - x.weight);
+  const rest = 1 - shown.reduce((sum, s) => sum + s.weight, 0);
   const mostlyImputed = imputedShare(score) >= IMPUTED_SHARE_LIMIT;
   const answered = score.observations === score.subset_items
-    ? `All ${score.subset_items.toLocaleString()} core questions answered`
-    : `${score.observations.toLocaleString()} of ${score.subset_items.toLocaleString()} core questions answered`;
+    ? `from ${score.subset_items.toLocaleString()} CORE answers`
+    : `from ${score.observations.toLocaleString()} of ${score.subset_items.toLocaleString()} CORE answers`;
   const reading = areaReading(score, field, panelMedian, standout, indexLabel);
 
   return (
@@ -473,19 +480,20 @@ function AreaBlock({ areaKey, name, description, refs, sources, prediction, scor
         <div className="shrink-0 text-right tabular" title={score.score_interval ? `90% interval ${formatAccuracyInterval(score.score_interval)}` : undefined}>
           <div className={`text-xl font-bold leading-6 ${mostlyImputed ? 'text-ink/50' : 'text-ink'}`}>{formatPercent(score.predicted_score)}{mostlyImputed && '*'}</div>
           {score.score_interval && <div className="text-xs text-muted-foreground">{formatAccuracyInterval(score.score_interval)}</div>}
+          <div className="text-xs text-muted-foreground">{answered}</div>
         </div>
       </div>
       <p className="mt-3 text-base text-muted-foreground leading-relaxed">
         {description}
         {mostlyImputed && (
           <>
-            {' '}Most of these questions come from benchmarks the model did not run, so the score is{' '}
+            {' '}Most of this score comes from benchmarks the model did not run, so it is{' '}
             <Link href="/methodology#areas" className="text-link hover:underline">largely inferred</Link> from its other results and the
             real uncertainty is wider than the interval shows.
           </>
         )}
       </p>
-      <SourceStack shown={shown} rest={rest} prediction={prediction} answered={answered} />
+      <SourceStack shown={shown} rest={rest} prediction={prediction} />
       {refs.length > 0 && (
         <div className="mt-6">
           <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
@@ -845,10 +853,10 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
     catalog.map(b => [b.name, b.areas.filter(a => a.items / labelledItems(b) >= 0.1).map(a => a.name)])
   );
 
-  // Where each area's questions come from: a benchmark's share of its own questions in the area, and of the area's.
+  // The benchmarks in each area: their questions in it, and its share of their own questions and of the area's.
   const areaSources: Record<string, AreaSource[]> = {};
   for (const b of catalog) {
-    for (const a of b.areas) (areaSources[a.key] ??= []).push({ task: b.name, name: benchmarkName(b.name), ownShare: a.items / labelledItems(b), areaShare: a.items });
+    for (const a of b.areas) (areaSources[a.key] ??= []).push({ task: b.name, name: benchmarkName(b.name), items: a.items, ownShare: a.items / labelledItems(b), areaShare: a.items, weight: 0 });
   }
   for (const list of Object.values(areaSources)) {
     const total = list.reduce((sum, s) => sum + s.areaShare, 0);

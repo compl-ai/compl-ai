@@ -103,46 +103,37 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
         </summary>
       <dl className="mt-3 grid gap-x-8 gap-y-4 text-sm leading-relaxed text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
         <div>
-          <dt className="font-semibold text-ink">Score spread and saturation</dt>
-          <dd className="mt-1">
-            The chart shows how many models fall in each 5-point band of predicted score. We split the models into thirds by score.
-            A benchmark is <span className="text-ink">saturated</span> when even the middle third averages 95% or more, so
-            only the weakest models still score differently. It is <span className="text-ink">saturated at the top</span> when
-            the top third averages 90% or more: the best models no longer separate, but the rest still do.
-          </dd>
-        </div>
-        <div>
-          <dt className="font-semibold text-ink">Signal</dt>
-          <dd className="mt-1">
-            How closely the benchmark’s score follows a model’s overall level on its index. With high signal, models that
-            are stronger on the index reliably score higher here. With low signal, the score barely changes with ability,
-            for example because the benchmark is saturated or measures something the rest of the index does not. It is
-            shown relative to the average benchmark of the same index: 1.00× is average, above 1 means more signal and
-            more weight in the index, below 1 less. The underlying value is the benchmark’s IRT discrimination in the
-            index fit; the average is the geometric mean over the index’s benchmarks.
-          </dd>
-        </div>
-        <div>
           <dt className="font-semibold text-ink">Answer outcomes</dt>
-          <dd className="mt-1">
-            How all models’ answers to the benchmark’s core questions ended. Hover a bar for the reasons behind it.
-          </dd>
+          <dd className="mt-1">How all models’ answers to the core questions ended. Hover a bar for the reasons.</dd>
           <dd className="mt-2">
             <OutcomeLegend definition={definition} only={['correct', 'wrong', 'did_not_finish', 'blocked']} />
           </dd>
         </div>
         <div>
-          <dt className="font-semibold text-ink">Compression</dt>
+          <dt className="font-semibold text-ink">Signal</dt>
+          <dd className="mt-1">How closely the score follows a model’s overall level on the index.</dd>
           <dd className="mt-1">
-            How many times more questions the full benchmark has than the CORE subset a new model runs. CORE estimates each
-            question at the benchmark’s median token use, so this is also the estimated token saving on that benchmark.
+            <strong className="text-ink">Above 1×:</strong> stronger models reliably score higher, and the benchmark counts more.
+          </dd>
+          <dd className="mt-1">
+            <strong className="text-ink">Below 1×:</strong> it follows ability less closely and counts less.
           </dd>
         </div>
         <div>
-          <dt className="font-semibold text-ink">Evaluation areas</dt>
+          <dt className="font-semibold text-ink">Compression</dt>
+          <dd className="mt-1">How many times fewer questions CORE runs than the full benchmark. This is also the estimated token saving.</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-ink">Score spread</dt>
+          <dd className="mt-1">Models per 5-point band of predicted score.</dd>
           <dd className="mt-1">
-            The tags at the bottom are the evaluation areas the benchmark’s questions are labelled with, most questions
-            first; hover +N for the rest. They link to the AI Act mapping.
+            <strong className={SATURATION.not_saturated.className}>Separates models:</strong> scores are still spread out.
+          </dd>
+          <dd className="mt-1">
+            <strong className={SATURATION.saturated_at_top.className}>Saturated at the top:</strong> the top third averages 90% or more.
+          </dd>
+          <dd className="mt-1">
+            <strong className={SATURATION.saturated.className}>Saturated:</strong> the middle third of models averages 95% or more.
           </dd>
         </div>
       </dl>

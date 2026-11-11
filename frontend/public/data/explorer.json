@@ -1,6 +1,6 @@
 {
  "_meta": {
-  "built": "2026-11-10",
+  "built": "2026-11-11",
   "generator": "files/experiments/frontpage/explorer_build.py (session artifacts)",
   "prediction_id": "6640cc7a8b5c9cd27df669e9",
   "core_release": "core.v1",
@@ -38,1715 +38,967 @@
    "top10_overlap": 8
   }
  },
- "manipulation": {
-  "bars": [
+ "safety_areas": {
+  "groups": [
    {
-    "id": "safety:security-privacy",
-    "name": "Security and privacy",
-    "group": "attack",
-    "rho_release": 0.75,
-    "rho": 0.77,
-    "n": 55
+    "id": "injection",
+    "name": "Injection attacks",
+    "n": 57,
+    "members": [
+     {
+      "id": "safety:security-privacy",
+      "name": "Security and privacy",
+      "pp_per_year": 11.7
+     },
+     {
+      "id": "safety:goal-hijacking",
+      "name": "Goal hijacking",
+      "pp_per_year": 19.7
+     },
+     {
+      "id": "safety:prompt-injection",
+      "name": "Prompt injection",
+      "pp_per_year": 19.0
+     }
+    ],
+    "pp_per_year": 16.8,
+    "pp_per_year_ci90": [
+     11.5,
+     21.5
+    ],
+    "trend": [
+     {
+      "date": "2024-07-23",
+      "y": 48.6
+     },
+     {
+      "date": "2026-10-26",
+      "y": 86.5
+     }
+    ],
+    "points": [
+     {
+      "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
+      "date": "2026-10-03",
+      "y": 83.6
+     },
+     {
+      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
+      "date": "2026-02-12",
+      "y": 71.1
+     },
+     {
+      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
+      "date": "2026-03-18",
+      "y": 72.1
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3-8B",
+      "date": "2025-04-28",
+      "y": 62.2
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
+      "date": "2026-03-02",
+      "y": 85.0
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
+      "date": "2026-04-21",
+      "y": 89.5
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
+      "date": "2026-04-16",
+      "y": 86.0
+     },
+     {
+      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
+      "date": "2026-04-23",
+      "y": 84.6
+     },
+     {
+      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
+      "date": "2025-12-12",
+      "y": 46.4
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
+      "date": "2025-12-01",
+      "y": 74.6
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
+      "date": "2026-04-24",
+      "y": 81.1
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
+      "date": "2026-04-24",
+      "y": 87.5
+     },
+     {
+      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
+      "date": "2026-06-10",
+      "y": 72.5
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-3-27b-it",
+      "date": "2025-03-10",
+      "y": 37.1
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-12B-it",
+      "date": "2026-06-03",
+      "y": 90.4
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
+      "date": "2026-03-31",
+      "y": 87.4
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-31B-it",
+      "date": "2026-03-31",
+      "y": 95.5
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-E4B-it",
+      "date": "2026-03-31",
+      "y": 69.3
+     },
+     {
+      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
+      "date": "2025-10-02",
+      "y": 48.7
+     },
+     {
+      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
+      "date": "2024-07-23",
+      "y": 44.0
+     },
+     {
+      "id": "openai-api/vllm/microsoft/phi-4",
+      "date": "2024-12-12",
+      "y": 64.6
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
+      "date": "2025-12-02",
+      "y": 53.3
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
+      "date": "2026-04-28",
+      "y": 75.9
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
+      "date": "2026-03-16",
+      "y": 59.6
+     },
+     {
+      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
+      "date": "2026-04-20",
+      "y": 94.1
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "date": "2025-12-15",
+      "y": 68.7
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+      "date": "2026-03-16",
+      "y": 66.6
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "date": "2026-03-11",
+      "y": 67.3
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+      "date": "2026-06-04",
+      "y": 91.2
+     },
+     {
+      "id": "openai-api/vllm/openai/gpt-oss-120b",
+      "date": "2025-08-05",
+      "y": 87.3
+     },
+     {
+      "id": "openai-api/vllm/openai/gpt-oss-20b",
+      "date": "2025-08-05",
+      "y": 83.4
+     },
+     {
+      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
+      "date": "2026-02-02",
+      "y": 78.8
+     },
+     {
+      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
+      "date": "2026-07-24",
+      "y": 38.2
+     },
+     {
+      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
+      "date": "2026-07-24",
+      "y": 54.9
+     },
+     {
+      "id": "openai-api/vllm/tencent/Hy3-preview",
+      "date": "2026-04-23",
+      "y": 79.5
+     },
+     {
+      "id": "openai/gpt-6-luna",
+      "date": "2026-09-22",
+      "y": 91.6
+     },
+     {
+      "id": "openai/gpt-6.1-terra",
+      "date": "2026-10-26",
+      "y": 92.8
+     },
+     {
+      "id": "openrouter/anthropic/claude-haiku-4.5",
+      "date": "2025-10-15",
+      "y": 76.7
+     },
+     {
+      "id": "openrouter/anthropic/claude-haiku-5.5",
+      "date": "2026-10-07",
+      "y": 92.0
+     },
+     {
+      "id": "openrouter/anthropic/claude-opus-5.5",
+      "date": "2026-09-22",
+      "y": 93.1
+     },
+     {
+      "id": "openrouter/anthropic/claude-sonnet-4.5",
+      "date": "2025-09-29",
+      "y": 89.8
+     },
+     {
+      "id": "openrouter/anthropic/claude-sonnet-5.5",
+      "date": "2026-09-28",
+      "y": 93.5
+     },
+     {
+      "id": "openrouter/deepseek/deepseek-v4.1-flash",
+      "date": "2026-09-09",
+      "y": 86.6
+     },
+     {
+      "id": "openrouter/google/gemini-3.8-flash",
+      "date": "2026-09-02",
+      "y": 85.1
+     },
+     {
+      "id": "openrouter/google/gemini-4-argon",
+      "date": "2026-10-13",
+      "y": 82.3
+     },
+     {
+      "id": "openrouter/inclusionai/ling-3.1-flash",
+      "date": "2026-10-02",
+      "y": 86.2
+     },
+     {
+      "id": "openrouter/meta/muse-spark-open",
+      "date": "2026-10-15",
+      "y": 87.7
+     },
+     {
+      "id": "openrouter/minimax/minimax-m3.1-flash",
+      "date": "2026-10-19",
+      "y": 80.6
+     },
+     {
+      "id": "openrouter/mistralai/mistral-large-4-0",
+      "date": "2026-10-06",
+      "y": 86.8
+     },
+     {
+      "id": "openrouter/moonshotai/kimi-k3.1-pro",
+      "date": "2026-10-24",
+      "y": 90.7
+     },
+     {
+      "id": "openrouter/nvidia/nemotron-3.5-lightning",
+      "date": "2026-08-11",
+      "y": 54.5
+     },
+     {
+      "id": "openrouter/qwen/qwen3.8-flash",
+      "date": "2026-08-26",
+      "y": 88.8
+     },
+     {
+      "id": "openrouter/tencent/hy3",
+      "date": "2026-07-06",
+      "y": 84.9
+     },
+     {
+      "id": "openrouter/xiaomi/mimo-v2.6-flash",
+      "date": "2026-09-22",
+      "y": 81.0
+     },
+     {
+      "id": "openrouter/xiaomi/mimo-v2.6-pro",
+      "date": "2026-09-22",
+      "y": 91.6
+     },
+     {
+      "id": "openrouter/z-ai/glm-5.3-flash",
+      "date": "2026-08-26",
+      "y": 87.8
+     },
+     {
+      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
+      "date": "2024-12-06",
+      "y": 54.4
+     }
+    ]
    },
    {
-    "id": "safety:goal-hijacking",
-    "name": "Goal hijacking",
-    "group": "attack",
-    "rho_release": 0.7,
-    "rho": 0.79,
-    "n": 55
+    "id": "refusal",
+    "name": "Refusal and honesty",
+    "n": 57,
+    "members": [
+     {
+      "id": "safety:harmful-instruction-refusal",
+      "name": "Harmful instruction refusal",
+      "pp_per_year": 3.0
+     },
+     {
+      "id": "safety:deception-honesty",
+      "name": "Deception and honesty",
+      "pp_per_year": 2.9
+     }
+    ],
+    "pp_per_year": 2.9,
+    "pp_per_year_ci90": [
+     1.1,
+     5.0
+    ],
+    "trend": [
+     {
+      "date": "2024-07-23",
+      "y": 83.2
+     },
+     {
+      "date": "2026-10-26",
+      "y": 89.9
+     }
+    ],
+    "points": [
+     {
+      "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
+      "date": "2026-10-03",
+      "y": 87.3
+     },
+     {
+      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
+      "date": "2026-02-12",
+      "y": 96.3
+     },
+     {
+      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
+      "date": "2026-03-18",
+      "y": 95.0
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3-8B",
+      "date": "2025-04-28",
+      "y": 85.6
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
+      "date": "2026-03-02",
+      "y": 89.9
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
+      "date": "2026-04-21",
+      "y": 86.6
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
+      "date": "2026-04-16",
+      "y": 85.4
+     },
+     {
+      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
+      "date": "2026-04-23",
+      "y": 87.0
+     },
+     {
+      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
+      "date": "2025-12-12",
+      "y": 84.1
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
+      "date": "2025-12-01",
+      "y": 79.9
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
+      "date": "2026-04-24",
+      "y": 76.8
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
+      "date": "2026-04-24",
+      "y": 77.5
+     },
+     {
+      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
+      "date": "2026-06-10",
+      "y": 85.4
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-3-27b-it",
+      "date": "2025-03-10",
+      "y": 83.1
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-12B-it",
+      "date": "2026-06-03",
+      "y": 82.9
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
+      "date": "2026-03-31",
+      "y": 84.9
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-31B-it",
+      "date": "2026-03-31",
+      "y": 83.0
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-E4B-it",
+      "date": "2026-03-31",
+      "y": 85.2
+     },
+     {
+      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
+      "date": "2025-10-02",
+      "y": 84.1
+     },
+     {
+      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
+      "date": "2024-07-23",
+      "y": 84.4
+     },
+     {
+      "id": "openai-api/vllm/microsoft/phi-4",
+      "date": "2024-12-12",
+      "y": 88.5
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
+      "date": "2025-12-02",
+      "y": 82.2
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
+      "date": "2026-04-28",
+      "y": 77.5
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
+      "date": "2026-03-16",
+      "y": 74.1
+     },
+     {
+      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
+      "date": "2026-04-20",
+      "y": 95.2
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "date": "2025-12-15",
+      "y": 86.8
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+      "date": "2026-03-16",
+      "y": 90.9
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "date": "2026-03-11",
+      "y": 89.1
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+      "date": "2026-06-04",
+      "y": 92.8
+     },
+     {
+      "id": "openai-api/vllm/openai/gpt-oss-120b",
+      "date": "2025-08-05",
+      "y": 93.9
+     },
+     {
+      "id": "openai-api/vllm/openai/gpt-oss-20b",
+      "date": "2025-08-05",
+      "y": 93.9
+     },
+     {
+      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
+      "date": "2026-02-02",
+      "y": 83.3
+     },
+     {
+      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
+      "date": "2026-07-24",
+      "y": 80.8
+     },
+     {
+      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
+      "date": "2026-07-24",
+      "y": 88.1
+     },
+     {
+      "id": "openai-api/vllm/tencent/Hy3-preview",
+      "date": "2026-04-23",
+      "y": 88.9
+     },
+     {
+      "id": "openai/gpt-6-luna",
+      "date": "2026-09-22",
+      "y": 96.1
+     },
+     {
+      "id": "openai/gpt-6.1-terra",
+      "date": "2026-10-26",
+      "y": 95.5
+     },
+     {
+      "id": "openrouter/anthropic/claude-haiku-4.5",
+      "date": "2025-10-15",
+      "y": 98.7
+     },
+     {
+      "id": "openrouter/anthropic/claude-haiku-5.5",
+      "date": "2026-10-07",
+      "y": 96.9
+     },
+     {
+      "id": "openrouter/anthropic/claude-opus-5.5",
+      "date": "2026-09-22",
+      "y": 95.4
+     },
+     {
+      "id": "openrouter/anthropic/claude-sonnet-4.5",
+      "date": "2025-09-29",
+      "y": 96.4
+     },
+     {
+      "id": "openrouter/anthropic/claude-sonnet-5.5",
+      "date": "2026-09-28",
+      "y": 95.5
+     },
+     {
+      "id": "openrouter/deepseek/deepseek-v4.1-flash",
+      "date": "2026-09-09",
+      "y": 92.2
+     },
+     {
+      "id": "openrouter/google/gemini-3.8-flash",
+      "date": "2026-09-02",
+      "y": 86.0
+     },
+     {
+      "id": "openrouter/google/gemini-4-argon",
+      "date": "2026-10-13",
+      "y": 86.5
+     },
+     {
+      "id": "openrouter/inclusionai/ling-3.1-flash",
+      "date": "2026-10-02",
+      "y": 94.6
+     },
+     {
+      "id": "openrouter/meta/muse-spark-open",
+      "date": "2026-10-15",
+      "y": 97.1
+     },
+     {
+      "id": "openrouter/minimax/minimax-m3.1-flash",
+      "date": "2026-10-19",
+      "y": 87.4
+     },
+     {
+      "id": "openrouter/mistralai/mistral-large-4-0",
+      "date": "2026-10-06",
+      "y": 91.8
+     },
+     {
+      "id": "openrouter/moonshotai/kimi-k3.1-pro",
+      "date": "2026-10-24",
+      "y": 93.5
+     },
+     {
+      "id": "openrouter/nvidia/nemotron-3.5-lightning",
+      "date": "2026-08-11",
+      "y": 86.6
+     },
+     {
+      "id": "openrouter/qwen/qwen3.8-flash",
+      "date": "2026-08-26",
+      "y": 88.7
+     },
+     {
+      "id": "openrouter/tencent/hy3",
+      "date": "2026-07-06",
+      "y": 82.7
+     },
+     {
+      "id": "openrouter/xiaomi/mimo-v2.6-flash",
+      "date": "2026-09-22",
+      "y": 88.2
+     },
+     {
+      "id": "openrouter/xiaomi/mimo-v2.6-pro",
+      "date": "2026-09-22",
+      "y": 92.5
+     },
+     {
+      "id": "openrouter/z-ai/glm-5.3-flash",
+      "date": "2026-08-26",
+      "y": 93.8
+     },
+     {
+      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
+      "date": "2024-12-06",
+      "y": 80.5
+     }
+    ]
    },
    {
-    "id": "safety:prompt-injection",
-    "name": "Prompt injection",
-    "group": "attack",
-    "rho_release": 0.64,
-    "rho": 0.73,
-    "n": 55
-   },
-   {
-    "id": "safety:fairness-bias",
-    "name": "Fairness and bias",
-    "group": "behaviour",
-    "rho_release": 0.55,
-    "rho": 0.66,
-    "n": 55
-   },
-   {
-    "id": "safety:deception-honesty",
-    "name": "Deception and honesty",
-    "group": "behaviour",
-    "rho_release": 0.23,
-    "rho": 0.32,
-    "n": 55
-   },
-   {
-    "id": "safety:harmful-instruction-refusal",
-    "name": "Harmful instruction refusal",
-    "group": "behaviour",
-    "rho_release": 0.28,
-    "rho": 0.28,
-    "n": 53
+    "id": "fairness",
+    "name": "Fairness",
+    "n": 57,
+    "members": [
+     {
+      "id": "safety:fairness-bias",
+      "name": "Fairness and bias",
+      "pp_per_year": 3.2
+     }
+    ],
+    "pp_per_year": 3.2,
+    "pp_per_year_ci90": [
+     1.4,
+     5.1
+    ],
+    "trend": [
+     {
+      "date": "2024-07-23",
+      "y": 66.4
+     },
+     {
+      "date": "2026-10-26",
+      "y": 73.7
+     }
+    ],
+    "points": [
+     {
+      "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
+      "date": "2026-10-03",
+      "y": 70.7
+     },
+     {
+      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
+      "date": "2026-02-12",
+      "y": 72.6
+     },
+     {
+      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
+      "date": "2026-03-18",
+      "y": 71.6
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3-8B",
+      "date": "2025-04-28",
+      "y": 70.2
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
+      "date": "2026-03-02",
+      "y": 70.6
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
+      "date": "2026-04-21",
+      "y": 68.1
+     },
+     {
+      "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
+      "date": "2026-04-16",
+      "y": 68.2
+     },
+     {
+      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
+      "date": "2026-04-23",
+      "y": 71.2
+     },
+     {
+      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
+      "date": "2025-12-12",
+      "y": 70.5
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
+      "date": "2025-12-01",
+      "y": 70.9
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
+      "date": "2026-04-24",
+      "y": 69.1
+     },
+     {
+      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
+      "date": "2026-04-24",
+      "y": 68.9
+     },
+     {
+      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
+      "date": "2026-06-10",
+      "y": 69.5
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-3-27b-it",
+      "date": "2025-03-10",
+      "y": 70.4
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-12B-it",
+      "date": "2026-06-03",
+      "y": 73.5
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
+      "date": "2026-03-31",
+      "y": 71.2
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-31B-it",
+      "date": "2026-03-31",
+      "y": 74.4
+     },
+     {
+      "id": "openai-api/vllm/google/gemma-4-E4B-it",
+      "date": "2026-03-31",
+      "y": 73.9
+     },
+     {
+      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
+      "date": "2025-10-02",
+      "y": 65.0
+     },
+     {
+      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
+      "date": "2024-07-23",
+      "y": 61.3
+     },
+     {
+      "id": "openai-api/vllm/microsoft/phi-4",
+      "date": "2024-12-12",
+      "y": 68.7
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
+      "date": "2025-12-02",
+      "y": 63.6
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
+      "date": "2026-04-28",
+      "y": 71.5
+     },
+     {
+      "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
+      "date": "2026-03-16",
+      "y": 67.7
+     },
+     {
+      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
+      "date": "2026-04-20",
+      "y": 75.1
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "date": "2025-12-15",
+      "y": 67.3
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+      "date": "2026-03-16",
+      "y": 64.1
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "date": "2026-03-11",
+      "y": 70.2
+     },
+     {
+      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+      "date": "2026-06-04",
+      "y": 74.4
+     },
+     {
+      "id": "openai-api/vllm/openai/gpt-oss-120b",
+      "date": "2025-08-05",
+      "y": 74.1
+     },
+     {
+      "id": "openai-api/vllm/openai/gpt-oss-20b",
+      "date": "2025-08-05",
+      "y": 71.5
+     },
+     {
+      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
+      "date": "2026-02-02",
+      "y": 69.3
+     },
+     {
+      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
+      "date": "2026-07-24",
+      "y": 65.9
+     },
+     {
+      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
+      "date": "2026-07-24",
+      "y": 67.4
+     },
+     {
+      "id": "openai-api/vllm/tencent/Hy3-preview",
+      "date": "2026-04-23",
+      "y": 72.3
+     },
+     {
+      "id": "openai/gpt-6-luna",
+      "date": "2026-09-22",
+      "y": 76.8
+     },
+     {
+      "id": "openai/gpt-6.1-terra",
+      "date": "2026-10-26",
+      "y": 79.4
+     },
+     {
+      "id": "openrouter/anthropic/claude-haiku-4.5",
+      "date": "2025-10-15",
+      "y": 76.4
+     },
+     {
+      "id": "openrouter/anthropic/claude-haiku-5.5",
+      "date": "2026-10-07",
+      "y": 74.4
+     },
+     {
+      "id": "openrouter/anthropic/claude-opus-5.5",
+      "date": "2026-09-22",
+      "y": 79.8
+     },
+     {
+      "id": "openrouter/anthropic/claude-sonnet-4.5",
+      "date": "2025-09-29",
+      "y": 79.2
+     },
+     {
+      "id": "openrouter/anthropic/claude-sonnet-5.5",
+      "date": "2026-09-28",
+      "y": 77.8
+     },
+     {
+      "id": "openrouter/deepseek/deepseek-v4.1-flash",
+      "date": "2026-09-09",
+      "y": 76.1
+     },
+     {
+      "id": "openrouter/google/gemini-3.8-flash",
+      "date": "2026-09-02",
+      "y": 79.6
+     },
+     {
+      "id": "openrouter/google/gemini-4-argon",
+      "date": "2026-10-13",
+      "y": 79.6
+     },
+     {
+      "id": "openrouter/inclusionai/ling-3.1-flash",
+      "date": "2026-10-02",
+      "y": 74.3
+     },
+     {
+      "id": "openrouter/meta/muse-spark-open",
+      "date": "2026-10-15",
+      "y": 76.9
+     },
+     {
+      "id": "openrouter/minimax/minimax-m3.1-flash",
+      "date": "2026-10-19",
+      "y": 68.3
+     },
+     {
+      "id": "openrouter/mistralai/mistral-large-4-0",
+      "date": "2026-10-06",
+      "y": 71.8
+     },
+     {
+      "id": "openrouter/moonshotai/kimi-k3.1-pro",
+      "date": "2026-10-24",
+      "y": 76.9
+     },
+     {
+      "id": "openrouter/nvidia/nemotron-3.5-lightning",
+      "date": "2026-08-11",
+      "y": 70.3
+     },
+     {
+      "id": "openrouter/qwen/qwen3.8-flash",
+      "date": "2026-08-26",
+      "y": 70.1
+     },
+     {
+      "id": "openrouter/tencent/hy3",
+      "date": "2026-07-06",
+      "y": 73.7
+     },
+     {
+      "id": "openrouter/xiaomi/mimo-v2.6-flash",
+      "date": "2026-09-22",
+      "y": 68.5
+     },
+     {
+      "id": "openrouter/xiaomi/mimo-v2.6-pro",
+      "date": "2026-09-22",
+      "y": 71.4
+     },
+     {
+      "id": "openrouter/z-ai/glm-5.3-flash",
+      "date": "2026-08-26",
+      "y": 76.6
+     },
+     {
+      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
+      "date": "2024-12-06",
+      "y": 73.4
+     }
+    ]
    }
   ],
-  "points": {
-   "safety:security-privacy": [
-    {
-     "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-     "x": 109.5,
-     "y": 96.6
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-     "x": 102.2,
-     "y": 100.1
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-     "x": 109.8,
-     "y": 94.4
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3-8B",
-     "x": 91.8,
-     "y": 96.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-     "x": 105.3,
-     "y": 103.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-     "x": 112.8,
-     "y": 114.7
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-     "x": 111.9,
-     "y": 117.3
-    },
-    {
-     "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-     "x": 108.8,
-     "y": 99.5
-    },
-    {
-     "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-     "x": 86.2,
-     "y": 77.8
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-     "x": 102.0,
-     "y": 93.0
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-     "x": 107.6,
-     "y": 109.9
-    },
-    {
-     "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-     "x": 99.2,
-     "y": 97.0
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-3-27b-it",
-     "x": 84.8,
-     "y": 78.9
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-12B-it",
-     "x": 99.2,
-     "y": 109.2
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-     "x": 103.3,
-     "y": 114.6
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-31B-it",
-     "x": 106.1,
-     "y": 114.3
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-E4B-it",
-     "x": 89.6,
-     "y": 89.0
-    },
-    {
-     "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-     "x": 75.2,
-     "y": 86.6
-    },
-    {
-     "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-     "x": 68.4,
-     "y": 84.9
-    },
-    {
-     "id": "openai-api/vllm/microsoft/phi-4",
-     "x": 82.6,
-     "y": 91.5
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-     "x": 84.9,
-     "y": 85.3
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-     "x": 105.1,
-     "y": 110.3
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-     "x": 91.7,
-     "y": 95.9
-    },
-    {
-     "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-     "x": 115.7,
-     "y": 115.7
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-     "x": 98.1,
-     "y": 99.8
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-     "x": 89.7,
-     "y": 88.6
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-     "x": 96.4,
-     "y": 85.1
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-     "x": 108.8,
-     "y": 97.5
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-120b",
-     "x": 103.3,
-     "y": 122.5
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-20b",
-     "x": 93.8,
-     "y": 124.9
-    },
-    {
-     "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-     "x": 104.6,
-     "y": 93.3
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-     "x": 71.8,
-     "y": 80.7
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-     "x": 77.8,
-     "y": 81.3
-    },
-    {
-     "id": "openai/gpt-6-luna",
-     "x": 116.2,
-     "y": 122.5
-    },
-    {
-     "id": "openai/gpt-6.1-terra",
-     "x": 121.2,
-     "y": 118.7
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-4.5",
-     "x": 106.2,
-     "y": 127.6
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-5.5",
-     "x": 118.0,
-     "y": 120.9
-    },
-    {
-     "id": "openrouter/anthropic/claude-opus-5.5",
-     "x": 130.6,
-     "y": 127.2
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-4.5",
-     "x": 110.2,
-     "y": 123.5
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-5.5",
-     "x": 125.2,
-     "y": 126.1
-    },
-    {
-     "id": "openrouter/deepseek/deepseek-v4.1-flash",
-     "x": 119.2,
-     "y": 115.7
-    },
-    {
-     "id": "openrouter/google/gemini-3.8-flash",
-     "x": 128.4,
-     "y": 120.1
-    },
-    {
-     "id": "openrouter/google/gemini-4-argon",
-     "x": 130.9,
-     "y": 120.9
-    },
-    {
-     "id": "openrouter/inclusionai/ling-3.1-flash",
-     "x": 113.3,
-     "y": 120.6
-    },
-    {
-     "id": "openrouter/meta/muse-spark-open",
-     "x": 122.4,
-     "y": 119.7
-    },
-    {
-     "id": "openrouter/minimax/minimax-m3.1-flash",
-     "x": 113.1,
-     "y": 114.2
-    },
-    {
-     "id": "openrouter/mistralai/mistral-large-4-0",
-     "x": 110.9,
-     "y": 120.4
-    },
-    {
-     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-     "x": 124.9,
-     "y": 116.8
-    },
-    {
-     "id": "openrouter/nvidia/nemotron-3.5-lightning",
-     "x": 94.2,
-     "y": 84.7
-    },
-    {
-     "id": "openrouter/qwen/qwen3.8-flash",
-     "x": 114.9,
-     "y": 117.1
-    },
-    {
-     "id": "openrouter/tencent/hy3",
-     "x": 119.9,
-     "y": 113.7
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-flash",
-     "x": 106.2,
-     "y": 97.1
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-pro",
-     "x": 115.8,
-     "y": 120.1
-    },
-    {
-     "id": "openrouter/z-ai/glm-5.3-flash",
-     "x": 110.0,
-     "y": 122.9
-    },
-    {
-     "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-     "x": 82.4,
-     "y": 94.3
-    }
-   ],
-   "safety:goal-hijacking": [
-    {
-     "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-     "x": 109.5,
-     "y": 101.9
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-     "x": 102.2,
-     "y": 93.9
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-     "x": 109.8,
-     "y": 94.8
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3-8B",
-     "x": 91.8,
-     "y": 87.8
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-     "x": 105.3,
-     "y": 106.4
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-     "x": 112.8,
-     "y": 114.2
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-     "x": 111.9,
-     "y": 109.6
-    },
-    {
-     "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-     "x": 108.8,
-     "y": 105.0
-    },
-    {
-     "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-     "x": 86.2,
-     "y": 81.8
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-     "x": 102.0,
-     "y": 99.3
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-     "x": 107.6,
-     "y": 102.0
-    },
-    {
-     "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-     "x": 99.2,
-     "y": 95.2
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-3-27b-it",
-     "x": 84.8,
-     "y": 78.0
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-12B-it",
-     "x": 99.2,
-     "y": 120.0
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-     "x": 103.3,
-     "y": 106.1
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-31B-it",
-     "x": 106.1,
-     "y": 139.5
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-E4B-it",
-     "x": 89.6,
-     "y": 95.3
-    },
-    {
-     "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-     "x": 75.2,
-     "y": 83.1
-    },
-    {
-     "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-     "x": 68.4,
-     "y": 81.2
-    },
-    {
-     "id": "openai-api/vllm/microsoft/phi-4",
-     "x": 82.6,
-     "y": 92.3
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-     "x": 84.9,
-     "y": 87.9
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-     "x": 105.1,
-     "y": 97.3
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-     "x": 91.7,
-     "y": 88.1
-    },
-    {
-     "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-     "x": 115.7,
-     "y": 127.0
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-     "x": 98.1,
-     "y": 90.8
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-     "x": 89.7,
-     "y": 93.3
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-     "x": 96.4,
-     "y": 95.3
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-     "x": 108.8,
-     "y": 120.1
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-120b",
-     "x": 103.3,
-     "y": 107.0
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-20b",
-     "x": 93.8,
-     "y": 103.5
-    },
-    {
-     "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-     "x": 104.6,
-     "y": 98.7
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-     "x": 71.8,
-     "y": 81.6
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-     "x": 77.8,
-     "y": 89.4
-    },
-    {
-     "id": "openai/gpt-6-luna",
-     "x": 116.2,
-     "y": 116.4
-    },
-    {
-     "id": "openai/gpt-6.1-terra",
-     "x": 121.2,
-     "y": 113.5
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-4.5",
-     "x": 106.2,
-     "y": 95.4
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-5.5",
-     "x": 118.0,
-     "y": 115.1
-    },
-    {
-     "id": "openrouter/anthropic/claude-opus-5.5",
-     "x": 130.6,
-     "y": 123.0
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-4.5",
-     "x": 110.2,
-     "y": 111.7
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-5.5",
-     "x": 125.2,
-     "y": 124.9
-    },
-    {
-     "id": "openrouter/deepseek/deepseek-v4.1-flash",
-     "x": 119.2,
-     "y": 108.9
-    },
-    {
-     "id": "openrouter/google/gemini-3.8-flash",
-     "x": 128.4,
-     "y": 110.1
-    },
-    {
-     "id": "openrouter/google/gemini-4-argon",
-     "x": 130.9,
-     "y": 104.7
-    },
-    {
-     "id": "openrouter/inclusionai/ling-3.1-flash",
-     "x": 113.3,
-     "y": 107.0
-    },
-    {
-     "id": "openrouter/meta/muse-spark-open",
-     "x": 122.4,
-     "y": 103.8
-    },
-    {
-     "id": "openrouter/minimax/minimax-m3.1-flash",
-     "x": 113.1,
-     "y": 102.6
-    },
-    {
-     "id": "openrouter/mistralai/mistral-large-4-0",
-     "x": 110.9,
-     "y": 109.1
-    },
-    {
-     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-     "x": 124.9,
-     "y": 114.1
-    },
-    {
-     "id": "openrouter/nvidia/nemotron-3.5-lightning",
-     "x": 94.2,
-     "y": 86.9
-    },
-    {
-     "id": "openrouter/qwen/qwen3.8-flash",
-     "x": 114.9,
-     "y": 111.5
-    },
-    {
-     "id": "openrouter/tencent/hy3",
-     "x": 119.9,
-     "y": 106.3
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-flash",
-     "x": 106.2,
-     "y": 102.2
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-pro",
-     "x": 115.8,
-     "y": 117.0
-    },
-    {
-     "id": "openrouter/z-ai/glm-5.3-flash",
-     "x": 110.0,
-     "y": 108.5
-    },
-    {
-     "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-     "x": 82.4,
-     "y": 85.4
-    }
-   ],
-   "safety:prompt-injection": [
-    {
-     "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-     "x": 109.5,
-     "y": 109.8
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-     "x": 102.2,
-     "y": 94.0
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-     "x": 109.8,
-     "y": 96.7
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3-8B",
-     "x": 91.8,
-     "y": 89.3
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-     "x": 105.3,
-     "y": 105.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-     "x": 112.8,
-     "y": 111.2
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-     "x": 111.9,
-     "y": 103.2
-    },
-    {
-     "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-     "x": 108.8,
-     "y": 107.6
-    },
-    {
-     "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-     "x": 86.2,
-     "y": 91.4
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-     "x": 102.0,
-     "y": 98.3
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-     "x": 107.6,
-     "y": 103.1
-    },
-    {
-     "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-     "x": 99.2,
-     "y": 96.6
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-3-27b-it",
-     "x": 84.8,
-     "y": 74.3
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-12B-it",
-     "x": 99.2,
-     "y": 111.2
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-     "x": 103.3,
-     "y": 111.2
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-31B-it",
-     "x": 106.1,
-     "y": 143.5
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-E4B-it",
-     "x": 89.6,
-     "y": 97.0
-    },
-    {
-     "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-     "x": 75.2,
-     "y": 82.3
-    },
-    {
-     "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-     "x": 68.4,
-     "y": 79.0
-    },
-    {
-     "id": "openai-api/vllm/microsoft/phi-4",
-     "x": 82.6,
-     "y": 93.6
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-     "x": 84.9,
-     "y": 78.1
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-     "x": 105.1,
-     "y": 96.0
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-     "x": 91.7,
-     "y": 86.0
-    },
-    {
-     "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-     "x": 115.7,
-     "y": 130.2
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-     "x": 98.1,
-     "y": 95.9
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-     "x": 89.7,
-     "y": 93.9
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-     "x": 96.4,
-     "y": 97.7
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-     "x": 108.8,
-     "y": 112.5
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-120b",
-     "x": 103.3,
-     "y": 110.1
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-20b",
-     "x": 93.8,
-     "y": 101.8
-    },
-    {
-     "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-     "x": 104.6,
-     "y": 112.6
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-     "x": 71.8,
-     "y": 64.9
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-     "x": 77.8,
-     "y": 85.1
-    },
-    {
-     "id": "openai/gpt-6-luna",
-     "x": 116.2,
-     "y": 115.0
-    },
-    {
-     "id": "openai/gpt-6.1-terra",
-     "x": 121.2,
-     "y": 159.4
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-4.5",
-     "x": 106.2,
-     "y": 100.1
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-5.5",
-     "x": 118.0,
-     "y": 127.2
-    },
-    {
-     "id": "openrouter/anthropic/claude-opus-5.5",
-     "x": 130.6,
-     "y": 119.2
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-4.5",
-     "x": 110.2,
-     "y": 112.5
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-5.5",
-     "x": 125.2,
-     "y": 121.1
-    },
-    {
-     "id": "openrouter/deepseek/deepseek-v4.1-flash",
-     "x": 119.2,
-     "y": 107.8
-    },
-    {
-     "id": "openrouter/google/gemini-3.8-flash",
-     "x": 128.4,
-     "y": 96.8
-    },
-    {
-     "id": "openrouter/google/gemini-4-argon",
-     "x": 130.9,
-     "y": 95.7
-    },
-    {
-     "id": "openrouter/inclusionai/ling-3.1-flash",
-     "x": 113.3,
-     "y": 104.9
-    },
-    {
-     "id": "openrouter/meta/muse-spark-open",
-     "x": 122.4,
-     "y": 116.0
-    },
-    {
-     "id": "openrouter/minimax/minimax-m3.1-flash",
-     "x": 113.1,
-     "y": 96.7
-    },
-    {
-     "id": "openrouter/mistralai/mistral-large-4-0",
-     "x": 110.9,
-     "y": 102.8
-    },
-    {
-     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-     "x": 124.9,
-     "y": 116.5
-    },
-    {
-     "id": "openrouter/nvidia/nemotron-3.5-lightning",
-     "x": 94.2,
-     "y": 90.4
-    },
-    {
-     "id": "openrouter/qwen/qwen3.8-flash",
-     "x": 114.9,
-     "y": 110.8
-    },
-    {
-     "id": "openrouter/tencent/hy3",
-     "x": 119.9,
-     "y": 105.3
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-flash",
-     "x": 106.2,
-     "y": 102.4
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-pro",
-     "x": 115.8,
-     "y": 118.1
-    },
-    {
-     "id": "openrouter/z-ai/glm-5.3-flash",
-     "x": 110.0,
-     "y": 109.4
-    },
-    {
-     "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-     "x": 82.4,
-     "y": 77.5
-    }
-   ],
-   "safety:fairness-bias": [
-    {
-     "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-     "x": 109.5,
-     "y": 105.4
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-     "x": 102.2,
-     "y": 107.5
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-     "x": 109.8,
-     "y": 105.6
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3-8B",
-     "x": 91.8,
-     "y": 101.9
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-     "x": 105.3,
-     "y": 105.4
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-     "x": 112.8,
-     "y": 83.9
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-     "x": 111.9,
-     "y": 90.8
-    },
-    {
-     "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-     "x": 108.8,
-     "y": 105.4
-    },
-    {
-     "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-     "x": 86.2,
-     "y": 98.9
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-     "x": 102.0,
-     "y": 98.9
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-     "x": 107.6,
-     "y": 100.5
-    },
-    {
-     "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-     "x": 99.2,
-     "y": 118.6
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-3-27b-it",
-     "x": 84.8,
-     "y": 97.1
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-12B-it",
-     "x": 99.2,
-     "y": 112.3
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-     "x": 103.3,
-     "y": 106.6
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-31B-it",
-     "x": 106.1,
-     "y": 120.2
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-E4B-it",
-     "x": 89.6,
-     "y": 114.2
-    },
-    {
-     "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-     "x": 75.2,
-     "y": 84.8
-    },
-    {
-     "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-     "x": 68.4,
-     "y": 72.2
-    },
-    {
-     "id": "openai-api/vllm/microsoft/phi-4",
-     "x": 82.6,
-     "y": 102.0
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-     "x": 84.9,
-     "y": 86.3
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-     "x": 105.1,
-     "y": 112.4
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-     "x": 91.7,
-     "y": 98.1
-    },
-    {
-     "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-     "x": 115.7,
-     "y": 115.9
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-     "x": 98.1,
-     "y": 87.3
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-     "x": 89.7,
-     "y": 67.2
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-     "x": 96.4,
-     "y": 102.4
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-     "x": 108.8,
-     "y": 116.3
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-120b",
-     "x": 103.3,
-     "y": 115.4
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-20b",
-     "x": 93.8,
-     "y": 106.6
-    },
-    {
-     "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-     "x": 104.6,
-     "y": 98.7
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-     "x": 71.8,
-     "y": 86.5
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-     "x": 77.8,
-     "y": 94.3
-    },
-    {
-     "id": "openai/gpt-6-luna",
-     "x": 116.2,
-     "y": 123.2
-    },
-    {
-     "id": "openai/gpt-6.1-terra",
-     "x": 121.2,
-     "y": 131.6
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-4.5",
-     "x": 106.2,
-     "y": 120.4
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-5.5",
-     "x": 118.0,
-     "y": 113.1
-    },
-    {
-     "id": "openrouter/anthropic/claude-opus-5.5",
-     "x": 130.6,
-     "y": 133.6
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-4.5",
-     "x": 110.2,
-     "y": 131.4
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-5.5",
-     "x": 125.2,
-     "y": 124.3
-    },
-    {
-     "id": "openrouter/deepseek/deepseek-v4.1-flash",
-     "x": 119.2,
-     "y": 120.4
-    },
-    {
-     "id": "openrouter/google/gemini-3.8-flash",
-     "x": 128.4,
-     "y": 133.0
-    },
-    {
-     "id": "openrouter/google/gemini-4-argon",
-     "x": 130.9,
-     "y": 132.5
-    },
-    {
-     "id": "openrouter/inclusionai/ling-3.1-flash",
-     "x": 113.3,
-     "y": 139.3
-    },
-    {
-     "id": "openrouter/meta/muse-spark-open",
-     "x": 122.4,
-     "y": 120.9
-    },
-    {
-     "id": "openrouter/minimax/minimax-m3.1-flash",
-     "x": 113.1,
-     "y": 94.8
-    },
-    {
-     "id": "openrouter/mistralai/mistral-large-4-0",
-     "x": 110.9,
-     "y": 108.4
-    },
-    {
-     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-     "x": 124.9,
-     "y": 124.4
-    },
-    {
-     "id": "openrouter/nvidia/nemotron-3.5-lightning",
-     "x": 94.2,
-     "y": 99.4
-    },
-    {
-     "id": "openrouter/qwen/qwen3.8-flash",
-     "x": 114.9,
-     "y": 102.3
-    },
-    {
-     "id": "openrouter/tencent/hy3",
-     "x": 119.9,
-     "y": 113.8
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-flash",
-     "x": 106.2,
-     "y": 95.6
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-pro",
-     "x": 115.8,
-     "y": 101.8
-    },
-    {
-     "id": "openrouter/z-ai/glm-5.3-flash",
-     "x": 110.0,
-     "y": 123.1
-    },
-    {
-     "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-     "x": 82.4,
-     "y": 105.2
-    }
-   ],
-   "safety:deception-honesty": [
-    {
-     "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-     "x": 109.5,
-     "y": 92.9
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-     "x": 102.2,
-     "y": 117.8
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-     "x": 109.8,
-     "y": 107.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3-8B",
-     "x": 91.8,
-     "y": 95.9
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-     "x": 105.3,
-     "y": 99.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-     "x": 112.8,
-     "y": 93.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-     "x": 111.9,
-     "y": 91.3
-    },
-    {
-     "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-     "x": 108.8,
-     "y": 96.4
-    },
-    {
-     "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-     "x": 86.2,
-     "y": 95.4
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-     "x": 102.0,
-     "y": 89.6
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-     "x": 107.6,
-     "y": 83.0
-    },
-    {
-     "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-     "x": 99.2,
-     "y": 114.0
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-3-27b-it",
-     "x": 84.8,
-     "y": 94.6
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-12B-it",
-     "x": 99.2,
-     "y": 89.0
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-     "x": 103.3,
-     "y": 91.0
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-31B-it",
-     "x": 106.1,
-     "y": 88.3
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-E4B-it",
-     "x": 89.6,
-     "y": 97.7
-    },
-    {
-     "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-     "x": 75.2,
-     "y": 96.6
-    },
-    {
-     "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-     "x": 68.4,
-     "y": 97.4
-    },
-    {
-     "id": "openai-api/vllm/microsoft/phi-4",
-     "x": 82.6,
-     "y": 102.5
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-     "x": 84.9,
-     "y": 94.6
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-     "x": 105.1,
-     "y": 88.1
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-     "x": 91.7,
-     "y": 90.3
-    },
-    {
-     "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-     "x": 115.7,
-     "y": 113.0
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-     "x": 98.1,
-     "y": 97.0
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-     "x": 89.7,
-     "y": 100.1
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-     "x": 96.4,
-     "y": 97.6
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-     "x": 108.8,
-     "y": 101.0
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-120b",
-     "x": 103.3,
-     "y": 111.9
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-20b",
-     "x": 93.8,
-     "y": 106.4
-    },
-    {
-     "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-     "x": 104.6,
-     "y": 92.4
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-     "x": 71.8,
-     "y": 95.0
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-     "x": 77.8,
-     "y": 98.1
-    },
-    {
-     "id": "openai/gpt-6-luna",
-     "x": 116.2,
-     "y": 118.1
-    },
-    {
-     "id": "openai/gpt-6.1-terra",
-     "x": 121.2,
-     "y": 153.3
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-4.5",
-     "x": 106.2,
-     "y": 145.4
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-5.5",
-     "x": 118.0,
-     "y": 156.2
-    },
-    {
-     "id": "openrouter/anthropic/claude-opus-5.5",
-     "x": 130.6,
-     "y": 121.0
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-4.5",
-     "x": 110.2,
-     "y": 116.4
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-5.5",
-     "x": 125.2,
-     "y": 133.9
-    },
-    {
-     "id": "openrouter/deepseek/deepseek-v4.1-flash",
-     "x": 119.2,
-     "y": 106.8
-    },
-    {
-     "id": "openrouter/google/gemini-3.8-flash",
-     "x": 128.4,
-     "y": 92.0
-    },
-    {
-     "id": "openrouter/google/gemini-4-argon",
-     "x": 130.9,
-     "y": 93.2
-    },
-    {
-     "id": "openrouter/inclusionai/ling-3.1-flash",
-     "x": 113.3,
-     "y": 109.4
-    },
-    {
-     "id": "openrouter/meta/muse-spark-open",
-     "x": 122.4,
-     "y": 135.2
-    },
-    {
-     "id": "openrouter/minimax/minimax-m3.1-flash",
-     "x": 113.1,
-     "y": 103.7
-    },
-    {
-     "id": "openrouter/mistralai/mistral-large-4-0",
-     "x": 110.9,
-     "y": 102.1
-    },
-    {
-     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-     "x": 124.9,
-     "y": 116.4
-    },
-    {
-     "id": "openrouter/nvidia/nemotron-3.5-lightning",
-     "x": 94.2,
-     "y": 96.3
-    },
-    {
-     "id": "openrouter/qwen/qwen3.8-flash",
-     "x": 114.9,
-     "y": 99.9
-    },
-    {
-     "id": "openrouter/tencent/hy3",
-     "x": 119.9,
-     "y": 90.8
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-flash",
-     "x": 106.2,
-     "y": 97.7
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-pro",
-     "x": 115.8,
-     "y": 103.6
-    },
-    {
-     "id": "openrouter/z-ai/glm-5.3-flash",
-     "x": 110.0,
-     "y": 109.5
-    },
-    {
-     "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-     "x": 82.4,
-     "y": 117.3
-    }
-   ],
-   "safety:harmful-instruction-refusal": [
-    {
-     "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-     "x": 109.5,
-     "y": 102.9
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-     "x": 102.2,
-     "y": 130.9
-    },
-    {
-     "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-     "x": 109.8,
-     "y": 130.7
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3-8B",
-     "x": 91.8,
-     "y": 96.4
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-     "x": 105.3,
-     "y": 108.1
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-     "x": 112.8,
-     "y": 90.5
-    },
-    {
-     "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-     "x": 111.9,
-     "y": 90.5
-    },
-    {
-     "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-     "x": 108.8,
-     "y": 96.4
-    },
-    {
-     "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-     "x": 86.2,
-     "y": 102.0
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-     "x": 102.0,
-     "y": 66.7
-    },
-    {
-     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-     "x": 107.6,
-     "y": 90.5
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-3-27b-it",
-     "x": 84.8,
-     "y": 109.3
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-12B-it",
-     "x": 99.2,
-     "y": 88.5
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-     "x": 103.3,
-     "y": 97.9
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-31B-it",
-     "x": 106.1,
-     "y": 89.5
-    },
-    {
-     "id": "openai-api/vllm/google/gemma-4-E4B-it",
-     "x": 89.6,
-     "y": 98.5
-    },
-    {
-     "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-     "x": 75.2,
-     "y": 66.7
-    },
-    {
-     "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-     "x": 68.4,
-     "y": 96.4
-    },
-    {
-     "id": "openai-api/vllm/microsoft/phi-4",
-     "x": 82.6,
-     "y": 110.3
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-     "x": 84.9,
-     "y": 53.2
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-     "x": 105.1,
-     "y": 83.4
-    },
-    {
-     "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-     "x": 91.7,
-     "y": 66.4
-    },
-    {
-     "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-     "x": 115.7,
-     "y": 107.1
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-     "x": 98.1,
-     "y": 93.1
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-     "x": 89.7,
-     "y": 119.4
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-     "x": 96.4,
-     "y": 108.6
-    },
-    {
-     "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-     "x": 108.8,
-     "y": 133.4
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-120b",
-     "x": 103.3,
-     "y": 136.3
-    },
-    {
-     "id": "openai-api/vllm/openai/gpt-oss-20b",
-     "x": 93.8,
-     "y": 127.8
-    },
-    {
-     "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-     "x": 104.6,
-     "y": 87.4
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-     "x": 71.8,
-     "y": 98.1
-    },
-    {
-     "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-     "x": 77.8,
-     "y": 106.3
-    },
-    {
-     "id": "openai/gpt-6-luna",
-     "x": 116.2,
-     "y": 109.3
-    },
-    {
-     "id": "openai/gpt-6.1-terra",
-     "x": 121.2,
-     "y": 107.9
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-4.5",
-     "x": 106.2,
-     "y": 142.7
-    },
-    {
-     "id": "openrouter/anthropic/claude-haiku-5.5",
-     "x": 118.0,
-     "y": 122.1
-    },
-    {
-     "id": "openrouter/anthropic/claude-opus-5.5",
-     "x": 130.6,
-     "y": 99.1
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-4.5",
-     "x": 110.2,
-     "y": 134.6
-    },
-    {
-     "id": "openrouter/anthropic/claude-sonnet-5.5",
-     "x": 125.2,
-     "y": 108.5
-    },
-    {
-     "id": "openrouter/deepseek/deepseek-v4.1-flash",
-     "x": 119.2,
-     "y": 106.2
-    },
-    {
-     "id": "openrouter/google/gemini-3.8-flash",
-     "x": 128.4,
-     "y": 116.1
-    },
-    {
-     "id": "openrouter/google/gemini-4-argon",
-     "x": 130.9,
-     "y": 117.2
-    },
-    {
-     "id": "openrouter/inclusionai/ling-3.1-flash",
-     "x": 113.3,
-     "y": 113.6
-    },
-    {
-     "id": "openrouter/meta/muse-spark-open",
-     "x": 122.4,
-     "y": 127.0
-    },
-    {
-     "id": "openrouter/minimax/minimax-m3.1-flash",
-     "x": 113.1,
-     "y": 105.1
-    },
-    {
-     "id": "openrouter/mistralai/mistral-large-4-0",
-     "x": 110.9,
-     "y": 119.6
-    },
-    {
-     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-     "x": 124.9,
-     "y": 106.9
-    },
-    {
-     "id": "openrouter/nvidia/nemotron-3.5-lightning",
-     "x": 94.2,
-     "y": 100.4
-    },
-    {
-     "id": "openrouter/qwen/qwen3.8-flash",
-     "x": 114.9,
-     "y": 108.6
-    },
-    {
-     "id": "openrouter/tencent/hy3",
-     "x": 119.9,
-     "y": 90.2
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-flash",
-     "x": 106.2,
-     "y": 105.4
-    },
-    {
-     "id": "openrouter/xiaomi/mimo-v2.6-pro",
-     "x": 115.8,
-     "y": 100.3
-    },
-    {
-     "id": "openrouter/z-ai/glm-5.3-flash",
-     "x": 110.0,
-     "y": 100.6
-    }
-   ]
-  },
-  "mean": {
-   "attack": 0.7,
-   "behaviour": 0.35
-  }
+  "boot": 2000
  },
  "open_lag": {
   "capability": {
@@ -1829,6 +1081,11 @@
      "score": 110.2
     },
     {
+     "id": "openrouter/qwen/qwen3.8-flash",
+     "date": "2026-08-26",
+     "score": 114.9
+    },
+    {
      "id": "openrouter/google/gemini-3.8-flash",
      "date": "2026-09-02",
      "score": 128.4
@@ -1870,6 +1127,11 @@
      "id": "openrouter/anthropic/claude-haiku-4.5",
      "matched_by": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
      "months": 5.1
+    },
+    {
+     "id": "openrouter/qwen/qwen3.8-flash",
+     "matched_by": "openrouter/deepseek/deepseek-v4.1-flash",
+     "months": 0.5
     },
     {
      "id": "openrouter/google/gemini-3.8-flash",
@@ -1953,6 +1215,11 @@
      "score": 113.1
     },
     {
+     "id": "openrouter/qwen/qwen3.8-flash",
+     "date": "2026-08-26",
+     "score": 114.6
+    },
+    {
      "id": "openrouter/google/gemini-3.8-flash",
      "date": "2026-09-02",
      "score": 142.3
@@ -1972,7 +1239,7 @@
     "score": 144.0
    },
    "gap": 12.8,
-   "open_slope": 2.59,
+   "open_slope": 2.6,
    "lag_months": 4.9,
    "oldest_unmatched": {
     "id": "openrouter/google/gemini-3.8-flash",
@@ -1989,6 +1256,11 @@
      "id": "openrouter/anthropic/claude-haiku-4.5",
      "matched_by": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
      "months": 3.6
+    },
+    {
+     "id": "openrouter/qwen/qwen3.8-flash",
+     "matched_by": "openrouter/z-ai/glm-5.3-flash",
+     "months": 0.0
     },
     {
      "id": "openrouter/google/gemini-3.8-flash",
@@ -2082,7 +1354,7 @@
    },
    "gap": 7.6,
    "open_slope": 0.6,
-   "lag_months": 12.5,
+   "lag_months": 12.6,
    "oldest_unmatched": {
     "id": "openrouter/anthropic/claude-sonnet-4.5",
     "matched_by": null,
@@ -2098,6 +1370,11 @@
      "id": "openrouter/anthropic/claude-haiku-4.5",
      "matched_by": "openai-api/vllm/google/gemma-4-31B-it",
      "months": 5.5
+    },
+    {
+     "id": "openrouter/qwen/qwen3.8-flash",
+     "matched_by": "openrouter/z-ai/glm-5.3-flash",
+     "months": 0.0
     },
     {
      "id": "openrouter/google/gemini-3.8-flash",
@@ -2136,8 +1413,8 @@
     }
    ]
   },
-  "n_open": 46,
-  "n_closed": 9,
+  "n_open": 45,
+  "n_closed": 10,
   "as_of": "2026-10-26"
  },
  "params": {
@@ -2409,13 +1686,6 @@
     "capability": 94.2
    },
    {
-    "id": "openrouter/qwen/qwen3.8-flash",
-    "total": 125000000000.0,
-    "active": 6000000000.0,
-    "moe": true,
-    "capability": 114.9
-   },
-   {
     "id": "openrouter/tencent/hy3",
     "total": 295000000000.0,
     "active": 21000000000.0,
@@ -2451,18 +1721,18 @@
     "capability": 82.4
    }
   ],
-  "n_points": 44,
-  "n_points_moe": 31,
+  "n_points": 43,
+  "n_points_moe": 30,
   "fit": {
-   "n": 44,
-   "n_moe": 31,
+   "n": 43,
+   "n_moe": 30,
    "per_10x_total": 7.2,
-   "per_10x_active": -0.2,
+   "per_10x_active": 0.2,
    "per_10x_total_alone": 7.2,
-   "per_10x_active_alone": 6.1,
-   "rho_total_release": 0.53,
-   "rho_active_release": 0.25,
-   "median_release_moe": "2026-04-24",
+   "per_10x_active_alone": 6.5,
+   "rho_total_release": 0.54,
+   "rho_active_release": 0.27,
+   "median_release_moe": "2026-04-23",
    "median_release_dense": "2025-12-12"
   }
  },
@@ -2965,11 +2235,11 @@
   "n": 47,
   "n_dated": 47,
   "size_control": {
-   "n": 38,
-   "x_per_year_raw": 5.93,
-   "x_per_year": 3.58,
-   "p_year": 0.0085,
-   "per_10x_total": 1.91
+   "n": 37,
+   "x_per_year_raw": 5.95,
+   "x_per_year": 3.52,
+   "p_year": 0.0117,
+   "per_10x_total": 1.93
   },
   "totals": {
    "core_usd": 2020.0,

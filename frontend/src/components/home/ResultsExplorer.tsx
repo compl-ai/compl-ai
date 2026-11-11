@@ -1,14 +1,14 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ExplorerData, JoinedModelData } from '@/lib/data';
-import { QUESTIONS, type QuestionId, buildFindings, lookupModels } from './explorer';
+import { QUESTIONS, type QuestionId, buildFindings, contextOf, lookupModels } from './explorer';
 import { VIEWS } from './explorerViews';
 
 // Space between the floating question card and the first data on wide screens.
 const CARD_GAP = 28;
 
 export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[]; explorer: ExplorerData }) {
-  const [question, setQuestion] = useState<QuestionId>('capability-safety');
+  const [question, setQuestion] = useState<QuestionId>(QUESTIONS[0].id);
   const findings = useMemo(() => buildFindings(explorer, models), [explorer, models]);
   const byId = useMemo(() => lookupModels(models), [models]);
 
@@ -57,7 +57,7 @@ export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[
                 </button>
                 {open && (
                   <div className="px-5 pb-5 pl-[52px] text-sm leading-relaxed">
-                    <p className="text-muted-foreground">{q.context}</p>
+                    <p className="text-muted-foreground">{contextOf(q, explorer)}</p>
                     <div className="mt-3 border-l-2 border-brand pl-3">
                       <p className="font-plex text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-strong">Finding</p>
                       <p className="mt-1 text-ink">{findings[q.id]}</p>
