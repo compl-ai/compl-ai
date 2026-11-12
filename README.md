@@ -183,7 +183,10 @@ Every item is labelled with the evaluation area it tests, from multi-step reason
 
 <p align="center">
   <a href="https://compl-ai.org/mapping/">
-    <img src="docs/images/mapping.png" alt="ComplAI CORE evaluation areas mapped to the EU AI Act and the Code of Practice" width="800">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/images/mapping-dark.png">
+      <img src="docs/images/mapping.png" alt="ComplAI CORE evaluation areas mapped to the EU AI Act and the Code of Practice" width="800">
+    </picture>
   </a>
 </p>
 
