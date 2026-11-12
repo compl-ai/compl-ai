@@ -20,6 +20,8 @@ export default function Home() {
   const models = getJoinedModels();
   const efficiency = getEfficiency();
   const lastUpdated = getLastUpdated();
+  const explorer = getExplorer();
+  const costs = Object.fromEntries(explorer.eval_cost.rows.map(r => [r.id, r]));
 
   return (
     <main className="min-h-screen">
@@ -40,10 +42,11 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <ResultsExplorer models={models} explorer={getExplorer()} />
+        <ResultsExplorer models={models} explorer={explorer} />
         <div id="rankings" className="scroll-mt-24 mt-12 md:mt-16">
         <ModelDataTable
           initialModels={models}
+          costs={costs}
           initialRows={15}
           heading={
             <SectionHeading title="Model rankings" className="" />

@@ -2,6 +2,8 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Segmented } from '@/components/home/explorerUi';
+import type { Weights } from '@/components/home/explorer';
 
 export type GridItem = {
   id: string;
@@ -9,6 +11,7 @@ export type GridItem = {
   org: string | null;
   release: string | null;
   params: number | null;
+  weights: Weights;
   capability: number | null;
   reliability: number | null;
   safety: number | null;
@@ -29,6 +32,13 @@ const SORTS: { id: string; label: string; key: Key; desc: boolean }[] = [
   { id: 'safety', label: 'Safety', key: 'safety', desc: true },
 ];
 
+type WeightsFilter = 'all' | 'open' | 'proprietary';
+const WEIGHTS: { id: WeightsFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'open', label: 'Open' },
+  { id: 'proprietary', label: 'Proprietary' },
+];
+
 // Missing values always sort last; ties fall back to newest first, then name.
 function compare(a: GridItem, b: GridItem, key: Key, desc: boolean): number {
   const x = a[key], y = b[key];
@@ -40,16 +50,19 @@ function compare(a: GridItem, b: GridItem, key: Key, desc: boolean): number {
 export function ModelGrid({ items }: { items: GridItem[] }) {
   const [sortId, setSortId] = useState('newest');
   const [search, setSearch] = useState('');
+  const [weights, setWeights] = useState<WeightsFilter>('all');
   const sorted = useMemo(() => {
     const { key, desc } = SORTS.find(s => s.id === sortId)!;
     const term = search.trim().toLowerCase();
-    const matches = items.filter(m => m.name.toLowerCase().includes(term) || (m.org || '').toLowerCase().includes(term));
+    const matches = items.filter(m =>
+      (weights === 'all' || m.weights === weights) &&
+      (m.name.toLowerCase().includes(term) || (m.org || '').toLowerCase().includes(term)));
     return matches.sort((a, b) =>
       compare(a, b, key, desc) || compare(a, b, 'release', true) || a.name.localeCompare(b.name));
-  }, [items, sortId, search]);
+  }, [items, sortId, search, weights]);
 
   return (
-    <div className="space-y-4">
+    <div className="cols-10 space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <Input
           type="search"
@@ -69,14 +82,15 @@ export function ModelGrid({ items }: { items: GridItem[] }) {
           </select>
           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </label>
+        <Segmented label="Weights" value={weights} options={WEIGHTS} onChange={setWeights} />
         <p className="text-sm tabular-nums text-muted-foreground md:ml-auto">
           {sorted.length === items.length ? `${items.length} models` : `${sorted.length} of ${items.length} models`}
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {sorted.map(item => <div key={item.id} className="flex">{item.card}</div>)}
       </div>
-      {sorted.length === 0 && <p className="text-sm text-muted-foreground">No models match “{search}”.</p>}
+      {sorted.length === 0 && <p className="text-sm text-muted-foreground">No models match these filters.</p>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { ExplorerData, JoinedModelData } from '@/lib/data';
 import { QUESTIONS, type QuestionId, buildFindings, contextOf, lookupModels } from './explorer';
 import { VIEWS } from './explorerViews';
@@ -30,12 +31,13 @@ export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[
   }, []);
 
   const View = VIEWS[question];
+  const current = QUESTIONS.find((q) => q.id === question)!;
 
   return (
     <div className="grid gap-6 rounded-panel border border-border bg-card p-5 md:p-8 xl:relative xl:left-1/2 xl:w-[max(calc(100%+48px),80vw)] xl:-translate-x-1/2 xl:gap-0 xl:min-h-[760px]">
       <div
         ref={cardRef}
-        className="relative z-10 self-start overflow-hidden rounded-2xl border border-border bg-card/90 shadow-[0_8px_30px_-12px_rgba(5,28,44,0.18)] backdrop-blur-sm xl:[grid-area:1/1] xl:w-[390px]"
+        className="relative z-10 hidden self-start overflow-hidden rounded-2xl xl:block border border-border bg-card/90 shadow-[0_8px_30px_-12px_rgba(5,28,44,0.18)] backdrop-blur-sm xl:[grid-area:1/1] xl:w-[390px]"
       >
         <ol className="divide-y divide-border">
           {QUESTIONS.map((q, i) => {
@@ -68,6 +70,35 @@ export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[
             );
           })}
         </ol>
+      </div>
+
+      <div className="xl:hidden">
+        <label htmlFor="results-explorer-question" className="font-plex text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          Question {QUESTIONS.findIndex((q) => q.id === question) + 1} of {QUESTIONS.length}
+        </label>
+        {/* The native select stays on top (transparent) so phones open their own picker; the label underneath can wrap. */}
+        <div className="relative mt-1.5 rounded-xl border border-border bg-brand-soft/50 py-3 pl-4 pr-10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand">
+          <span aria-hidden className="block font-serif text-[14px] font-bold leading-snug text-ink">{current.title}</span>
+          <ChevronDown aria-hidden className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-ink" />
+          <select
+            id="results-explorer-question"
+            value={question}
+            onChange={(ev) => setQuestion(ev.target.value as QuestionId)}
+            aria-controls="results-explorer-chart"
+            className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0 focus:outline-none"
+          >
+            {QUESTIONS.map((q) => (
+              <option key={q.id} value={q.id}>{q.title}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mt-4 text-sm leading-relaxed">
+          <p className="text-muted-foreground">{contextOf(current, explorer)}</p>
+          <div className="mt-3 border-l-2 border-brand pl-3">
+            <p className="font-plex text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-strong">Finding</p>
+            <p className="mt-1 text-ink">{findings[question]}</p>
+          </div>
+        </div>
       </div>
 
       <div ref={columnRef} id="results-explorer-chart" className="font-plex min-w-0 xl:flex xl:flex-col xl:[grid-area:1/1]">

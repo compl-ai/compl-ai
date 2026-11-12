@@ -33,13 +33,27 @@ export function SiteHeader() {
     </Link>
   ));
 
+  const createdBy = (
+    <>
+      Created by{' '}
+      {CREATORS.map((c, i) => (
+        <span key={c.name}>
+          <a href={c.href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-link">{c.name}</a>
+          {i < CREATORS.length - 2 ? ', ' : i === CREATORS.length - 2 ? ', and ' : ''}
+        </span>
+      ))}
+    </>
+  );
+
+  // Phones: only the link row sticks; the logo row scrolls away.
   return (
-    <header className="sticky top-0 z-50 w-full bg-card/90 backdrop-blur pt-3 md:pt-4 print:pt-0 print:bg-transparent print:backdrop-blur-none">
+    <>
+    <header className="sm:sticky top-0 z-50 w-full bg-card/90 backdrop-blur pt-3 md:pt-4 print:pt-0 print:bg-transparent print:backdrop-blur-none">
       <div className="frame h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6">
         <div className="flex items-center gap-2.5">
           <Link href="/" aria-label="ComplAI CORE home" className="flex shrink-0"><BrandMark /></Link>
           <span
-            className="font-mono text-[11px] font-semibold text-ink bg-brand/30 dark:bg-brand/70 dark:text-navy rounded-full px-2.5 py-1 leading-none"
+            className="whitespace-nowrap font-mono text-[11px] font-semibold text-ink bg-brand/30 dark:bg-brand/70 dark:text-navy rounded-full px-2.5 py-1 leading-none"
             style={{ transform: `translateY(${(LOGO_HEIGHT.md * LOGO_I_CENTER_OFFSET).toFixed(2)}px)` }}
             title="Current release of the CORE evaluation set and results"
           >
@@ -47,18 +61,10 @@ export function SiteHeader() {
           </span>
         </div>
 
-        <nav className="hidden md:flex print:hidden justify-center gap-6 lg:gap-10 text-[17px]" aria-label="Main">{navLinks}</nav>
+        <nav className="hidden xl:flex print:hidden justify-center gap-10 text-[17px]" aria-label="Main">{navLinks}</nav>
 
         <div className="flex items-center justify-end gap-5 print:hidden">
-          <p className="hidden xl:block font-plex text-[11px] font-medium text-ink">
-            Created by{' '}
-            {CREATORS.map((c, i) => (
-              <span key={c.name}>
-                <a href={c.href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-link">{c.name}</a>
-                {i < CREATORS.length - 2 ? ', ' : i === CREATORS.length - 2 ? ', and ' : ''}
-              </span>
-            ))}
-          </p>
+          <p className="hidden md:block font-plex text-[11px] font-medium text-ink">{createdBy}</p>
           <a
             href={REPO_URL}
             target="_blank"
@@ -70,7 +76,12 @@ export function SiteHeader() {
           </a>
         </div>
       </div>
-      <nav className="md:hidden print:hidden flex gap-6 overflow-x-auto px-4 pb-3 text-[15px]" aria-label="Main">{navLinks}</nav>
+      <p className="md:hidden print:hidden frame -mt-1 font-plex text-[11px] font-medium text-ink">{createdBy}</p>
+      <nav className="hidden sm:flex xl:hidden print:hidden frame justify-between md:justify-start gap-3 md:gap-8 overflow-x-auto pt-2.5 md:pt-0 pb-3 text-[13px] md:text-[16px]" aria-label="Main">{navLinks}</nav>
     </header>
+    <nav className="sm:hidden print:hidden sticky top-0 z-50 w-full bg-card/90 backdrop-blur" aria-label="Main">
+      <div className="frame flex justify-between gap-3 overflow-x-auto pt-2.5 pb-3 text-[12px] min-[400px]:text-[13px]">{navLinks}</div>
+    </nav>
+    </>
   );
 }

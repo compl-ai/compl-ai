@@ -1,4 +1,4 @@
-import { OutcomeBar, OutcomeLegend } from '@/components/OutcomeBar';
+import { OutcomeBar, OutcomeLegend, OutcomeShares } from '@/components/OutcomeBar';
 import Link from 'next/link';
 import { dataSourceUrl, type BenchmarkHealth, type BenchmarkMeta, type SampleAnalysis } from '@/lib/data';
 import { SATURATION } from '@/lib/outcomes';
@@ -168,7 +168,7 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
                 const b = byName[name];
                 const m = meta[name];
                 return (
-                  <BaseCard key={name} id={benchmarkAnchor(name)} className="scroll-mt-24 gap-4 target:ring-2 target:ring-ink/30">
+                  <BaseCard key={name} id={benchmarkAnchor(name)} className="scroll-mt-24 gap-3 sm:gap-4 target:ring-2 target:ring-ink/30">
                     <div>
                       <BaseCardTitle className="[overflow-wrap:anywhere]">{m?.name ?? name}</BaseCardTitle>
                       <BenchmarkMetaLine meta={m} />
@@ -182,6 +182,7 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
                           definition={definition}
                           footer={`The answers of ${outcomes.models} models to ${t.core_items} core questions.`}
                         />
+                        <OutcomeShares shares={outcomes.outcomes} definition={definition} />
                       </div>
                     )}
 

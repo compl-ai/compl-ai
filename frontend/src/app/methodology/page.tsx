@@ -177,7 +177,7 @@ export default function MethodologyPage() {
   const efficiency = getEfficiency();
   const method = METHOD;
   return (
-    <article className="frame pt-22 pb-12">
+    <article className="frame pt-10 sm:pt-22 pb-12">
       <div className="cols-8">
       <header>
         <Eyebrow>How it works</Eyebrow>

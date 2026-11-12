@@ -4,7 +4,7 @@ import { getJoinedModels, getTaxonomy } from '@/lib/data';
 import { ModelCard } from '@/components/ModelCard';
 import { Eyebrow } from '@/components/layout/Eyebrow';
 import { getIndexTheta, scaleTheta, type IndexId } from '@/lib/scores';
-import { paramsOf } from '@/components/home/explorer';
+import { paramsOf, weightsOf } from '@/components/home/explorer';
 import { areaStandings } from './strengths';
 import { ModelGrid, type GridItem } from './ModelGrid';
 
@@ -23,6 +23,7 @@ export default function ModelsPage() {
     org: m.metadata?.organization || null,
     release: m.metadata?.release_date || null,
     params: paramsOf(m),
+    weights: weightsOf(m),
     capability: score(m, 'capability'),
     reliability: score(m, 'reliability'),
     safety: score(m, 'safety'),
@@ -30,7 +31,7 @@ export default function ModelsPage() {
   }));
 
   return (
-    <div className="frame pt-22 pb-12 space-y-14">
+    <div className="frame pt-10 sm:pt-22 pb-12 space-y-14">
       <header className="cols-10">
         <div className="max-w-3xl">
         <Eyebrow>Models</Eyebrow>

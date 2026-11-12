@@ -12,7 +12,7 @@ import { ReportToc } from '@/components/ReportToc';
 import { cn } from '@/lib/utils';
 import { ModelMeta } from '@/components/ModelCard';
 import { CopyCommand } from '@/components/home/CopyCommand';
-import { fmtUsd } from '@/components/home/explorer';
+import { CostPanel } from '@/components/CostPanel';
 import { areaSlug, benchmarkAnchor, getBenchmarkCatalog, type CatalogBenchmark } from '@/lib/catalog';
 import {
   getAreaDescriptions,
@@ -44,7 +44,6 @@ import {
   formatDate,
   formatDateRange,
   formatInterval,
-  formatMultiplier,
   formatAccuracyInterval,
   formatPercent,
   formatRankRange,
@@ -56,7 +55,6 @@ import {
   rankRange,
   scaleTheta,
   scoreBarPct,
-  tokenMultiplier,
 } from '@/lib/scores';
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -214,53 +212,12 @@ function CostSection({ tokens, usd, run, coreAnswered, coreTotal, tasksTotal }: 
   coreTotal: number | null;
   tasksTotal: number;
 }) {
-  const multiplier = tokenMultiplier(tokens);
-  const coreEstimated = run !== 'core';
-  const fullEstimated = run !== 'full';
-  const bars = [
-    { label: 'CORE subset', value: tokens.core, estimated: coreEstimated, className: 'bg-teal-strong' },
-    { label: 'Every question', value: tokens.full, estimated: fullEstimated, className: 'bg-ink/25' },
-  ];
   return (
     <section aria-labelledby="cost">
       <SectionHeading id="cost" title="Cost of the evaluation">
-        {RUN_TYPES[run].description} Answering only the CORE subset takes a fraction of the tokens needed to run every question of the suite.
+        {RUN_TYPES[run].description} Answering only the CORE subset costs a fraction of running every question of the suite.
       </SectionHeading>
-      <div className="rounded-2xl border border-border bg-card p-5 md:p-6 grid grid-cols-1 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] gap-6 md:gap-10 items-center">
-        {multiplier !== null && (
-          <div>
-            <div className="font-serif text-5xl font-extrabold tracking-tight tabular text-teal-strong">{formatMultiplier(multiplier)}×</div>
-            <div className="mt-1 text-sm text-ink">more efficient than running every question</div>
-          </div>
-        )}
-        <div className="space-y-3">
-          {bars.map(b => (
-            <div key={b.label}>
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">{b.label}</span>
-                <span className="tabular">
-                  <span className="font-semibold text-ink">{b.estimated ? '~' : ''}{formatTokens(b.value)} tokens</span>
-                  <span className="ml-1.5 text-xs text-muted-foreground">{b.estimated ? 'estimated' : 'measured'}</span>
-                </span>
-              </div>
-              <div className="mt-1.5 h-2 rounded-full bg-track">
-                <div className={`h-2 rounded-full ${b.className}`} style={{ width: `${Math.max((b.value / tokens.full) * 100, 1)}%` }} />
-              </div>
-            </div>
-          ))}
-          <p className="pt-1 text-sm text-muted-foreground leading-relaxed">
-            {coreAnswered !== null && coreTotal !== null && <>{coreAnswered.toLocaleString()} of {coreTotal.toLocaleString()} core questions answered. </>}
-            Tokens of the evaluated model only, measured in the logs of {tokens.tasks} of {tasksTotal} benchmarks; judge models are not counted.{' '}
-            <Link href="/methodology#efficiency" className="font-semibold text-link hover:underline">How we estimate this</Link>
-          </p>
-          {usd && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              At {usd.source} list prices this is about <span className="font-semibold text-ink tabular">{fmtUsd(usd.core_usd)}</span> for CORE
-              and <span className="font-semibold text-ink tabular">{fmtUsd(usd.full_usd)}</span> for every question. Batch APIs roughly halve both.
-            </p>
-          )}
-        </div>
-      </div>
+      <CostPanel tokens={tokens} usd={usd} run={run} coreAnswered={coreAnswered} coreTotal={coreTotal} tasksTotal={tasksTotal} />
     </section>
   );
 }
@@ -1013,7 +970,7 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
   ];
 
   return (
-    <div className="frame pt-20 pb-10 print:pt-6">
+    <div className="frame pt-10 sm:pt-20 pb-10 print:pt-6">
     <div className="cols-10 space-y-14">
       <div>
         <Link href="/models" className="inline-block mb-[34px] text-sm font-semibold text-muted-foreground hover:text-link transition-colors print:hidden">

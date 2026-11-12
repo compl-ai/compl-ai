@@ -73,7 +73,7 @@ export default function MappingPage() {
 
   return (
     <div className="frame">
-      <div className="cols-10 pt-22 pb-12">
+      <div className="cols-10 pt-10 sm:pt-22 pb-12">
         <IndexScope className="space-y-12">
           <section aria-labelledby="mapping-heading" className="space-y-8">
             <header className="max-w-5xl">

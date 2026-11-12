@@ -4,85 +4,82 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { ProviderLogo } from '@/components/ProviderLogo';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { JoinedModelData } from '@/lib/data';
+import type { ExplorerCostRow, JoinedModelData } from '@/lib/data';
+import { fmtUsd } from '@/components/home/explorer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowDown, ArrowUp, ArrowUpDown, Info } from 'lucide-react';
-import { INDEX_BAR, INDICES, NO_SCORE_REASON, THETA_MEAN, formatInterval, formatMultiplier, formatScore, formatTokens, getIndexTheta, getRunType, parseParams, scaleTheta, scoreBarPct, tokenMultiplier } from '@/lib/scores';
+import { INDEX_BAR, INDICES, NO_SCORE_REASON, THETA_MEAN, formatInterval, formatMultiplier, formatScore, getIndexTheta, getRunType, parseParams, scaleTheta, scoreBarPct } from '@/lib/scores';
 
 
-function formatParams(m: JoinedModelData): string {
+function formatParams(m: JoinedModelData): string | null {
   const specs = m.metadata?.specs;
   const total = parseParams(specs?.total_params);
-  if (!total || isNaN(total)) return '—';
+  if (!total || isNaN(total)) return null;
   const active = specs?.active_params ? parseParams(specs.active_params) : null;
   const fmt = (n: number) => `${(n / 1e9).toFixed(0)}B`;
   return active && active !== total && !isNaN(active) ? `${fmt(total)} (${fmt(active)})` : fmt(total);
 }
 
-type SortKey = 'name' | 'org' | 'params' | 'tokens' | (typeof INDICES)[number]['id'];
+type SortKey = 'name' | 'org' | 'params' | 'cost' | (typeof INDICES)[number]['id'];
 
-function TokensCell({ model }: { model: JoinedModelData }) {
+function CostCell({ model, cost }: { model: JoinedModelData; cost: ExplorerCostRow | undefined }) {
   const run = getRunType(model);
-  const t = model.prediction?.usage?.tokens;
-  if (!t || !run) {
+  if (!cost || !run || !(cost.core_usd > 0) || !(cost.full_usd > 0)) {
     return (
-      <TableCell className="px-3 py-3 text-right text-muted-foreground/60 text-xs" title="The logs for this run have no token counts.">—</TableCell>
+      <TableCell className="px-3 py-3 text-right text-muted-foreground/60 text-xs" title="No list price for this model (self-hosted).">—</TableCell>
     );
   }
   const coreEst = run !== 'core';
   const fullEst = run !== 'full';
-  const corePct = Math.max((t.core / t.full) * 100, 2);
-  const multiplier = tokenMultiplier(t);
+  const multiplier = cost.full_usd / cost.core_usd;
   const benchmarks = model.prediction?.coverage?.tasks_total;
+  const tokens = model.prediction?.usage?.tokens;
   const title = [
-    `Core subset: ${coreEst ? 'about ' : ''}${t.core.toLocaleString()} tokens${coreEst ? ' (estimated)' : ' (measured)'}`,
-    `All items: ${fullEst ? 'about ' : ''}${t.full.toLocaleString()} tokens${fullEst ? ' (estimated)' : ' (measured)'}`,
-    `Tokens of the evaluated model (judge models not counted), on the ${t.tasks}${benchmarks ? ` of ${benchmarks}` : ''} benchmarks it ran that have token counts in the logs. Estimates scale the measured tokens per item to the other item count.`,
+    `CORE subset: ${coreEst ? 'about ' : ''}${fmtUsd(cost.core_usd)}${coreEst ? ' (estimated)' : ' (measured tokens)'}`,
+    `All items: ${fullEst ? 'about ' : ''}${fmtUsd(cost.full_usd)}${fullEst ? ' (estimated)' : ' (measured tokens)'}`,
+    `${formatMultiplier(multiplier)}× cheaper. Tokens of the evaluated model at ${cost.source} list prices (judge models not counted)${tokens ? `, on the ${tokens.tasks}${benchmarks ? ` of ${benchmarks}` : ''} benchmarks with token counts in the logs` : ''}.`,
   ].join('\n');
   return (
-    <TableCell className="px-3 py-3" title={title}>
-      <div className="flex flex-col items-end gap-1.5">
-        <span className="tabular text-[13px] font-semibold text-ink whitespace-nowrap">
-          {multiplier !== null ? <>{formatMultiplier(multiplier)}×</> : <>{coreEst ? '~' : ''}{formatTokens(t.core)}</>}
-        </span>
-        <div className="w-full space-y-0.5" aria-hidden>
-          <div className="h-1 rounded-full bg-ink" style={{ width: `${corePct}%` }} />
-          <div className="h-1 w-full rounded-full bg-track" />
-        </div>
-        <span className="text-[10px] text-muted-foreground tabular whitespace-nowrap">
-          {coreEst ? '~' : ''}{formatTokens(t.core)} vs {fullEst ? '~' : ''}{formatTokens(t.full)} full
+    <TableCell className="px-1.5 sm:px-2 md:px-3 py-3" title={title}>
+      <div className="flex flex-col items-end gap-0.5">
+        <span className="tabular text-[13px] font-semibold text-ink whitespace-nowrap">{coreEst ? '~' : ''}{fmtUsd(cost.core_usd)}<span className="hidden sm:inline text-[10px] font-medium text-muted-foreground"> (CORE)</span></span>
+        <span className="text-[10px] sm:text-[11px] md:text-xs text-muted-foreground tabular whitespace-nowrap">
+          vs {fullEst ? '~' : ''}<span className="sm:hidden">{fmtUsdShort(cost.full_usd)}</span><span className="hidden sm:inline">{fmtUsd(cost.full_usd)}</span><span className="hidden md:inline"> full</span>
         </span>
       </div>
     </TableCell>
   );
 }
+// Phones only: $1,422 -> $1.4k.
+const fmtUsdShort = (v: number) => (v >= 1000 ? `$${+(v / 1000).toFixed(1)}k` : fmtUsd(v));
+
 type SortState = { key: SortKey, direction: 'asc' | 'desc' };
 
-const EFFICIENCY_INFO = 'How many times fewer tokens the model uses on a core evaluation than on a full evaluation of the same benchmarks. The dark bar is the core run, the grey bar the full run. Judge models are not counted, and a tilde marks values extrapolated from the run that was actually done.';
+const COST_INFO = 'What a CORE evaluation costs at the model\'s list prices, compared with a full evaluation of the same benchmarks. Judge models are not counted, a tilde marks values extrapolated from the run that was actually done, and self-hosted models without a list price show a dash.';
 
-function SortableHead({ label, sortKey, sort, onSort, align = 'left', className = '', info }: {
-  label: string, sortKey: SortKey, sort: SortState, onSort: (key: SortKey) => void, align?: 'left' | 'right', className?: string, info?: string
+function SortableHead({ label, sortKey, sort, onSort, align = 'left', className = '', info, nowrap = false }: {
+  label: string, nowrap?: boolean, sortKey: SortKey, sort: SortState, onSort: (key: SortKey) => void, align?: 'left' | 'right', className?: string, info?: string
 }) {
   const active = sort.key === sortKey;
   const Icon = !active ? ArrowUpDown : sort.direction === 'asc' ? ArrowUp : ArrowDown;
   return (
     <TableHead
-      className={`h-11 px-3 text-xs font-semibold uppercase tracking-wider ${align === 'right' ? 'text-right' : ''} ${className}`}
+      className={`h-11 px-1.5 sm:px-2 md:px-3 pb-2.5 md:pb-0 text-[9px] leading-tight sm:text-[11px] sm:leading-normal md:text-xs font-semibold uppercase tracking-normal md:tracking-wider whitespace-normal md:whitespace-nowrap align-bottom md:align-middle ${align === 'right' ? 'text-right' : ''} ${className}`}
       aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
-      <div className="inline-flex items-center">
+      <div className={`flex items-center ${align === 'right' ? 'justify-end' : ''}`}>
       <button
         onClick={() => onSort(sortKey)}
-        className={`inline-flex cursor-pointer items-center gap-1 uppercase tracking-wider transition-colors hover:text-ink ${align === 'right' ? 'flex-row-reverse' : ''} ${active ? 'text-ink' : 'text-muted-foreground'}`}
+        className={`inline-flex cursor-pointer items-center gap-1 text-left uppercase transition-colors hover:text-ink ${align === 'right' ? 'flex-row-reverse' : ''} ${active ? 'text-ink' : 'text-muted-foreground'}`}
       >
-        {label}
-        <Icon className={`w-3 h-3 ${active ? 'text-brand-strong' : 'opacity-40'}`} />
+        <span className={nowrap ? 'whitespace-nowrap' : undefined}>{label}</span>
+        <Icon className={`w-3 h-3 shrink-0 ${active ? 'text-brand-strong' : 'hidden sm:block opacity-40'}`} />
       </button>
       {info && (
         <Tooltip>
           <TooltipTrigger
             aria-label={`About ${label}`}
-            className="-my-2 -mr-1.5 inline-flex py-2 pl-2 pr-1.5 text-muted-foreground/70 transition-colors hover:text-ink"
+            className="-my-2 -mr-1.5 hidden md:inline-flex py-2 pl-2 pr-1.5 text-muted-foreground/70 transition-colors hover:text-ink"
           >
             <Info className="w-3.5 h-3.5" />
           </TooltipTrigger>
@@ -94,8 +91,10 @@ function SortableHead({ label, sortKey, sort, onSort, align = 'left', className 
   );
 }
 
-export function ModelDataTable({ initialModels, initialRows, heading }: {
+export function ModelDataTable({ initialModels, costs, initialRows, heading }: {
   initialModels: JoinedModelData[],
+  // Eval cost rows keyed by model id; models without a list price are absent.
+  costs: Record<string, ExplorerCostRow>,
   // Rendered above the filter row.
   heading?: React.ReactNode,
   // Rows shown before "Show all"; searching always shows every match.
@@ -116,7 +115,7 @@ export function ModelDataTable({ initialModels, initialRows, heading }: {
       case 'name': return m.metadata?.name || m.yamlId;
       case 'org': return m.metadata?.organization || null;
       case 'params': return parseParams(m.metadata?.specs?.total_params) || null;
-      case 'tokens': { const t = m.prediction?.usage?.tokens; return t ? tokenMultiplier(t) : null; }
+      case 'cost': { const c = costs[m.id]; return c && c.core_usd > 0 ? c.core_usd : null; }
       default: return getIndexTheta(m, sort.key)?.theta ?? null;
     }
   };
@@ -137,7 +136,7 @@ export function ModelDataTable({ initialModels, initialRows, heading }: {
   const requestSort = (key: SortKey) => {
     setSort(prev => prev.key === key
       ? { key, direction: prev.direction === 'desc' ? 'asc' : 'desc' }
-      : { key, direction: key === 'name' || key === 'org' ? 'asc' : 'desc' });
+      : { key, direction: key === 'name' || key === 'org' || key === 'cost' ? 'asc' : 'desc' });
   };
 
 
@@ -162,33 +161,40 @@ export function ModelDataTable({ initialModels, initialRows, heading }: {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <SortableHead sort={sort} onSort={requestSort} label="Model" sortKey="name" className="sticky left-0 bg-card z-10" />
-              <SortableHead sort={sort} onSort={requestSort} label="Org" sortKey="org" />
-              <SortableHead sort={sort} onSort={requestSort} label="Params" sortKey="params" align="right" />
-              <SortableHead sort={sort} onSort={requestSort} label="Eval Efficiency" sortKey="tokens" align="right" className="min-w-[130px]" info={EFFICIENCY_INFO} />
+              <SortableHead sort={sort} onSort={requestSort} label="Org" sortKey="org" className="hidden md:table-cell" />
+              <SortableHead sort={sort} onSort={requestSort} label="Params" sortKey="params" align="right" className="hidden md:table-cell w-px" nowrap />
+              <SortableHead sort={sort} onSort={requestSort} label="Eval Cost" sortKey="cost" align="right" className="sm:min-w-[96px] md:min-w-[130px]" info={COST_INFO} nowrap />
               {INDICES.map(d => (
-                <SortableHead sort={sort} onSort={requestSort} key={d.id} label={d.label} sortKey={d.id} align="right" className="min-w-[150px]" info={d.description} />
+                <SortableHead sort={sort} onSort={requestSort} key={d.id} label={d.label} sortKey={d.id} align="right" className="sm:min-w-[96px] md:min-w-[150px] xl:min-w-[168px] 2xl:min-w-[180px]" info={d.description} />
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {visible.map(model => {
+              const params = formatParams(model);
               return (
                 <TableRow key={model.id} className="group hover:bg-hover">
-                  <TableCell className="px-3 py-3 font-semibold text-ink truncate max-w-[220px] sticky left-0 bg-card group-hover:bg-hover transition-colors z-10">
-                    <Link href={`/models/${model.yamlId}`} className="hover:underline decoration-brand decoration-2 underline-offset-4">
-                      {model.metadata?.name || model.yamlId}
-                    </Link>
+                  <TableCell className="px-1.5 sm:px-2 md:px-3 py-3 text-[11px] md:text-sm font-semibold text-ink max-w-[112px] sm:max-w-[132px] md:max-w-[220px] sticky left-0 bg-card group-hover:bg-hover transition-colors z-10">
+                    <span className="flex items-start gap-2 md:block md:truncate">
+                      <ProviderLogo org={model.metadata?.organization} className="mt-0.5 text-ink md:hidden" />
+                      <span className="min-w-0 whitespace-normal md:inline">
+                        <Link href={`/models/${model.yamlId}`} className="hover:underline decoration-brand decoration-2 underline-offset-4">
+                          {model.metadata?.name || model.yamlId}
+                        </Link>
+                        {params && <span className="block whitespace-nowrap font-normal text-muted-foreground tabular text-[10px] md:hidden">{params}</span>}
+                      </span>
+                    </span>
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-muted-foreground max-w-[160px]">
+                  <TableCell className="hidden md:table-cell px-3 py-3 text-muted-foreground max-w-[160px]">
                     <span className="flex items-center gap-2">
                       <ProviderLogo org={model.metadata?.organization} className="text-ink" />
                       <span className="truncate">{model.metadata?.organization || '—'}</span>
                     </span>
                   </TableCell>
-                  <TableCell className="px-3 py-3 text-right text-muted-foreground tabular text-xs whitespace-nowrap">
-                    {formatParams(model)}
+                  <TableCell className="hidden md:table-cell w-px px-2 py-3 text-right text-muted-foreground tabular text-xs whitespace-nowrap">
+                    {params ?? '—'}
                   </TableCell>
-                  <TokensCell model={model} />
+                  <CostCell model={model} cost={costs[model.id]} />
                   {INDICES.map(d => {
                     const t = getIndexTheta(model, d.id);
                     if (!t) {
@@ -202,12 +208,12 @@ export function ModelDataTable({ initialModels, initialRows, heading }: {
                     return (
                       <TableCell
                         key={d.id}
-                        className="px-3 py-3"
+                        className="px-1.5 sm:px-2 md:px-3 py-3"
                         title={`${d.label} ${formatScore(t.theta)}, 90% interval ${formatInterval(t.interval)}; estimated from ${t.tasks} of ${t.tasks_total} benchmarks`}
                       >
-                        <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex flex-col items-end gap-0.5">
                           <span className="tabular text-[13px] font-semibold text-ink whitespace-nowrap">{formatScore(t.theta)}</span>
-                          <div className="relative w-full h-1.5 rounded-full bg-grid">
+                          <div className="relative hidden sm:block w-full h-1.5 rounded-full bg-grid">
                             <div className="absolute inset-y-0 w-px bg-track" style={{ left: `${scoreBarPct(THETA_MEAN)}%` }} />
                             <div
                               className={`absolute inset-y-0 rounded-full ${INDEX_BAR[d.id].band}`}
@@ -218,7 +224,7 @@ export function ModelDataTable({ initialModels, initialRows, heading }: {
                               style={{ left: `${point}%` }}
                             />
                           </div>
-                          <span className="text-[10px] text-muted-foreground tabular whitespace-nowrap">{formatInterval(t.interval)} @ 90% CI</span>
+                          <span className="text-[10px] sm:text-[11px] md:text-xs text-muted-foreground tabular whitespace-nowrap">{formatInterval(t.interval)}<span className="hidden md:inline"> @ 90% CI</span></span>
                         </div>
                       </TableCell>
                     );

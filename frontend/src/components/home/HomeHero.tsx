@@ -15,7 +15,7 @@ export function HomeHero({ benchmarks }: { benchmarks: number | null }) {
               on {benchmarks ?? 'the'} established benchmarks across capability, safety, and reliability.
             Previous h1: Run fewer tests.<br />Measure more.
         */}
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-ink leading-[1.02]">
+        <h1 className="text-[42px] md:text-7xl font-extrabold tracking-tight text-ink leading-[1.02]">
           Efficient, open, and<br /> reproducible AI evaluation.
         </h1>
         <p className="mt-8 font-plex text-[20px] text-muted-foreground max-w-[780px] leading-relaxed">
@@ -67,7 +67,7 @@ export function CoreStats({ efficiency }: { efficiency: SuiteEfficiency }) {
   const label = 'mt-2 font-plex text-sm text-muted-foreground leading-snug max-w-[18rem]';
 
   return (
-    <section className="frame pb-16" aria-label="CORE at a glance">
+    <section className="frame pb-2 sm:pb-16" aria-label="CORE at a glance">
       <div className="grid gap-8 md:grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)_auto_minmax(13rem,1fr)] lg:grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)_auto_minmax(16rem,1fr)] md:items-start md:gap-6 xl:gap-10 border-y border-border py-5 lg:py-6 px-0 [--bleed:24px] min-[1440px]:[--bleed:40px] md:-mx-[var(--bleed)] md:px-[var(--bleed)]">
         <div>
           <StatTag kind="evaluate" />

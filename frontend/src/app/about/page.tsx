@@ -30,7 +30,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 export default function AboutPage() {
   return (
-    <article className="frame pt-22 pb-12">
+    <article className="frame pt-10 sm:pt-22 pb-12">
       <div className="cols-8">
         <header>
           <Eyebrow>About</Eyebrow>

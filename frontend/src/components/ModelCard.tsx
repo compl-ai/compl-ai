@@ -26,7 +26,7 @@ function StandingList({ label, items, tone }: { label: string; items: AreaStandi
       <MicroLabel icon={<Icon className={`size-3.5 shrink-0 ${tone === 'strong' ? 'text-success' : 'text-brand'}`} strokeWidth={2.5} aria-hidden />}>
         {label}
       </MicroLabel>
-      <p className="mt-0.5 text-xs leading-snug text-ink">
+      <p className="mt-0.5 sm:mt-1 text-xs leading-snug text-ink">
         {items.map((s, i) => (
           <span key={s.key} title={`Rank ${s.rank} of ${s.of} models in this evaluation area`}>
             {s.name}
@@ -89,7 +89,7 @@ export function ModelCard({ model, strong, weak }: { model: JoinedModelData; str
       <h2 className="font-serif text-base font-bold leading-tight tracking-tight text-ink group-hover:text-link transition-colors">{name}</h2>
       <ModelMeta model={model} className="mt-1.5 gap-1.5 text-xs" />
 
-      <StatGrid className="mt-4">
+      <StatGrid className="mt-4 sm:mt-6">
         {INDICES.map(index => {
           const theta = getIndexTheta(model, index.id);
           return (
@@ -105,7 +105,7 @@ export function ModelCard({ model, strong, weak }: { model: JoinedModelData; str
       </StatGrid>
 
       {(strong.length > 0 || weak.length > 0) && (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
           {strong.length > 0 && <StandingList label="Excels at" items={strong} tone="strong" />}
           {weak.length > 0 && <StandingList label="Falls behind on" items={weak} tone="weak" />}
         </div>

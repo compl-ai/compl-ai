@@ -57,7 +57,7 @@ export default function BenchmarksPage() {
 
   return (
     <div className="frame">
-    <IndexScope className="cols-10 pt-22 pb-12 space-y-12">
+    <IndexScope className="cols-10 pt-10 sm:pt-22 pb-12 space-y-12">
       <section aria-labelledby="benchmarks-heading" className="space-y-8">
         <header className="max-w-5xl">
           <Eyebrow>Benchmarks</Eyebrow>

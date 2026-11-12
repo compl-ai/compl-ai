@@ -69,6 +69,21 @@ export function OutcomeBar({
   );
 }
 
+// Phone-only key under a bar (no hover there): each outcome's colour, name and share, so the bar reads without hovering.
+export function OutcomeShares({ shares, definition }: { shares: OutcomeShares; definition: Definition }) {
+  return (
+    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] sm:hidden leading-tight text-muted-foreground">
+      {OUTCOMES.filter(o => shares[o.id] > 0).map(o => (
+        <span key={o.id} className="inline-flex items-center gap-1 whitespace-nowrap">
+          <span className={`size-1.5 shrink-0 rounded-sm ${o.bar}`} aria-hidden />
+          {definition[o.id].label}
+          <span className="tabular font-semibold text-ink/80">{formatShare(shares[o.id])}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function OutcomeLegend({ definition, only }: { definition: Definition; only?: Outcome[] }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
