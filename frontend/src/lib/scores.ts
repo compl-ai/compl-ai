@@ -77,14 +77,12 @@ export const RUN_TYPES: Record<RunType, { label: string; short: string; descript
   },
 };
 
-// Falls back to coverage for exports without usage data: a CORE-only run observed no
-// population items beyond the CORE items it answered.
+// Where a list rate in costs.json comes from.
+const RATE_SOURCES: Record<string, string> = { openrouter: 'OpenRouter', google: 'Google' };
+export const rateSource = (source: string) => RATE_SOURCES[source] ?? source;
+
 export function getRunType(m: JoinedModelData): RunType | null {
-  const usage = m.prediction?.usage;
-  if (usage) return usage.run_type;
-  const cov = m.prediction?.coverage;
-  if (!cov) return null;
-  return cov.population_samples_observed > cov.samples_completed ? 'full' : 'core';
+  return m.runType;
 }
 
 export function formatTokens(n: number): string {
@@ -130,18 +128,9 @@ export function formatAccuracyInterval(interval: readonly [number, number]): str
   return `${Math.round(interval[0] * 100)}–${Math.round(interval[1] * 100)}%`;
 }
 
-// Above this share of imputed items, an evaluation-area score mostly reflects benchmarks the
-// model did not run, and its interval (which excludes imputation error) understates the uncertainty.
-export const IMPUTED_SHARE_LIMIT = 0.5;
-
 // An evaluation-area score is only shown when the model answered at least one of its CORE items.
 export function hasMeasuredScore(score: LabelScore | undefined): score is LabelScore & { predicted_score: number } {
   return !!score && score.predicted_score !== null && score.observations > 0;
-}
-
-export function imputedShare(score: LabelScore): number {
-  if (score.imputed_weight !== undefined) return score.imputed_weight;
-  return score.population_items > 0 ? score.imputed_items / score.population_items : 0;
 }
 
 // Plausible rank range from 90% intervals: models whose interval lies entirely above this

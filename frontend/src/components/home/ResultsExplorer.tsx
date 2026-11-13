@@ -1,16 +1,16 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import type { ExplorerData, JoinedModelData } from '@/lib/data';
+import type { CostOverview, ExperimentsData, JoinedModelData } from '@/lib/data';
 import { QUESTIONS, type QuestionId, buildFindings, contextOf, lookupModels } from './explorer';
 import { VIEWS } from './explorerViews';
 
 // Space between the floating question card and the first data on wide screens.
 const CARD_GAP = 28;
 
-export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[]; explorer: ExplorerData }) {
+export function ResultsExplorer({ models, explorer, costs }: { models: JoinedModelData[]; explorer: ExperimentsData; costs: CostOverview }) {
   const [question, setQuestion] = useState<QuestionId>(QUESTIONS[0].id);
-  const findings = useMemo(() => buildFindings(explorer, models), [explorer, models]);
+  const findings = useMemo(() => buildFindings(explorer, costs, models), [explorer, costs, models]);
   const byId = useMemo(() => lookupModels(models), [models]);
 
   const columnRef = useRef<HTMLDivElement>(null);
@@ -102,7 +102,7 @@ export function ResultsExplorer({ models, explorer }: { models: JoinedModelData[
       </div>
 
       <div ref={columnRef} id="results-explorer-chart" className="font-plex min-w-0 xl:flex xl:flex-col xl:[grid-area:1/1]">
-        <View key={question} e={explorer} models={models} byId={byId} inset={inset} />
+        <View key={question} e={explorer} costs={costs} models={models} byId={byId} inset={inset} />
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { ReferenceLine } from 'recharts';
 import type { ExplorerSafetyGroup, JoinedModelData } from '@/lib/data';
-import { type IndexId, INDICES, THETA_MEAN, formatTokens, getIndexTheta, scaleTheta } from '@/lib/scores';
+import { type IndexId, INDICES, THETA_MEAN, formatDate, formatTokens, getIndexTheta, scaleTheta } from '@/lib/scores';
 import {
   type QuestionId, fmtMonth, fmtParams, fmtUsd,
   indexLabel, ols, paramsFit, indexScore, nameFor, nameOf, releaseOf, shortName, weightsOf,
@@ -113,11 +113,10 @@ function CapabilitySafetyView({ e, models, inset }: ViewProps) {
   );
 }
 
-// 3. The scored safety areas in three groups by release date: one group's models, every group's trend.
+// 3. The scored safety areas in two groups by release date: one group's models, every group's trend.
 const GROUP_STYLE: Record<ExplorerSafetyGroup['id'], { color: string; dash?: string }> = {
   injection: { color: 'var(--color-lavender-strong)' },
   refusal: { color: 'var(--color-lavender)', dash: '5 4' },
-  fairness: { color: 'var(--muted-foreground)', dash: '1 3' },
 };
 const pp = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${f1(Math.abs(v))}`;
 
@@ -167,13 +166,13 @@ function SafetyAreasView({ e, byId, inset }: ViewProps) {
       status={<>
         Each group averages its areas: {groups.filter(g => g.members.length > 1).map((g, k) => (
           <span key={g.id}>{k > 0 && '; '}<span className="text-ink">{g.name.toLowerCase()}</span> = {g.members.map(m => m.name.toLowerCase()).join(', ')}</span>
-        ))}. One fairness benchmark (FairLLM) is hard for every model, which lowers the fairness level.
+        ))}. Fairness is left out because many older models skipped one of its benchmarks, so their scores are not comparable.
         {' '}Accuracy on our benchmarks, not real-world safety; jailbreak resistance is not scored yet.
       </>}
       legend={<>
         <WeightKeys color={style.color} />
         <Key kind={style.dash ? 'dash' : 'line'} color={style.color}>Trend</Key>
-        <Key kind="line" color="var(--color-subtle)">Other groups’ trends</Key>
+        <Key kind="line" color="var(--color-subtle)">Other group’s trend</Key>
       </>}
     >
       <ScatterPlot chart={chart} inset={inset} className="absolute inset-0" />
@@ -318,9 +317,8 @@ const fmtUsdTick = (v: number) => (v < 10 ? `$${+v.toPrecision(1)}` : fmtUsd(v))
 const fmtCost = (unit: 'usd' | 'tokens') => (v: number) =>
   v === 0 ? (unit === 'usd' ? '$0' : '0') : unit === 'usd' ? fmtUsd(v) : formatTokens(v);
 
-function EvalCostView({ e, byId, inset }: ViewProps) {
+function EvalCostView({ costs: ec, byId, inset }: ViewProps) {
   const [unit, setUnit] = useState<'usd' | 'tokens'>('usd');
-  const ec = e.eval_cost;
   const brand = INDEX_COLOR.capability;
   const full = 'var(--color-ink)';
 
@@ -328,9 +326,12 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
     const fmt = fmtCost(unit);
     const kc = `core_${unit}` as const;
     const kf = `full_${unit}` as const;
+    // Priced models only, the same ones the totals and trends cover.
     const rows = ec.rows.flatMap(r => {
       const m = byId.get(r.id);
-      return m && r.release ? [{ m, r, date: Date.parse(r.release) }] : [];
+      return m && r.release && r.core_usd && r.full_usd && r.core_tokens && r.full_tokens
+        ? [{ m, date: Date.parse(r.release), r: { id: r.id, core_usd: r.core_usd, full_usd: r.full_usd, core_tokens: r.core_tokens, full_tokens: r.full_tokens } }]
+        : [];
     });
     // Label the most expensive full-suite runs; every CORE run sits far below them.
     const labelled = new Set([...rows].sort((a, b) => b.r[kf] - a.r[kf]).slice(0, 10).map(d => d.r.id));
@@ -351,7 +352,7 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
     const domain: [number, number] = unit === 'usd' ? [0.3, 5000] : [3e6, 6e8];
     const ticks = unit === 'usd' ? [0.3, 1, 3, 10, 30, 100, 300, 1000, 3000, 5000] : [3e6, 1e7, 3e7, 1e8, 3e8, 6e8];
     // The fitted exponential trends behind the "×/year" figures, drawn as short segments so they curve.
-    const epoch = Date.parse(ec.trend_epoch);
+    const epoch = Date.parse(ec.trend.epoch);
     const x0 = Math.min(...rows.map(d => d.date));
     const x1 = Math.max(...rows.map(d => d.date));
     const trend = (key: typeof kc | typeof kf, color: string) => {
@@ -380,13 +381,13 @@ function EvalCostView({ e, byId, inset }: ViewProps) {
     };
   }, [ec, byId, unit, brand, full]);
 
-  const t = ec.totals;
+  const t = ec.summary.totals;
   return (
     <ViewFrame
       controls={<Segmented label="Measure" value={unit} onChange={setUnit} options={[{ id: 'usd', label: 'Cost' }, { id: 'tokens', label: 'Tokens' }]} />}
       status={<>
         {shown} models. All runs together: {unit === 'usd' ? `${fmtUsd(t.full_usd)} for the full suite, ${fmtUsd(t.core_usd)} for CORE.` : `${formatTokens(t.full_tokens)} tokens for the full suite, ${formatTokens(t.core_tokens)} for CORE.`}
-        {unit === 'usd' ? ` With model size held fixed (${ec.size_control.n} models of known size), the full-suite cost still rises about ${Math.round(ec.size_control.x_per_year)}× a year. ${ec.price_note}` : ''}
+        {unit === 'usd' ? ` With model size held fixed (${ec.size_control.n} models of known size), the full-suite cost still rises about ${Math.round(ec.size_control.x_per_year)}× a year.${ec.rates_date ? ` List prices as of ${formatDate(ec.rates_date)}.` : ''}` : ''}
       </>}
       legend={<>
         <Key kind="dot" color={full}>Full suite</Key>

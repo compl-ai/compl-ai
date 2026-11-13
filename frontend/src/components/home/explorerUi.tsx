@@ -1,5 +1,5 @@
 'use client';
-import type { ExplorerData, JoinedModelData } from '@/lib/data';
+import type { CostOverview, ExperimentsData, JoinedModelData } from '@/lib/data';
 import type { IndexId } from '@/lib/scores';
 import type { ModelLookup } from './explorer';
 
@@ -15,7 +15,7 @@ export const INDEX_SOFT: Record<IndexId, string> = {
   safety: 'var(--color-lavender-soft)',
 };
 
-export type ViewProps = { e: ExplorerData; models: JoinedModelData[]; byId: ModelLookup; inset: number };
+export type ViewProps = { e: ExperimentsData; costs: CostOverview; models: JoinedModelData[]; byId: ModelLookup; inset: number };
 
 export function ViewFrame({ controls, summary, status, legend, plotClassName, children }: {
   controls?: React.ReactNode;

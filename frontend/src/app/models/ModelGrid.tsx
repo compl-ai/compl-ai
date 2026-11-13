@@ -1,8 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Segmented } from '@/components/home/explorerUi';
+import { ModelFilterBar, type WeightsFilter } from '@/components/ModelFilterBar';
 import type { Weights } from '@/components/home/explorer';
 
 export type GridItem = {
@@ -32,13 +30,6 @@ const SORTS: { id: string; label: string; key: Key; desc: boolean }[] = [
   { id: 'safety', label: 'Safety', key: 'safety', desc: true },
 ];
 
-type WeightsFilter = 'all' | 'open' | 'proprietary';
-const WEIGHTS: { id: WeightsFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'open', label: 'Open' },
-  { id: 'proprietary', label: 'Proprietary' },
-];
-
 // Missing values always sort last; ties fall back to newest first, then name.
 function compare(a: GridItem, b: GridItem, key: Key, desc: boolean): number {
   const x = a[key], y = b[key];
@@ -63,30 +54,12 @@ export function ModelGrid({ items }: { items: GridItem[] }) {
 
   return (
     <div className="cols-10 space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <Input
-          type="search"
-          placeholder="Filter by model or organization…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="h-10 w-full rounded-full bg-card px-4 text-sm md:w-72"
-        />
-        <label className="relative w-full md:w-72">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Sort by</span>
-          <select
-            value={sortId}
-            onChange={e => setSortId(e.target.value)}
-            className="h-10 w-full appearance-none rounded-full border border-input bg-card pl-[4.5rem] pr-10 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        </label>
-        <Segmented label="Weights" value={weights} options={WEIGHTS} onChange={setWeights} />
-        <p className="text-sm tabular-nums text-muted-foreground md:ml-auto">
-          {sorted.length === items.length ? `${items.length} models` : `${sorted.length} of ${items.length} models`}
-        </p>
-      </div>
+      <ModelFilterBar
+        search={search} onSearch={setSearch}
+        sorts={SORTS} sortId={sortId} onSort={setSortId}
+        weights={weights} onWeights={setWeights}
+        shown={sorted.length} total={items.length}
+      />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {sorted.map(item => <div key={item.id} className="flex">{item.card}</div>)}
       </div>

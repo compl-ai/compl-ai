@@ -1,5 +1,5 @@
 import type { JoinedModelData, LabelScore, Taxonomy } from '@/lib/data';
-import { IMPUTED_SHARE_LIMIT, hasMeasuredScore, imputedShare } from '@/lib/scores';
+import { hasMeasuredScore } from '@/lib/scores';
 
 // Evaluation-area accuracies mix benchmarks of different difficulty, so a model's areas are
 // compared against other models, not against each other: strong = top quarter of the models
@@ -11,7 +11,7 @@ const MAX_LISTED = 3;
 export type AreaStanding = { key: string; name: string; rank: number; of: number };
 
 export function areaStandings(models: JoinedModelData[], taxonomy: Taxonomy) {
-  const usable = (s: LabelScore | undefined) => hasMeasuredScore(s) && imputedShare(s) < IMPUTED_SHARE_LIMIT;
+  const usable = (s: LabelScore | undefined) => hasMeasuredScore(s);
   const scored = Object.entries(taxonomy.subcategories).map(([key, info]) => ({
     key,
     name: info.name,

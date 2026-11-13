@@ -1,5 +1,5 @@
 // Shared data shaping for the Benchmarks and AI Act mapping pages (server side, at build time).
-import { getAreaDescriptions, getBenchmarkLabels, getEfficiency, getGrounding, getPredictions, getTaxonomy, type GroundingLink, type LabelScore } from '@/lib/data';
+import { getAreaDescriptions, getBenchmarkLabels, getCosts, getGrounding, getPredictions, getTaxonomy, type GroundingLink, type LabelScore } from '@/lib/data';
 import { INDICES, type IndexId } from '@/lib/scores';
 
 export const areaSlug = (key: string) => key.replace(':', '-');
@@ -25,7 +25,7 @@ export interface CatalogBenchmark {
 
 export function getBenchmarkCatalog(): CatalogBenchmark[] {
   const taxonomy = getTaxonomy();
-  const efficiency = getEfficiency()?.tasks ?? {};
+  const efficiency = getCosts().suite.tasks;
   return Object.entries(getBenchmarkLabels()).map(([name, labels]) => {
     const subcategoryIdx = labels.columns.indexOf('subcategory');
     const counts: Record<string, number> = {};

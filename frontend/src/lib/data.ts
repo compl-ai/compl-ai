@@ -71,8 +71,8 @@ export interface IndexTheta {
 }
 
 // Scores are null when gap is set: the reason too few subset items cover the label.
-// score_interval is a 90% bootstrap interval of predicted_score. It does not cover the
-// error of imputing benchmarks the model did not run (imputed_items of population_items, imputed_weight of the score).
+// score_interval is a 90% bootstrap interval of predicted_score. Scores use only benchmarks the
+// model ran (measured_weight: their share of the label's weight); below half, the label is "not run".
 export interface LabelScore {
   gap: string | null;
   predicted_score: number | null;
@@ -80,8 +80,7 @@ export interface LabelScore {
   population_items: number;
   population_tasks: number;
   subset_items: number;
-  imputed_items: number;
-  imputed_weight?: number;
+  measured_weight?: number;
   observations: number;
   ability: number | null;
   ability_standard_error: number | null;
@@ -93,38 +92,38 @@ export interface LabelScore {
 
 export type RunType = 'core' | 'full' | 'mixed';
 
-// Tokens of the evaluated model (judge models are excluded; `judge` is kept for reference). `measured` is what the logs recorded;
-// `core`/`full` are measured for the run that was done and extrapolated per item for the other.
-interface ModelTokens {
-  tasks: number;
-  measured: number;
-  input: number;
-  output: number;
-  reasoning: number;
-  judge: number;
-  core: number;
-  full: number;
-  reduction: number | null;
-}
-
+// One benchmark of one model in costs.json: what it ran and the tokens its logs recorded
+// (token fields are absent when the logs have none). Benchmark sizes are in CostSuite.tasks.
 export interface TaskUsage {
   // 'partial': more than the core items but well short of all items.
   run: 'core' | 'full' | 'partial';
   observed_items: number;
-  subset_items: number;
-  population_items: number;
-  input_tokens: number;
-  output_tokens: number;
-  reasoning_tokens: number;
-  model_tokens: number;
-  judge_tokens: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  model_tokens?: number;
+  judge_tokens?: number;
 }
 
-interface ModelUsage {
+// Tokens of the evaluated model (judge tokens are kept for reference only). `measured_tokens` is what the
+// logs recorded; core/full are measured for the scope that was run and estimated per question for the other.
+// USD is tokens × the list rate; null for models without a rate (self-hosted).
+export interface ModelCost {
+  release: string | null;
   run_type: RunType | null;
-  observed_items: number;
-  tasks?: Record<string, TaskUsage>;
-  tokens: ModelTokens | null;
+  measured_tokens: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  reasoning_tokens: number | null;
+  judge_tokens: number | null;
+  core_tokens: number | null;
+  full_tokens: number | null;
+  ratio_tokens: number | null;
+  core_usd: number | null;
+  full_usd: number | null;
+  ratio_usd: number | null;
+  rate: { in: number; out: number; source: string; date: string } | null;
+  tasks: Record<string, TaskUsage>;
 }
 
 // ok: all core items answered; partial: some; imputed: not run, score imputed from other benchmarks.
@@ -155,12 +154,6 @@ export interface FullRun {
   log_path: string;
 }
 
-interface TaskEfficiency {
-  subset_items: number;
-  population_items: number;
-  tokens_per_item_median: number;
-}
-
 interface SubcategoryInfo {
   name: string;
   index: string;
@@ -182,14 +175,69 @@ interface BenchmarkLabels {
   data: [string, string, string[]][];
 }
 
-export interface SuiteEfficiency {
+// Panel-wide core vs full tokens, from each benchmark's tokens per question.
+export interface CostSuite {
   subset_items: number;
   population_items: number;
   core_tokens_median: number;
   full_tokens_median: number;
   token_reduction: number | null;
+  unpriced_tasks: string[];
   run_types: Record<string, number>;
-  tasks?: Record<string, TaskEfficiency>;
+  tasks: Record<string, { subset_items: number; population_items: number; tokens_per_item_median: number | null }>;
+}
+
+interface Spread {
+  n: number;
+  median: number;
+  min: number;
+  max: number;
+}
+
+interface CostFit {
+  log10_intercept: number;
+  log10_per_year: number;
+  x_per_year: number;
+}
+
+export interface CostSummary {
+  ratio_usd: Spread;
+  ratio_tokens: Spread;
+  totals: { core_usd: number; full_usd: number; core_tokens: number; full_tokens: number };
+  pooled_ratio_usd: number;
+  pooled_ratio_tokens: number;
+  unpriced: string[];
+}
+
+export type CostTrend = { epoch: string; n: number } & Record<'core_usd' | 'full_usd' | 'core_tokens' | 'full_tokens', CostFit>;
+
+export interface CostSizeControl {
+  n: number;
+  x_per_year_raw: number;
+  x_per_year: number;
+  p_year: number;
+  per_10x_total: number;
+}
+
+export interface Costs {
+  _meta: Record<string, unknown>;
+  summary: CostSummary;
+  suite: CostSuite;
+  trend: CostTrend;
+  size_control: CostSizeControl;
+  models: Record<string, ModelCost>;
+}
+
+// A model's costs without its per-benchmark tokens, small enough to pass to client components.
+export type CostRow = Omit<ModelCost, 'tasks'> & { id: string };
+
+export interface CostOverview {
+  rows: CostRow[];
+  summary: CostSummary;
+  trend: CostTrend;
+  size_control: CostSizeControl;
+  // Newest date among the list rates used.
+  rates_date: string | null;
 }
 
 // The generation settings from the eval logs (inspect's GenerateConfig).
@@ -202,7 +250,6 @@ export interface ModelConfig {
 
 interface ModelPrediction {
   predicted_score: number;
-  usage?: ModelUsage;
   model_config?: ModelConfig;
   // Start time (ISO, UTC) of the model's newest eval log.
   last_evaluated?: string | null;
@@ -229,6 +276,8 @@ export interface JoinedModelData {
   id: string; // The key from predictions (e.g. "openai-api/vllm/.../model")
   yamlId: string; // The inferred yaml key based on the name or ID
   prediction: ModelPrediction;
+  // From costs.json: whether the model ran the core questions, the full benchmarks or some of each.
+  runType: RunType | null;
   metadata: ModelParams | null;
 }
 
@@ -257,8 +306,23 @@ export function getLastUpdated(): string | null {
   return dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : null;
 }
 
-export function getEfficiency(): SuiteEfficiency | null {
-  return getPredictions().efficiency ?? null;
+let costsCache: Costs | null = null;
+
+export function getCosts(): Costs {
+  // Re-read on every request in dev so a new export-web shows without restarting the server.
+  if (!costsCache || process.env.NODE_ENV === 'development') {
+    const dataPath = path.join(process.cwd(), 'public', 'data', 'costs.json');
+    costsCache = JSON.parse(fs.readFileSync(dataPath, 'utf8')) as Costs;
+  }
+  return costsCache;
+}
+
+export function getCostOverview(): CostOverview {
+  const { models, summary, trend, size_control } = getCosts();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const rows = Object.entries(models).map(([id, { tasks, ...row }]) => ({ ...row, id }));
+  const dates = rows.map(r => r.rate?.date).filter((d): d is string => !!d);
+  return { rows, summary, trend, size_control, rates_date: dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : null };
 }
 
 export type Outcome = 'correct' | 'wrong' | 'did_not_finish' | 'blocked' | 'unscored';
@@ -274,8 +338,7 @@ export interface SampleAnalysisEntry {
 
 // Outcomes of the answers to the core questions (descriptive only; not used for scores).
 export interface SampleAnalysis {
-  rules_version: number;
-  scope: string;
+  _meta: { rules_version: number; scope: string };
   tags: Record<string, string>;
   outcomes: { definition: Record<Outcome, { label: string; tags: string[] }>; scope: string };
   models: Record<string, Record<string, SampleAnalysisEntry>>;
@@ -309,9 +372,7 @@ export interface BenchmarkHealthEntry {
 
 // How each benchmark spreads and separates the models (descriptive only; not used for scores).
 export interface BenchmarkHealth {
-  params_id: string;
-  subset_id: string;
-  scope: string;
+  _meta: { params_id: string; subset_id: string; scope: string };
   definitions: Record<string, string>;
   tasks: Record<string, BenchmarkHealthEntry>;
 }
@@ -396,6 +457,7 @@ export interface MethodEciRow {
   eci_upper: number;
 }
 
+// One model in the methodology cost figure, built from costs.json.
 export interface MethodCostRow {
   model: string;
   source: string;
@@ -406,10 +468,9 @@ export interface MethodCostRow {
 
 export type MethodIndex = 'capability' | 'reliability' | 'safety';
 interface MethodInterval { est: number; lo: number; hi: number }
-interface MethodRatioStats { n: number; median: number; min: number; max: number }
 
 // Every experiment number quoted on the methodology page; written with the figure rows by
-// method_json_build.py. Shares and errors are fractions (0.0147 = 1.47%); score errors are index points.
+// tools/method/agreement.py. Shares and errors are fractions (0.0147 = 1.47%); score errors are index points.
 export interface MethodNumbers {
   panel: {
     models: number;
@@ -467,24 +528,17 @@ export interface MethodNumbers {
     };
     distinct: Record<'reliability' | 'safety', { rho: number; n: number }>;
   };
-  cost: {
-    openrouter: MethodRatioStats;
-    direct: MethodRatioStats;
-    token_reduction: number;
-    opus: { core: number; full: number };
-  };
 }
 
-interface MethodData {
+interface AgreementData {
   _meta: Record<string, string>;
   lomo: MethodLomoRow[];
   eci: MethodEciRow[];
-  cost: MethodCostRow[];
   numbers: MethodNumbers;
 }
 
-export function getMethod(): MethodData {
-  const dataPath = path.join(process.cwd(), 'public', 'data', 'method.json');
+export function getAgreement(): AgreementData {
+  const dataPath = path.join(process.cwd(), 'public', 'data', 'agreement.json');
   return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 }
 
@@ -506,7 +560,7 @@ export function widenLomo(rows: MethodLomoRow[], scales: Record<MethodIndex, num
   });
 }
 
-// Homepage results explorer (explorer.json). Model ids are prediction ids, as in JoinedModelData.id.
+// Homepage results explorer (experiments.json). Model ids are prediction ids, as in JoinedModelData.id.
 export interface ExplorerStep { id: string; date: string; score: number }
 
 export interface ExplorerLag {
@@ -522,17 +576,6 @@ export interface ExplorerLag {
   observed: { id: string; matched_by: string | null; months: number }[];
 }
 
-export interface ExplorerCostRow {
-  id: string;
-  release: string | null;
-  source: string;
-  run_type: 'core' | 'full' | string;
-  core_usd: number;
-  full_usd: number;
-  core_tokens: number;
-  full_tokens: number;
-}
-
 export interface ExplorerLabStats {
   n: number;
   per_capability_point: number;
@@ -542,7 +585,7 @@ export interface ExplorerLabStats {
 }
 
 export interface ExplorerSafetyGroup {
-  id: 'injection' | 'refusal' | 'fairness';
+  id: 'injection' | 'refusal';
   name: string;
   n: number;
   members: { id: string; name: string; pp_per_year: number }[];
@@ -552,7 +595,7 @@ export interface ExplorerSafetyGroup {
   points: { id: string; date: string; y: number }[];
 }
 
-export interface ExplorerData {
+export interface ExperimentsData {
   _meta: Record<string, string | number>;
   capability_safety: {
     labels: string[];
@@ -579,26 +622,14 @@ export interface ExplorerData {
       median_release_dense: string;
     };
   };
-  eval_cost: {
-    rows: ExplorerCostRow[];
-    trend: Record<'core_usd' | 'full_usd' | 'core_tokens' | 'full_tokens', { log10_intercept: number; log10_per_year: number; x_per_year: number }>;
-    trend_epoch: string;
-    n: number;
-    n_dated: number;
-    size_control: { n: number; x_per_year_raw: number; x_per_year: number; p_year: number; per_10x_total: number };
-    totals: { core_usd: number; full_usd: number; core_tokens: number; full_tokens: number };
-    ratio_usd: number;
-    ratio_tokens: number;
-    price_note: string;
-  };
   labs: Record<'safety' | 'reliability', ExplorerLabStats>;
   frontier: Record<'capability' | 'reliability' | 'safety', { steps: ExplorerStep[]; start: ExplorerStep; end: ExplorerStep; delta: number; slope: number }> & {
     window: { from: string; to: string };
   };
 }
 
-export function getExplorer(): ExplorerData {
-  const dataPath = path.join(process.cwd(), 'public', 'data', 'explorer.json');
+export function getExperiments(): ExperimentsData {
+  const dataPath = path.join(process.cwd(), 'public', 'data', 'experiments.json');
   return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 }
 
@@ -696,6 +727,7 @@ function getAllModelMetadata(): Record<string, ModelParams> {
 
 export function getJoinedModels(): JoinedModelData[] {
   const predictions = getPredictions();
+  const costs = getCosts().models;
   const metadataMap = getAllModelMetadata();
   const joined: JoinedModelData[] = [];
 
@@ -716,6 +748,7 @@ export function getJoinedModels(): JoinedModelData[] {
       id: predId,
       yamlId: matchedYamlId || predId.split('/').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || '',
       prediction: predData as ModelPrediction,
+      runType: costs[predId]?.run_type ?? null,
       metadata: matchedYamlId ? metadataMap[matchedYamlId] : null,
     });
   }

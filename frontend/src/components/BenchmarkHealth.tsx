@@ -97,7 +97,7 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
   const byName = Object.fromEntries(catalog.map(b => [b.name, b]));
   return (
     <div className="space-y-10">
-      <details className="group rounded-xl border border-border/70 bg-card px-4 py-3">
+      {/* <details className="group rounded-xl border border-border/70 bg-card px-4 py-3">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
           <span className="inline-block text-muted-foreground transition-transform group-open:rotate-90" aria-hidden>›</span>
           How to read these cards
@@ -139,7 +139,7 @@ export function BenchmarkHealthGrid({ health, analysis, scores, catalog, meta }:
           </dd>
         </div>
       </dl>
-      </details>
+      </details> */}
 
       {INDICES.map(index => {
         const tasks = Object.entries(health.tasks)

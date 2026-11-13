@@ -1,7 +1,9 @@
 {
-  "params_id": "a53e18a35696459c67905d81",
-  "subset_id": "2c5444664540135d1a8f7995",
-  "scope": "Descriptive metadata only: not used for scores or indices.",
+  "_meta": {
+    "params_id": "dea762affcb3727a5b805c81",
+    "subset_id": "f92fe68a15104e7c322138ad",
+    "scope": "Descriptive metadata only: not used for scores or indices."
+  },
   "definitions": {
     "score_histogram": "Number of models per band of predicted score on this task (0 to 1), counting the models that answered at least one of its core questions.",
     "saturation": "Models are split into thirds by their predicted score on this task. 'saturated': the middle third averages at least 95%, so only the weakest models still separate. 'saturated_at_top': the top third averages at least 90% (and the middle third is below 95%), so the best models no longer separate but the others still do. 'not_saturated' otherwise; null with fewer than 3 models.",
@@ -1319,34 +1321,34 @@
         {
           "low": 0.5,
           "high": 0.6,
-          "count": 2
+          "count": 0
         },
         {
           "low": 0.6,
           "high": 0.7,
-          "count": 3
+          "count": 1
         },
         {
           "low": 0.7,
           "high": 0.8,
-          "count": 8
+          "count": 4
         },
         {
           "low": 0.8,
           "high": 0.9,
-          "count": 21
+          "count": 11
         },
         {
           "low": 0.9,
           "high": 1.0,
-          "count": 23
+          "count": 41
         }
       ],
       "saturation": "saturated_at_top",
       "third_means": {
-        "top": 0.9405,
-        "middle": 0.8906,
-        "bottom": 0.745
+        "top": 0.9645,
+        "middle": 0.9324,
+        "bottom": 0.8389
       },
       "benchmark_discrimination": 0.6033,
       "core_items": 74,
@@ -1925,8 +1927,8 @@
       "saturation": "saturated",
       "third_means": {
         "top": 0.9787,
-        "middle": 0.9749,
-        "bottom": 0.9559
+        "middle": 0.9762,
+        "bottom": 0.9636
       },
       "benchmark_discrimination": 0.5938,
       "core_items": 54,

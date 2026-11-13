@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getBenchmarkMeta, getEfficiency, getIntervalScales, getMethod, widenLomo } from '@/lib/data';
-import { formatPercent, formatTokens } from '@/lib/scores';
+import { getBenchmarkMeta, getCostOverview, getCosts, getIntervalScales, getAgreement, getJoinedModels, widenLomo } from '@/lib/data';
+import { formatDate, formatPercent, formatTokens, rateSource } from '@/lib/scores';
 import { README_CORE_URL, REPO_URL, pageMetadata } from '@/lib/site';
 import { Eyebrow } from '@/components/layout/Eyebrow';
 import { CostFigure, EciFigure, LomoFigure } from '@/components/method/MethodFigures';
@@ -42,7 +42,7 @@ const REFERENCES = [
   },
   {
     id: 'ref-prices',
-    text: `List prices pulled ${getMethod()._meta.prices_pulled} from OpenRouter (openrouter.ai/api/v1/models) and the Anthropic, OpenAI and Google API pricing pages.`,
+    text: `List prices as of ${formatDate(getCostOverview().rates_date ?? '')} from OpenRouter (openrouter.ai/api/v1/models), and from Google’s API pricing page for Gemini 3.8 Flash and Gemini 4 Argon.`,
     url: 'https://openrouter.ai/models',
     link: 'openrouter.ai',
   },
@@ -109,8 +109,8 @@ function Figure({ id, n, title, caption, wide = false, children }: { id?: string
   );
 }
 
-// All experiment numbers come from method.json (numbers + figure rows), so a refit only needs a regenerated file.
-const METHOD = getMethod();
+// All experiment numbers come from agreement.json (numbers + figure rows), so a refit only needs a regenerated file.
+const METHOD = getAgreement();
 const N = METHOD.numbers;
 const BENCHMARKS = getBenchmarkMeta();
 const task = (id: string) => BENCHMARKS[id]?.name ?? id;
@@ -135,6 +135,28 @@ const TOP3 = N.agreement.top3;
 const TOP3_SHARED = sameSet(TOP3.ours, TOP3.eci) && sameSet(TOP3.ours, TOP3.aa);
 const TOP3_COMMON = TOP3.ours.filter(m => TOP3.eci.includes(m) && TOP3.aa.includes(m));
 const rest = (xs: string[]) => andList(xs.filter(m => !TOP3_COMMON.includes(m)));
+const COSTS = getCosts();
+const RATIO = COSTS.summary.ratio_usd;
+const OPUS = COSTS.models['openrouter/anthropic/claude-opus-5.5'];
+const RATES_DATE = formatDate(getCostOverview().rates_date ?? '');
+// Figure 4: representative closed and open-weight models.
+const COST_FIGURE_IDS = [
+  'openrouter/google/gemini-4-argon',
+  'openrouter/anthropic/claude-opus-5.5',
+  'openai/gpt-6.1-terra',
+  'openai-api/vllm/MiniMaxAI/MiniMax-M2.5',
+  'openrouter/deepseek/deepseek-v4.1-flash',
+  'openrouter/anthropic/claude-haiku-5.5',
+  'openai/gpt-6-luna',
+  'openai-api/vllm/openai/gpt-oss-120b',
+];
+const MODEL_NAMES = new Map(getJoinedModels().map(m => [m.id, m.metadata?.name || m.yamlId]));
+const COST_ROWS = COST_FIGURE_IDS.flatMap(id => {
+  const c = COSTS.models[id];
+  return c?.core_usd && c.full_usd && c.ratio_usd && c.rate
+    ? [{ model: MODEL_NAMES.get(id) ?? id, source: rateSource(c.rate.source), core: c.core_usd, full: c.full_usd, ratio: c.ratio_usd }]
+    : [];
+});
 const FRACTION = ['', '', 'half', 'third', 'quarter', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
 const LEAD_GAP_POINTS = 15 * Math.abs(N.agreement.top3_theta[TOP3.ours[0]] - (N.agreement.top3_theta[TOP3.eci[0]] ?? N.agreement.top3_theta[TOP3.ours[0]]));
 
@@ -147,12 +169,12 @@ const FAQ: { id: string; q: string; a: React.ReactNode }[] = [
   {
     id: 'tokens',
     q: 'How do you count tokens?',
-    a: <>From the evaluation logs: the evaluated model’s input, output and reasoning tokens on every item it ran. The side of a run we did not do (the full suite for a core run, the core subset for a full run) is estimated per benchmark from the measured tokens per item and marked with a tilde (~). Costs are these token counts at list prices. Tokens used by judge models, which grade some benchmarks, are not counted on either side: judges are typically much cheaper models, so counting their tokens would understate the saving in dollars.</>,
+    a: <>From the evaluation logs: the evaluated model’s input, output and reasoning tokens on every item it ran, including retries and any calls it makes while its answers are scored. The side of a run we did not do (the full suite for a core run, the core subset for a full run) is estimated per benchmark from the measured tokens per item and marked with a tilde (~). Costs are these token counts at list prices. Tokens used by judge models, which grade some benchmarks, are not counted on either side: judges are typically much cheaper models, so counting their tokens would understate the saving in dollars.</>,
   },
   {
     id: 'intervals',
     q: 'How are the 90% intervals computed?',
-    a: <>With a parametric bootstrap (200 draws): the model’s ability is redrawn given its answers, with the calibration held fixed. The intervals therefore reflect which items a model answered, but not the error of the calibration or of the IRT model itself. For models held out of calibration, these raw intervals contained the full-run score {pct(IDX.capability.coverage_90)} of the time for Capability, but only {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety (section 3). We therefore widen the published Reliability intervals by {scale(SCALE.reliability)} and the Safety intervals by {scale(SCALE.safety)}, so that at least 90% of those models fall inside; Capability is left as is. The factors are fitted on the same held-out models, so expect real coverage to be slightly lower.</>,
+    a: <>With a parametric bootstrap (200 draws): the model’s ability is redrawn given its answers, with the calibration held fixed. The intervals therefore reflect which items a model answered, but not the error of the calibration or of the IRT model itself. For models held out of calibration, these raw intervals contained the full-run score {pct(IDX.capability.coverage_90)} of the time for Capability and {pct(IDX.reliability.coverage_90)} for Reliability, close to the intended 90%, but only {pct(IDX.safety.coverage_90)} for Safety (section 3). We therefore widen the published Safety intervals by {scale(SCALE.safety)} and the Reliability intervals slightly, by {scale(SCALE.reliability)}, so that at least 90% of those models fall inside; Capability is left as is. The factors are fitted on the same held-out models, so expect real coverage to be slightly lower.</>,
   },
   {
     id: 'compliance',
@@ -174,7 +196,7 @@ const FAQ: { id: string; q: string; a: React.ReactNode }[] = [
 const P = 'space-y-4 text-[15px] leading-relaxed text-ink/85';
 
 export default function MethodologyPage() {
-  const efficiency = getEfficiency();
+  const efficiency = getCosts().suite;
   const method = METHOD;
   return (
     <article className="frame pt-10 sm:pt-22 pb-12">
@@ -207,7 +229,7 @@ export default function MethodologyPage() {
             <p>As we see it, evaluating language models well is getting harder for four reasons:</p>
             <ul className="space-y-3 pl-5 list-disc marker:text-brand">
               <li>
-                <strong>Cost and scale.</strong> New models arrive every week, and running a full suite on each is expensive: all {int(N.panel.items)} items on Claude Opus 5.5 cost about {usd(N.cost.opus.full)} at list prices, the core subset {usd(N.cost.opus.core)}.
+                <strong>Cost and scale.</strong> New models arrive every week, and running a full suite on each is expensive: all {int(N.panel.items)} items on Claude Opus 5.5 cost about {usd(OPUS.full_usd ?? 0)} at list prices, the core subset {usd(OPUS.core_usd ?? 0)}.
               </li>
               <li>
                 <strong>Reproducibility.</strong> Leaderboards often mix vendor-reported numbers from different prompts, settings and harnesses. Every CORE model runs through the same open, Inspect-based<Cite ids={['ref-inspect']} /> harness, with a public core list and calibration (<Faq id="reproduce">FAQ</Faq>).
@@ -251,6 +273,9 @@ export default function MethodologyPage() {
               <strong>Scoring a new model.</strong> A model answers the core items, and we estimate its ability on each benchmark. Its predicted benchmark score combines its real answers on the core items with the predicted probability of a correct answer on every other item: <span className="whitespace-nowrap">score&nbsp;=&nbsp;(Σ<sub>core</sub>&nbsp;real answers&nbsp;+&nbsp;Σ<sub>rest</sub>&nbsp;<i>P</i>(correct))&nbsp;/&nbsp;<i>N</i></span>, where <i>N</i> is the number of items in the benchmark.
             </p>
             <p>
+              <strong>Prediction correction.</strong> Every benchmark has some prediction error that IRT cannot remove, and on a few it is consistent across models. MMLU-Pro Robustness, for example, only scores perturbed questions that the model answered correctly in their original form, which an item-by-item prediction does not capture, so its predictions came out too low for almost every model. For benchmarks with consistent error (currently MMLU-Pro Robustness and CAB), the predicted score is corrected with a simple linear fit to the full-run scores of the calibration models. The correction is applied only at prediction time and never enters the IRT fit.
+            </p>
+            <p>
               <strong>Indices.</strong> The benchmark scores are combined into three indices (Capability, Reliability and Safety) with a second IRT fit, in which each benchmark is one observation weighted by its fitted discrimination. A benchmark on which all models score alike has low discrimination and barely moves the result, while one that spreads models apart carries more weight. This naturally puts the emphasis on high-signal benchmarks and keeps our rankings in line with external leaderboards, without any manual weighting of benchmarks. Following Epoch AI’s ECI, the benchmark discriminations within an index get a log-normal prior (standard deviation 0.5 on the log scale) around their common average, so no single benchmark’s weight runs away or collapses to zero. Each index is published as <strong>100&nbsp;+&nbsp;15θ</strong> with a 90% interval.
             </p>
             <p id="labeling" className="scroll-mt-24">
@@ -274,7 +299,7 @@ export default function MethodologyPage() {
               On the published index scale, the MAE is {IDX.capability.score_mae.toFixed(1)} points for Capability, {IDX.reliability.score_mae.toFixed(1)} for Reliability and {IDX.safety.score_mae.toFixed(1)} for Safety, and no prediction is off by more than {Math.max(IDX.capability.score_max_ae, IDX.reliability.score_max_ae, IDX.safety.score_max_ae).toFixed(1)} points (Figure&nbsp;2). Rankings survive almost intact: predicted and full-run scores order <strong>{pct(IDX.capability.pairwise, 1)}</strong>, <strong>{pct(IDX.reliability.pairwise, 1)}</strong> and <strong>{pct(IDX.safety.pairwise, 1)}</strong> of model pairs the same way.
             </p>
             <p>
-              We also checked how often the bootstrap 90% intervals contain the full-run score: {pct(IDX.capability.coverage_90)} for Capability, close to the intended 90%, but only {pct(IDX.reliability.coverage_90)} for Reliability and {pct(IDX.safety.coverage_90)} for Safety, because they leave out the uncertainty of the calibration and of the IRT model itself (<Faq id="intervals">FAQ</Faq>). We therefore publish Reliability intervals {scale(SCALE.reliability)} and Safety intervals {scale(SCALE.safety)} as wide, which brings their coverage in this test to {pct(covered('reliability'))} and {pct(covered('safety'))} (Figure&nbsp;2). Only {N.panel.closed_models} closed models, with partial full runs, are part of this test.
+              We also checked how often the bootstrap 90% intervals contain the full-run score: {pct(IDX.capability.coverage_90)} for Capability and {pct(IDX.reliability.coverage_90)} for Reliability, close to the intended 90%, but only {pct(IDX.safety.coverage_90)} for Safety, because they leave out the uncertainty of the calibration and of the IRT model itself (<Faq id="intervals">FAQ</Faq>). We therefore publish Safety intervals {scale(SCALE.safety)} and Reliability intervals {scale(SCALE.reliability)} as wide, which brings their coverage in this test to {pct(covered('safety'))} and {pct(covered('reliability'))} (Figure&nbsp;2). Only {N.panel.closed_models} closed models, with partial full runs, are part of this test.
             </p>
           </div>
           <Figure
@@ -325,18 +350,18 @@ export default function MethodologyPage() {
         <Section id="cost" n={5} title="Costs">
           <div className={P}>
             <p>
-              At list prices, a core run costs a median of <strong>{times(N.cost.openrouter.median)} less</strong> than a full run (about {pct(1 - 1 / N.cost.openrouter.median)} less) across {N.cost.openrouter.n} models priced on OpenRouter, ranging from {times(N.cost.openrouter.min)} to {times(N.cost.openrouter.max)}. For the {N.cost.direct.n} closed models at their providers’ own prices, the median is <strong>{times(N.cost.direct.median)}</strong> ({N.cost.direct.min.toFixed(1)}–{times(N.cost.direct.max)}). In tokens, a typical core run uses {pct(N.cost.token_reduction)} fewer. In short, evaluating a new model costs about a {FRACTION[Math.round(N.cost.openrouter.median)] ?? `1/${Math.round(N.cost.openrouter.median)}`} of a full run.
+              At list prices, a core run costs a median of <strong>{times(RATIO.median)} less</strong> than a full run (about {pct(1 - 1 / RATIO.median)} less) across {RATIO.n} priced models, ranging from {times(RATIO.min)} to {times(RATIO.max)}. In tokens, our suite estimate for a typical model is {pct(efficiency.token_reduction ?? 0)} fewer. In short, evaluating a new model costs about a {FRACTION[Math.round(RATIO.median)] ?? `1/${Math.round(RATIO.median)}`} of a full run.
             </p>
             <p>
-              These figures count the evaluated model’s input, output and reasoning tokens, while judge-model calls are excluded on both sides (<Faq id="tokens">FAQ</Faq>). We note that these are list prices and can differ in practice (e.g., our open-weight runs were on our own servers), so OpenRouter prices stand in for what an average user would pay. Generally, batch APIs halve both sides and leave the ratio unchanged.
+              These figures count the evaluated model’s input, output and reasoning tokens, while judge-model calls are excluded on both sides (<Faq id="tokens">FAQ</Faq>). We note that these are list prices (OpenRouter’s, or the provider’s own where they differ) and can differ in practice (e.g., our open-weight runs were on our own servers), so they stand in for what an average user would pay. Generally, batch APIs halve both sides and leave the ratio unchanged.
             </p>
           </div>
           <Figure
             n={4}
             title="One evaluation run in USD: core subset vs full suite"
-            caption={<>Representative models. Each run’s cost is measured on the items it actually ran and extrapolated to the rest per benchmark from measured tokens per item: core-only closed models have an extrapolated full-suite cost, open-weight models with full runs an extrapolated core cost, and the Claude models with partial full runs a mix of both. Prices pulled {method._meta.prices_pulled}<Cite ids={['ref-prices']} />. Judge tokens excluded.</>}
+            caption={<>Representative models. Each run’s cost is measured on the items it actually ran and extrapolated to the rest per benchmark from measured tokens per item: core-only closed models have an extrapolated full-suite cost, open-weight models with full runs an extrapolated core cost, and the Claude models with partial full runs a mix of both. List prices as of {RATES_DATE}<Cite ids={['ref-prices']} />. Judge tokens excluded.</>}
           >
-            <CostFigure rows={method.cost} items={N.panel.items} />
+            <CostFigure rows={COST_ROWS} items={N.panel.items} />
           </Figure>
         </Section>
 
@@ -370,7 +395,7 @@ export default function MethodologyPage() {
               An index always contains whole benchmarks, so it can be fitted on benchmark scores. Evaluation areas (for example math or coding within Capability) are <a href="#labeling" className="font-semibold text-link hover:underline">labeled per item</a> and cut across benchmarks, so they are not put on the index scale. Instead, each shows the model’s <strong>predicted accuracy</strong> on all of its items: real answers on the CORE items plus predictions for the rest. Each benchmark’s accuracy on its items in the area is weighted the same way as in the index, by how well it separates models (its discrimination), times the share of its own items that fall in the area. A large benchmark therefore cannot drown out the others just by having more items: in Fairness and bias, BBQ has 58,492 items and FairLLM 200, but they weigh about the same. Predicted accuracy depends on how hard the items are, so they compare models within an evaluation area but not across areas. The model pages mark the median model for reference.
             </p>
             <p>
-              Each evaluation-area score has a 90% interval, from a bootstrap that redraws the model’s ability on each benchmark within its uncertainty. If a model skipped some of an area’s benchmarks, those items are estimated from the rest of its index, and that extra error is not in the interval.
+              Each evaluation-area score has a 90% interval, from a bootstrap that redraws the model’s ability on each benchmark within its uncertainty. An area score uses only the benchmarks the model ran, reweighted among themselves; if those carry less than half of the area’s weight, the area is shown without a score.
             </p>
           </div>
 
@@ -381,7 +406,7 @@ export default function MethodologyPage() {
                 <>
                   The core subset has {efficiency.subset_items.toLocaleString()} items, against {efficiency.population_items.toLocaleString()} in the full suite, about {Math.round(efficiency.population_items / efficiency.subset_items)}&times; fewer.
                   {efficiency.token_reduction !== null && (
-                    <> Measured in tokens, the saving is smaller, about {formatPercent(efficiency.token_reduction)}: a typical evaluation uses roughly {formatTokens(efficiency.core_tokens_median)} tokens on the core subset against {formatTokens(efficiency.full_tokens_median)} on the full suite.</>
+                    <> Measured in tokens for a typical model, the saving is smaller, about {formatPercent(efficiency.token_reduction)}: roughly {formatTokens(efficiency.core_tokens_median)} tokens on the core subset against {formatTokens(efficiency.full_tokens_median)} on the full suite.</>
                   )}
                 </>
               ) : (
@@ -390,7 +415,7 @@ export default function MethodologyPage() {
               {' '}The gap exists because the core subset keeps most items from the long, token-heavy benchmarks (multi-step math, jailbreak and rule-following dialogues), where each item says a lot about a model, and drops most items from short multiple-choice benchmarks.
             </p>
             <p>
-              Token counts come from the evaluation logs and include the evaluated model’s input, output, and reasoning tokens, excluding judge calls. For each run, we measure the tokens of the run actually done and <strong>estimate</strong> the other figure by scaling each benchmark’s measured tokens per item to the other item count, and mark it with a tilde (~). Suite-wide figures use the typical tokens per item of each benchmark across all models (average input, median output). Runs whose logs have no token counts show a dash.
+              Token counts come from the evaluation logs and include the evaluated model’s input, output, and reasoning tokens (including retries and calls during scoring), excluding judge calls. For each run, we measure the tokens of the run actually done and <strong>estimate</strong> the other figure by scaling each benchmark’s measured tokens per item to the other item count, and mark it with a tilde (~). Suite-wide figures use the typical tokens per item of each benchmark across all models (average input, median output). Runs whose logs have no token counts show a dash.
             </p>
           </div>
         </Section>
@@ -400,7 +425,7 @@ export default function MethodologyPage() {
             <p>Returning to the four problems outlined at the top, we stand roughly here:</p>
             <ul className="space-y-3 pl-5 list-disc marker:text-brand">
               <li>
-                <strong>Cost and scale.</strong> A core run costs a median of {times(N.cost.openrouter.median)} less than a full run, {times(N.cost.direct.median)} for closed models at their providers’ prices (section 5).
+                <strong>Cost and scale.</strong> A core run costs a median of {times(RATIO.median)} less than a full run (section 5).
               </li>
               <li>
                 <strong>Reproducibility.</strong> One open harness, a fixed public core list and public item parameters, so anyone can run CORE and get scores comparable to ours.

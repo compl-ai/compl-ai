@@ -1,4 +1,4 @@
-import type { SuiteEfficiency } from '@/lib/data';
+import type { CostSuite } from '@/lib/data';
 import { CATEGORIES } from '@/components/home/IndexLegend';
 import { CoreMark3D } from '@/components/home/CoreMark3D';
 
@@ -61,8 +61,8 @@ function FlowArrow() {
   );
 }
 
-export function CoreStats({ efficiency }: { efficiency: SuiteEfficiency }) {
-  const benchmarks = Object.keys(efficiency.tasks ?? {}).length;
+export function CoreStats({ suite }: { suite: CostSuite }) {
+  const benchmarks = Object.keys(suite.tasks).length;
   const number = 'font-serif text-2xl lg:text-3xl xl:text-[36px] font-extrabold tracking-tight text-ink tabular leading-none';
   const label = 'mt-2 font-plex text-sm text-muted-foreground leading-snug max-w-[18rem]';
 
@@ -71,7 +71,7 @@ export function CoreStats({ efficiency }: { efficiency: SuiteEfficiency }) {
       <div className="grid gap-8 md:grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)_auto_minmax(13rem,1fr)] lg:grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)_auto_minmax(16rem,1fr)] md:items-start md:gap-6 xl:gap-10 border-y border-border py-5 lg:py-6 px-0 [--bleed:24px] min-[1440px]:[--bleed:40px] md:-mx-[var(--bleed)] md:px-[var(--bleed)]">
         <div>
           <StatTag kind="evaluate" />
-          <p className={`mt-2 ${number}`}>{efficiency.subset_items.toLocaleString()} <span className="text-lg lg:text-xl">tasks</span></p>
+          <p className={`mt-2 ${number}`}>{suite.subset_items.toLocaleString()} <span className="text-lg lg:text-xl">tasks</span></p>
           <p className={label}>Run a compact evaluation instead of the full suite.</p>
         </div>
         <FlowArrow />
@@ -81,7 +81,7 @@ export function CoreStats({ efficiency }: { efficiency: SuiteEfficiency }) {
             {benchmarks} <span className="text-lg lg:text-xl">benchmarks</span>
           </p>
           <p className={label}>
-            {efficiency.population_items.toLocaleString()} tasks: performance predicted across the full evaluation suite.
+            {suite.population_items.toLocaleString()} tasks: performance predicted across the full evaluation suite.
           </p>
         </div>
         <FlowArrow />

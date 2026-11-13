@@ -1,4 +1,4 @@
-import { getEfficiency, getExplorer, getJoinedModels, getLastUpdated } from '@/lib/data';
+import { getCostOverview, getCosts, getExperiments, getJoinedModels, getLastUpdated } from '@/lib/data';
 import { formatDate } from '@/lib/scores';
 import { CoreStats, HomeHero } from '@/components/home/HomeHero';
 import { ResultsExplorer } from '@/components/home/ResultsExplorer';
@@ -18,15 +18,16 @@ function SectionHeading({ eyebrow, title, children, className = 'mb-8' }: { eyeb
 
 export default function Home() {
   const models = getJoinedModels();
-  const efficiency = getEfficiency();
+  const suite = getCosts().suite;
   const lastUpdated = getLastUpdated();
-  const explorer = getExplorer();
-  const costs = Object.fromEntries(explorer.eval_cost.rows.map(r => [r.id, r]));
+  const explorer = getExperiments();
+  const costOverview = getCostOverview();
+  const costs = Object.fromEntries(costOverview.rows.map(r => [r.id, r]));
 
   return (
     <main className="min-h-screen">
-      <HomeHero benchmarks={efficiency?.tasks ? Object.keys(efficiency.tasks).length : null} />
-      {efficiency && <CoreStats efficiency={efficiency} />}
+      <HomeHero benchmarks={Object.keys(suite.tasks).length} />
+      <CoreStats suite={suite} />
 
       <section id="results" className="scroll-mt-24 frame pt-8 md:pt-14 pb-20">
         <div className="cols-10">
@@ -42,7 +43,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <ResultsExplorer models={models} explorer={explorer} />
+        <ResultsExplorer models={models} explorer={explorer} costs={costOverview} />
         <div id="rankings" className="scroll-mt-24 mt-12 md:mt-16">
         <ModelDataTable
           initialModels={models}
@@ -56,7 +57,7 @@ export default function Home() {
         </div>
       </section>
 
-      <RunCore subsetItems={efficiency?.subset_items ?? null} />
+      <RunCore subsetItems={suite.subset_items} />
     </main>
   );
 }

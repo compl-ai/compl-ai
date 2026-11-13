@@ -1,25 +1,24 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import type { ExplorerCostRow, RunType } from '@/lib/data';
-import { formatMultiplier, formatTokens } from '@/lib/scores';
+import type { CostRow, RunType } from '@/lib/data';
+import { formatMultiplier, formatTokens, rateSource } from '@/lib/scores';
 import { fmtUsd } from '@/components/home/explorer';
 import { Segmented } from '@/components/home/explorerUi';
 
 type Unit = 'usd' | 'tokens';
 
-export function CostPanel({ tokens, usd, run, coreAnswered, coreTotal, tasksTotal }: {
-  tokens: { core: number; full: number; tasks: number };
-  usd: ExplorerCostRow | null;
+export function CostPanel({ cost, run, coreAnswered, coreTotal }: {
+  cost: CostRow;
   run: RunType;
   coreAnswered: number | null;
   coreTotal: number | null;
-  tasksTotal: number;
 }) {
   const [picked, setPicked] = useState<Unit>('usd');
-  const unit: Unit = usd ? picked : 'tokens';
-  const core = unit === 'usd' ? usd!.core_usd : tokens.core;
-  const full = unit === 'usd' ? usd!.full_usd : tokens.full;
+  const priced = !!(cost.core_usd && cost.full_usd && cost.rate);
+  const unit: Unit = priced ? picked : 'tokens';
+  const core = (unit === 'usd' ? cost.core_usd : cost.core_tokens) ?? 0;
+  const full = (unit === 'usd' ? cost.full_usd : cost.full_tokens) ?? 0;
   const multiplier = core > 0 && full > 0 ? full / core : null;
   const coreEstimated = run !== 'core';
   const fullEstimated = run !== 'full';
@@ -32,7 +31,7 @@ export function CostPanel({ tokens, usd, run, coreAnswered, coreTotal, tasksTota
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6 grid grid-cols-1 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] gap-6 md:gap-10 items-start">
       <div>
-        {usd && (
+        {priced && (
           <div className="mb-4">
             <Segmented label="Measure" value={unit} onChange={setPicked} options={[{ id: 'usd', label: 'Cost' }, { id: 'tokens', label: 'Tokens' }]} />
           </div>
@@ -64,8 +63,8 @@ export function CostPanel({ tokens, usd, run, coreAnswered, coreTotal, tasksTota
         ))}
         <p className="pt-1 text-sm text-muted-foreground leading-relaxed">
           {coreAnswered !== null && coreTotal !== null && <>{coreAnswered.toLocaleString()} of {coreTotal.toLocaleString()} core questions answered. </>}
-          Tokens of the evaluated model only, measured in the logs of {tokens.tasks} of {tasksTotal} benchmarks; judge models are not counted.
-          {usd ? <> Costs are these tokens at {usd.source} list prices; batch APIs roughly halve both.</> : <> No list price is available for this model, so only tokens are shown.</>}{' '}
+          Tokens of the evaluated model only, measured in its logs; judge models are not counted.
+          {priced ? <> Costs are these tokens at {rateSource(cost.rate!.source)} list prices.</> : <> No list price is available for this model, so only tokens are shown.</>}{' '}
           <Link href="/methodology#efficiency" className="font-semibold text-link hover:underline">How we estimate this</Link>
         </p>
       </div>

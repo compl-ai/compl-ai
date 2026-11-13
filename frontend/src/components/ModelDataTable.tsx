@@ -1,14 +1,14 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
+import { ModelFilterBar, type WeightsFilter } from '@/components/ModelFilterBar';
 import { ProviderLogo } from '@/components/ProviderLogo';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { ExplorerCostRow, JoinedModelData } from '@/lib/data';
-import { fmtUsd } from '@/components/home/explorer';
+import type { CostRow, JoinedModelData } from '@/lib/data';
+import { fmtUsd, weightsOf } from '@/components/home/explorer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowDown, ArrowUp, ArrowUpDown, Info } from 'lucide-react';
-import { INDEX_BAR, INDICES, NO_SCORE_REASON, THETA_MEAN, formatInterval, formatMultiplier, formatScore, getIndexTheta, getRunType, parseParams, scaleTheta, scoreBarPct } from '@/lib/scores';
+import { INDEX_BAR, INDICES, NO_SCORE_REASON, THETA_MEAN, formatInterval, formatMultiplier, formatScore, getIndexTheta, getRunType, parseParams, rateSource, scaleTheta, scoreBarPct } from '@/lib/scores';
 
 
 function formatParams(m: JoinedModelData): string | null {
@@ -20,11 +20,30 @@ function formatParams(m: JoinedModelData): string | null {
   return active && active !== total && !isNaN(active) ? `${fmt(total)} (${fmt(active)})` : fmt(total);
 }
 
-type SortKey = 'name' | 'org' | 'params' | 'cost' | (typeof INDICES)[number]['id'];
+type SortKey = 'name' | 'org' | 'params' | 'cost' | 'release' | (typeof INDICES)[number]['id'];
 
-function CostCell({ model, cost }: { model: JoinedModelData; cost: ExplorerCostRow | undefined }) {
+// Same options as the models page, plus eval cost. Column headers set the same sort state.
+const SORTS: { id: string; label: string; key: SortKey; direction: 'asc' | 'desc' }[] = [
+  { id: 'newest', label: 'Newest first', key: 'release', direction: 'desc' },
+  { id: 'oldest', label: 'Oldest first', key: 'release', direction: 'asc' },
+  { id: 'org', label: 'Organization', key: 'org', direction: 'asc' },
+  { id: 'name', label: 'Name', key: 'name', direction: 'asc' },
+  { id: 'largest', label: 'Largest first', key: 'params', direction: 'desc' },
+  { id: 'smallest', label: 'Smallest first', key: 'params', direction: 'asc' },
+  { id: 'capability', label: 'Capability', key: 'capability', direction: 'desc' },
+  { id: 'reliability', label: 'Reliability', key: 'reliability', direction: 'desc' },
+  { id: 'safety', label: 'Safety', key: 'safety', direction: 'desc' },
+  { id: 'cheapest', label: 'Cheapest eval', key: 'cost', direction: 'asc' },
+];
+// Label for a header-click sort that has no dropdown entry, e.g. Capability ascending.
+const SORT_LABEL: Record<SortKey, string> = {
+  name: 'Name', org: 'Organization', params: 'Size', cost: 'Eval cost', release: 'Release',
+  capability: 'Capability', reliability: 'Reliability', safety: 'Safety',
+};
+
+function CostCell({ model, cost }: { model: JoinedModelData; cost: CostRow | undefined }) {
   const run = getRunType(model);
-  if (!cost || !run || !(cost.core_usd > 0) || !(cost.full_usd > 0)) {
+  if (!cost?.rate || !run || !cost.core_usd || !cost.full_usd) {
     return (
       <TableCell className="px-3 py-3 text-right text-muted-foreground/60 text-xs" title="No list price for this model (self-hosted).">—</TableCell>
     );
@@ -32,12 +51,10 @@ function CostCell({ model, cost }: { model: JoinedModelData; cost: ExplorerCostR
   const coreEst = run !== 'core';
   const fullEst = run !== 'full';
   const multiplier = cost.full_usd / cost.core_usd;
-  const benchmarks = model.prediction?.coverage?.tasks_total;
-  const tokens = model.prediction?.usage?.tokens;
   const title = [
     `CORE subset: ${coreEst ? 'about ' : ''}${fmtUsd(cost.core_usd)}${coreEst ? ' (estimated)' : ' (measured tokens)'}`,
     `All items: ${fullEst ? 'about ' : ''}${fmtUsd(cost.full_usd)}${fullEst ? ' (estimated)' : ' (measured tokens)'}`,
-    `${formatMultiplier(multiplier)}× cheaper. Tokens of the evaluated model at ${cost.source} list prices (judge models not counted)${tokens ? `, on the ${tokens.tasks}${benchmarks ? ` of ${benchmarks}` : ''} benchmarks with token counts in the logs` : ''}.`,
+    `${formatMultiplier(multiplier)}× cheaper. Tokens of the evaluated model at ${rateSource(cost.rate.source)} list prices (judge models not counted).`,
   ].join('\n');
   return (
     <TableCell className="px-1.5 sm:px-2 md:px-3 py-3" title={title}>
@@ -55,7 +72,7 @@ const fmtUsdShort = (v: number) => (v >= 1000 ? `$${+(v / 1000).toFixed(1)}k` : 
 
 type SortState = { key: SortKey, direction: 'asc' | 'desc' };
 
-const COST_INFO = 'What a CORE evaluation costs at the model\'s list prices, compared with a full evaluation of the same benchmarks. Judge models are not counted, a tilde marks values extrapolated from the run that was actually done, and self-hosted models without a list price show a dash.';
+const COST_INFO = 'What a CORE evaluation costs at the model\'s list prices, compared with a full evaluation of the same benchmarks.';
 
 function SortableHead({ label, sortKey, sort, onSort, align = 'left', className = '', info, nowrap = false }: {
   label: string, nowrap?: boolean, sortKey: SortKey, sort: SortState, onSort: (key: SortKey) => void, align?: 'left' | 'right', className?: string, info?: string
@@ -93,8 +110,8 @@ function SortableHead({ label, sortKey, sort, onSort, align = 'left', className 
 
 export function ModelDataTable({ initialModels, costs, initialRows, heading }: {
   initialModels: JoinedModelData[],
-  // Eval cost rows keyed by model id; models without a list price are absent.
-  costs: Record<string, ExplorerCostRow>,
+  // Eval cost rows keyed by model id; self-hosted models have no USD.
+  costs: Record<string, CostRow>,
   // Rendered above the filter row.
   heading?: React.ReactNode,
   // Rows shown before "Show all"; searching always shows every match.
@@ -102,20 +119,29 @@ export function ModelDataTable({ initialModels, costs, initialRows, heading }: {
 }) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortState>({ key: 'capability', direction: 'desc' });
+  const [weights, setWeights] = useState<WeightsFilter>('all');
   const [expanded, setExpanded] = useState(false);
 
-  const term = search.toLowerCase();
+  const term = search.trim().toLowerCase();
   const filtered = initialModels.filter(m =>
-    (m.metadata?.name || m.yamlId).toLowerCase().includes(term) ||
-    (m.metadata?.organization || '').toLowerCase().includes(term)
+    (weights === 'all' || weightsOf(m) === weights) && (
+      (m.metadata?.name || m.yamlId).toLowerCase().includes(term) ||
+      (m.metadata?.organization || '').toLowerCase().includes(term))
   );
+
+  const preset = SORTS.find(s => s.key === sort.key && s.direction === sort.direction);
+  const sortOptions = preset ? SORTS : [
+    { id: 'column', label: `${SORT_LABEL[sort.key]}, ${sort.direction === 'asc' ? 'lowest' : 'highest'} first`, key: sort.key, direction: sort.direction },
+    ...SORTS,
+  ];
 
   const sortValue = (m: JoinedModelData): number | string | null => {
     switch (sort.key) {
       case 'name': return m.metadata?.name || m.yamlId;
       case 'org': return m.metadata?.organization || null;
+      case 'release': return m.metadata?.release_date || null;
       case 'params': return parseParams(m.metadata?.specs?.total_params) || null;
-      case 'cost': { const c = costs[m.id]; return c && c.core_usd > 0 ? c.core_usd : null; }
+      case 'cost': return costs[m.id]?.core_usd || null;
       default: return getIndexTheta(m, sort.key)?.theta ?? null;
     }
   };
@@ -143,18 +169,13 @@ export function ModelDataTable({ initialModels, costs, initialRows, heading }: {
   return (
     <div className="space-y-5">
       {heading}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <Input
-          type="search"
-          placeholder="Filter by model or organization…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-full bg-card px-4 text-sm md:w-72"
-        />
-        <p className="text-sm tabular-nums text-muted-foreground md:ml-auto">
-          {filtered.length === initialModels.length ? `${initialModels.length} models` : `${filtered.length} of ${initialModels.length} models`}
-        </p>
-      </div>
+      <ModelFilterBar
+        search={search} onSearch={setSearch}
+        sorts={sortOptions} sortId={preset?.id ?? 'column'}
+        onSort={id => { const o = SORTS.find(s => s.id === id); if (o) setSort({ key: o.key, direction: o.direction }); }}
+        weights={weights} onWeights={setWeights}
+        shown={filtered.length} total={initialModels.length}
+      />
 
       <div className="overflow-x-auto">
         <Table className="w-full text-sm">

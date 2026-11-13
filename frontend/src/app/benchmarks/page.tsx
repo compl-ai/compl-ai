@@ -75,15 +75,6 @@ export default function BenchmarksPage() {
       </section>
 
       <section id="health" aria-labelledby="health-heading" className="scroll-mt-24 space-y-6">
-        <div className="max-w-5xl">
-          <Eyebrow>Benchmark health</Eyebrow>
-          <h2 id="health-heading" className="text-3xl font-extrabold tracking-tight text-ink">How the benchmarks behave</h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Each card shows how the models’ answers ended, how much signal the benchmark gives about a model’s ability,
-            how much CORE shortens it and how the models’ scores are spread. Older benchmarks lose their value once most
-            models score near the top.
-          </p>
-        </div>
         <BenchmarkHealthGrid health={getBenchmarkHealth()} analysis={getSampleAnalysis()} scores={healthScores} catalog={catalog} meta={getBenchmarkMeta()} />
       </section>
     </IndexScope>

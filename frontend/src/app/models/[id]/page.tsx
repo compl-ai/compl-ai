@@ -18,7 +18,8 @@ import {
   getAreaDescriptions,
   getBenchmarkMeta,
   getCoreRelease,
-  getExplorer,
+  getCostOverview,
+  getCosts,
   getGrounding,
   getJoinedModels,
   getPredictionRecord,
@@ -28,14 +29,14 @@ import {
   type LabelScore,
   type ModelConfig,
   type SampleAnalysis,
-  type ExplorerCostRow,
+  type CostRow,
+  type CostSuite,
   type TaskUsage,
 } from '@/lib/data';
 import { citeLabel } from '@/lib/frameworks';
 import { OUTCOMES, TAG_LABELS } from '@/lib/outcomes';
 import {
   hasMeasuredScore,
-  IMPUTED_SHARE_LIMIT,
   INDEX_BAR,
   INDICES,
   NO_SCORE_REASON,
@@ -51,7 +52,6 @@ import {
   formatTokens,
   getIndexTheta,
   getRunType,
-  imputedShare,
   rankRange,
   scaleTheta,
   scoreBarPct,
@@ -188,7 +188,6 @@ function formatReasoning(config: ModelConfig | undefined): string {
 type Tone = { band: string; dot: string };
 type Prediction = JoinedModelData['prediction'];
 type TaskPrediction = Prediction['tasks'][string];
-type Tokens = NonNullable<NonNullable<Prediction['usage']>['tokens']>;
 
 const notRun = (t: TaskPrediction | undefined) => !t || t.status === 'imputed' || t.status === 'missing';
 const scoreMargin = (t: TaskPrediction) => (t.predicted_score_error ? 1.645 * t.predicted_score_error : 0);
@@ -204,20 +203,18 @@ function Fact({ label, className, children }: { label: string; className?: strin
   );
 }
 
-function CostSection({ tokens, usd, run, coreAnswered, coreTotal, tasksTotal }: {
-  tokens: Tokens;
-  usd: ExplorerCostRow | null;
+function CostSection({ cost, run, coreAnswered, coreTotal }: {
+  cost: CostRow;
   run: NonNullable<ReturnType<typeof getRunType>>;
   coreAnswered: number | null;
   coreTotal: number | null;
-  tasksTotal: number;
 }) {
   return (
     <section aria-labelledby="cost">
       <SectionHeading id="cost" title="Cost of the evaluation">
         {RUN_TYPES[run].description} Answering only the CORE subset costs a fraction of running every question of the suite.
       </SectionHeading>
-      <CostPanel tokens={tokens} usd={usd} run={run} coreAnswered={coreAnswered} coreTotal={coreTotal} tasksTotal={tasksTotal} />
+      <CostPanel cost={cost} run={run} coreAnswered={coreAnswered} coreTotal={coreTotal} />
     </section>
   );
 }
@@ -370,7 +367,7 @@ function ReadingIcon({ direction }: { direction: 'up' | 'down' | 'level' }) {
 // Each scored area of an index on one 0–100% scale: the other models' scores as a histogram, the median
 // model as a tick and this model as a line with its 90% interval.
 function AreaChart({ rows, tone }: {
-  rows: { key: string; name: string; field: number[]; score: LabelScore & { predicted_score: number }; median: number | null }[];
+  rows: { key: string; name: string; field: number[]; score: (LabelScore & { predicted_score: number }) | null; median: number | null }[];
   tone: Tone;
 }) {
   return (
@@ -382,22 +379,20 @@ function AreaChart({ rows, tone }: {
             <span key={v} className={cn('absolute top-0', v === 0 ? '' : v === 100 ? '-translate-x-full' : '-translate-x-1/2')} style={{ left: `${v}%` }}>{v}%</span>
           ))}
         </div>
-        {rows.map(r => {
-          const muted = imputedShare(r.score) >= IMPUTED_SHARE_LIMIT;
-          return (
-            <Fragment key={r.key}>
-              <a href={`#result-${areaSlug(r.key)}`} className="truncate text-sm text-ink hover:text-link hover:underline">{r.name}</a>
+        {rows.map(r => (
+          <Fragment key={r.key}>
+            <a href={`#result-${areaSlug(r.key)}`} className={cn('truncate text-sm hover:text-link hover:underline', r.score ? 'text-ink' : 'text-muted-foreground')}>{r.name}</a>
+            {r.score ? (
               <ScoreDistribution
                 field={r.field}
                 point={r.score.predicted_score}
                 interval={r.score.score_interval ?? null}
                 reference={r.median}
                 tone={tone}
-                className={muted ? 'opacity-50' : ''}
               />
-            </Fragment>
-          );
-        })}
+            ) : <span className="text-xs text-muted-foreground">— not enough data</span>}
+          </Fragment>
+        ))}
       </div>
       <figcaption className="mt-3 text-xs text-muted-foreground">
         Grey bars: the other models’ scores · thin tick: the median model · coloured line and band: this model and its 90% interval.
@@ -410,7 +405,7 @@ function AreaBlock({ areaKey, name, description, refs, sources, prediction, scor
   areaKey: string;
   name: string;
   description: string;
-  refs: { id: string; label: string; title: string; direct: boolean }[];
+  refs: RegulationRef[];
   sources: AreaSource[];
   prediction: Prediction;
   score: LabelScore & { predicted_score: number };
@@ -424,7 +419,6 @@ function AreaBlock({ areaKey, name, description, refs, sources, prediction, scor
   const weighted = sources.map(s => ({ ...s, weight: score.task_weights ? score.task_weights[s.task] ?? 0 : s.areaShare }));
   const shown = weighted.filter(s => s.weight >= 0.05 || s.ownShare >= 0.5).sort((x, y) => y.weight - x.weight);
   const rest = 1 - shown.reduce((sum, s) => sum + s.weight, 0);
-  const mostlyImputed = imputedShare(score) >= IMPUTED_SHARE_LIMIT;
   const answered = score.observations === score.subset_items
     ? `from ${score.subset_items.toLocaleString()} CORE answers`
     : `from ${score.observations.toLocaleString()} of ${score.subset_items.toLocaleString()} CORE answers`;
@@ -443,43 +437,79 @@ function AreaBlock({ areaKey, name, description, refs, sources, prediction, scor
           )}
         </div>
         <div className="shrink-0 text-right tabular" title={score.score_interval ? `90% interval ${formatAccuracyInterval(score.score_interval)}` : undefined}>
-          <div className={`text-xl font-bold leading-6 ${mostlyImputed ? 'text-ink/50' : 'text-ink'}`}>{formatPercent(score.predicted_score)}{mostlyImputed && '*'}</div>
+          <div className="text-xl font-bold leading-6 text-ink">{formatPercent(score.predicted_score)}</div>
           {score.score_interval && <div className="text-xs text-muted-foreground">{formatAccuracyInterval(score.score_interval)}</div>}
           <div className="text-xs text-muted-foreground">{answered}</div>
         </div>
       </div>
       <p className="mt-3 text-base text-muted-foreground leading-relaxed">
         {description}
-        {mostlyImputed && (
-          <>
-            {' '}Most of this score comes from benchmarks the model did not run, so it is{' '}
-            <Link href="/methodology#areas" className="text-link hover:underline">largely inferred</Link> from its other results and the
-            real uncertainty is wider than the interval shows.
-          </>
-        )}
       </p>
       <SourceStack shown={shown} rest={rest} prediction={prediction} />
-      {refs.length > 0 && (
-        <div className="mt-6">
-          <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-            <span>How it maps to regulation</span>
-            {refs.some(r => !r.direct) && <span>Dashed: related, not directly tested</span>}
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-          {refs.map(r => (
-            <Link
-              key={r.id}
-              href={`/mapping#ref-${r.id}`}
-              title={`${r.label}${r.direct ? '' : ' (related)'}`}
-              className={`rounded-full border px-2 py-0.5 text-xs leading-4 hover:border-ink ${r.direct ? 'border-ink/40' : 'border-dashed border-ink/30'}`}
-            >
-              <span className={`font-semibold ${r.direct ? 'text-ink' : 'text-ink/70'}`}>{r.title}</span>
-              <span className="ml-1.5 text-muted-foreground">{r.label}</span>
-            </Link>
-          ))}
-          </div>
+      <RegulationRefs refs={refs} />
+    </div>
+  );
+}
+
+type RegulationRef = { id: string; label: string; title: string; direct: boolean };
+
+function RegulationRefs({ refs }: { refs: RegulationRef[] }) {
+  if (refs.length === 0) return null;
+  return (
+    <div className="mt-6">
+      <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+        <span>How it maps to regulation</span>
+        {refs.some(r => !r.direct) && <span>Dashed: related, not directly tested</span>}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+      {refs.map(r => (
+        <Link
+          key={r.id}
+          href={`/mapping#ref-${r.id}`}
+          title={`${r.label}${r.direct ? '' : ' (related)'}`}
+          className={`rounded-full border px-2 py-0.5 text-xs leading-4 hover:border-ink ${r.direct ? 'border-ink/40' : 'border-dashed border-ink/30'}`}
+        >
+          <span className={`font-semibold ${r.direct ? 'text-ink' : 'text-ink/70'}`}>{r.title}</span>
+          <span className="ml-1.5 text-muted-foreground">{r.label}</span>
+        </Link>
+      ))}
+      </div>
+    </div>
+  );
+}
+
+// An area without a score: either the model ran too little of it, or CORE has too few of its questions for any model.
+function UnscoredAreaBlock({ areaKey, name, description, refs, sources, prediction, score }: {
+  areaKey: string;
+  name: string;
+  description: string;
+  refs: RegulationRef[];
+  sources: AreaSource[];
+  prediction: Prediction;
+  score: LabelScore | undefined;
+}) {
+  const total = sources.reduce((sum, s) => sum + s.items, 0);
+  const missing = sources
+    .filter(s => notRun(prediction.tasks[s.task]) && s.items >= 0.05 * total)
+    .sort((a, b) => b.items - a.items);
+  const reason = score?.gap === 'not run'
+    ? <>The benchmarks this model ran cover less than half of this area{missing.length > 0 && <>; it did not run {listJoin(missing.map(s => <Link key={s.task} href={`/benchmarks#${benchmarkAnchor(s.task)}`} className="text-ink hover:text-link hover:underline">{s.name}</Link>))}</>}.</>
+    : <>CORE has too few questions in this area to score it, for any model.</>;
+  return (
+    <div id={`result-${areaSlug(areaKey)}`} data-print-block className="scroll-mt-28 py-10 border-b border-border last:border-0">
+      <div className="flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <h5><Link href={`/mapping#${areaSlug(areaKey)}`} className="text-base font-bold text-ink hover:text-link hover:underline">{name}</Link></h5>
+          <p className="mt-1 text-[13px] text-ink/80 leading-snug">Not enough data to score this area. {reason}</p>
         </div>
-      )}
+        <div className="shrink-0 text-right">
+          <div className="text-xl font-bold leading-6 text-muted-foreground" title="Not enough data to score this area">—</div>
+        </div>
+      </div>
+      <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+        {description}
+      </p>
+      <RegulationRefs refs={refs} />
     </div>
   );
 }
@@ -666,18 +696,20 @@ function FailedAnswers({ analysis, modelId, names }: { analysis: SampleAnalysis;
 }
 
 // Tokens per benchmark: measured in the run it was answered in, and estimated from the tokens per question otherwise.
-function TokenSpend({ taskUsage, names }: { taskUsage: Record<string, TaskUsage>; names: Record<string, string> }) {
+function TokenSpend({ taskUsage, sizes, names }: { taskUsage: Record<string, TaskUsage>; sizes: CostSuite['tasks']; names: Record<string, string> }) {
   const rows = Object.entries(taskUsage)
-    .filter(([, u]) => u.observed_items > 0 && u.model_tokens > 0)
+    .filter(([task, u]) => u.observed_items > 0 && (u.model_tokens ?? 0) > 0 && sizes[task])
     .map(([task, u]) => {
-      const perQuestion = u.model_tokens / u.observed_items;
+      const modelTokens = u.model_tokens ?? 0;
+      const perQuestion = modelTokens / u.observed_items;
       return {
         task,
         u,
+        ...sizes[task],
         perQuestion,
-        core: u.run === 'core' ? u.model_tokens : perQuestion * u.subset_items,
+        core: u.run === 'core' ? modelTokens : perQuestion * sizes[task].subset_items,
         coreEstimated: u.run !== 'core',
-        full: u.run === 'full' ? u.model_tokens : perQuestion * u.population_items,
+        full: u.run === 'full' ? modelTokens : perQuestion * sizes[task].population_items,
         fullEstimated: u.run !== 'full',
       };
     })
@@ -687,15 +719,15 @@ function TokenSpend({ taskUsage, names }: { taskUsage: Record<string, TaskUsage>
   const top = rows.slice(0, 5);
   const topShare = top.reduce((sum, r) => sum + r.core, 0) / coreTotal;
   const saving = [...rows].sort((a, b) => b.full - b.core - (a.full - a.core))[0];
-  const output = rows.reduce((sum, r) => sum + r.u.output_tokens, 0);
-  const reasoning = rows.reduce((sum, r) => sum + r.u.reasoning_tokens, 0);
+  const output = rows.reduce((sum, r) => sum + (r.u.output_tokens ?? 0), 0);
+  const reasoning = rows.reduce((sum, r) => sum + (r.u.reasoning_tokens ?? 0), 0);
   const tokens = (value: number, estimated: boolean) => `${estimated ? '~' : ''}${formatTokens(value)}`;
   return (
     <>
       <p className="mb-3 text-base text-ink leading-relaxed">
         The {top.length} benchmarks below take {formatPercent(topShare)} of the model’s CORE tokens. The largest saving is on {names[saving.task] ?? saving.task}:
-        its {saving.u.subset_items.toLocaleString()} core questions take {tokens(saving.core, saving.coreEstimated)} tokens, against {tokens(saving.full, saving.fullEstimated)} for
-        all {saving.u.population_items.toLocaleString()}.{reasoning > 0 && ` Reasoning made up ${formatPercent(reasoning / output)} of the model’s output tokens.`}
+        its {saving.subset_items.toLocaleString()} core questions take {tokens(saving.core, saving.coreEstimated)} tokens, against {tokens(saving.full, saving.fullEstimated)} for
+        all {saving.population_items.toLocaleString()}.{reasoning > 0 && ` Reasoning made up ${formatPercent(reasoning / output)} of the model’s output tokens.`}
       </p>
       <Table columns={[{ label: 'Benchmark' }, { label: 'Per question', numeric: true }, { label: 'CORE', numeric: true }, { label: 'Every question', numeric: true }]}>
         {top.map(r => (
@@ -796,8 +828,9 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
   const catalog = getBenchmarkCatalog();
   const prediction = model.prediction;
   const run = getRunType(model);
-  const tokens = prediction.usage?.tokens ?? null;
-  const taskUsage = prediction.usage?.tasks ?? {};
+  const costs = getCosts();
+  const taskUsage = costs.models[model.id]?.tasks ?? {};
+  const cost = getCostOverview().rows.find(r => r.id === model.id) ?? null;
   const coverage = prediction.coverage;
   const modelConfig = prediction.model_config;
   const coreRelease = getCoreRelease();
@@ -807,7 +840,6 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
   const isCalibration = Object.values(prediction.tasks).some(t => t.full_run);
   const hasSeparateFullRun = Object.entries(prediction.tasks).some(([task, t]) => t.full_run && answerOutcomes[task] && t.full_run.log_path !== answerOutcomes[task].log_path);
   const tasksTotal = Object.keys(prediction.tasks).length;
-  const usd = getExplorer().eval_cost.rows.find(r => r.id === model.id) ?? null;
 
   const benchmarkName = (task: string) => benchmarkMeta[task]?.name ?? task;
   const names = Object.fromEntries(catalog.map(b => [b.name, benchmarkName(b.name)]));
@@ -886,9 +918,7 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
     const own = prediction.subcategories![key]!.predicted_score!;
     return [key, field.length ? field.filter(v => v < own).length / field.length : 0.5];
   }));
-  // Areas mostly imputed from benchmarks the model did not run are left out of comparisons.
-  const rankAreas = (keys: string[]) =>
-    keys.filter(key => imputedShare(prediction.subcategories![key]!) < IMPUTED_SHARE_LIMIT).sort((a, b) => standing[b] - standing[a]);
+  const rankAreas = (keys: string[]) => [...keys].sort((a, b) => standing[b] - standing[a]);
 
   // Comparison groups for 3.1: models scored on all three indices, nearest first.
   const PEER_COUNT = 5;
@@ -1014,14 +1044,12 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
         </div>
       </section>
 
-      {tokens && run && (
+      {cost?.core_tokens && run && (
         <CostSection
-          tokens={tokens}
-          usd={usd}
+          cost={cost}
           run={run}
           coreAnswered={coverage?.samples_completed ?? null}
           coreTotal={coverage?.samples_total ?? null}
-          tasksTotal={tasksTotal}
         />
       )}
 
@@ -1168,12 +1196,13 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
           Evaluation areas group the questions of the benchmarks by what they test, and link to the provisions of the EU AI Act and the
           GPAI Code of Practice that they inform, as set out in the <Link href="/mapping" className="text-link hover:underline">AI Act mapping</Link>.
           Each score is the predicted accuracy on the area’s questions, with its 90% interval. Areas mix questions of different
-          difficulty, so their scores are not comparable with each other.
+          difficulty, so their scores are not comparable with each other. Areas without enough data to score are listed without a score.
         </SubHeading>
         <div className="mt-8 space-y-10">
         {INDICES.map((index, i) => {
           const areas = Object.entries(taxonomy.subcategories).filter(([, s]) => s.index === index.id);
-          const scored = areas.filter(([key]) => hasMeasuredScore(prediction.subcategories?.[key]) && !prediction.subcategories?.[key]?.gap);
+          const isScored = (key: string) => hasMeasuredScore(prediction.subcategories?.[key]) && !prediction.subcategories?.[key]?.gap;
+          const scored = areas.filter(([key]) => isScored(key));
           // The extremes are named when an index has 3+ areas.
           const ranked = rankAreas(scored.map(([key]) => key));
           const standout = (key: string): AreaStandout =>
@@ -1185,28 +1214,30 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
             <div key={index.id}>
               <SubHeading id={`area-${index.id}`} number={`2.2.${i + 1}`} level={4} title={index.label} dot={INDEX_BAR[index.id].dot}>{index.description}</SubHeading>
               <div className={INDENT}>
-                {scored.length > 0 && (
+                {areas.length > 0 && (
                   <AreaChart
                     tone={INDEX_BAR[index.id]}
-                    rows={scored.map(([key, info]) => ({
+                    rows={areas.map(([key, info]) => ({
                       key,
                       name: info.name,
                       field: areaField(key),
-                      score: prediction.subcategories![key] as LabelScore & { predicted_score: number },
+                      score: isScored(key) ? prediction.subcategories![key] as LabelScore & { predicted_score: number } : null,
                       median: subcategoryMedians[key],
                     }))}
                   />
                 )}
-                {scored.map(([key, info]) => (
+                {areas.map(([key, info]) => {
+                  const refs = (grounding.subcategories[key]?.refs ?? [])
+                    .filter(r => r.coverage !== 'none' && grounding.refs[r.id])
+                    .map(r => ({ id: r.id, label: citeLabel(grounding.refs[r.id]), title: grounding.refs[r.id].title, direct: r.strength === 'direct' }))
+                    .sort((a, b) => Number(b.direct) - Number(a.direct));
+                  return isScored(key) ? (
                   <AreaBlock
                     key={key}
                     areaKey={key}
                     name={info.name}
                     description={areaDescriptions[key] ?? info.description}
-                    refs={(grounding.subcategories[key]?.refs ?? [])
-                      .filter(r => r.coverage !== 'none' && grounding.refs[r.id])
-                      .map(r => ({ id: r.id, label: citeLabel(grounding.refs[r.id]), title: grounding.refs[r.id].title, direct: r.strength === 'direct' }))
-                      .sort((a, b) => Number(b.direct) - Number(a.direct))}
+                    refs={refs}
                     sources={areaSources[key] ?? []}
                     prediction={prediction}
                     score={prediction.subcategories![key] as LabelScore & { predicted_score: number }}
@@ -1215,7 +1246,19 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
                     standout={standout(key)}
                     indexLabel={index.label}
                   />
-                ))}
+                  ) : (
+                  <UnscoredAreaBlock
+                    key={key}
+                    areaKey={key}
+                    name={info.name}
+                    description={areaDescriptions[key] ?? info.description}
+                    refs={refs}
+                    sources={areaSources[key] ?? []}
+                    prediction={prediction}
+                    score={prediction.subcategories?.[key]}
+                  />
+                  );
+                })}
               </div>
             </div>
           );
@@ -1256,7 +1299,7 @@ export default async function ModelReportPage(props: { params: Promise<{ id: str
           <SectionHeading id="tokens" number={chapterNumber('tokens')} title="Cost">
             The benchmarks that took the most of the model’s tokens in CORE, against answering every question.
           </SectionHeading>
-          <div className={`mt-8 ${INDENT}`}><TokenSpend taskUsage={taskUsage} names={names} /></div>
+          <div className={`mt-8 ${INDENT}`}><TokenSpend taskUsage={taskUsage} sizes={costs.suite.tasks} names={names} /></div>
         </section>
       )}
       </div>

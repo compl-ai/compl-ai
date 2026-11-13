@@ -1,4 +1,4 @@
-import type { ExplorerData, JoinedModelData } from '@/lib/data';
+import type { CostOverview, ExperimentsData, JoinedModelData } from '@/lib/data';
 import { INDICES, type IndexId, getIndexTheta, parseParams, scaleTheta } from '@/lib/scores';
 
 export type QuestionId = 'capability-safety' | 'safety-areas' | 'over-time' | 'parameters' | 'labs' | 'eval-cost';
@@ -6,10 +6,10 @@ export type QuestionId = 'capability-safety' | 'safety-areas' | 'over-time' | 'p
 export interface Question {
   id: QuestionId;
   title: string;
-  context: string | ((e: ExplorerData) => string);
+  context: string | ((e: ExperimentsData) => string);
 }
 
-export const contextOf = (q: Question, e: ExplorerData) => (typeof q.context === 'function' ? q.context(e) : q.context);
+export const contextOf = (q: Question, e: ExperimentsData) => (typeof q.context === 'function' ? q.context(e) : q.context);
 
 export const QUESTIONS: Question[] = [
   {
@@ -25,7 +25,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 'safety-areas',
     title: 'Which parts of safety are improving?',
-    context: 'Predicted accuracy by release date for three groups of safety areas, each with a linear trend. Areas that tend to move together are grouped.',
+    context: 'Predicted accuracy by release date for two groups of safety areas, each with a linear trend. Areas that tend to move together are grouped.',
   },
   {
     id: 'parameters',
@@ -145,7 +145,7 @@ const YEAR = 365.25 * 864e5;
 
 // Capability shifted to the median release date along the pooled date trend (size held fixed),
 // so older models are not mistaken for weaker architectures; then a log10(total) trend per architecture.
-export function paramsFit(e: ExplorerData, byId: ModelLookup) {
+export function paramsFit(e: ExperimentsData, byId: ModelLookup) {
   const base = e.params.points.flatMap(p => {
     const m = byId.get(p.id);
     const d = m ? releaseOf(m) : null;
@@ -164,7 +164,7 @@ export function paramsFit(e: ExplorerData, byId: ModelLookup) {
   return { rows, refDate, perYear, dMin: dates[0], dMax: dates[dates.length - 1], trends: { true: trend(true), false: trend(false) } };
 }
 
-export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Record<QuestionId, string> {
+export function buildFindings(e: ExperimentsData, costs: CostOverview, models: JoinedModelData[]): Record<QuestionId, string> {
   const byId = lookupModels(models);
   const name = (id: string) => nameFor(byId, id);
 
@@ -185,8 +185,8 @@ export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Recor
   const sg = Object.fromEntries(e.safety_areas.groups.map(g => [g.id, g]));
   const ppy = (g: { pp_per_year: number }) => `${signed(g.pp_per_year)} percentage points a year`;
   const trendPct = (g: { trend: { y: number }[] }, k: number) => `${Math.round(g.trend[k].y)}%`;
-  const inj = sg.injection, ref = sg.refusal, fair = sg.fairness;
-  const safetyAreas = `Resistance to injection attacks is improving fastest, ${ppy(inj)}, from ${trendPct(inj, 0)} on trend in ${fmtMonth(inj.trend[0].date)} to ${trendPct(inj, 1)} in ${fmtMonth(inj.trend[1].date)}. Refusal and honesty (${signed(ref.pp_per_year)}) and fairness (${signed(fair.pp_per_year)}) improve far more slowly.`;
+  const inj = sg.injection, ref = sg.refusal;
+  const safetyAreas = `Resistance to injection attacks is improving quickly, ${ppy(inj)}, from ${trendPct(inj, 0)} on trend in ${fmtMonth(inj.trend[0].date)} to ${trendPct(inj, 1)} in ${fmtMonth(inj.trend[1].date)}. Refusal and honesty is already high, ${trendPct(ref, 1)} on trend, and barely moves: ${ppy(ref)} (90% interval ${signed(ref.pp_per_year_ci90[0])} to ${signed(ref.pp_per_year_ci90[1])}).`;
 
   const ol = e.open_lag;
   const lag = (ix: IndexId) => `${f1(ol[ix].lag_months)} months`;
@@ -205,8 +205,7 @@ export function buildFindings(e: ExplorerData, models: JoinedModelData[]): Recor
     parameters = `MoE models gain more from scale: each 10× in total parameters adds ${signed(moe.b)} Capability points, against ${signed(dense.b)} for dense models, while using only part of those parameters per token. In absolute terms MoE still trails at the same total size: about ${f1(Math.abs(gap))} points ${gap > 0 ? 'behind' : 'ahead'} at ${fmtParams(REF)}${cross && cross > dense.x1 ? `, with the trends meeting only around ${fmtParams(+cross.toPrecision(1))}, beyond the largest dense model here (${fmtParams(dense.x1)})` : ''}.`;
   }
 
-  const ec = e.eval_cost;
-  const evalCost = `Evaluation gets about ${Math.round(ec.trend.full_usd.x_per_year)}× more expensive every year, and CORE cuts each run by about ${Math.round(ec.ratio_usd)}×. Newer models write more tokens at higher prices, so a full-suite run keeps climbing while CORE rises from a far lower level, keeping evaluation of new foundation models cheap, feasible and reproducible.`;
+  const evalCost = `Evaluation gets about ${Math.round(costs.trend.full_usd.x_per_year)}× more expensive every year, and CORE cuts each run by about ${f1(costs.summary.ratio_usd.median)}×. Newer models write more tokens at higher prices, so a full-suite run keeps climbing while CORE rises from a far lower level, keeping evaluation of new foundation models cheap, feasible and reproducible.`;
 
   const ls = e.labs.safety.labs.filter(l => l.lab !== 'Other').sort((a, b) => b.median - a.median);
   const top = ls.slice(0, 2);

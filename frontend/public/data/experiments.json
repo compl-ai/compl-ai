@@ -1,10 +1,10 @@
 {
  "_meta": {
-  "built": "2026-11-11",
-  "generator": "files/experiments/frontpage/explorer_build.py (session artifacts)",
-  "prediction_id": "6640cc7a8b5c9cd27df669e9",
+  "built": "2026-11-12",
+  "generator": "tools/method/experiments.py",
+  "prediction_id": "20884adc5cac214c68ebe88f",
   "core_release": "core.v1",
-  "analysis_rules_version": 1,
+  "analysis_rules_version": null,
   "n_models": 57,
   "n_scored": 55,
   "scale": "100 + 15 * theta",
@@ -32,7 +32,7 @@
   },
   "reliability": {
    "rho": 0.9,
-   "rho_release": 0.85,
+   "rho_release": 0.84,
    "n": 55,
    "n_release": 55,
    "top10_overlap": 8
@@ -48,7 +48,7 @@
      {
       "id": "safety:security-privacy",
       "name": "Security and privacy",
-      "pp_per_year": 11.7
+      "pp_per_year": 12.6
      },
      {
       "id": "safety:goal-hijacking",
@@ -61,19 +61,19 @@
       "pp_per_year": 19.0
      }
     ],
-    "pp_per_year": 16.8,
+    "pp_per_year": 17.1,
     "pp_per_year_ci90": [
-     11.5,
-     21.5
+     11.7,
+     21.9
     ],
     "trend": [
      {
       "date": "2024-07-23",
-      "y": 48.6
+      "y": 48.0
      },
      {
       "date": "2026-10-26",
-      "y": 86.5
+      "y": 86.6
      }
     ],
     "points": [
@@ -115,17 +115,17 @@
      {
       "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
       "date": "2026-04-23",
-      "y": 84.6
+      "y": 85.0
      },
      {
       "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
       "date": "2025-12-12",
-      "y": 46.4
+      "y": 44.7
      },
      {
       "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
       "date": "2025-12-01",
-      "y": 74.6
+      "y": 74.8
      },
      {
       "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
@@ -135,17 +135,17 @@
      {
       "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
       "date": "2026-04-24",
-      "y": 87.5
+      "y": 88.1
      },
      {
       "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
       "date": "2026-06-10",
-      "y": 72.5
+      "y": 72.7
      },
      {
       "id": "openai-api/vllm/google/gemma-3-27b-it",
       "date": "2025-03-10",
-      "y": 37.1
+      "y": 35.6
      },
      {
       "id": "openai-api/vllm/google/gemma-4-12B-it",
@@ -170,22 +170,22 @@
      {
       "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
       "date": "2025-10-02",
-      "y": 48.7
+      "y": 47.9
      },
      {
       "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
       "date": "2024-07-23",
-      "y": 44.0
+      "y": 43.0
      },
      {
       "id": "openai-api/vllm/microsoft/phi-4",
       "date": "2024-12-12",
-      "y": 64.6
+      "y": 64.0
      },
      {
       "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
       "date": "2025-12-02",
-      "y": 53.3
+      "y": 53.2
      },
      {
       "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
@@ -225,7 +225,7 @@
      {
       "id": "openai-api/vllm/openai/gpt-oss-120b",
       "date": "2025-08-05",
-      "y": 87.3
+      "y": 87.6
      },
      {
       "id": "openai-api/vllm/openai/gpt-oss-20b",
@@ -250,12 +250,12 @@
      {
       "id": "openai-api/vllm/tencent/Hy3-preview",
       "date": "2026-04-23",
-      "y": 79.5
+      "y": 79.9
      },
      {
       "id": "openai/gpt-6-luna",
       "date": "2026-09-22",
-      "y": 91.6
+      "y": 91.9
      },
      {
       "id": "openai/gpt-6.1-terra",
@@ -360,39 +360,39 @@
      {
       "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
       "date": "2024-12-06",
-      "y": 54.4
+      "y": 54.6
      }
     ]
    },
    {
     "id": "refusal",
     "name": "Refusal and honesty",
-    "n": 57,
+    "n": 42,
     "members": [
      {
       "id": "safety:harmful-instruction-refusal",
       "name": "Harmful instruction refusal",
-      "pp_per_year": 3.0
+      "pp_per_year": 0.5
      },
      {
       "id": "safety:deception-honesty",
       "name": "Deception and honesty",
-      "pp_per_year": 2.9
+      "pp_per_year": 2.3
      }
     ],
-    "pp_per_year": 2.9,
+    "pp_per_year": 1.4,
     "pp_per_year_ci90": [
-     1.1,
-     5.0
+     -3.0,
+     8.2
     ],
     "trend": [
      {
-      "date": "2024-07-23",
-      "y": 83.2
+      "date": "2025-08-05",
+      "y": 88.0
      },
      {
       "date": "2026-10-26",
-      "y": 89.9
+      "y": 89.8
      }
     ],
     "points": [
@@ -412,11 +412,6 @@
       "y": 95.0
      },
      {
-      "id": "openai-api/vllm/Qwen/Qwen3-8B",
-      "date": "2025-04-28",
-      "y": 85.6
-     },
-     {
       "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
       "date": "2026-03-02",
       "y": 89.9
@@ -432,39 +427,9 @@
       "y": 85.4
      },
      {
-      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-      "date": "2026-04-23",
-      "y": 87.0
-     },
-     {
-      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-      "date": "2025-12-12",
-      "y": 84.1
-     },
-     {
-      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-      "date": "2025-12-01",
-      "y": 79.9
-     },
-     {
       "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
       "date": "2026-04-24",
       "y": 76.8
-     },
-     {
-      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
-      "date": "2026-04-24",
-      "y": 77.5
-     },
-     {
-      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-      "date": "2026-06-10",
-      "y": 85.4
-     },
-     {
-      "id": "openai-api/vllm/google/gemma-3-27b-it",
-      "date": "2025-03-10",
-      "y": 83.1
      },
      {
       "id": "openai-api/vllm/google/gemma-4-12B-it",
@@ -487,26 +452,6 @@
       "y": 85.2
      },
      {
-      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-      "date": "2025-10-02",
-      "y": 84.1
-     },
-     {
-      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-      "date": "2024-07-23",
-      "y": 84.4
-     },
-     {
-      "id": "openai-api/vllm/microsoft/phi-4",
-      "date": "2024-12-12",
-      "y": 88.5
-     },
-     {
-      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-      "date": "2025-12-02",
-      "y": 82.2
-     },
-     {
       "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
       "date": "2026-04-28",
       "y": 77.5
@@ -519,7 +464,7 @@
      {
       "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
       "date": "2026-04-20",
-      "y": 95.2
+      "y": 96.1
      },
      {
       "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
@@ -542,11 +487,6 @@
       "y": 92.8
      },
      {
-      "id": "openai-api/vllm/openai/gpt-oss-120b",
-      "date": "2025-08-05",
-      "y": 93.9
-     },
-     {
       "id": "openai-api/vllm/openai/gpt-oss-20b",
       "date": "2025-08-05",
       "y": 93.9
@@ -565,16 +505,6 @@
       "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
       "date": "2026-07-24",
       "y": 88.1
-     },
-     {
-      "id": "openai-api/vllm/tencent/Hy3-preview",
-      "date": "2026-04-23",
-      "y": 88.9
-     },
-     {
-      "id": "openai/gpt-6-luna",
-      "date": "2026-09-22",
-      "y": 96.1
      },
      {
       "id": "openai/gpt-6.1-terra",
@@ -675,325 +605,6 @@
       "id": "openrouter/z-ai/glm-5.3-flash",
       "date": "2026-08-26",
       "y": 93.8
-     },
-     {
-      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-      "date": "2024-12-06",
-      "y": 80.5
-     }
-    ]
-   },
-   {
-    "id": "fairness",
-    "name": "Fairness",
-    "n": 57,
-    "members": [
-     {
-      "id": "safety:fairness-bias",
-      "name": "Fairness and bias",
-      "pp_per_year": 3.2
-     }
-    ],
-    "pp_per_year": 3.2,
-    "pp_per_year_ci90": [
-     1.4,
-     5.1
-    ],
-    "trend": [
-     {
-      "date": "2024-07-23",
-      "y": 66.4
-     },
-     {
-      "date": "2026-10-26",
-      "y": 73.7
-     }
-    ],
-    "points": [
-     {
-      "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
-      "date": "2026-10-03",
-      "y": 70.7
-     },
-     {
-      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-      "date": "2026-02-12",
-      "y": 72.6
-     },
-     {
-      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-      "date": "2026-03-18",
-      "y": 71.6
-     },
-     {
-      "id": "openai-api/vllm/Qwen/Qwen3-8B",
-      "date": "2025-04-28",
-      "y": 70.2
-     },
-     {
-      "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-      "date": "2026-03-02",
-      "y": 70.6
-     },
-     {
-      "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-      "date": "2026-04-21",
-      "y": 68.1
-     },
-     {
-      "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-      "date": "2026-04-16",
-      "y": 68.2
-     },
-     {
-      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-      "date": "2026-04-23",
-      "y": 71.2
-     },
-     {
-      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
-      "date": "2025-12-12",
-      "y": 70.5
-     },
-     {
-      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-      "date": "2025-12-01",
-      "y": 70.9
-     },
-     {
-      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-      "date": "2026-04-24",
-      "y": 69.1
-     },
-     {
-      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
-      "date": "2026-04-24",
-      "y": 68.9
-     },
-     {
-      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
-      "date": "2026-06-10",
-      "y": 69.5
-     },
-     {
-      "id": "openai-api/vllm/google/gemma-3-27b-it",
-      "date": "2025-03-10",
-      "y": 70.4
-     },
-     {
-      "id": "openai-api/vllm/google/gemma-4-12B-it",
-      "date": "2026-06-03",
-      "y": 73.5
-     },
-     {
-      "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-      "date": "2026-03-31",
-      "y": 71.2
-     },
-     {
-      "id": "openai-api/vllm/google/gemma-4-31B-it",
-      "date": "2026-03-31",
-      "y": 74.4
-     },
-     {
-      "id": "openai-api/vllm/google/gemma-4-E4B-it",
-      "date": "2026-03-31",
-      "y": 73.9
-     },
-     {
-      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
-      "date": "2025-10-02",
-      "y": 65.0
-     },
-     {
-      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-      "date": "2024-07-23",
-      "y": 61.3
-     },
-     {
-      "id": "openai-api/vllm/microsoft/phi-4",
-      "date": "2024-12-12",
-      "y": 68.7
-     },
-     {
-      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-      "date": "2025-12-02",
-      "y": 63.6
-     },
-     {
-      "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-      "date": "2026-04-28",
-      "y": 71.5
-     },
-     {
-      "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-      "date": "2026-03-16",
-      "y": 67.7
-     },
-     {
-      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-      "date": "2026-04-20",
-      "y": 75.1
-     },
-     {
-      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-      "date": "2025-12-15",
-      "y": 67.3
-     },
-     {
-      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
-      "date": "2026-03-16",
-      "y": 64.1
-     },
-     {
-      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-      "date": "2026-03-11",
-      "y": 70.2
-     },
-     {
-      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-      "date": "2026-06-04",
-      "y": 74.4
-     },
-     {
-      "id": "openai-api/vllm/openai/gpt-oss-120b",
-      "date": "2025-08-05",
-      "y": 74.1
-     },
-     {
-      "id": "openai-api/vllm/openai/gpt-oss-20b",
-      "date": "2025-08-05",
-      "y": 71.5
-     },
-     {
-      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-      "date": "2026-02-02",
-      "y": 69.3
-     },
-     {
-      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
-      "date": "2026-07-24",
-      "y": 65.9
-     },
-     {
-      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
-      "date": "2026-07-24",
-      "y": 67.4
-     },
-     {
-      "id": "openai-api/vllm/tencent/Hy3-preview",
-      "date": "2026-04-23",
-      "y": 72.3
-     },
-     {
-      "id": "openai/gpt-6-luna",
-      "date": "2026-09-22",
-      "y": 76.8
-     },
-     {
-      "id": "openai/gpt-6.1-terra",
-      "date": "2026-10-26",
-      "y": 79.4
-     },
-     {
-      "id": "openrouter/anthropic/claude-haiku-4.5",
-      "date": "2025-10-15",
-      "y": 76.4
-     },
-     {
-      "id": "openrouter/anthropic/claude-haiku-5.5",
-      "date": "2026-10-07",
-      "y": 74.4
-     },
-     {
-      "id": "openrouter/anthropic/claude-opus-5.5",
-      "date": "2026-09-22",
-      "y": 79.8
-     },
-     {
-      "id": "openrouter/anthropic/claude-sonnet-4.5",
-      "date": "2025-09-29",
-      "y": 79.2
-     },
-     {
-      "id": "openrouter/anthropic/claude-sonnet-5.5",
-      "date": "2026-09-28",
-      "y": 77.8
-     },
-     {
-      "id": "openrouter/deepseek/deepseek-v4.1-flash",
-      "date": "2026-09-09",
-      "y": 76.1
-     },
-     {
-      "id": "openrouter/google/gemini-3.8-flash",
-      "date": "2026-09-02",
-      "y": 79.6
-     },
-     {
-      "id": "openrouter/google/gemini-4-argon",
-      "date": "2026-10-13",
-      "y": 79.6
-     },
-     {
-      "id": "openrouter/inclusionai/ling-3.1-flash",
-      "date": "2026-10-02",
-      "y": 74.3
-     },
-     {
-      "id": "openrouter/meta/muse-spark-open",
-      "date": "2026-10-15",
-      "y": 76.9
-     },
-     {
-      "id": "openrouter/minimax/minimax-m3.1-flash",
-      "date": "2026-10-19",
-      "y": 68.3
-     },
-     {
-      "id": "openrouter/mistralai/mistral-large-4-0",
-      "date": "2026-10-06",
-      "y": 71.8
-     },
-     {
-      "id": "openrouter/moonshotai/kimi-k3.1-pro",
-      "date": "2026-10-24",
-      "y": 76.9
-     },
-     {
-      "id": "openrouter/nvidia/nemotron-3.5-lightning",
-      "date": "2026-08-11",
-      "y": 70.3
-     },
-     {
-      "id": "openrouter/qwen/qwen3.8-flash",
-      "date": "2026-08-26",
-      "y": 70.1
-     },
-     {
-      "id": "openrouter/tencent/hy3",
-      "date": "2026-07-06",
-      "y": 73.7
-     },
-     {
-      "id": "openrouter/xiaomi/mimo-v2.6-flash",
-      "date": "2026-09-22",
-      "y": 68.5
-     },
-     {
-      "id": "openrouter/xiaomi/mimo-v2.6-pro",
-      "date": "2026-09-22",
-      "y": 71.4
-     },
-     {
-      "id": "openrouter/z-ai/glm-5.3-flash",
-      "date": "2026-08-26",
-      "y": 76.6
-     },
-     {
-      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-      "date": "2024-12-06",
-      "y": 73.4
      }
     ]
    }
@@ -1175,72 +786,77 @@
     {
      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
      "date": "2024-07-23",
-     "score": 67.7
+     "score": 72.5
     },
     {
      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
      "date": "2024-12-06",
-     "score": 90.1
+     "score": 94.4
     },
     {
      "id": "openai-api/vllm/openai/gpt-oss-120b",
      "date": "2025-08-05",
-     "score": 101.1
+     "score": 102.7
     },
     {
      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
      "date": "2026-02-02",
-     "score": 106.5
+     "score": 107.7
     },
     {
      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
      "date": "2026-04-20",
-     "score": 119.6
+     "score": 120.2
+    },
+    {
+     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
+     "date": "2026-04-24",
+     "score": 120.5
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
      "date": "2026-06-04",
-     "score": 122.9
+     "score": 123.6
     },
     {
      "id": "openrouter/meta/muse-spark-open",
      "date": "2026-10-15",
-     "score": 131.2
+     "score": 132.1
     }
    ],
    "closed_steps": [
     {
      "id": "openrouter/anthropic/claude-sonnet-4.5",
      "date": "2025-09-29",
-     "score": 113.1
+     "score": 114.2
     },
     {
      "id": "openrouter/qwen/qwen3.8-flash",
      "date": "2026-08-26",
-     "score": 114.6
+     "score": 116.1
     },
     {
      "id": "openrouter/google/gemini-3.8-flash",
      "date": "2026-09-02",
-     "score": 142.3
+     "score": 142.9
     },
     {
      "id": "openrouter/google/gemini-4-argon",
      "date": "2026-10-13",
-     "score": 144.0
+     "score": 144.8
     }
    ],
    "best_open": {
     "id": "openrouter/meta/muse-spark-open",
-    "score": 131.2
+    "score": 132.1
    },
    "best_closed": {
     "id": "openrouter/google/gemini-4-argon",
-    "score": 144.0
+    "score": 144.8
    },
-   "gap": 12.8,
-   "open_slope": 2.6,
-   "lag_months": 4.9,
+   "gap": 12.6,
+   "open_slope": 2.54,
+   "lag_months": 5.0,
    "oldest_unmatched": {
     "id": "openrouter/google/gemini-3.8-flash",
     "matched_by": null,
@@ -1329,7 +945,7 @@
     {
      "id": "openrouter/moonshotai/kimi-k3.1-pro",
      "date": "2026-10-24",
-     "score": 123.1
+     "score": 123.0
     }
    ],
    "closed_steps": [
@@ -1346,7 +962,7 @@
    ],
    "best_open": {
     "id": "openrouter/moonshotai/kimi-k3.1-pro",
-    "score": 123.1
+    "score": 123.0
    },
    "best_closed": {
     "id": "openrouter/anthropic/claude-opus-5.5",
@@ -1736,536 +1352,21 @@
    "median_release_dense": "2025-12-12"
   }
  },
- "eval_cost": {
-  "rows": [
-   {
-    "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
-    "release": "2026-02-12",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 23.62,
-    "full_usd": 169.07,
-    "core_tokens": 21742487,
-    "full_tokens": 157480218
-   },
-   {
-    "id": "openrouter/z-ai/glm-5.3-flash",
-    "release": "2026-08-26",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 1.99,
-    "full_usd": 16.8,
-    "core_tokens": 26725305,
-    "full_tokens": 225379453
-   },
-   {
-    "id": "openrouter/anthropic/claude-haiku-4.5",
-    "release": "2025-10-15",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 136.64,
-    "full_usd": 1043.16,
-    "core_tokens": 29602137,
-    "full_tokens": 229556971
-   },
-   {
-    "id": "openrouter/anthropic/claude-sonnet-4.5",
-    "release": "2025-09-29",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 215.87,
-    "full_usd": 1910.74,
-    "core_tokens": 16669677,
-    "full_tokens": 148158216
-   },
-   {
-    "id": "openrouter/deepseek/deepseek-v4.1-flash",
-    "release": "2026-09-09",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 15.5,
-    "full_usd": 112.13,
-    "core_tokens": 29969291,
-    "full_tokens": 219100332
-   },
-   {
-    "id": "openai-api/vllm/tencent/Hy3-preview",
-    "release": "2026-04-23",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 11.05,
-    "full_usd": 46.48,
-    "core_tokens": 19595763,
-    "full_tokens": 81245403
-   },
-   {
-    "id": "openrouter/meta/muse-spark-open",
-    "release": "2026-10-15",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 86.83,
-    "full_usd": 763.16,
-    "core_tokens": 23727668,
-    "full_tokens": 207191952
-   },
-   {
-    "id": "openrouter/minimax/minimax-m3.1-flash",
-    "release": "2026-10-19",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 20.13,
-    "full_usd": 128.07,
-    "core_tokens": 36865247,
-    "full_tokens": 246829557
-   },
-   {
-    "id": "openrouter/mistralai/mistral-large-4-0",
-    "release": "2026-10-06",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 78.27,
-    "full_usd": 617.5,
-    "core_tokens": 38997284,
-    "full_tokens": 307899000
-   },
-   {
-    "id": "openrouter/moonshotai/kimi-k3.1-pro",
-    "release": "2026-10-24",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 109.4,
-    "full_usd": 822.97,
-    "core_tokens": 13879913,
-    "full_tokens": 107331682
-   },
-   {
-    "id": "openrouter/nvidia/nemotron-3.5-lightning",
-    "release": "2026-08-11",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 7.3,
-    "full_usd": 44.78,
-    "core_tokens": 38327795,
-    "full_tokens": 238347491
-   },
-   {
-    "id": "openrouter/qwen/qwen3.8-flash",
-    "release": "2026-08-26",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 19.35,
-    "full_usd": 148.21,
-    "core_tokens": 43838114,
-    "full_tokens": 335599039
-   },
-   {
-    "id": "openrouter/tencent/hy3",
-    "release": "2026-07-06",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 19.65,
-    "full_usd": 183.03,
-    "core_tokens": 39507633,
-    "full_tokens": 363019415
-   },
-   {
-    "id": "openrouter/xiaomi/mimo-v2.6-flash",
-    "release": "2026-09-22",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 5.42,
-    "full_usd": 51.52,
-    "core_tokens": 20789101,
-    "full_tokens": 195134262
-   },
-   {
-    "id": "openrouter/xiaomi/mimo-v2.6-pro",
-    "release": "2026-09-22",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 20.92,
-    "full_usd": 189.63,
-    "core_tokens": 25486097,
-    "full_tokens": 228877950
-   },
-   {
-    "id": "openrouter/inclusionai/ling-3.1-flash",
-    "release": "2026-10-02",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 2.84,
-    "full_usd": 35.43,
-    "core_tokens": 22578597,
-    "full_tokens": 276838064
-   },
-   {
-    "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
-    "release": "2026-02-02",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 12.99,
-    "full_usd": 74.05,
-    "core_tokens": 45219406,
-    "full_tokens": 254190945
-   },
-   {
-    "id": "openai-api/vllm/openai/gpt-oss-120b",
-    "release": "2025-08-05",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 16.11,
-    "full_usd": 102.45,
-    "core_tokens": 30544673,
-    "full_tokens": 185414408
-   },
-   {
-    "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
-    "release": "2026-03-18",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 20.37,
-    "full_usd": 100.07,
-    "core_tokens": 26552644,
-    "full_tokens": 128583976
-   },
-   {
-    "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
-    "release": "2026-03-02",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 15.79,
-    "full_usd": 96.99,
-    "core_tokens": 64259417,
-    "full_tokens": 393241901
-   },
-   {
-    "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
-    "release": "2026-04-21",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 91.55,
-    "full_usd": 578.74,
-    "core_tokens": 31318915,
-    "full_tokens": 192246890
-   },
-   {
-    "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
-    "release": "2026-04-16",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 31.44,
-    "full_usd": 173.92,
-    "core_tokens": 37823344,
-    "full_tokens": 204528420
-   },
-   {
-    "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
-    "release": "2026-04-23",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 31.84,
-    "full_usd": 187.64,
-    "core_tokens": 18011919,
-    "full_tokens": 104598108
-   },
-   {
-    "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
-    "release": "2025-12-01",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 1.56,
-    "full_usd": 11.22,
-    "core_tokens": 4996133,
-    "full_tokens": 35240264
-   },
-   {
-    "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
-    "release": "2026-04-24",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 6.65,
-    "full_usd": 28.17,
-    "core_tokens": 39026184,
-    "full_tokens": 165684325
-   },
-   {
-    "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro",
-    "release": "2026-04-24",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 29.97,
-    "full_usd": 94.52,
-    "core_tokens": 16603534,
-    "full_tokens": 52573085
-   },
-   {
-    "id": "openai-api/vllm/google/gemma-3-27b-it",
-    "release": "2025-03-10",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 1.29,
-    "full_usd": 8.51,
-    "core_tokens": 6353980,
-    "full_tokens": 38179608
-   },
-   {
-    "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
-    "release": "2026-03-31",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 0.65,
-    "full_usd": 4.83,
-    "core_tokens": 7050142,
-    "full_tokens": 51027131
-   },
-   {
-    "id": "openai-api/vllm/google/gemma-4-31B-it",
-    "release": "2026-03-31",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 1.72,
-    "full_usd": 11.38,
-    "core_tokens": 5866532,
-    "full_tokens": 35671749
-   },
-   {
-    "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
-    "release": "2024-07-23",
-    "source": "OpenRouter",
-    "run_type": "mixed",
-    "core_usd": 0.35,
-    "full_usd": 2.54,
-    "core_tokens": 10714801,
-    "full_tokens": 76339255
-   },
-   {
-    "id": "openai-api/vllm/openai/gpt-oss-20b",
-    "release": "2025-08-05",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 4.32,
-    "full_usd": 25.09,
-    "core_tokens": 51003253,
-    "full_tokens": 291819184
-   },
-   {
-    "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
-    "release": "2024-12-06",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 2.32,
-    "full_usd": 20.04,
-    "core_tokens": 3268336,
-    "full_tokens": 28227392
-   },
-   {
-    "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
-    "release": "2025-12-02",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 1.32,
-    "full_usd": 8.47,
-    "core_tokens": 6581413,
-    "full_tokens": 42351039
-   },
-   {
-    "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
-    "release": "2026-04-28",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 268.67,
-    "full_usd": 1022.97,
-    "core_tokens": 38096809,
-    "full_tokens": 145023156
-   },
-   {
-    "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
-    "release": "2026-03-16",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 12.54,
-    "full_usd": 84.27,
-    "core_tokens": 23185951,
-    "full_tokens": 151195843
-   },
-   {
-    "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
-    "release": "2026-04-20",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 110.91,
-    "full_usd": 328.64,
-    "core_tokens": 34813052,
-    "full_tokens": 103446173
-   },
-   {
-    "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-    "release": "2025-12-15",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 8.63,
-    "full_usd": 63.12,
-    "core_tokens": 39318546,
-    "full_tokens": 275910555
-   },
-   {
-    "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-    "release": "2026-03-11",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 7.59,
-    "full_usd": 58.49,
-    "core_tokens": 22040966,
-    "full_tokens": 158898865
-   },
-   {
-    "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
-    "release": "2026-06-04",
-    "source": "OpenRouter",
-    "run_type": "core",
-    "core_usd": 53.37,
-    "full_usd": 443.34,
-    "core_tokens": 24703856,
-    "full_tokens": 202270258
-   },
-   {
-    "id": "openai-api/vllm/microsoft/phi-4",
-    "release": "2024-12-12",
-    "source": "OpenRouter",
-    "run_type": "full",
-    "core_usd": 0.43,
-    "full_usd": 3.41,
-    "core_tokens": 4441443,
-    "full_tokens": 34264271
-   },
-   {
-    "id": "openrouter/google/gemini-4-argon",
-    "release": "2026-10-13",
-    "source": "Google",
-    "run_type": "core",
-    "core_usd": 156.04,
-    "full_usd": 1421.73,
-    "core_tokens": 19232126,
-    "full_tokens": 165952536
-   },
-   {
-    "id": "openrouter/anthropic/claude-sonnet-5.5",
-    "release": "2026-09-28",
-    "source": "Anthropic",
-    "run_type": "mixed",
-    "core_usd": 65.56,
-    "full_usd": 453.46,
-    "core_tokens": 9926524,
-    "full_tokens": 70208462
-   },
-   {
-    "id": "openrouter/anthropic/claude-opus-5.5",
-    "release": "2026-09-22",
-    "source": "Anthropic",
-    "run_type": "mixed",
-    "core_usd": 140.74,
-    "full_usd": 1052.71,
-    "core_tokens": 10631721,
-    "full_tokens": 78399584
-   },
-   {
-    "id": "openrouter/anthropic/claude-haiku-5.5",
-    "release": "2026-10-07",
-    "source": "Anthropic",
-    "run_type": "mixed",
-    "core_usd": 5.49,
-    "full_usd": 38.07,
-    "core_tokens": 14167331,
-    "full_tokens": 92631250
-   },
-   {
-    "id": "openai/gpt-6.1-terra",
-    "release": "2026-10-26",
-    "source": "OpenAI",
-    "run_type": "core",
-    "core_usd": 27.24,
-    "full_usd": 164.99,
-    "core_tokens": 7525589,
-    "full_tokens": 49181810
-   },
-   {
-    "id": "openai/gpt-6-luna",
-    "release": "2026-09-22",
-    "source": "OpenAI",
-    "run_type": "core",
-    "core_usd": 4.0,
-    "full_usd": 36.25,
-    "core_tokens": 9812579,
-    "full_tokens": 89709625
-   },
-   {
-    "id": "openrouter/google/gemini-3.8-flash",
-    "release": "2026-09-02",
-    "source": "Google",
-    "run_type": "core",
-    "core_usd": 114.17,
-    "full_usd": 904.63,
-    "core_tokens": 33187967,
-    "full_tokens": 260344302
-   }
-  ],
-  "trend": {
-   "core_usd": {
-    "log10_intercept": -0.3668,
-    "log10_per_year": 0.6744,
-    "x_per_year": 4.73
-   },
-   "full_usd": {
-    "log10_intercept": 0.4189,
-    "log10_per_year": 0.6949,
-    "x_per_year": 4.95
-   },
-   "core_tokens": {
-    "log10_intercept": 6.8242,
-    "log10_per_year": 0.208,
-    "x_per_year": 1.61
-   },
-   "full_tokens": {
-    "log10_intercept": 7.5901,
-    "log10_per_year": 0.2351,
-    "x_per_year": 1.72
-   }
-  },
-  "trend_epoch": "2024-01-01",
-  "n": 47,
-  "n_dated": 47,
-  "size_control": {
-   "n": 37,
-   "x_per_year_raw": 5.95,
-   "x_per_year": 3.52,
-   "p_year": 0.0117,
-   "per_10x_total": 1.93
-  },
-  "totals": {
-   "core_usd": 2020.0,
-   "full_usd": 13887.0,
-   "core_tokens": 1144581212,
-   "full_tokens": 7725343386
-  },
-  "ratio_usd": 6.9,
-  "ratio_tokens": 6.7,
-  "price_note": "List prices fetched 2026-11-02/03, re-checked 2026-11-08; OpenRouter prices re-pulled 2026-11-10."
- },
  "labs": {
   "safety": {
    "n": 55,
    "per_capability_point": 0.92,
-   "per_month": -0.21,
+   "per_month": -0.2,
    "rows": [
     {
      "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
      "lab": "Other",
-     "resid": -5.0
+     "resid": -4.9
     },
     {
      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
      "lab": "MiniMax",
-     "resid": 1.8
+     "resid": 1.7
     },
     {
      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
@@ -2290,7 +1391,7 @@
     {
      "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
      "lab": "Alibaba Cloud",
-     "resid": -7.7
+     "resid": -7.6
     },
     {
      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
@@ -2300,17 +1401,17 @@
     {
      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
      "lab": "Other",
-     "resid": -7.4
+     "resid": -7.5
     },
     {
      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
      "lab": "DeepSeek",
-     "resid": -9.4
+     "resid": -9.5
     },
     {
      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
      "lab": "DeepSeek",
-     "resid": -11.2
+     "resid": -11.0
     },
     {
      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
@@ -2330,7 +1431,7 @@
     {
      "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
      "lab": "Google",
-     "resid": 2.7
+     "resid": 2.8
     },
     {
      "id": "openai-api/vllm/google/gemma-4-31B-it",
@@ -2340,7 +1441,7 @@
     {
      "id": "openai-api/vllm/google/gemma-4-E4B-it",
      "lab": "Google",
-     "resid": 6.4
+     "resid": 6.3
     },
     {
      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
@@ -2350,27 +1451,27 @@
     {
      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
      "lab": "Meta",
-     "resid": 0.3
+     "resid": 0.2
     },
     {
      "id": "openai-api/vllm/microsoft/phi-4",
      "lab": "Other",
-     "resid": 4.1
+     "resid": 4.0
     },
     {
      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
      "lab": "Mistral AI",
-     "resid": -6.6
+     "resid": -6.7
     },
     {
      "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
      "lab": "Mistral AI",
-     "resid": -8.5
+     "resid": -8.6
     },
     {
      "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
      "lab": "Mistral AI",
-     "resid": -8.7
+     "resid": -8.6
     },
     {
      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
@@ -2380,22 +1481,22 @@
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
      "lab": "NVIDIA",
-     "resid": -6.5
+     "resid": -6.3
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
      "lab": "NVIDIA",
-     "resid": 1.0
+     "resid": 1.4
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
      "lab": "NVIDIA",
-     "resid": -2.4
+     "resid": -2.3
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
      "lab": "NVIDIA",
-     "resid": 9.4
+     "resid": 9.3
     },
     {
      "id": "openai-api/vllm/openai/gpt-oss-120b",
@@ -2405,22 +1506,22 @@
     {
      "id": "openai-api/vllm/openai/gpt-oss-20b",
      "lab": "OpenAI",
-     "resid": 14.5
+     "resid": 14.6
     },
     {
      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
      "lab": "Other",
-     "resid": -7.6
+     "resid": -7.4
     },
     {
      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
      "lab": "Swiss AI Initiative",
-     "resid": 1.0
+     "resid": 0.9
     },
     {
      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
      "lab": "Swiss AI Initiative",
-     "resid": 7.8
+     "resid": 7.7
     },
     {
      "id": "openai/gpt-6-luna",
@@ -2430,7 +1531,7 @@
     {
      "id": "openai/gpt-6.1-terra",
      "lab": "OpenAI",
-     "resid": 12.0
+     "resid": 11.9
     },
     {
      "id": "openrouter/anthropic/claude-haiku-4.5",
@@ -2465,7 +1566,7 @@
     {
      "id": "openrouter/google/gemini-3.8-flash",
      "lab": "Google",
-     "resid": -13.5
+     "resid": -13.6
     },
     {
      "id": "openrouter/google/gemini-4-argon",
@@ -2475,7 +1576,7 @@
     {
      "id": "openrouter/inclusionai/ling-3.1-flash",
      "lab": "Other",
-     "resid": 7.6
+     "resid": 7.5
     },
     {
      "id": "openrouter/meta/muse-spark-open",
@@ -2485,7 +1586,7 @@
     {
      "id": "openrouter/minimax/minimax-m3.1-flash",
      "lab": "MiniMax",
-     "resid": -8.1
+     "resid": -8.2
     },
     {
      "id": "openrouter/mistralai/mistral-large-4-0",
@@ -2515,7 +1616,7 @@
     {
      "id": "openrouter/xiaomi/mimo-v2.6-flash",
      "lab": "Xiaomi",
-     "resid": -3.3
+     "resid": -3.2
     },
     {
      "id": "openrouter/xiaomi/mimo-v2.6-pro",
@@ -2525,7 +1626,7 @@
     {
      "id": "openrouter/z-ai/glm-5.3-flash",
      "lab": "Other",
-     "resid": 10.2
+     "resid": 10.1
     },
     {
      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
@@ -2548,14 +1649,14 @@
     },
     {
      "lab": "Moonshot AI",
-     "mean": 4.7,
-     "median": 4.7,
+     "mean": 4.6,
+     "median": 4.6,
      "n": 2
     },
     {
      "lab": "Swiss AI Initiative",
-     "mean": 4.4,
-     "median": 4.4,
+     "mean": 4.3,
+     "median": 4.3,
      "n": 2
     },
     {
@@ -2572,8 +1673,8 @@
     },
     {
      "lab": "NVIDIA",
-     "mean": -1.2,
-     "median": -2.4,
+     "mean": -1.1,
+     "median": -2.3,
      "n": 5
     },
     {
@@ -2590,13 +1691,13 @@
     },
     {
      "lab": "Alibaba Cloud",
-     "mean": -3.6,
+     "mean": -3.5,
      "median": -4.4,
      "n": 5
     },
     {
      "lab": "MiniMax",
-     "mean": -4.2,
+     "mean": -4.3,
      "median": -6.4,
      "n": 3
     },
@@ -2609,40 +1710,40 @@
     {
      "lab": "DeepSeek",
      "mean": -6.9,
-     "median": -9.4,
+     "median": -9.5,
      "n": 3
     }
    ]
   },
   "reliability": {
    "n": 55,
-   "per_capability_point": 1.17,
-   "per_month": -0.2,
+   "per_capability_point": 1.11,
+   "per_month": -0.19,
    "rows": [
     {
      "id": "openai-api/vllm/Aleph-Alpha/Kolibri-1",
      "lab": "Other",
-     "resid": -7.9
+     "resid": -8.0
     },
     {
      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.5",
      "lab": "MiniMax",
-     "resid": 3.6
+     "resid": 3.2
     },
     {
      "id": "openai-api/vllm/MiniMaxAI/MiniMax-M2.7",
      "lab": "MiniMax",
-     "resid": -4.1
+     "resid": -3.9
     },
     {
      "id": "openai-api/vllm/Qwen/Qwen3-8B",
      "lab": "Alibaba Cloud",
-     "resid": -10.2
+     "resid": -10.6
     },
     {
      "id": "openai-api/vllm/Qwen/Qwen3.5-9B",
      "lab": "Alibaba Cloud",
-     "resid": -5.7
+     "resid": -5.6
     },
     {
      "id": "openai-api/vllm/Qwen/Qwen3.6-27B",
@@ -2652,142 +1753,142 @@
     {
      "id": "openai-api/vllm/Qwen/Qwen3.6-35B-A3B",
      "lab": "Alibaba Cloud",
-     "resid": -7.7
+     "resid": -8.0
     },
     {
      "id": "openai-api/vllm/XiaomiMiMo/MiMo-V2.5",
      "lab": "Xiaomi",
-     "resid": -8.3
+     "resid": -8.1
     },
     {
      "id": "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct",
      "lab": "Other",
-     "resid": 2.7
+     "resid": 1.9
     },
     {
      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V3.2",
      "lab": "DeepSeek",
-     "resid": -2.6
+     "resid": -3.4
     },
     {
      "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
      "lab": "DeepSeek",
-     "resid": 12.0
+     "resid": 11.9
     },
     {
      "id": "openai-api/vllm/google/diffusiongemma-26B-A4B-it",
      "lab": "Google",
-     "resid": -1.3
+     "resid": -0.8
     },
     {
      "id": "openai-api/vllm/google/gemma-3-27b-it",
      "lab": "Google",
-     "resid": 2.9
+     "resid": 2.6
     },
     {
      "id": "openai-api/vllm/google/gemma-4-12B-it",
      "lab": "Google",
-     "resid": 6.3
+     "resid": 5.8
     },
     {
      "id": "openai-api/vllm/google/gemma-4-26B-A4B-it",
      "lab": "Google",
-     "resid": -7.7
+     "resid": -7.9
     },
     {
      "id": "openai-api/vllm/google/gemma-4-31B-it",
      "lab": "Google",
-     "resid": -2.9
+     "resid": -3.6
     },
     {
      "id": "openai-api/vllm/google/gemma-4-E4B-it",
      "lab": "Google",
-     "resid": -8.1
+     "resid": -8.2
     },
     {
      "id": "openai-api/vllm/ibm-granite/granite-4.0-h-small",
      "lab": "Other",
-     "resid": 3.9
+     "resid": 4.1
     },
     {
      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
      "lab": "Meta",
-     "resid": 2.3
+     "resid": 3.4
     },
     {
      "id": "openai-api/vllm/microsoft/phi-4",
      "lab": "Other",
-     "resid": -3.1
+     "resid": -3.3
     },
     {
      "id": "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512",
      "lab": "Mistral AI",
-     "resid": -6.8
+     "resid": -6.7
     },
     {
      "id": "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B",
      "lab": "Mistral AI",
-     "resid": 6.9
+     "resid": 6.4
     },
     {
      "id": "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603",
      "lab": "Mistral AI",
-     "resid": 4.3
+     "resid": 3.2
     },
     {
      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
      "lab": "Moonshot AI",
-     "resid": 2.9
+     "resid": 2.6
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
      "lab": "NVIDIA",
-     "resid": 1.0
+     "resid": 1.1
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
      "lab": "NVIDIA",
-     "resid": -10.7
+     "resid": -9.9
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
      "lab": "NVIDIA",
-     "resid": 10.7
+     "resid": 9.7
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
      "lab": "NVIDIA",
-     "resid": 14.6
+     "resid": 14.0
     },
     {
      "id": "openai-api/vllm/openai/gpt-oss-120b",
      "lab": "OpenAI",
-     "resid": -2.7
+     "resid": -2.8
     },
     {
      "id": "openai-api/vllm/openai/gpt-oss-20b",
      "lab": "OpenAI",
-     "resid": 2.2
+     "resid": 2.3
     },
     {
      "id": "openai-api/vllm/stepfun-ai/Step-3.5-Flash",
      "lab": "Other",
-     "resid": 2.3
+     "resid": 1.9
     },
     {
      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B",
      "lab": "Swiss AI Initiative",
-     "resid": 10.1
+     "resid": 10.7
     },
     {
      "id": "openai-api/vllm/swiss-ai/Apertus-v1.5-8B-thinking",
      "lab": "Swiss AI Initiative",
-     "resid": 6.4
+     "resid": 7.0
     },
     {
      "id": "openai/gpt-6-luna",
      "lab": "OpenAI",
-     "resid": -0.8
+     "resid": -1.0
     },
     {
      "id": "openai/gpt-6.1-terra",
@@ -2797,52 +1898,52 @@
     {
      "id": "openrouter/anthropic/claude-haiku-4.5",
      "lab": "Anthropic",
-     "resid": -6.0
+     "resid": -6.4
     },
     {
      "id": "openrouter/anthropic/claude-haiku-5.5",
      "lab": "Anthropic",
-     "resid": -8.1
+     "resid": -7.7
     },
     {
      "id": "openrouter/anthropic/claude-opus-5.5",
      "lab": "Anthropic",
-     "resid": 7.1
+     "resid": 7.7
     },
     {
      "id": "openrouter/anthropic/claude-sonnet-4.5",
      "lab": "Anthropic",
-     "resid": 1.6
+     "resid": 1.5
     },
     {
      "id": "openrouter/anthropic/claude-sonnet-5.5",
      "lab": "Anthropic",
-     "resid": -4.9
+     "resid": -4.4
     },
     {
      "id": "openrouter/deepseek/deepseek-v4.1-flash",
      "lab": "DeepSeek",
-     "resid": -1.8
+     "resid": -1.7
     },
     {
      "id": "openrouter/google/gemini-3.8-flash",
      "lab": "Google",
-     "resid": 11.6
+     "resid": 12.0
     },
     {
      "id": "openrouter/google/gemini-4-argon",
      "lab": "Google",
-     "resid": 10.7
+     "resid": 11.4
     },
     {
      "id": "openrouter/inclusionai/ling-3.1-flash",
      "lab": "Other",
-     "resid": -2.0
+     "resid": -1.9
     },
     {
      "id": "openrouter/meta/muse-spark-open",
      "lab": "Meta",
-     "resid": 7.7
+     "resid": 8.2
     },
     {
      "id": "openrouter/minimax/minimax-m3.1-flash",
@@ -2857,17 +1958,17 @@
     {
      "id": "openrouter/moonshotai/kimi-k3.1-pro",
      "lab": "Moonshot AI",
-     "resid": 2.7
+     "resid": 3.1
     },
     {
      "id": "openrouter/nvidia/nemotron-3.5-lightning",
      "lab": "NVIDIA",
-     "resid": -8.1
+     "resid": -8.2
     },
     {
      "id": "openrouter/qwen/qwen3.8-flash",
      "lab": "Alibaba Cloud",
-     "resid": -0.3
+     "resid": 0.2
     },
     {
      "id": "openrouter/tencent/hy3",
@@ -2877,35 +1978,35 @@
     {
      "id": "openrouter/xiaomi/mimo-v2.6-flash",
      "lab": "Xiaomi",
-     "resid": -7.0
+     "resid": -7.2
     },
     {
      "id": "openrouter/xiaomi/mimo-v2.6-pro",
      "lab": "Xiaomi",
-     "resid": -1.9
+     "resid": -2.1
     },
     {
      "id": "openrouter/z-ai/glm-5.3-flash",
      "lab": "Other",
-     "resid": 6.3
+     "resid": 6.4
     },
     {
      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
      "lab": "Meta",
-     "resid": 9.2
+     "resid": 10.6
     }
    ],
    "labs": [
     {
      "lab": "Swiss AI Initiative",
-     "mean": 8.2,
-     "median": 8.2,
+     "mean": 8.9,
+     "median": 8.9,
      "n": 2
     },
     {
      "lab": "Meta",
-     "mean": 6.4,
-     "median": 7.7,
+     "mean": 7.4,
+     "median": 8.2,
      "n": 3
     },
     {
@@ -2916,21 +2017,21 @@
     },
     {
      "lab": "DeepSeek",
-     "mean": 2.5,
-     "median": -1.8,
+     "mean": 2.3,
+     "median": -1.7,
      "n": 3
-    },
-    {
-     "lab": "NVIDIA",
-     "mean": 1.5,
-     "median": 1.0,
-     "n": 5
     },
     {
      "lab": "Google",
      "mean": 1.4,
-     "median": 0.8,
+     "median": 0.9,
      "n": 8
+    },
+    {
+     "lab": "NVIDIA",
+     "mean": 1.3,
+     "median": 1.1,
+     "n": 5
     },
     {
      "lab": "OpenAI",
@@ -2940,32 +2041,32 @@
     },
     {
      "lab": "Mistral AI",
-     "mean": 0.4,
-     "median": 0.7,
+     "mean": 0.0,
+     "median": 0.2,
      "n": 4
     },
     {
      "lab": "Other",
-     "mean": 0.1,
-     "median": 0.4,
+     "mean": -0.0,
+     "median": 0.2,
      "n": 8
     },
     {
      "lab": "Anthropic",
-     "mean": -2.1,
-     "median": -4.9,
+     "mean": -1.9,
+     "median": -4.4,
      "n": 5
     },
     {
      "lab": "MiniMax",
-     "mean": -5.2,
-     "median": -4.1,
+     "mean": -5.3,
+     "median": -3.9,
      "n": 3
     },
     {
      "lab": "Xiaomi",
-     "mean": -5.7,
-     "median": -7.0,
+     "mean": -5.8,
+     "median": -7.2,
      "n": 3
     },
     {
@@ -3064,56 +2165,61 @@
     {
      "id": "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct",
      "date": "2024-07-23",
-     "score": 67.7
+     "score": 72.5
     },
     {
      "id": "vllm/meta-llama/Llama-3.3-70B-Instruct",
      "date": "2024-12-06",
-     "score": 90.1
+     "score": 94.4
     },
     {
      "id": "openai-api/vllm/openai/gpt-oss-120b",
      "date": "2025-08-05",
-     "score": 101.1
+     "score": 102.7
     },
     {
      "id": "openrouter/anthropic/claude-sonnet-4.5",
      "date": "2025-09-29",
-     "score": 113.1
+     "score": 114.2
     },
     {
      "id": "openai-api/vllm/moonshotai/Kimi-K2.6",
      "date": "2026-04-20",
-     "score": 119.6
+     "score": 120.2
+    },
+    {
+     "id": "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash",
+     "date": "2026-04-24",
+     "score": 120.5
     },
     {
      "id": "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
      "date": "2026-06-04",
-     "score": 122.9
+     "score": 123.6
     },
     {
      "id": "openrouter/google/gemini-3.8-flash",
      "date": "2026-09-02",
-     "score": 142.3
+     "score": 142.9
     },
     {
      "id": "openrouter/google/gemini-4-argon",
      "date": "2026-10-13",
-     "score": 144.0
+     "score": 144.8
     }
    ],
    "start": {
     "id": "openrouter/anthropic/claude-sonnet-4.5",
     "date": "2025-09-29",
-    "score": 113.1
+    "score": 114.2
    },
    "end": {
     "id": "openrouter/google/gemini-4-argon",
     "date": "2026-10-13",
-    "score": 144.0
+    "score": 144.8
    },
-   "delta": 30.9,
-   "slope": 3.48
+   "delta": 30.6,
+   "slope": 3.42
   },
   "safety": {
    "steps": [

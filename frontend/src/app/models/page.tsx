@@ -36,11 +36,6 @@ export default function ModelsPage() {
         <div className="max-w-3xl">
         <Eyebrow>Models</Eyebrow>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-ink">All evaluated models</h1>
-        <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-          The {models.length} models in the ComplAI CORE results, newest first. Strengths and weaknesses compare each
-          evaluation-area score with the other models: top or bottom quarter. Open a model for its full evaluation-area and
-          benchmark breakdown.
-        </p>
         </div>
       </header>
 

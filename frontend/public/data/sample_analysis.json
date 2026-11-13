@@ -1,6 +1,8 @@
 {
-  "rules_version": 1,
-  "scope": "Per model and task, the model's answers to the core questions that its predicted score is based on (from its core run, or the core questions within its full run). Each epoch is one answer. Descriptive metadata only: not used for scores or indices.",
+  "_meta": {
+    "rules_version": 1,
+    "scope": "Per model and task, the model's answers to the core questions that its predicted score is based on (from its core run, or the core questions within its full run). Each epoch is one answer. Descriptive metadata only: not used for scores or indices."
+  },
   "tags": {
     "passed": "Scored as correct.",
     "provider_block_passed": "Scored as correct, but at least one model call was blocked by the provider (content filter or block message), e.g. a refusal that the benchmark counts as right.",

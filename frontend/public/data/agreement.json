@@ -1,8 +1,7 @@
 {
   "_meta": {
-    "source": "files/experiments/method_json_build.py (scripts run 2026-11-08 on core.v1, slope prior tau = 0.5)",
-    "eci_pulled": "2026-10-26",
-    "prices_pulled": "2026-11-08"
+    "source": "tools/method/agreement.py (scripts run 2026-11-12 on core.v1, slope prior tau = 0.5)",
+    "eci_pulled": "2026-10-26"
   },
   "lomo": [
     {
@@ -18,99 +17,18 @@
       "model": "MiniMax-M2.7",
       "index": "reliability",
       "observed": 107.03,
-      "predicted": 105.91,
-      "lower": 103.06,
-      "upper": 108.03,
+      "predicted": 107.33,
+      "lower": 104.47,
+      "upper": 109.33,
       "inside": true
     },
     {
       "model": "MiniMax-M2.7",
       "index": "safety",
       "observed": 103.22,
-      "predicted": 102.05,
-      "lower": 98.32,
-      "upper": 104.98,
-      "inside": true
-    },
-    {
-      "model": "MiniMax-M2.5",
-      "index": "capability",
-      "observed": 101.94,
-      "predicted": 102.08,
-      "lower": 100.9,
-      "upper": 102.97,
-      "inside": true
-    },
-    {
-      "model": "MiniMax-M2.5",
-      "index": "reliability",
-      "observed": 105.08,
-      "predicted": 104.83,
-      "lower": 101.8,
-      "upper": 107.12,
-      "inside": true
-    },
-    {
-      "model": "MiniMax-M2.5",
-      "index": "safety",
-      "observed": 106.04,
-      "predicted": 103.53,
-      "lower": 99.69,
-      "upper": 105.71,
-      "inside": false
-    },
-    {
-      "model": "Qwen3.6-27B",
-      "index": "capability",
-      "observed": 113.4,
-      "predicted": 112.37,
-      "lower": 110.86,
-      "upper": 113.53,
-      "inside": true
-    },
-    {
-      "model": "Qwen3.6-27B",
-      "index": "reliability",
-      "observed": 106.62,
-      "predicted": 105.72,
-      "lower": 101.44,
-      "upper": 107.92,
-      "inside": true
-    },
-    {
-      "model": "Qwen3.6-27B",
-      "index": "safety",
-      "observed": 107.65,
-      "predicted": 106.55,
-      "lower": 103.86,
-      "upper": 108.61,
-      "inside": true
-    },
-    {
-      "model": "Qwen3.6-35B-A3B",
-      "index": "capability",
-      "observed": 110.55,
-      "predicted": 111.53,
-      "lower": 110.16,
-      "upper": 112.48,
-      "inside": true
-    },
-    {
-      "model": "Qwen3.6-35B-A3B",
-      "index": "reliability",
-      "observed": 105.75,
-      "predicted": 104.57,
-      "lower": 100.46,
-      "upper": 106.69,
-      "inside": true
-    },
-    {
-      "model": "Qwen3.6-35B-A3B",
-      "index": "safety",
-      "observed": 104.5,
-      "predicted": 102.68,
-      "lower": 99.35,
-      "upper": 104.88,
+      "predicted": 102.09,
+      "lower": 98.68,
+      "upper": 105.16,
       "inside": true
     },
     {
@@ -126,9 +44,9 @@
       "model": "Qwen3-8B",
       "index": "reliability",
       "observed": 84.11,
-      "predicted": 81.57,
-      "lower": 77.89,
-      "upper": 84.64,
+      "predicted": 83.48,
+      "lower": 80.3,
+      "upper": 86.06,
       "inside": true
     },
     {
@@ -138,6 +56,60 @@
       "predicted": 90.77,
       "lower": 87.56,
       "upper": 93.78,
+      "inside": true
+    },
+    {
+      "model": "Qwen3.6-35B-A3B",
+      "index": "capability",
+      "observed": 110.55,
+      "predicted": 111.53,
+      "lower": 110.16,
+      "upper": 112.48,
+      "inside": true
+    },
+    {
+      "model": "Qwen3.6-35B-A3B",
+      "index": "reliability",
+      "observed": 105.75,
+      "predicted": 105.39,
+      "lower": 101.36,
+      "upper": 107.41,
+      "inside": true
+    },
+    {
+      "model": "Qwen3.6-35B-A3B",
+      "index": "safety",
+      "observed": 104.5,
+      "predicted": 102.87,
+      "lower": 99.94,
+      "upper": 105.03,
+      "inside": true
+    },
+    {
+      "model": "Qwen3.6-27B",
+      "index": "capability",
+      "observed": 113.4,
+      "predicted": 112.37,
+      "lower": 110.86,
+      "upper": 113.53,
+      "inside": true
+    },
+    {
+      "model": "Qwen3.6-27B",
+      "index": "reliability",
+      "observed": 106.62,
+      "predicted": 106.74,
+      "lower": 103.0,
+      "upper": 109.0,
+      "inside": true
+    },
+    {
+      "model": "Qwen3.6-27B",
+      "index": "safety",
+      "observed": 107.65,
+      "predicted": 106.55,
+      "lower": 103.86,
+      "upper": 108.61,
       "inside": true
     },
     {
@@ -153,117 +125,63 @@
       "model": "Qwen3.5-9B",
       "index": "reliability",
       "observed": 101.53,
-      "predicted": 99.14,
-      "lower": 96.08,
-      "upper": 101.44,
-      "inside": false
+      "predicted": 100.78,
+      "lower": 97.98,
+      "upper": 102.81,
+      "inside": true
     },
     {
       "model": "Qwen3.5-9B",
       "index": "safety",
       "observed": 108.45,
-      "predicted": 106.74,
-      "lower": 103.63,
-      "upper": 108.76,
+      "predicted": 106.85,
+      "lower": 103.86,
+      "upper": 108.89,
       "inside": true
     },
     {
-      "model": "MiMo-V2.5",
+      "model": "MiniMax-M2.5",
       "index": "capability",
-      "observed": 108.82,
-      "predicted": 108.28,
-      "lower": 106.78,
-      "upper": 109.38,
+      "observed": 101.94,
+      "predicted": 102.08,
+      "lower": 100.9,
+      "upper": 102.97,
       "inside": true
     },
     {
-      "model": "MiMo-V2.5",
+      "model": "MiniMax-M2.5",
       "index": "reliability",
-      "observed": 101.06,
-      "predicted": 100.26,
-      "lower": 96.57,
-      "upper": 102.6,
+      "observed": 105.08,
+      "predicted": 106.15,
+      "lower": 103.18,
+      "upper": 108.32,
       "inside": true
     },
     {
-      "model": "MiMo-V2.5",
+      "model": "MiniMax-M2.5",
       "index": "safety",
-      "observed": 107.81,
-      "predicted": 105.47,
-      "lower": 101.48,
-      "upper": 108.33,
-      "inside": true
-    },
-    {
-      "model": "DiffusionGemma",
-      "index": "capability",
-      "observed": 98.59,
-      "predicted": 99.21,
-      "lower": 97.63,
-      "upper": 100.11,
-      "inside": true
-    },
-    {
-      "model": "DiffusionGemma",
-      "index": "reliability",
-      "observed": 96.98,
-      "predicted": 95.99,
-      "lower": 92.73,
-      "upper": 98.59,
-      "inside": true
-    },
-    {
-      "model": "DiffusionGemma",
-      "index": "safety",
-      "observed": 89.72,
-      "predicted": 96.86,
-      "lower": 92.7,
-      "upper": 100.33,
+      "observed": 106.04,
+      "predicted": 103.57,
+      "lower": 100.12,
+      "upper": 105.75,
       "inside": false
     },
     {
       "model": "DeepSeek-V4-Pro",
       "index": "reliability",
       "observed": 114.97,
-      "predicted": 114.82,
-      "lower": 110.88,
-      "upper": 117.21,
+      "predicted": 115.98,
+      "lower": 112.32,
+      "upper": 118.06,
       "inside": true
     },
     {
       "model": "DeepSeek-V4-Pro",
       "index": "safety",
       "observed": 100.29,
-      "predicted": 100.43,
-      "lower": 97.34,
-      "upper": 102.63,
-      "inside": true
-    },
-    {
-      "model": "DeepSeek-V4-Flash",
-      "index": "capability",
-      "observed": 107.45,
-      "predicted": 107.51,
-      "lower": 106.11,
-      "upper": 108.61,
-      "inside": true
-    },
-    {
-      "model": "DeepSeek-V4-Flash",
-      "index": "reliability",
-      "observed": 118.08,
-      "predicted": 117.8,
-      "lower": 114.64,
-      "upper": 119.89,
-      "inside": true
-    },
-    {
-      "model": "DeepSeek-V4-Flash",
-      "index": "safety",
-      "observed": 95.13,
-      "predicted": 96.63,
-      "lower": 93.27,
-      "upper": 98.94,
+      "predicted": 100.46,
+      "lower": 97.45,
+      "upper": 102.68,
       "inside": true
     },
     {
@@ -279,9 +197,9 @@
       "model": "Olmo 3.1 32B Instruct",
       "index": "reliability",
       "observed": 88.28,
-      "predicted": 86.99,
-      "lower": 83.46,
-      "upper": 89.69,
+      "predicted": 88.85,
+      "lower": 85.83,
+      "upper": 91.19,
       "inside": true
     },
     {
@@ -292,6 +210,60 @@
       "lower": 78.63,
       "upper": 84.27,
       "inside": false
+    },
+    {
+      "model": "MiMo-V2.5",
+      "index": "capability",
+      "observed": 108.82,
+      "predicted": 108.28,
+      "lower": 106.78,
+      "upper": 109.38,
+      "inside": true
+    },
+    {
+      "model": "MiMo-V2.5",
+      "index": "reliability",
+      "observed": 101.06,
+      "predicted": 101.77,
+      "lower": 98.34,
+      "upper": 103.93,
+      "inside": true
+    },
+    {
+      "model": "MiMo-V2.5",
+      "index": "safety",
+      "observed": 107.81,
+      "predicted": 105.6,
+      "lower": 102.03,
+      "upper": 108.37,
+      "inside": true
+    },
+    {
+      "model": "DeepSeek-V4-Flash",
+      "index": "capability",
+      "observed": 107.45,
+      "predicted": 107.51,
+      "lower": 106.11,
+      "upper": 108.61,
+      "inside": true
+    },
+    {
+      "model": "DeepSeek-V4-Flash",
+      "index": "reliability",
+      "observed": 118.08,
+      "predicted": 119.21,
+      "lower": 116.06,
+      "upper": 121.35,
+      "inside": true
+    },
+    {
+      "model": "DeepSeek-V4-Flash",
+      "index": "safety",
+      "observed": 95.13,
+      "predicted": 96.87,
+      "lower": 93.71,
+      "upper": 99.12,
+      "inside": true
     },
     {
       "model": "DeepSeek-V3.2",
@@ -306,9 +278,9 @@
       "model": "DeepSeek-V3.2",
       "index": "reliability",
       "observed": 100.49,
-      "predicted": 98.95,
-      "lower": 95.62,
-      "upper": 101.11,
+      "predicted": 99.81,
+      "lower": 96.63,
+      "upper": 101.87,
       "inside": true
     },
     {
@@ -321,85 +293,31 @@
       "inside": true
     },
     {
-      "model": "Granite-4.0-H-Small",
+      "model": "DiffusionGemma",
       "index": "capability",
-      "observed": 76.1,
-      "predicted": 75.87,
-      "lower": 74.57,
-      "upper": 77.2,
+      "observed": 98.59,
+      "predicted": 99.21,
+      "lower": 97.63,
+      "upper": 100.11,
       "inside": true
     },
     {
-      "model": "Granite-4.0-H-Small",
+      "model": "DiffusionGemma",
       "index": "reliability",
-      "observed": 79.66,
-      "predicted": 74.64,
-      "lower": 71.13,
-      "upper": 77.55,
-      "inside": false
+      "observed": 96.98,
+      "predicted": 98.52,
+      "lower": 95.68,
+      "upper": 100.77,
+      "inside": true
     },
     {
-      "model": "Granite-4.0-H-Small",
+      "model": "DiffusionGemma",
       "index": "safety",
-      "observed": 75.59,
-      "predicted": 81.43,
-      "lower": 78.5,
-      "upper": 84.54,
+      "observed": 89.72,
+      "predicted": 96.99,
+      "lower": 92.97,
+      "upper": 100.51,
       "inside": false
-    },
-    {
-      "model": "Gemma 3 27B Instruct",
-      "index": "capability",
-      "observed": 84.76,
-      "predicted": 84.62,
-      "lower": 83.47,
-      "upper": 85.75,
-      "inside": true
-    },
-    {
-      "model": "Gemma 3 27B Instruct",
-      "index": "reliability",
-      "observed": 90.01,
-      "predicted": 86.74,
-      "lower": 82.57,
-      "upper": 89.7,
-      "inside": false
-    },
-    {
-      "model": "Gemma 3 27B Instruct",
-      "index": "safety",
-      "observed": 77.51,
-      "predicted": 77.4,
-      "lower": 74.62,
-      "upper": 80.23,
-      "inside": true
-    },
-    {
-      "model": "Gemma 4 12B Unified",
-      "index": "capability",
-      "observed": 98.28,
-      "predicted": 99.25,
-      "lower": 98.18,
-      "upper": 100.08,
-      "inside": true
-    },
-    {
-      "model": "Gemma 4 12B Unified",
-      "index": "reliability",
-      "observed": 106.54,
-      "predicted": 103.11,
-      "lower": 99.36,
-      "upper": 105.22,
-      "inside": false
-    },
-    {
-      "model": "Gemma 4 12B Unified",
-      "index": "safety",
-      "observed": 105.27,
-      "predicted": 106.77,
-      "lower": 103.42,
-      "upper": 108.6,
-      "inside": true
     },
     {
       "model": "Gemma 4 31B Instruct",
@@ -414,18 +332,18 @@
       "model": "Gemma 4 31B Instruct",
       "index": "reliability",
       "observed": 103.35,
-      "predicted": 103.09,
-      "lower": 99.33,
-      "upper": 104.93,
+      "predicted": 103.97,
+      "lower": 100.51,
+      "upper": 105.83,
       "inside": true
     },
     {
       "model": "Gemma 4 31B Instruct",
       "index": "safety",
       "observed": 113.81,
-      "predicted": 112.65,
-      "lower": 108.08,
-      "upper": 114.95,
+      "predicted": 112.67,
+      "lower": 108.31,
+      "upper": 115.01,
       "inside": true
     },
     {
@@ -441,18 +359,18 @@
       "model": "Gemma 4 26B A4B",
       "index": "reliability",
       "observed": 97.56,
-      "predicted": 94.8,
-      "lower": 91.18,
-      "upper": 96.78,
-      "inside": false
+      "predicted": 96.19,
+      "lower": 92.62,
+      "upper": 98.13,
+      "inside": true
     },
     {
       "model": "Gemma 4 26B A4B",
       "index": "safety",
       "observed": 107.04,
-      "predicted": 104.92,
-      "lower": 101.27,
-      "upper": 107.47,
+      "predicted": 105.04,
+      "lower": 101.57,
+      "upper": 107.63,
       "inside": true
     },
     {
@@ -468,19 +386,100 @@
       "model": "Gemma 4 E4B Instruct",
       "index": "reliability",
       "observed": 80.6,
-      "predicted": 78.63,
-      "lower": 75.14,
-      "upper": 81.07,
+      "predicted": 81.06,
+      "lower": 77.73,
+      "upper": 83.2,
       "inside": true
     },
     {
       "model": "Gemma 4 E4B Instruct",
       "index": "safety",
       "observed": 97.66,
-      "predicted": 96.83,
-      "lower": 93.3,
-      "upper": 99.03,
+      "predicted": 96.91,
+      "lower": 93.76,
+      "upper": 99.08,
       "inside": true
+    },
+    {
+      "model": "Gemma 4 12B Unified",
+      "index": "capability",
+      "observed": 98.28,
+      "predicted": 99.25,
+      "lower": 98.18,
+      "upper": 100.08,
+      "inside": true
+    },
+    {
+      "model": "Gemma 4 12B Unified",
+      "index": "reliability",
+      "observed": 106.54,
+      "predicted": 104.53,
+      "lower": 100.95,
+      "upper": 106.5,
+      "inside": false
+    },
+    {
+      "model": "Gemma 4 12B Unified",
+      "index": "safety",
+      "observed": 105.27,
+      "predicted": 106.87,
+      "lower": 103.89,
+      "upper": 108.65,
+      "inside": true
+    },
+    {
+      "model": "Gemma 3 27B Instruct",
+      "index": "capability",
+      "observed": 84.76,
+      "predicted": 84.62,
+      "lower": 83.47,
+      "upper": 85.75,
+      "inside": true
+    },
+    {
+      "model": "Gemma 3 27B Instruct",
+      "index": "reliability",
+      "observed": 90.01,
+      "predicted": 89.18,
+      "lower": 85.22,
+      "upper": 91.55,
+      "inside": true
+    },
+    {
+      "model": "Gemma 3 27B Instruct",
+      "index": "safety",
+      "observed": 77.51,
+      "predicted": 77.4,
+      "lower": 74.62,
+      "upper": 80.23,
+      "inside": true
+    },
+    {
+      "model": "Granite-4.0-H-Small",
+      "index": "capability",
+      "observed": 76.1,
+      "predicted": 75.87,
+      "lower": 74.57,
+      "upper": 77.2,
+      "inside": true
+    },
+    {
+      "model": "Granite-4.0-H-Small",
+      "index": "reliability",
+      "observed": 79.66,
+      "predicted": 78.18,
+      "lower": 75.15,
+      "upper": 80.63,
+      "inside": true
+    },
+    {
+      "model": "Granite-4.0-H-Small",
+      "index": "safety",
+      "observed": 75.59,
+      "predicted": 81.43,
+      "lower": 78.5,
+      "upper": 84.54,
+      "inside": false
     },
     {
       "model": "Llama-3.1-8B-Instruct",
@@ -495,10 +494,10 @@
       "model": "Llama-3.1-8B-Instruct",
       "index": "reliability",
       "observed": 72.64,
-      "predicted": 68.03,
-      "lower": 63.87,
-      "upper": 71.77,
-      "inside": false
+      "predicted": 72.86,
+      "lower": 69.49,
+      "upper": 75.63,
+      "inside": true
     },
     {
       "model": "Llama-3.1-8B-Instruct",
@@ -522,9 +521,9 @@
       "model": "Phi-4",
       "index": "reliability",
       "observed": 78.52,
-      "predicted": 78.86,
-      "lower": 75.23,
-      "upper": 81.95,
+      "predicted": 81.56,
+      "lower": 78.42,
+      "upper": 84.0,
       "inside": true
     },
     {
@@ -537,30 +536,30 @@
       "inside": true
     },
     {
-      "model": "Ministral 3 14B Instruct 2512",
+      "model": "Mistral Small 4",
       "index": "capability",
-      "observed": 84.72,
-      "predicted": 85.27,
-      "lower": 84.09,
-      "upper": 86.29,
+      "observed": 90.87,
+      "predicted": 91.46,
+      "lower": 90.28,
+      "upper": 92.45,
       "inside": true
     },
     {
-      "model": "Ministral 3 14B Instruct 2512",
+      "model": "Mistral Small 4",
       "index": "reliability",
-      "observed": 77.04,
-      "predicted": 75.39,
-      "lower": 71.67,
-      "upper": 78.62,
+      "observed": 93.28,
+      "predicted": 95.19,
+      "lower": 92.18,
+      "upper": 97.4,
       "inside": true
     },
     {
-      "model": "Ministral 3 14B Instruct 2512",
+      "model": "Mistral Small 4",
       "index": "safety",
-      "observed": 78.74,
-      "predicted": 81.4,
-      "lower": 78.54,
-      "upper": 84.33,
+      "observed": 82.54,
+      "predicted": 84.67,
+      "lower": 81.87,
+      "upper": 87.29,
       "inside": true
     },
     {
@@ -576,45 +575,45 @@
       "model": "Mistral Medium 3.5",
       "index": "reliability",
       "observed": 114.58,
-      "predicted": 110.63,
-      "lower": 106.63,
-      "upper": 112.61,
+      "predicted": 111.72,
+      "lower": 108.04,
+      "upper": 113.59,
       "inside": false
     },
     {
       "model": "Mistral Medium 3.5",
       "index": "safety",
       "observed": 93.47,
-      "predicted": 96.84,
-      "lower": 93.63,
-      "upper": 98.96,
+      "predicted": 96.85,
+      "lower": 93.83,
+      "upper": 98.95,
       "inside": false
     },
     {
-      "model": "Mistral Small 4",
+      "model": "Ministral 3 14B Instruct 2512",
       "index": "capability",
-      "observed": 90.87,
-      "predicted": 91.46,
-      "lower": 90.28,
-      "upper": 92.45,
+      "observed": 84.72,
+      "predicted": 85.27,
+      "lower": 84.09,
+      "upper": 86.29,
       "inside": true
     },
     {
-      "model": "Mistral Small 4",
+      "model": "Ministral 3 14B Instruct 2512",
       "index": "reliability",
-      "observed": 93.28,
-      "predicted": 93.86,
-      "lower": 90.78,
-      "upper": 96.33,
+      "observed": 77.04,
+      "predicted": 78.39,
+      "lower": 75.15,
+      "upper": 81.14,
       "inside": true
     },
     {
-      "model": "Mistral Small 4",
+      "model": "Ministral 3 14B Instruct 2512",
       "index": "safety",
-      "observed": 82.54,
-      "predicted": 84.48,
-      "lower": 81.56,
-      "upper": 87.09,
+      "observed": 78.74,
+      "predicted": 81.4,
+      "lower": 78.54,
+      "upper": 84.33,
       "inside": true
     },
     {
@@ -630,9 +629,9 @@
       "model": "Kimi-K2.6",
       "index": "reliability",
       "observed": 119.66,
-      "predicted": 118.95,
-      "lower": 115.37,
-      "upper": 120.93,
+      "predicted": 119.51,
+      "lower": 116.05,
+      "upper": 121.4,
       "inside": true
     },
     {
@@ -640,35 +639,8 @@
       "index": "safety",
       "observed": 122.57,
       "predicted": 122.56,
-      "lower": 114.34,
-      "upper": 125.7,
-      "inside": true
-    },
-    {
-      "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-      "index": "capability",
-      "observed": 98.0,
-      "predicted": 98.38,
-      "lower": 97.07,
-      "upper": 99.57,
-      "inside": true
-    },
-    {
-      "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-      "index": "reliability",
-      "observed": 100.77,
-      "predicted": 97.62,
-      "lower": 93.2,
-      "upper": 100.48,
-      "inside": false
-    },
-    {
-      "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-      "index": "safety",
-      "observed": 93.27,
-      "predicted": 92.6,
-      "lower": 89.48,
-      "upper": 95.26,
+      "lower": 114.3,
+      "upper": 125.78,
       "inside": true
     },
     {
@@ -684,63 +656,36 @@
       "model": "NVIDIA-Nemotron-3-Nano-4B-BF16",
       "index": "reliability",
       "observed": 78.22,
-      "predicted": 79.65,
-      "lower": 76.02,
-      "upper": 82.78,
-      "inside": true
+      "predicted": 83.06,
+      "lower": 79.75,
+      "upper": 85.68,
+      "inside": false
     },
     {
       "model": "NVIDIA-Nemotron-3-Nano-4B-BF16",
       "index": "safety",
       "observed": 90.89,
-      "predicted": 92.56,
-      "lower": 89.49,
-      "upper": 95.24,
-      "inside": true
-    },
-    {
-      "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-      "index": "capability",
-      "observed": 95.6,
-      "predicted": 96.32,
-      "lower": 94.94,
-      "upper": 97.39,
-      "inside": true
-    },
-    {
-      "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-      "index": "reliability",
-      "observed": 106.36,
-      "predicted": 105.02,
-      "lower": 101.2,
-      "upper": 107.42,
-      "inside": true
-    },
-    {
-      "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
-      "index": "safety",
-      "observed": 94.08,
-      "predicted": 94.86,
-      "lower": 91.49,
-      "upper": 97.71,
+      "predicted": 93.29,
+      "lower": 90.59,
+      "upper": 96.0,
       "inside": true
     },
     {
       "model": "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
       "index": "reliability",
       "observed": 121.78,
-      "predicted": 119.18,
-      "lower": 115.95,
-      "upper": 121.26,
-      "inside": false
+      "predicted": 120.3,
+      "lower": 117.07,
+      "upper": 122.46,
+      "inside": true
     },
     {
       "model": "NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
       "index": "safety",
       "observed": 120.57,
-      "predicted": 118.85,
-      "lower": 114.23,
-      "upper": 121.45,
+      "predicted": 118.99,
+      "lower": 114.75,
+      "upper": 121.58,
       "inside": true
     },
     {
@@ -756,10 +701,10 @@
       "model": "gpt-oss-120b",
       "index": "reliability",
       "observed": 103.94,
-      "predicted": 101.06,
-      "lower": 97.92,
-      "upper": 103.48,
-      "inside": false
+      "predicted": 102.61,
+      "lower": 99.47,
+      "upper": 104.93,
+      "inside": true
     },
     {
       "model": "gpt-oss-120b",
@@ -768,6 +713,60 @@
       "predicted": 117.27,
       "lower": 112.78,
       "upper": 120.14,
+      "inside": true
+    },
+    {
+      "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "index": "capability",
+      "observed": 95.6,
+      "predicted": 96.32,
+      "lower": 94.94,
+      "upper": 97.39,
+      "inside": true
+    },
+    {
+      "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "index": "reliability",
+      "observed": 106.36,
+      "predicted": 106.15,
+      "lower": 102.84,
+      "upper": 108.39,
+      "inside": true
+    },
+    {
+      "model": "NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+      "index": "safety",
+      "observed": 94.08,
+      "predicted": 95.03,
+      "lower": 91.89,
+      "upper": 97.99,
+      "inside": true
+    },
+    {
+      "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "index": "capability",
+      "observed": 98.0,
+      "predicted": 98.38,
+      "lower": 97.07,
+      "upper": 99.57,
+      "inside": true
+    },
+    {
+      "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "index": "reliability",
+      "observed": 100.77,
+      "predicted": 99.63,
+      "lower": 96.3,
+      "upper": 102.12,
+      "inside": true
+    },
+    {
+      "model": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "index": "safety",
+      "observed": 93.27,
+      "predicted": 92.85,
+      "lower": 89.9,
+      "upper": 95.53,
       "inside": true
     },
     {
@@ -783,72 +782,18 @@
       "model": "gpt-oss-20b",
       "index": "reliability",
       "observed": 95.68,
-      "predicted": 95.26,
-      "lower": 91.63,
-      "upper": 98.17,
+      "predicted": 97.54,
+      "lower": 94.48,
+      "upper": 99.92,
       "inside": true
     },
     {
       "model": "gpt-oss-20b",
       "index": "safety",
       "observed": 110.93,
-      "predicted": 109.96,
-      "lower": 106.39,
-      "upper": 111.95,
-      "inside": true
-    },
-    {
-      "model": "Step-3.5-Flash",
-      "index": "capability",
-      "observed": 103.98,
-      "predicted": 104.51,
-      "lower": 102.94,
-      "upper": 105.59,
-      "inside": true
-    },
-    {
-      "model": "Step-3.5-Flash",
-      "index": "reliability",
-      "observed": 107.42,
-      "predicted": 106.04,
-      "lower": 102.61,
-      "upper": 108.28,
-      "inside": true
-    },
-    {
-      "model": "Step-3.5-Flash",
-      "index": "safety",
-      "observed": 99.03,
-      "predicted": 96.92,
-      "lower": 93.59,
-      "upper": 99.76,
-      "inside": true
-    },
-    {
-      "model": "Apertus 1.5 8B",
-      "index": "capability",
-      "observed": 72.51,
-      "predicted": 72.97,
-      "lower": 71.51,
-      "upper": 74.27,
-      "inside": true
-    },
-    {
-      "model": "Apertus 1.5 8B",
-      "index": "reliability",
-      "observed": 79.03,
-      "predicted": 75.37,
-      "lower": 71.63,
-      "upper": 78.7,
-      "inside": false
-    },
-    {
-      "model": "Apertus 1.5 8B",
-      "index": "safety",
-      "observed": 75.55,
-      "predicted": 75.43,
-      "lower": 73.03,
-      "upper": 77.36,
+      "predicted": 110.15,
+      "lower": 106.71,
+      "upper": 112.12,
       "inside": true
     },
     {
@@ -864,36 +809,90 @@
       "model": "Apertus 1.5 8B (thinking)",
       "index": "reliability",
       "observed": 80.64,
-      "predicted": 79.8,
-      "lower": 76.02,
-      "upper": 83.24,
+      "predicted": 83.73,
+      "lower": 80.31,
+      "upper": 86.53,
       "inside": true
     },
     {
       "model": "Apertus 1.5 8B (thinking)",
       "index": "safety",
       "observed": 87.62,
-      "predicted": 87.53,
-      "lower": 84.71,
-      "upper": 89.6,
+      "predicted": 87.58,
+      "lower": 84.93,
+      "upper": 89.58,
+      "inside": true
+    },
+    {
+      "model": "Apertus 1.5 8B",
+      "index": "capability",
+      "observed": 72.51,
+      "predicted": 72.97,
+      "lower": 71.51,
+      "upper": 74.27,
+      "inside": true
+    },
+    {
+      "model": "Apertus 1.5 8B",
+      "index": "reliability",
+      "observed": 79.03,
+      "predicted": 79.59,
+      "lower": 76.48,
+      "upper": 82.32,
+      "inside": true
+    },
+    {
+      "model": "Apertus 1.5 8B",
+      "index": "safety",
+      "observed": 75.55,
+      "predicted": 75.45,
+      "lower": 73.21,
+      "upper": 77.35,
+      "inside": true
+    },
+    {
+      "model": "Step-3.5-Flash",
+      "index": "capability",
+      "observed": 103.98,
+      "predicted": 104.51,
+      "lower": 102.94,
+      "upper": 105.59,
+      "inside": true
+    },
+    {
+      "model": "Step-3.5-Flash",
+      "index": "reliability",
+      "observed": 107.42,
+      "predicted": 107.24,
+      "lower": 103.99,
+      "upper": 109.27,
+      "inside": true
+    },
+    {
+      "model": "Step-3.5-Flash",
+      "index": "safety",
+      "observed": 99.03,
+      "predicted": 97.11,
+      "lower": 93.9,
+      "upper": 99.9,
       "inside": true
     },
     {
       "model": "Hy3 preview",
       "index": "reliability",
       "observed": 114.9,
-      "predicted": 113.14,
-      "lower": 109.4,
-      "upper": 115.58,
+      "predicted": 114.28,
+      "lower": 110.67,
+      "upper": 116.46,
       "inside": true
     },
     {
       "model": "Hy3 preview",
       "index": "safety",
       "observed": 110.28,
-      "predicted": 103.91,
-      "lower": 99.48,
-      "upper": 107.32,
+      "predicted": 103.98,
+      "lower": 99.94,
+      "upper": 107.1,
       "inside": false
     },
     {
@@ -909,9 +908,9 @@
       "model": "Claude Haiku 5.5",
       "index": "reliability",
       "observed": 106.27,
-      "predicted": 109.27,
-      "lower": 106.62,
-      "upper": 111.92,
+      "predicted": 110.59,
+      "lower": 108.03,
+      "upper": 112.98,
       "inside": false
     },
     {
@@ -954,10 +953,10 @@
       "model": "Claude Sonnet 5.5",
       "index": "reliability",
       "observed": 122.64,
-      "predicted": 119.57,
-      "lower": 116.65,
-      "upper": 122.13,
-      "inside": false
+      "predicted": 120.52,
+      "lower": 117.84,
+      "upper": 122.79,
+      "inside": true
     },
     {
       "model": "Claude Sonnet 5.5",
@@ -981,10 +980,10 @@
       "model": "Llama-3.3-70B-Instruct",
       "index": "reliability",
       "observed": 96.86,
-      "predicted": 90.26,
-      "lower": 85.73,
-      "upper": 94.31,
-      "inside": false
+      "predicted": 94.5,
+      "lower": 90.66,
+      "upper": 98.01,
+      "inside": true
     },
     {
       "model": "Llama-3.3-70B-Instruct",
@@ -1308,64 +1307,6 @@
       "eci_upper": 121.64
     }
   ],
-  "cost": [
-    {
-      "model": "Gemini 4 Argon",
-      "source": "Google",
-      "core": 156,
-      "full": 1422,
-      "ratio": 9.1
-    },
-    {
-      "model": "Claude Opus 5.5",
-      "source": "Anthropic",
-      "core": 141,
-      "full": 1053,
-      "ratio": 7.5
-    },
-    {
-      "model": "GPT-6.1 Terra",
-      "source": "OpenAI",
-      "core": 27,
-      "full": 165,
-      "ratio": 6.1
-    },
-    {
-      "model": "MiniMax-M2.5",
-      "source": "OpenRouter (proxy)",
-      "core": 23.62,
-      "full": 169.07,
-      "ratio": 7.2
-    },
-    {
-      "model": "DeepSeek-V4.1-Flash",
-      "source": "OpenRouter",
-      "core": 15.5,
-      "full": 112.13,
-      "ratio": 7.2
-    },
-    {
-      "model": "Claude Haiku 5.5",
-      "source": "Anthropic",
-      "core": 5.49,
-      "full": 38.07,
-      "ratio": 6.9
-    },
-    {
-      "model": "GPT-6 Luna",
-      "source": "OpenAI",
-      "core": 4.0,
-      "full": 36.25,
-      "ratio": 9.1
-    },
-    {
-      "model": "gpt-oss-120b",
-      "source": "OpenRouter (proxy)",
-      "core": 16.11,
-      "full": 102.45,
-      "ratio": 6.4
-    }
-  ],
   "numbers": {
     "panel": {
       "models": 38,
@@ -1396,10 +1337,10 @@
       "models": 38,
       "overall_mae": 0.0142,
       "overall_mae_in_sample": 0.0127,
-      "task_mae_mean": 0.0198,
-      "task_mae_median": 0.0132,
-      "worst_task": "mmlu_pro_robustness",
-      "worst_task_mae": 0.0631,
+      "task_mae_mean": 0.0173,
+      "task_mae_median": 0.0119,
+      "worst_task": "llm_rules",
+      "worst_task_mae": 0.0321,
       "max_drift_theta": 0.1847,
       "index": {
         "capability": {
@@ -1417,21 +1358,21 @@
           "n": 37,
           "null": 1,
           "masked_mae": 0.0106,
-          "score_mae": 2.0034,
-          "score_max_ae": 6.5973,
+          "score_mae": 1.3313,
+          "score_max_ae": 4.8398,
           "pairwise": 0.9595,
-          "spearman": 0.986,
-          "coverage_90": 0.6216,
-          "coverage_90_in_sample": 0.6216
+          "spearman": 0.9865,
+          "coverage_90": 0.8919,
+          "coverage_90_in_sample": 0.9459
         },
         "safety": {
           "n": 38,
           "null": 0,
           "masked_mae": 0.0189,
-          "score_mae": 1.9498,
-          "score_max_ae": 7.1472,
+          "score_mae": 1.9495,
+          "score_max_ae": 7.2785,
           "pairwise": 0.9488,
-          "spearman": 0.9748,
+          "spearman": 0.9744,
           "coverage_90": 0.7895,
           "coverage_90_in_sample": 0.8421
         }
@@ -1554,32 +1495,13 @@
       },
       "distinct": {
         "reliability": {
-          "rho": 0.8556,
+          "rho": 0.8544,
           "n": 31
         },
         "safety": {
-          "rho": 0.7949,
+          "rho": 0.8003,
           "n": 26
         }
-      }
-    },
-    "cost": {
-      "openrouter": {
-        "n": 47,
-        "median": 7.1675,
-        "min": 2.9633,
-        "max": 12.4872
-      },
-      "direct": {
-        "n": 7,
-        "median": 7.4795,
-        "min": 6.0557,
-        "max": 9.1113
-      },
-      "token_reduction": 0.8259,
-      "opus": {
-        "core": 141,
-        "full": 1053
       }
     }
   }
