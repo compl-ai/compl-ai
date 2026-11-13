@@ -1,0 +1,64 @@
+name: "Qwen3.8-Flash"
+release_date: "2026-08-26"
+open_weights: false
+organization: "Alibaba Cloud"
+license: "proprietary"
+
+availability:
+  - "api"
+
+description: |
+  Qwen3.8-Flash is a proprietary large language model developed by Alibaba's Qwen team, featuring a sparse Mixture-of-Experts architecture with 125 billion total parameters and 6 billion active parameters. It supports a context window of up to 1 million tokens and is designed for agentic coding, long-horizon office automation, and multimodal understanding.
+
+
+specs:
+  architecture: "hybrid-attention Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 125_000_000_000
+  active_params: 6_000_000_000
+  context: 1_000_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "qwen3.8-flash"
+    url: "https://docs.qwencloud.com/models/qwen3-8-flash"
+    type: "model-homepage"
+  - title: "On the Design of Qwen3.8-Next Architecture: Evaluation, Efficiency, and Training Stability"          
+    url: "https://arxiv.org/abs/2608.30320"
+    type: "paper-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: "Qwen3.8-Flash-Next"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 28
+  latency_ms_per_token: 35.71
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/qwen/qwen3.8-flash"

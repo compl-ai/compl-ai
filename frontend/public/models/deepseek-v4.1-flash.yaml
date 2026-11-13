@@ -1,0 +1,66 @@
+name: "DeepSeek-V4.1-Flash"
+release_date: "2026-09-09"
+open_weights: true
+organization: "DeepSeek"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  DeepSeek's multimodal (text and image) Mixture-of-Experts model with 552B parameters and a 1M-token context, trained from scratch on 45T tokens. It activates 16B parameters per generated token, and only 8B while reading the prompt, which makes long inputs cheap.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 552000000000
+  active_params: 16000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/deepseek/deepseek-v4.1-flash"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash"
+    type: "model-weights"
+  - title: "MIT License"
+    url: "https://opensource.org/license/mit"
+    type: "licence-url"
+
+training:
+  tokens: 45000000000000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/deepseek/deepseek-v4.1-flash"

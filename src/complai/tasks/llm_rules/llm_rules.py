@@ -143,7 +143,7 @@ def llm_rules_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirement="Cyberattack Resilience")
+@task
 def llm_rules(
     evaluation_category: EvaluationCategory = "basic",
     remove_precedence_reminders: bool = True,

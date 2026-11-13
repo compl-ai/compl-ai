@@ -1,0 +1,935 @@
+{
+  "_meta": {
+    "description": "Article-level regulatory grounding of the ComplAI CORE taxonomy. Citations are a technical interpretation, not legal advice or a compliance determination. strength: direct = the text names what is measured; related = the measurement informs the cited risk. coverage none = in the taxonomy scope but not measured by current benchmarks. gaps = cited sources of risk or obligations that ComplAI CORE does not currently evaluate. requirements_not_in_core = technical requirements of the 2024 COMPL-AI framework whose benchmarks are not part of the CORE suite.",
+    "sources": {
+      "EU AI Act": "https://artificialintelligenceact.eu/",
+      "GPAI Code of Practice": "https://code-of-practice.ai/"
+    },
+    "paper": {
+      "title": "COMPL-AI Framework: A Technical Interpretation and LLM Benchmarking Suite for the EU Artificial Intelligence Act",
+      "url": "https://arxiv.org/abs/2410.07959",
+      "year": 2024
+    }
+  },
+  "refs": {
+    "aiact-2-7": {
+      "framework": "EU AI Act",
+      "citation": "Art. 2(7)",
+      "title": "Personal data and privacy",
+      "url": "https://artificialintelligenceact.eu/article/2/",
+      "excerpt": "Union law on the protection of personal data, privacy and the confidentiality of communications applies to personal data processed in connection with the rights and obligations laid down in this Regulation.",
+      "short": "Art. 2(7)"
+    },
+    "aiact-10-2-f": {
+      "framework": "EU AI Act",
+      "citation": "Art. 10(2)(f)",
+      "title": "Examination of possible biases",
+      "url": "https://artificialintelligenceact.eu/article/10/",
+      "excerpt": "examination in view of possible biases that are likely to affect the health and safety of persons, have a negative impact on fundamental rights or lead to discrimination prohibited under Union law, especially where data outputs influence inputs for future operations;",
+      "short": "Art. 10(2)(f)"
+    },
+    "aiact-15-1": {
+      "framework": "EU AI Act",
+      "citation": "Art. 15(1)",
+      "title": "Accuracy, robustness and cybersecurity",
+      "url": "https://artificialintelligenceact.eu/article/15/",
+      "excerpt": "High-risk AI systems shall be designed and developed in such a way that they achieve an appropriate level of accuracy, robustness, and cybersecurity, and that they perform consistently in those respects throughout their lifecycle.",
+      "short": "Art. 15(1)"
+    },
+    "aiact-15-3": {
+      "framework": "EU AI Act",
+      "citation": "Art. 15(3)",
+      "title": "Declared accuracy metrics",
+      "url": "https://artificialintelligenceact.eu/article/15/",
+      "excerpt": "The levels of accuracy and the relevant accuracy metrics of high-risk AI systems shall be declared in the accompanying instructions of use.",
+      "short": "Art. 15(3)"
+    },
+    "aiact-15-4": {
+      "framework": "EU AI Act",
+      "citation": "Art. 15(4)",
+      "title": "Resilience to errors and inconsistencies",
+      "url": "https://artificialintelligenceact.eu/article/15/",
+      "excerpt": "High-risk AI systems shall be as resilient as possible regarding errors, faults or inconsistencies that may occur within the system or the environment in which the system operates, in particular due to their interaction with natural persons or other systems.",
+      "short": "Art. 15(4)"
+    },
+    "aiact-15-4-bias": {
+      "framework": "EU AI Act",
+      "citation": "Art. 15(4)",
+      "title": "Biased feedback loops",
+      "url": "https://artificialintelligenceact.eu/article/15/",
+      "excerpt": "High-risk AI systems that continue to learn after being placed on the market or put into service shall be developed in such a way as to eliminate or reduce as far as possible the risk of possibly biased outputs influencing input for future operations (feedback loops)…",
+      "short": "Art. 15(4)"
+    },
+    "aiact-15-5": {
+      "framework": "EU AI Act",
+      "citation": "Art. 15(5)",
+      "title": "Resilience against attacks",
+      "url": "https://artificialintelligenceact.eu/article/15/",
+      "excerpt": "High-risk AI systems shall be resilient against attempts by unauthorised third parties to alter their use, outputs or performance by exploiting system vulnerabilities.",
+      "short": "Art. 15(5)"
+    },
+    "aiact-15-5-conf": {
+      "framework": "EU AI Act",
+      "citation": "Art. 15(5)",
+      "title": "Confidentiality attacks",
+      "url": "https://artificialintelligenceact.eu/article/15/",
+      "excerpt": "The technical solutions to address AI specific vulnerabilities shall include, where appropriate, measures to prevent, detect, respond to, resolve and control for attacks trying to manipulate the training data set (data poisoning)… inputs designed to cause the AI model to make a mistake (adversarial examples or model evasion), confidentiality attacks or model flaws.",
+      "short": "Art. 15(5)"
+    },
+    "aiact-50-1": {
+      "framework": "EU AI Act",
+      "citation": "Art. 50(1)",
+      "title": "Disclosure of AI interaction",
+      "url": "https://artificialintelligenceact.eu/article/50/",
+      "excerpt": "Providers shall ensure that AI systems intended to interact directly with natural persons are designed and developed in such a way that the natural persons concerned are informed that they are interacting with an AI system…",
+      "short": "Art. 50(1)"
+    },
+    "aiact-51-1-a": {
+      "framework": "EU AI Act",
+      "citation": "Art. 51(1)(a)",
+      "title": "High-impact capabilities",
+      "url": "https://artificialintelligenceact.eu/article/51/",
+      "excerpt": "it has high impact capabilities evaluated on the basis of appropriate technical tools and methodologies, including indicators and benchmarks;",
+      "short": "Art. 51(1)(a)"
+    },
+    "aiact-53-1-a": {
+      "framework": "EU AI Act",
+      "citation": "Art. 53(1)(a)",
+      "title": "Technical documentation",
+      "url": "https://artificialintelligenceact.eu/article/53/",
+      "excerpt": "draw up and keep up-to-date the technical documentation of the model, including its training and testing process and the results of its evaluation, which shall contain, at a minimum, the information set out in Annex XI…",
+      "short": "Art. 53(1)(a)"
+    },
+    "aiact-53-1-b-i": {
+      "framework": "EU AI Act",
+      "citation": "Art. 53(1)(b)(i)",
+      "title": "Capabilities and limitations",
+      "url": "https://artificialintelligenceact.eu/article/53/",
+      "excerpt": "enable providers of AI systems to have a good understanding of the capabilities and limitations of the general-purpose AI model and to comply with their obligations pursuant to this Regulation;",
+      "short": "Art. 53(1)(b)(i)"
+    },
+    "aiact-53-1-c": {
+      "framework": "EU AI Act",
+      "citation": "Art. 53(1)(c)",
+      "title": "Copyright policy",
+      "url": "https://artificialintelligenceact.eu/article/53/",
+      "excerpt": "put in place a policy to comply with Union law on copyright and related rights…",
+      "short": "Art. 53(1)(c)"
+    },
+    "aiact-55-1-a": {
+      "framework": "EU AI Act",
+      "citation": "Art. 55(1)(a)",
+      "title": "Model evaluation and adversarial testing",
+      "url": "https://artificialintelligenceact.eu/article/55/",
+      "excerpt": "perform model evaluation in accordance with standardised protocols and tools reflecting the state of the art, including conducting and documenting adversarial testing of the model with a view to identifying and mitigating systemic risks;",
+      "short": "Art. 55(1)(a)"
+    },
+    "aiact-55-1-b": {
+      "framework": "EU AI Act",
+      "citation": "Art. 55(1)(b)",
+      "title": "Systemic-risk mitigation",
+      "url": "https://artificialintelligenceact.eu/article/55/",
+      "excerpt": "assess and mitigate possible systemic risks at Union level, including their sources, that may stem from the development, the placing on the market, or the use of general-purpose AI models with systemic risk;",
+      "short": "Art. 55(1)(b)"
+    },
+    "aiact-55-1-d": {
+      "framework": "EU AI Act",
+      "citation": "Art. 55(1)(d)",
+      "title": "Cybersecurity protection",
+      "url": "https://artificialintelligenceact.eu/article/55/",
+      "excerpt": "ensure an adequate level of cybersecurity protection for the general-purpose AI model with systemic risk and the physical infrastructure of the model.",
+      "short": "Art. 55(1)(d)"
+    },
+    "aiact-annex11-1-1-e": {
+      "framework": "EU AI Act",
+      "citation": "Annex XI, Sec. 1(1)(e)",
+      "title": "Input and output modalities",
+      "url": "https://artificialintelligenceact.eu/annex/11/",
+      "excerpt": "the modality (e.g. text, image) and format of inputs and outputs;",
+      "short": "Annex XI §1(1)(e)"
+    },
+    "aiact-annex11-1-2-c": {
+      "framework": "EU AI Act",
+      "citation": "Annex XI, Sec. 1(2)(c)",
+      "title": "Detecting identifiable biases",
+      "url": "https://artificialintelligenceact.eu/annex/11/",
+      "excerpt": "information on the data used for training, testing and validation… as well as all other measures to detect the unsuitability of data sources and methods to detect identifiable biases, where applicable;",
+      "short": "Annex XI §1(2)(c)"
+    },
+    "aiact-annex11-2-1": {
+      "framework": "EU AI Act",
+      "citation": "Annex XI, Sec. 2(1)",
+      "title": "Evaluation strategies and results",
+      "url": "https://artificialintelligenceact.eu/annex/11/",
+      "excerpt": "A detailed description of the evaluation strategies, including evaluation results, on the basis of available public evaluation protocols and tools or otherwise of other evaluation methodologies. Evaluation strategies shall include evaluation criteria, metrics and the methodology on the identification of limitations.",
+      "short": "Annex XI §2(1)"
+    },
+    "aiact-annex11-2-2": {
+      "framework": "EU AI Act",
+      "citation": "Annex XI, Sec. 2(2)",
+      "title": "Adversarial testing",
+      "url": "https://artificialintelligenceact.eu/annex/11/",
+      "excerpt": "Where applicable, a detailed description of the measures put in place for the purpose of conducting internal and/or external adversarial testing (e.g. red teaming), model adaptations, including alignment and fine-tuning.",
+      "short": "Annex XI §2(2)"
+    },
+    "aiact-recital-75": {
+      "framework": "EU AI Act",
+      "citation": "Recital 75",
+      "title": "Technical robustness",
+      "url": "https://artificialintelligenceact.eu/recital/75/",
+      "excerpt": "Technical robustness is a key requirement for high-risk AI systems. They should be resilient in relation to harmful or otherwise undesirable behaviour that may result from limitations within the systems or the environment in which the systems operate (e.g. errors, faults, inconsistencies, unexpected situations).",
+      "short": "Recital 75"
+    },
+    "aiact-recital-110": {
+      "framework": "EU AI Act",
+      "citation": "Recital 110",
+      "title": "Systemic risks of GPAI models",
+      "url": "https://artificialintelligenceact.eu/recital/110/",
+      "excerpt": "General-purpose AI models could pose systemic risks which include… the dissemination of illegal, false, or discriminatory content.",
+      "short": "Recital 110"
+    },
+    "cop-ss-m3-2": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Measure 3.2",
+      "title": "Model evaluations",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Examples of model evaluation methods are: Q&A sets, task-based evaluations, benchmarks, red-teaming and other methods of adversarial testing…",
+      "short": "Measure 3.2"
+    },
+    "cop-ss-c5": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Commitment 5",
+      "title": "Safety mitigations",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Signatories will implement safety mitigations that are appropriate, including sufficiently robust under adversarial pressure (e.g. fine-tuning attacks or jailbreaking)…",
+      "short": "Commitment 5"
+    },
+    "cop-ss-a1-1": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.1",
+      "title": "Types of risks",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "…risks to critical sectors or infrastructure, public mental health, freedom of expression and information, non-discrimination, privacy and the protection of personal data… and illegal, violent, hateful, radicalising, or false content…",
+      "short": "App. 1.1"
+    },
+    "cop-ss-a1-3-1-cyber": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Offensive cyber capabilities",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: offensive cyber capabilities;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-deceive": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Capabilities to manipulate, persuade, or deceive",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to manipulate, persuade, or deceive;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-aird": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Automating AI R&D",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to automate AI research and development;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-modal": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Multiple modalities",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to process multiple modalities (e.g. text, images, audio, video, and further modalities);…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-2-intent": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Misalignment with human intent",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: misalignment with human intent;…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-2-harm": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Harmful deployment of capabilities",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: … tendency to deploy capabilities in harmful ways (e.g. to manipulate or deceive);…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-2-halluc": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Hallucination and misinformation",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: … tendency to “hallucinate”, to produce misinformation, or to obscure sources of information;…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-2-bias": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Discriminatory bias",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: … discriminatory bias;…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-2-reliab": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Lack of performance reliability",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: … lack of performance reliability;…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-3-guard": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.3",
+      "title": "Adversarial removal of guardrails",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model affordances and other systemic risk sources… include: … vulnerability to adversarial removal of guardrails;…",
+      "short": "App. 1.3.3"
+    },
+    "cop-ss-a1-4-loc": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.4",
+      "title": "Loss of control",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Risks from humans losing the ability to reliably direct, modify, or shut down a model. Such risks may emerge from misalignment with human intent or values… deception… or autonomously creating or improving AI models or AI systems.",
+      "short": "App. 1.4"
+    },
+    "cop-ss-a1-4-cyber": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.4",
+      "title": "Cyber offence",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Risks from enabling large-scale sophisticated cyber-attacks, including on critical systems (e.g. critical infrastructure).",
+      "short": "App. 1.4"
+    },
+    "cop-ss-a1-4-manip": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.4",
+      "title": "Harmful manipulation",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Risks from enabling the strategic distortion of human behaviour or beliefs by targeting large populations or high-stakes decision-makers through persuasion, deception, or personalised targeting.",
+      "short": "App. 1.4"
+    },
+    "cop-ss-a3-1": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 3.1",
+      "title": "Rigorous model evaluations",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Signatories will ensure that the model evaluations are conducted with high scientific and technical rigour, ensuring: internal validity; external validity; and reproducibility.",
+      "short": "App. 3.1"
+    },
+    "cop-ss-a3-3": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 3.3",
+      "title": "Mitigations under adversarial pressure",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Signatories will ensure that the model evaluations assess the effectiveness of their safety mitigations… including under adversarial pressure (e.g. fine-tuning attacks or jailbreaking).",
+      "short": "App. 3.3"
+    },
+    "cop-cr-m1-4": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Copyright, Measure 1.4",
+      "title": "Copyright-infringing outputs",
+      "url": "https://code-of-practice.ai/?section=copyright",
+      "excerpt": "…to implement appropriate and proportionate technical safeguards to prevent their models from generating outputs that reproduce training content protected by Union law on copyright and related rights in an infringing manner…",
+      "short": "Copyright M1.4"
+    },
+    "cop-ss-a1-3-1-cbrn": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "CBRN capabilities",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … Chemical, Biological, Radiological, and Nuclear (CBRN) capabilities, and other such weapon acquisition or proliferation capabilities;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-autonomy": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Autonomous operation",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to operate autonomously;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-planning": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Long-horizon planning",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities of long-horizon planning, forecasting, or strategising;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-selfreason": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Self-reasoning",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities of self-reasoning (e.g. a model's ability to reason about itself, its implementation, or environment, its ability to know if it is being evaluated);…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-oversight": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Evading human oversight",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to evade human oversight;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-selfrep": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Self-replication and self-improvement",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to self-replicate, self-improve, or modify its own implementation environment;…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-tools": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Tool use and computer use",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to use tools, including \"computer use\" (e.g. interacting with hardware or software that is not part of the model itself, application interfaces, and user interfaces);…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-1-physical": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.1",
+      "title": "Control of physical systems",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model capabilities include: … capabilities to control physical systems.…",
+      "short": "App. 1.3.1"
+    },
+    "cop-ss-a1-3-2-power": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Goal-pursuing and power-seeking",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: … \"goal-pursuing\", harmful resistance to goal modification, or \"power-seeking\";…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-2-collude": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.2",
+      "title": "Collusion with other AI systems",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model propensities… include: … \"colluding\" with other AI models/systems;…",
+      "short": "App. 1.3.2"
+    },
+    "cop-ss-a1-3-3-exfil": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.3",
+      "title": "Model exfiltration",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model affordances and other systemic risk sources… include: … vulnerability to model exfiltration (e.g. model leakage/theft);…",
+      "short": "App. 1.3.3"
+    },
+    "cop-ss-a1-3-3-explain": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.3.3",
+      "title": "Model explainability and transparency",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Model affordances and other systemic risk sources… include: … lack of appropriate model explainability or transparency;…",
+      "short": "App. 1.3.3"
+    },
+    "cop-ss-a1-4-cbrn": {
+      "framework": "GPAI Code of Practice",
+      "citation": "Safety & Security, Appendix 1.4",
+      "title": "CBRN (specified systemic risk)",
+      "url": "https://code-of-practice.ai/?section=safety-security",
+      "excerpt": "Risks from enabling chemical, biological, radiological, and nuclear (CBRN) attacks or accidents.…",
+      "short": "App. 1.4"
+    },
+    "aiact-50-2": {
+      "framework": "EU AI Act",
+      "citation": "Art. 50(2)",
+      "title": "Marking of AI-generated content",
+      "url": "https://artificialintelligenceact.eu/article/50/",
+      "excerpt": "Providers of AI systems, including general-purpose AI systems, generating synthetic audio, image, video or text content, shall ensure that the outputs of the AI system are marked in a machine-readable format and detectable as artificially generated or manipulated.…",
+      "short": "Art. 50(2)"
+    },
+    "aiact-13-1": {
+      "framework": "EU AI Act",
+      "citation": "Art. 13(1)",
+      "title": "Transparency and interpretability",
+      "url": "https://artificialintelligenceact.eu/article/13/",
+      "excerpt": "High-risk AI systems shall be designed and developed in such a way as to ensure that their operation is sufficiently transparent to enable deployers to interpret a system’s output and use it appropriately.…",
+      "short": "Art. 13(1)"
+    }
+  },
+  "all": [
+    "aiact-53-1-a",
+    "aiact-annex11-2-1",
+    "aiact-55-1-a",
+    "cop-ss-m3-2",
+    "cop-ss-a3-1"
+  ],
+  "indices": {
+    "capability": [
+      "aiact-51-1-a",
+      "aiact-53-1-b-i"
+    ],
+    "reliability": [
+      "aiact-15-1",
+      "cop-ss-a1-3-2-reliab"
+    ],
+    "safety": [
+      "aiact-55-1-b",
+      "aiact-annex11-2-2"
+    ]
+  },
+  "subcategories": {
+    "capability:reasoning": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-2-1",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "capability:knowledge": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-2-1",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "capability:math": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-2-1",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "capability:coding": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-2-1",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-1-cyber",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "capability:multilingual": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-2-1",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "capability:multimodal": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-2-1",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-1-1-e",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-1-modal",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "capability:ai-r-and-d": {
+      "refs": [
+        {
+          "id": "cop-ss-a1-3-1-aird",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-51-1-a",
+          "strength": "related"
+        },
+        {
+          "id": "cop-ss-a1-4-loc",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "reliability:factuality": {
+      "refs": [
+        {
+          "id": "aiact-15-1",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-15-3",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-halluc",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Societal Alignment"
+      ]
+    },
+    "reliability:hallucination-resistance": {
+      "refs": [
+        {
+          "id": "aiact-15-1",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-halluc",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Robustness and Predictability",
+        "Societal Alignment"
+      ]
+    },
+    "reliability:consistency": {
+      "refs": [
+        {
+          "id": "aiact-15-1",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-15-4",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-reliab",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Robustness and Predictability"
+      ]
+    },
+    "reliability:perturbation-robustness": {
+      "refs": [
+        {
+          "id": "aiact-15-1",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-15-4",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-55-1-a",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-reliab",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-recital-75",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Robustness and Predictability"
+      ]
+    },
+    "reliability:instruction-following": {
+      "refs": [
+        {
+          "id": "aiact-53-1-b-i",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-15-1",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-intent",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Capabilities, Performance, and Limitations"
+      ]
+    },
+    "safety:harmful-instruction-refusal": {
+      "refs": [
+        {
+          "id": "aiact-55-1-b",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-1",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-harm",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-c5",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-recital-110",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Cyberattack Resilience",
+        "Societal Alignment"
+      ]
+    },
+    "safety:deception-honesty": {
+      "refs": [
+        {
+          "id": "aiact-50-1",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-1-deceive",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-harm",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-4-manip",
+          "strength": "related"
+        },
+        {
+          "id": "cop-ss-a1-4-loc",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Disclosure of AI",
+        "Societal Alignment",
+        "Cyberattack Resilience"
+      ]
+    },
+    "safety:prompt-injection": {
+      "refs": [
+        {
+          "id": "aiact-15-5",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-55-1-d",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a3-3",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Cyberattack Resilience"
+      ]
+    },
+    "safety:jailbreak-resistance": {
+      "refs": [
+        {
+          "id": "aiact-15-5",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-55-1-a",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a3-3",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-3-guard",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-c5",
+          "strength": "direct"
+        }
+      ],
+      "lineage": [
+        "Cyberattack Resilience"
+      ]
+    },
+    "safety:goal-hijacking": {
+      "refs": [
+        {
+          "id": "aiact-15-5",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-55-1-d",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a3-3",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-intent",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Cyberattack Resilience"
+      ]
+    },
+    "safety:security-privacy": {
+      "refs": [
+        {
+          "id": "aiact-15-5-conf",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-55-1-d",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-1",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-2-7",
+          "strength": "related"
+        },
+        {
+          "id": "cop-ss-a1-4-cyber",
+          "strength": "related"
+        },
+        {
+          "id": "aiact-53-1-c",
+          "strength": "related",
+          "coverage": "none"
+        },
+        {
+          "id": "cop-cr-m1-4",
+          "strength": "related",
+          "coverage": "none"
+        }
+      ],
+      "lineage": [
+        "Cyberattack Resilience"
+      ]
+    },
+    "safety:fairness-bias": {
+      "refs": [
+        {
+          "id": "aiact-10-2-f",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-annex11-1-2-c",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-3-2-bias",
+          "strength": "direct"
+        },
+        {
+          "id": "cop-ss-a1-1",
+          "strength": "direct"
+        },
+        {
+          "id": "aiact-15-4-bias",
+          "strength": "related"
+        },
+        {
+          "id": "aiact-recital-110",
+          "strength": "related"
+        }
+      ],
+      "lineage": [
+        "Representation — Absence of Bias",
+        "Fairness — Absence of Discrimination"
+      ]
+    }
+  },
+  "gaps": [
+    "aiact-13-1",
+    "aiact-50-2",
+    "cop-ss-a1-4-cbrn",
+    "cop-ss-a1-3-1-cbrn",
+    "cop-ss-a1-3-1-autonomy",
+    "cop-ss-a1-3-1-planning",
+    "cop-ss-a1-3-1-selfreason",
+    "cop-ss-a1-3-1-oversight",
+    "cop-ss-a1-3-1-selfrep",
+    "cop-ss-a1-3-1-tools",
+    "cop-ss-a1-3-1-physical",
+    "cop-ss-a1-3-2-power",
+    "cop-ss-a1-3-2-collude",
+    "cop-ss-a1-3-3-exfil",
+    "cop-ss-a1-3-3-explain"
+  ],
+  "requirements_not_in_core": [
+    {
+      "name": "Interpretability",
+      "benchmarks": [
+        "bigbench_calibration",
+        "triviaqa_calibration"
+      ]
+    },
+    {
+      "name": "Harmful Content and Toxicity",
+      "benchmarks": [
+        "realtoxicityprompts"
+      ]
+    }
+  ]
+}

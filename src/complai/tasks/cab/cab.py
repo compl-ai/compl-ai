@@ -311,7 +311,7 @@ def cab_scorer(judge_model: str, judge_retries: int = 2) -> Scorer:
     return score
 
 
-@task(technical_requirement="Representation — Absence of Bias")
+@task
 def cab(
     judge_model: str = "openai/gpt-5-mini-2025-08-07",
     judge_retries: int = 2,

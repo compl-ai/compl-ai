@@ -134,7 +134,7 @@ def accuracy() -> Metric:
     return metric
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def boolq_contrast(num_contrasts: int = 3, contrast_seed: int = 0) -> Task:
     """BoolQ contrast sets task.
 

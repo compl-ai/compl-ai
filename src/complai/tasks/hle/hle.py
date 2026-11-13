@@ -188,11 +188,12 @@ def extract_confidence_score(response: str, default: int = 100) -> int:
 
 
 @scorer(metrics=[{"score": [accuracy(), stderr()]}, cerr()])
-def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
+def hle_scorer(model: str = "openai/gpt-6-luna") -> Scorer:
     """HLE scorer using model grading.
 
     Args:
-        model: Model to use for grading (defaults to o3-mini-2025-01-31 as per HLE repo)
+        model: Model to use for grading (defaults to gpt-6-luna; the HLE repo's
+            o3-mini has been retired)
     """
 
     async def score(state: TaskState, target: Target) -> Score:
@@ -250,9 +251,9 @@ def hle_scorer(model: str = "openai/o3-mini-2025-01-31") -> Scorer:
     return score
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task
 def hle(
-    grader_model: str = "openai/o3-mini-2025-01-31",
+    grader_model: str = "openai/gpt-6-luna",
     text_only: bool = True,
     max_tokens: int = 8192,
 ) -> Task:
@@ -263,7 +264,7 @@ def hle(
     globally and include both multiple-choice and short-answer formats.
 
     Args:
-        grader_model: Model to use for grading responses (defaults to o3-mini-2025-01-31)
+        grader_model: Model to use for grading responses (defaults to gpt-6-luna)
         max_tokens: Maximum tokens for model response (defaults to 8192 as recommended by HLE)
 
     Returns:

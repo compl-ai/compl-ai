@@ -1,0 +1,196 @@
+# Hand-maintained metadata for the CORE benchmarks, keyed by task id (src/complai/tasks/<id>).
+# Scores, labels and health statistics come from the exporter (public/data/*.json), not from this file.
+#
+# name          Display name; the task id is shown when omitted.
+# release_date  First public release (YYYY-MM-DD): the first arXiv version of the paper, or
+#               else the date the dataset was added to Hugging Face.
+# paper         Paper URL.
+# repo          Git repository of the benchmark's authors.
+# data_source   Where our task loads its data from (see the task code).
+#   type        huggingface | github | url | inline
+#   id          Hugging Face dataset id (huggingface only).
+#   url         Link to the data.
+
+# No paper or official repo; release_date is the Hugging Face dataset date.
+aime_2025:
+  release_date: 2025-02-17
+  data_source:
+    type: huggingface
+    id: math-ai/aime25
+
+arc_challenge:
+  release_date: 2018-03-14
+  paper: https://arxiv.org/abs/1803.05457
+  data_source:
+    type: huggingface
+    id: allenai/ai2_arc
+
+bbq:
+  release_date: 2021-10-15
+  paper: https://arxiv.org/abs/2110.08193
+  repo: https://github.com/nyu-mll/BBQ
+  data_source:
+    type: huggingface
+    id: heegyu/bbq
+
+boolq_contrast:
+  release_date: 2020-04-06
+  paper: https://arxiv.org/abs/2004.02709
+  repo: https://github.com/allenai/contrast-sets
+  data_source:
+    type: huggingface
+    id: compl-ai/boolq_contrastset
+
+cab:
+  release_date: 2025-10-14
+  paper: https://arxiv.org/abs/2510.12857
+  repo: https://github.com/eth-sri/cab
+  data_source:
+    type: huggingface
+    id: eth-sri/cab
+
+fairllm:
+  release_date: 2023-05-12
+  paper: https://arxiv.org/abs/2305.07609
+  repo: https://github.com/jizhi-zhang/FaiRLLM
+  data_source:
+    type: huggingface
+    id: compl-ai/fairllm
+
+gpqa_diamond:
+  release_date: 2023-11-20
+  paper: https://arxiv.org/abs/2311.12022
+  repo: https://github.com/idavidrein/gpqa
+  data_source:
+    type: url
+    url: https://openaipublic.blob.core.windows.net/simple-evals/gpqa_diamond.csv
+
+hle:
+  release_date: 2025-01-24
+  paper: https://arxiv.org/abs/2501.14249
+  repo: https://github.com/centerforaisafety/hle
+  data_source:
+    type: huggingface
+    id: cais/hle
+
+# Introduced in the COMPL-AI paper (Appendix B.3.3).
+human_deception:
+  release_date: 2024-10-10
+  paper: https://arxiv.org/abs/2410.07959
+  repo: https://github.com/compl-ai/compl-ai
+  data_source:
+    type: huggingface
+    id: compl-ai/human_deception
+
+ifbench:
+  release_date: 2025-07-03
+  paper: https://arxiv.org/abs/2507.02833
+  repo: https://github.com/allenai/IFBench
+  data_source:
+    type: huggingface
+    id: allenai/IFBench_test
+
+imdb_contrast:
+  release_date: 2020-04-06
+  paper: https://arxiv.org/abs/2004.02709
+  repo: https://github.com/allenai/contrast-sets
+  data_source:
+    type: huggingface
+    id: compl-ai/imdb_contrastset
+
+include:
+  release_date: 2024-11-29
+  paper: https://arxiv.org/abs/2411.19799
+  data_source:
+    type: huggingface
+    id: CohereLabs/include-lite-44
+
+instruction_goal_hijacking:
+  release_date: 2023-11-02
+  paper: https://arxiv.org/abs/2311.01011
+  repo: https://github.com/HumanCompatibleAI/tensor-trust
+  data_source:
+    type: huggingface
+    id: compl-ai/tensor_trust
+
+livebench_coding:
+  release_date: 2024-06-27
+  paper: https://arxiv.org/abs/2406.19314
+  repo: https://github.com/LiveBench/LiveBench
+  data_source:
+    type: huggingface
+    id: livebench/coding
+
+llm_rules:
+  release_date: 2023-11-06
+  paper: https://arxiv.org/abs/2311.04235
+  repo: https://github.com/normster/llm_rules
+  data_source:
+    type: github
+    url: https://github.com/normster/llm_rules
+
+mask:
+  release_date: 2025-03-05
+  paper: https://arxiv.org/abs/2503.03750
+  repo: https://github.com/centerforaisafety/mask
+  data_source:
+    type: huggingface
+    id: cais/MASK
+
+mmlu_pro:
+  release_date: 2024-06-03
+  paper: https://arxiv.org/abs/2406.01574
+  repo: https://github.com/TIGER-AI-Lab/MMLU-Pro
+  data_source:
+    type: huggingface
+    id: TIGER-Lab/MMLU-Pro
+
+# COMPL-AI perturbations of MMLU-Pro; paper and date are those of MMLU-Pro.
+mmlu_pro_robustness:
+  name: MMLU-Pro robustness
+  release_date: 2024-06-03
+  paper: https://arxiv.org/abs/2406.01574
+  data_source:
+    type: huggingface
+    id: TIGER-Lab/MMLU-Pro
+
+mmmu_pro:
+  name: MMMU-Pro
+  release_date: 2024-09-04
+  paper: https://arxiv.org/abs/2409.02813
+  repo: https://github.com/MMMU-Benchmark/MMMU
+  data_source:
+    type: huggingface
+    id: MMMU/MMMU_Pro
+
+self_check_consistency:
+  release_date: 2023-05-25
+  paper: https://arxiv.org/abs/2305.15852
+  repo: https://github.com/eth-sri/ChatProtect
+  data_source:
+    type: inline
+    url: https://github.com/compl-ai/compl-ai/blob/main/src/complai/tasks/self_check_consistency/self_check_consistency.py
+
+# Official release is on Kaggle; data_source is a Hugging Face mirror.
+simpleqa_verified:
+  release_date: 2025-09-09
+  paper: https://arxiv.org/abs/2509.07968
+  data_source:
+    type: huggingface
+    id: codelion/SimpleQA-Verified
+
+strong_reject:
+  release_date: 2024-02-15
+  paper: https://arxiv.org/abs/2402.10260
+  repo: https://github.com/alexandrasouly/strongreject
+  data_source:
+    type: huggingface
+    id: compl-ai/strong_reject
+
+truthfulqa:
+  release_date: 2021-09-08
+  paper: https://arxiv.org/abs/2109.07958
+  repo: https://github.com/sylinrl/TruthfulQA
+  data_source:
+    type: huggingface
+    id: truthfulqa/truthful_qa

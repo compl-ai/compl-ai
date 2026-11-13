@@ -1,0 +1,71 @@
+
+name: "Olmo 3.1 32B Instruct"
+release_date: "2025-12-12"
+open_weights: true
+organization: "Ai2"
+license: "apache-2.0"
+
+availability:
+  - "open-source"
+  - "open-weights"
+  - "saas-chat"
+
+description: |
+  Olmo 3.1 32B Instruct is a 32-billion-parameter, decoder-only language model developed by the Allen Institute for AI (Ai2). It is an instruction-tuned, text-only model designed for general-purpose language tasks, including reasoning, coding, mathematics, tool use, and multi-turn dialogue. It supports a 65,536-token context window and is released under the Apache 2.0 license with openly available weights.
+
+specs:
+  architecture: "dense decoder-only transformer"
+  knowledge_cutoff: "2024-12"
+  total_params: 32_000_000_000
+  active_params: 32_000_000_000
+  context: 65_536
+  max_output_tokens: 32_768
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "The Olmo 3 model family"
+    url: "https://allenai.org/olmo"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct"
+    type: "model-weights"
+  - title: "Olmo 3"
+    url: "https://arxiv.org/abs/2512.13961"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "Dolma 3 + Dolci data"
+  base_model: "Olmo-3-1125-32B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 53.68
+  latency_ms_per_token: 18.63
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openai-api/vllm/allenai/Olmo-3.1-32B-Instruct"

@@ -1,0 +1,73 @@
+
+name: "MiMo-V2.5"
+release_date: "2026-04-23"
+open_weights: true
+organization: "Xiaomi"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+  
+
+description: |
+  MiMo-V2.5 is a multimodal AI model developed by Xiaomi in China. It uses a sparse Mixture-of-Experts (MoE) Transformer architecture with 310 billion total parameters and 15 billion active parameters. It supports text, image, video, and audio inputs, with text output, and is designed for reasoning, coding, mathematical tasks, and tool use. Its context window supports up to 1 million tokens.
+
+specs:
+  architecture: "Sparse Mixture-of-Experts (MoE) Transformer"
+  knowledge_cutoff: null
+  total_params: 310_000_000_000
+  active_params: 15_000_000_000
+  context: 1_000_000
+  max_output_tokens: 128_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "tools"
+
+sources:
+  - title: "MiMo-V2.5"
+    url: "https://mimo.mi.com/models/en-US/mimo-v2.5"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.5"
+    type: "model-weights"
+  - title: "Full-Pipeline Inference Optimization for MiMo-V2.5 Series: Pushing Hybrid SWA Efficiency to the Limit"          
+    url: "https://arxiv.org/abs/2607.13095"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
+
+training:
+  tokens: 48_000_000_000_000
+  compute_flops: 4.3e24
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "text + multimodal + agentic data"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 29
+  latency_ms_per_token: 1_550
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openai-api/vllm/XiaomiMiMo/MiMo-V2.5"

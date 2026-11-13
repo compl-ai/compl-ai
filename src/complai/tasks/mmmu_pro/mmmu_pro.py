@@ -5,7 +5,6 @@ Dataset: https://huggingface.co/datasets/MMMU/MMMU_Pro
 """
 
 import ast
-import re
 from functools import partial
 from typing import Any
 from typing import Literal
@@ -19,16 +18,18 @@ from inspect_ai.model import ChatMessageUser
 from inspect_ai.model import Content
 from inspect_ai.model import ContentImage
 from inspect_ai.model import ContentText
-from inspect_ai.scorer import choice
 from inspect_ai.solver import multiple_choice
 from inspect_ai.solver import prompt_template
 
+from complai.scorers.choice import choice
 from complai.tasks.mmmu_pro.utils import get_images_in_order
 from complai.tasks.mmmu_pro.utils import image_to_data_uri
 from complai.tasks.mmmu_pro.utils import replace_image_tokens
 
 
 DATASET_PATH = "MMMU/MMMU_Pro"
+# Pinned: the 2026-10-05 upstream re-upload rewrote validation_Finance_5, breaking core.v1 subset hashes.
+DATASET_REVISION = "563f3e84bb3b90893083a1f039cfa13077f2302b"
 
 MMMUProSubset = Literal["standard_10", "standard_4", "vision"]
 
@@ -152,12 +153,13 @@ def mmmu_pro_dataset(subset: MMMUProSubset) -> Dataset:
     return hf_dataset(
         path=DATASET_PATH,
         name=name,
+        revision=DATASET_REVISION,
         split="test",
         sample_fields=partial(record_to_sample, subset=subset),
     )
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task
 def mmmu_pro(subset: MMMUProSubset = "standard_10", cot: bool = False) -> Task:
     """MMMU-Pro: A More Robust Multi-discipline Multimodal Understanding Benchmark.
 
@@ -171,5 +173,7 @@ def mmmu_pro(subset: MMMUProSubset = "standard_10", cot: bool = False) -> Task:
     return Task(
         dataset=mmmu_pro_dataset(subset),
         solver=[prompt_template(get_prompt_template(subset, cot)), multiple_choice()],
-        scorer=choice(),
+        # The "direct" prompt asks for the letter alone, while the multiple_choice()
+        # template asks for 'ANSWER: $LETTER', so models follow either.
+        scorer=choice(bare_letter=True),
     )

@@ -54,7 +54,7 @@ complai eval hf/local -M model_path=./my-model
 ### vLLM and SGLang
 The vLLM and SGLang backends are generally much faster than the Hugging Face provider as the libraries are designed entirely for inference speed whereas the Hugging Face library is more general purpose.
 
-If you want to use the vLLM or SGLang backend, COMPL-AI will automatically start a server for you in the background. To avoid repeated server starts (which can take several minutes for large models), you can start your own server and set the `VLLM_BASE_URL` and `VLLM_API_KEY` environment variables. For SGLang, use `SGLANG_BASE_URL` and `SGLANG_API_KEY`.
+If you want to use the vLLM or SGLang backend, COMPL-AI will automatically start a server for you in the background. To avoid repeated server starts (which can take several minutes for large models), you can start your own server and set the `VLLM_BASE_URL` and `VLLM_API_KEY` environment variables. For SGLang, use `SGLANG_BASE_URL` and `SGLANG_API_KEY`. When a base URL is set, `complai status` (also run before every eval) verifies that the server answers.
 
 Similar to the Hugging Face provider, you can also use local models with vLLM or SGLang. Use `vllm/local` or `sglang/local` along with the `model_path`, and (optionally) `tokenizer_path` arguments to select a local model. For example:
 

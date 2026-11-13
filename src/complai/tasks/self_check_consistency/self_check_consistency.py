@@ -364,10 +364,10 @@ def self_check_consistency_scorer(
     return score
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def self_check_consistency(
-    argumentation_model: str = "openai/gpt-5-mini",
-    judge_model: str = "openai/gpt-5-mini",
+    argumentation_model: str = "openai/gpt-6-luna",
+    judge_model: str = "openai/gpt-6-luna",
     num_conclusions: int = 10,
 ) -> Task:
     ensure_punkt_tab_tokenizer(NLTK_TOKENIZER_PATH, CACHE_DIR)

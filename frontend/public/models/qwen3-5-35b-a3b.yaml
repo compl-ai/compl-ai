@@ -1,0 +1,70 @@
+
+name: "Qwen3.5-35B-A3B"
+release_date: "2026-02-24"
+open_weights: true
+organization: "Alibaba Cloud"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Qwen3.5-35B-A3B is an open-weight multimodal language model developed by Alibaba's Qwen team. It uses a hybrid Mixture-of-Experts (MoE) architecture with 35 billion total parameters and approximately 3 billion active parameters per token. It supports text, image, and video inputs, with text generation, and is designed for reasoning, coding, mathematical problem-solving, multilingual tasks, and tool use.
+
+specs:
+  architecture: "Hybrid Gated DeltaNet + Gated Attention"
+  knowledge_cutoff: null
+  total_params: 35_000_000_000
+  active_params: 3_000_000_000
+  context: 262_144
+  max_output_tokens: 65_536
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "qwen3.5-35b-a3b"
+    url: "https://www.alibabacloud.com/help/en/model-studio/qwen3-5-35b-a3b"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/Qwen/Qwen3.5-35B-A3B"
+    type: "model-weights"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/Qwen/Qwen3.5-35B-A3B/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "text + image + video + audio"
+  base_model: "Qwen3.5-35B-A3B-Base"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 160.3
+  latency_ms_per_token: 6.24
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openai-api/vllm/Qwen/Qwen3.5-35B-A3B"

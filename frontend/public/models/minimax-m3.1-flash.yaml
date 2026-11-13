@@ -1,0 +1,69 @@
+name: "MiniMax-M3.1-Flash"
+release_date: "2026-10-19"
+open_weights: true
+organization: "MiniMax"
+license: "minimax-community"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  MiniMax-M3.1-Flash is a Mixture-of-Experts language model from the Chinese company MiniMax, with about 428 billion parameters in total, of which about 23 billion are used for each token. It reads text, images and video, writes text, and is built for coding, long multi-step tasks that use tools, operating a computer and cybersecurity work, with a context window of about one million tokens. It always thinks step by step before answering, and its weights, published after the API launch, come with a licence that requires permission or notice for commercial use.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 428000000000
+  active_params: 23000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/minimax/minimax-m3.1-flash"
+    type: "model-homepage"
+  - title: "MiniMax M3.1 Flash announcement"
+    url: "https://www.minimax.io/blog/minimax-m31f"
+    type: "announcement"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash"
+    type: "model-weights"
+  - title: "MiniMax Community License"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/minimax/minimax-m3.1-flash"

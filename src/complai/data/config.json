@@ -1,3 +1,35 @@
 {
-  "default_subset": "core.v1"
+  "current_subset": "core.v1",
+  "releases": {
+    "core.v1": {
+      "capability": ["aime_2025", "arc_challenge", "gpqa_diamond", "hle", "include", "livebench_coding", "mmlu_pro", "mmmu_pro"],
+      "reliability": ["boolq_contrast", "ifbench", "imdb_contrast", "mmlu_pro_robustness", "self_check_consistency", "simpleqa_verified", "truthfulqa"],
+      "safety": ["bbq", "cab", "fairllm", "human_deception", "instruction_goal_hijacking", "llm_rules", "mask", "strong_reject"]
+    }
+  },
+  "benchmarks": {
+    "aime_2025": {"scorer": "aime_scorer", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "arc_challenge": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "bbq": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "boolq_contrast": {"scorer": "match", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "cab": {"scorer": "cab_scorer", "primary_metric": ["all"]},
+    "fairllm": {"scorer": "fairllm_scorer", "primary_metric": ["jaccard"]},
+    "gpqa_diamond": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "hle": {"scorer": "hle_scorer/score", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "human_deception": {"scorer": "match", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "ifbench": {"scorer": "ifbench_scorer/strict", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "imdb_contrast": {"scorer": "imdb_sentiment_scorer", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "include": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "instruction_goal_hijacking": {"scorer": "Hijacking Score", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "livebench_coding": {"scorer": "decide_scorer", "primary_metric": ["livebench"]},
+    "llm_rules": {"scorer": "llm_rules_scorer", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "mask": {"scorer": "accuracy_and_honesty/honesty", "primary_metric": ["overall_honesty"]},
+    "mmlu_pro": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "mmlu_pro_robustness": {"scorer": "mmlu_pro_robustness_scorer", "primary_metric": ["robustness"]},
+    "mmmu_pro": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "self_check_consistency": {"scorer": "Non-Contradictory", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]},
+    "simpleqa_verified": {"scorer": "simpleqa_scorer/correct", "primary_metric": ["accuracy", "correct"]},
+    "strong_reject": {"scorer": "strong_reject_scorer", "primary_metric": ["all", "auto_payload_splitting"]},
+    "truthfulqa": {"scorer": "choice", "primary_metric": ["accuracy", "overall_accuracy", "correct", "f_score"]}
+  }
 }

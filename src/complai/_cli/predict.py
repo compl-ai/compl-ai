@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 import typer
 from rich import print
 
+from complai._cli.utils import default_subset_dir
 from complai._cli.utils import error_handler
 from complai.predict import predict_scores, read_inputs, write_prediction
 from complai.utils.log_parser import preprocess_logs
@@ -23,46 +24,31 @@ def predict_command(
     output: Annotated[
         Path | None, typer.Option("--output", help="Output path for the predicted scores.")
     ] = None,
-    duplicates: Annotated[
-        Literal["error", "latest", "mean"],
-        typer.Option(
-            "--duplicates", help="How to handle samples with multiple results."
-        ),
-    ] = "latest",
     estimator: Annotated[
         Literal["irt", "gp_irt"] | None,
         typer.Option("--estimator", help="Score estimator; defaults to the fitted artifact (legacy artifacts use irt)."),
     ] = None,
+    imputation: Annotated[
+        Literal["index_pooled", "task_mean"],
+        typer.Option("--imputation", help="How to estimate abilities for subset tasks a model did not run."),
+    ] = "index_pooled",
     debug: Annotated[
         bool, typer.Option("--debug", help="Enable full stack traces.")
     ] = False,
 ) -> None:
     """Predict full-task scores from results on a selected GP-IRT subset."""
     with error_handler(debug):
-        # Auto-resolve bundled data paths if not provided
-        data_dir = Path(__file__).parent.parent / "data"
-        if params is None or subset is None:
-            import json
-            config_path = data_dir / "config.json"
-            default_version = "core.v1"
-            if config_path.exists():
-                try:
-                    with open(config_path, "r") as f:
-                        cfg = json.load(f)
-                        default_version = cfg.get("default_subset", default_version)
-                except Exception:
-                    pass
-            
-            if params is None:
-                params = data_dir / default_version / "params.json"
-            if subset is None:
-                subset = data_dir / default_version / "subset.jsonl"
+        if params is None:
+            params = default_subset_dir() / "params.json"
+        if subset is None:
+            subset = default_subset_dir() / "subset.jsonl"
         if output is None:
             output = Path("predicted.json")
 
         if input_path.suffix == ".jsonl":
             result = predict_scores(
-                input_path, params, subset, duplicate_policy=duplicates, estimator=estimator
+                input_path, params, subset, estimator=estimator,
+                imputation=imputation,
             )
         else:
             fitted, _ = read_inputs(params, subset)
@@ -73,7 +59,8 @@ def predict_command(
                     Path(temporary_dir) / "samples.jsonl",
                 )
                 result = predict_scores(
-                    records.records_path, params, subset, duplicate_policy=duplicates, estimator=estimator
+                    records.records_path, params, subset, estimator=estimator,
+                    imputation=imputation,
                 )
         output_path = write_prediction(result, output)
         print(f"Wrote {output_path} ({len(result['models'])} model(s))")

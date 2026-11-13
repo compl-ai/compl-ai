@@ -1,0 +1,73 @@
+
+name: "Gemma 4 26B A4B"
+release_date: "2026-03-31"
+open_weights: true
+organization: "Google"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "api"
+  - "saas-chat"
+
+description: |
+  Gemma 4 26B A4B is an open-weight multimodal language model from Google DeepMind that uses a mixture-of-experts (MoE) architecture with approximately 26 billion total parameters and 4 billion active parameters. It supports text and image inputs and is designed for tasks including reasoning, coding, mathematics, multilingual understanding, and tool use.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2025-01"
+  total_params: 25_200_000_000
+  active_params: 3_800_000_000
+  context: 256_000
+  max_output_tokens: null
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Gemma 4 Model Card"
+    url: "https://ai.google.dev/gemma/docs/core/model_card_4"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/google/gemma-4-26B-A4B-it"
+    type: "model-weights"
+  - title: "Gemma 4 Technical Report"          
+    url: "https://arxiv.org/abs/2607.02770"
+    type: "paper-url"
+  - title: "Apache License 2.0"
+    url: "https://ai.google.dev/gemma/apache_2"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "web documents + code + math + images + audio"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: 4_428
+  throughput_tokens_per_second: 220.5
+  latency_ms_per_token: 4.54
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openai-api/vllm/google/gemma-4-26B-A4B-it"

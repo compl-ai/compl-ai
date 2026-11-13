@@ -1,0 +1,70 @@
+name: "MiMo-V2.6-Flash"
+release_date: "2026-09-22"
+open_weights: true
+organization: "Xiaomi"
+license: "mit"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  MiMo-V2.6-Flash is a multimodal large language model developed by Xiaomi, featuring a sparse Mixture-of-Experts architecture with 309 billion total parameters and 15 billion active parameters. It supports text, image, video and audio inputs, and is designed for high-frequency calls and large-scale tasks in professional workflows.
+
+specs:
+  architecture: "sparse Mixture-of-Experts (MoE) transformer"
+  knowledge_cutoff: null
+  total_params: 309_000_000_000
+  active_params: 15_000_000_000
+  context: 1_048_576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "tools"
+
+sources:
+  - title: "MiMo-V2.6-Flash"
+    url: "https://mimo.mi.com/models/en-US/mimo-v2.6-flash"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL"
+    type: "model-weights"
+  - title: "MiMo-V2.6: Scaling Reinforcement Learning Towards Self-Improvement"          
+    url: "https://arxiv.org/abs/2610.11959"
+    type: "paper-url"
+  - title: "MIT License"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/mit.md"
+    type: "licence-url"
+
+training:
+  tokens: 48_000_000_000_000
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: "public web data + books + academic papers + code + STEM"
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: 2_160_000
+  throughput_tokens_per_second: 212
+  latency_ms_per_token: 4.72
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/xiaomi/mimo-v2.6-flash"

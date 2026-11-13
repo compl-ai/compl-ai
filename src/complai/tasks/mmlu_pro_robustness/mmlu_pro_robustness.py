@@ -13,8 +13,6 @@ from inspect_ai.model import ChatMessage
 from inspect_ai.model import ChatMessageSystem
 from inspect_ai.model import ChatMessageUser
 from inspect_ai.model import get_model
-from inspect_ai.scorer import choice
-from inspect_ai.scorer import CORRECT
 from inspect_ai.scorer import metric
 from inspect_ai.scorer import MetricProtocol
 from inspect_ai.scorer import SampleScore
@@ -33,6 +31,7 @@ from inspect_ai.solver._multiple_choice import prompt
 from inspect_ai.solver._multiple_choice import SINGLE_ANSWER_TEMPLATE_COT
 from inspect_ai.util import collect
 
+from complai.scorers.choice import normalize_answer_line
 from complai.tasks.mmlu_pro_robustness.perturbations.perturbation import Perturbation
 from complai.tasks.mmlu_pro_robustness.perturbations.registry import PerturbationName
 from complai.tasks.mmlu_pro_robustness.perturbations.registry import PERTURBATIONS
@@ -129,6 +128,8 @@ def parse_answers(completion: str, num_choices: int) -> set[str]:
     However, if the answer isn't in the expected format the model has
     failed in the task so we'll ultimately just mark it as incorrect
     """
+    completion = normalize_answer_line(completion)
+
     # First check whether the string strictly ends with the expected answer
     # In this case, we're looking for a single line which contains the expected
     # ANSWER: <answer> string with only whitespace or a period/full stop at the end.
@@ -238,12 +239,17 @@ def robustness() -> MetricProtocol:
             if isinstance(val, dict):
                 p = val.get("perturbed_score")
                 u = val.get("unperturbed_score")
-                if p is not None and u is not None and float(u) == 1.0:
-                    valid_scores.append(float(p))
-                    
+            else:
+                meta = score.score.metadata or {}
+                p = meta.get("perturbed_score")
+                u = meta.get("unperturbed_score")
+
+            if p is not None and u is not None and float(u) == 1.0:
+                valid_scores.append(float(p))
+
         if not valid_scores:
             return 1.0
-            
+
         return float(np.mean(valid_scores))
 
     return metric
@@ -251,25 +257,28 @@ def robustness() -> MetricProtocol:
 
 @scorer(metrics=[robustness()])
 def mmlu_pro_robustness_scorer() -> Scorer:
-    mc_scorer = choice()
-
     async def score(state: TaskState, target: Target) -> Score:
-        unperturbed_score = cast(Score, await mc_scorer(state, target))
-
         perturbed_answers = state.metadata["perturbed_answers"]
         perturbed_scores = [target.text == answer for answer in perturbed_answers]
 
+        unperturbed_answer = state.metadata.get("unperturbed_answer", [])
+        if isinstance(unperturbed_answer, set):
+            unperturbed_answer = list(unperturbed_answer)
+
+        perturbed_score = np.mean(perturbed_scores)
+        unperturbed_score_val = int(target.text in unperturbed_answer)
+
         return Score(
             value={
-                "perturbed_score": np.mean(perturbed_scores),
-                "unperturbed_score": int(unperturbed_score.value == CORRECT),
+                "perturbed_score": float(perturbed_score),
+                "unperturbed_score": unperturbed_score_val,
             }
         )
 
     return score
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def mmlu_pro_robustness(
     categories: str | list[str] | None = None,
     num_samples: int = 200,

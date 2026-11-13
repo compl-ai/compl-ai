@@ -6,8 +6,9 @@ from inspect_ai.dataset import Dataset
 from inspect_ai.dataset import hf_dataset
 from inspect_ai.dataset import MemoryDataset
 from inspect_ai.dataset import Sample
-from inspect_ai.scorer import choice
 from inspect_ai.solver import multiple_choice
+
+from complai.scorers.choice import choice
 
 
 DATASET_PATHS = {
@@ -100,7 +101,7 @@ def include_dataset(full: bool = False) -> Dataset:
     )
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task
 def include(full: bool = False) -> Task:
     """
     Include task.
