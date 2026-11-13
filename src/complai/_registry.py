@@ -1,5 +1,7 @@
 # ruff: noqa: F401
 
+import complai.providers.openai_batch_errors
+import complai.providers.openrouter_content_filter
 from complai.providers.openrouter_batch import openrouter_batch
 from complai.tasks.aime_2025 import aime_2025
 from complai.tasks.arc_challenge import arc_challenge

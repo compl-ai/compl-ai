@@ -170,3 +170,6 @@ tools/minify/data/
 
 # Artificial Analysis snapshot (their terms limit redistribution)
 tools/method/data/aa_models.json
+
+# Local run outputs and analysis (never committed)
+/outputs/
