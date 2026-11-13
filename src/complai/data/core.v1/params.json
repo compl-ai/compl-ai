@@ -157,7 +157,7 @@
       }
     }
   },
-  "input_digest": "8599be2d0cfd37481f578eeb6322b3502b3f2956e86c03507182c8aed68146c0",
+  "input_digest": "69b79a527947f9de0f24deee217925515a0157fe05c04efb34669c31ce4bfa7c",
   "labels": {
     "secondary": [
       "capability:math",
@@ -1122,10 +1122,22 @@
       "phi-4": -0.5676662350148689
     }
   },
-  "params_id": "a53e18a35696459c67905d81",
+  "params_id": "dea762affcb3727a5b805c81",
+  "prediction_corrections": {
+    "cab": {
+      "intercept": 0.33066269446123336,
+      "models": 24,
+      "slope": 0.6620998580943583
+    },
+    "mmlu_pro_robustness": {
+      "intercept": 0.35983292003156564,
+      "models": 37,
+      "slope": 0.6429689090982867
+    }
+  },
   "schema_version": "complai-core-params-v4",
   "seed": 0,
-  "subset_id": "2c5444664540135d1a8f7995",
+  "subset_id": "f92fe68a15104e7c322138ad",
   "task_scorers": {
     "aime_2025": "aime_scorer",
     "arc_challenge": "choice",

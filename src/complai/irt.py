@@ -22,6 +22,7 @@ from complai.constants import (
     MIN_DISCRIMINATION,
     MIN_INDEX_THETA_TASKS,
     PARAMS_SCHEMA,
+    PREDICTION_CORRECTION_TASKS,
     TASK_FIT_HYPERPARAMETERS,
 )
 from complai.labels import (
@@ -156,7 +157,7 @@ def fit(
         from complai.gp_irt import calibrate_tasks
         calibration = calibrate_tasks(tasks, selected_keys)
 
-    return build_result(
+    result = build_result(
         records=records,
         scorers=scorers,
         budget=budget,
@@ -173,6 +174,7 @@ def fit(
         indices=index_calibration,
         gp_irt=calibration,
     )
+    return add_prediction_corrections(result, records, tasks)
 
 
 def find_subset_items(
@@ -238,7 +240,7 @@ def refit(
         from complai.gp_irt import calibrate_tasks
         calibration = calibrate_tasks(tasks, selected_keys)
 
-    return build_result(
+    result = build_result(
         records=records,
         scorers=scorers,
         budget=params["budget"],
@@ -255,6 +257,28 @@ def refit(
         indices=fit_indices(tasks),
         gp_irt=calibration,
     )
+    return add_prediction_corrections(result, records, tasks)
+
+
+def add_prediction_corrections(
+    result: FitResult,
+    records: PreprocessedRecords,
+    tasks: dict[str, dict[str, Any]],
+) -> FitResult:
+    """Store each ``PREDICTION_CORRECTION_TASKS`` task's linear prediction correction in the params.
+
+    The fitted params predict every panel model in ``tasks`` from its subset
+    responses; per task, the model's full-run score (its mean response over
+    all task questions it answered) is regressed on that prediction. Only models in ``tasks`` take part, so a model left out of the
+    fit is also left out of its correction. Runs after the IRT and index fits
+    and changes neither.
+    """
+    from complai.predict import fit_prediction_corrections
+
+    result.params["prediction_corrections"] = fit_prediction_corrections(
+        records, result.params, list(result.subset), tasks
+    )
+    return result
 
 
 def _load_labels(labels_dir: Path | None) -> tuple[ItemLabels, Subcategories]:
@@ -534,6 +558,19 @@ def uninformative_items(
     return uninformative
 
 
+def observed_task_scores(task: dict[str, Any]) -> dict[str, float]:
+    """Model -> full-run task score: its mean response over the task questions it answered."""
+    matrix = task["matrix"]
+    answered = np.isfinite(matrix)
+    counts = np.sum(answered, axis=1)
+    sums = np.sum(np.where(answered, matrix, 0.0), axis=1)
+    return {
+        model: float(total / count)
+        for model, count, total in zip(task["models"], counts, sums)
+        if count
+    }
+
+
 def fit_indices(tasks: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Calibrate every index's tasks for the index theta (Epoch-style).
 
@@ -560,13 +597,8 @@ def fit_indices(tasks: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
         row_of = {model: row for row, model in enumerate(models)}
         scores = np.full((len(models), len(names)), np.nan)
         for column, name in enumerate(names):
-            matrix = tasks[name]["matrix"]
-            answered = np.isfinite(matrix)
-            counts = np.sum(answered, axis=1)
-            sums = np.sum(np.where(answered, matrix, 0.0), axis=1)
-            for model, count, total in zip(tasks[name]["models"], counts, sums):
-                if count:
-                    scores[row_of[model], column] = total / count
+            for model, score in observed_task_scores(tasks[name]).items():
+                scores[row_of[model], column] = score
         scores = scores[np.sum(np.isfinite(scores), axis=1) >= MIN_INDEX_THETA_TASKS]
         if not len(scores):
             continue
@@ -1019,6 +1051,7 @@ def build_result(
         "inventory_digest": records.digest,
         "task_scorers": dict(sorted(scorers.items())),
         "hyperparameters": hyperparameters,
+        "prediction_correction_tasks": sorted(set(PREDICTION_CORRECTION_TASKS) & set(scorers)),
     }
     if gp_irt is not None:
         from complai.gp_irt import METHOD_VERSION as GP_IRT_METHOD_VERSION

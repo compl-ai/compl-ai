@@ -530,6 +530,9 @@ def _preprocess_file(
             "dataset": metadata["dataset"],
             "created": metadata["created"],
             "sample_count": metadata["sample_count"],
+            "epochs": metadata.get("epochs", 1),
+            # Larger of the header total and the per-answer sum (see _parse_log); None if the log has no header.json (unfinished run).
+            "tokens": metadata.get("tokens"),
             "partial": metadata["partial"],
             "metrics": metadata.get("metrics", {}),
             "model_config": metadata.get("model_config", {}),
@@ -605,6 +608,21 @@ def _extract_metrics(results: Any) -> dict[str, dict[str, float]]:
                 metrics[s.name] = m_dict
     return metrics
 
+def _split_usage(usage: dict[str, Any], model: str) -> dict[str, int]:
+    """Tokens of the evaluated model (named as Inspect logged it, e.g. a batch provider)
+    and, as ``judge``, the total of every other model (judges, graders)."""
+    out = {"input": 0, "output": 0, "reasoning": 0, "model": 0, "judge": 0}
+    for name, used in usage.items():
+        if name == model:
+            out["input"] += used.get("input_tokens") or 0
+            out["output"] += used.get("output_tokens") or 0
+            out["reasoning"] += used.get("reasoning_tokens") or 0
+            out["model"] += used.get("total_tokens") or 0
+        else:
+            out["judge"] += used.get("total_tokens") or 0
+    return out
+
+
 def _read_log_metadata(path: Path) -> dict[str, Any]:
     """Read lightweight run metadata from an Inspect log header."""
     log = read_eval_log(str(path), header_only=True)
@@ -619,12 +637,19 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
     
     model_config = {}
     task_config = {}
+    tokens = None
+    epochs = 1
     try:
         with ZipFile(path, 'r') as z:
             if 'header.json' in z.namelist():
                 header = json.loads(z.read('header.json'))
                 eval_data = header.get('eval', {})
                 plan_data = header.get('plan', {})
+                epochs = int((eval_data.get('config') or {}).get('epochs') or 1)
+                tokens = _split_usage(
+                    (header.get('stats') or {}).get('model_usage') or {},
+                    str(eval_data.get('model', '')),
+                )
                 
                 # Model level
                 if 'model_generate_config' in eval_data:
@@ -651,6 +676,7 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
         "created": str(getattr(spec, "created", "")),
         "status": status,
         "model": MODEL_ALIASES.get(model, model),
+        "model_logged": str(getattr(spec, "model", "")),
         "task": str(getattr(spec, "task", "")),
         "dataset": str(
             getattr(dataset_spec, "name", None)
@@ -658,6 +684,8 @@ def _read_log_metadata(path: Path) -> dict[str, Any]:
             or "unknown_dataset"
         ),
         "sample_count": int(completed or 0),
+        "epochs": epochs,
+        "tokens": tokens,
         # Runs restricted with --limit, --sample-id or to the subset cannot define a task's question set.
         "partial": bool(
             getattr(spec.config, "limit", None)
@@ -688,6 +716,18 @@ def _parse_log(
     summaries = read_eval_log_sample_summaries(str(path))
     missing_choices = _read_missing_choices(path, summaries)
     _restore_thinned_fields(path, summaries)
+    # The header total misses calls made before a resumed run; the per-answer sum misses
+    # model calls made outside an answer (e.g. while scoring). Keep the larger of each.
+    usage: dict[str, dict[str, int]] = {}
+    for sample in summaries:
+        for name, used in (sample.model_usage or {}).items():
+            total = usage.setdefault(name, {})
+            for key, value in used.model_dump().items():
+                if isinstance(value, int):
+                    total[key] = total.get(key, 0) + value
+    answered = _split_usage(usage, metadata["model_logged"])
+    header = metadata.get("tokens") or answered
+    metadata["tokens"] = {key: max(header[key], answered[key]) for key in answered}
     samples = []
     for sample in summaries:
         epoch = int(sample.epoch or 1)

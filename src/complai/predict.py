@@ -17,10 +17,13 @@ from complai.constants import (
     ITEM_COLUMNS,
     METHOD_VERSION,
     MIN_INDEX_THETA_TASK_SHARE,
+    MIN_MEASURED_POOL_SHARE,
+    MIN_PREDICTION_CORRECTION_MODELS,
     MIN_SUBSET_ITEMS,
     PARAMS_SCHEMA,
+    PREDICTION_CORRECTION_TASKS,
 )
-from complai.irt import index_thetas, prepare_tasks, sigmoid
+from complai.irt import index_thetas, observed_task_scores, prepare_tasks, sigmoid
 from complai.gp_irt import METHOD_VERSION as GP_IRT_METHOD_VERSION
 from complai.gp_irt import Estimator, predict_task, resolve_estimator, task_blend
 from complai.labels import UNKNOWN_LABEL, Subcategories, split_item_id
@@ -42,9 +45,9 @@ INDEX_THETA_SEED = 0
 # intervals are too narrow for some indices. Each interval is widened around the
 # point estimate by this factor: the smallest that makes 90% of the intervals
 # contain the full-run index theta in leave-one-model-out validation (core.v1,
-# 2026-11-08: raw coverage 91% Capability, 62% Reliability, 79% Safety). Never
-# below 1, so an interval is never narrowed.
-INDEX_THETA_INTERVAL_SCALE = {"reliability": 1.65, "safety": 1.55}
+# 2026-11-12, with prediction corrections: raw coverage 91% Capability, 89%
+# Reliability, 79% Safety). Never below 1, so an interval is never narrowed.
+INDEX_THETA_INTERVAL_SCALE = {"reliability": 1.05, "safety": 1.55}
 # Task score curves are tabulated on this ability grid for the bootstrap.
 SCORE_CURVE_GRID = np.linspace(-10.0, 10.0, 801)
 
@@ -158,8 +161,16 @@ def _predict_task_scores(
     subset: list[dict[str, Any]],
     *,
     estimator: Estimator | None,
+    tasks: dict[str, dict[str, Any]] | None = None,
+    apply_corrections: bool = True,
 ) -> Prediction:
-    """Core per-task ability re-estimation and score prediction (algorithm unchanged)."""
+    """Core per-task ability re-estimation and score prediction.
+
+    ``tasks`` replaces the response matrices prepared from ``records`` (used to
+    predict exactly the models a fit saw). Tasks with a stored
+    ``prediction_corrections`` entry get their score corrected unless
+    ``apply_corrections`` is false.
+    """
     estimator = resolve_estimator(params, estimator)
     selected_tasks = {str(row["task"]) for row in subset}
     task_scorers = {
@@ -178,7 +189,11 @@ def _predict_task_scores(
     ridge = float(hyperparameters.get("ridge", 0.01))
     iterations = int(hyperparameters.get("iterations", 10))
     params_items = {str(row["item_id"]): row for row in params["items"]}
-    tasks = prepared_tasks(records, task_scorers)
+    if tasks is None:
+        tasks = prepared_tasks(records, task_scorers)
+    else:
+        tasks = {name: task for name, task in tasks.items() if name in task_scorers}
+    corrections = params.get("prediction_corrections", {}) if apply_corrections else {}
     if not tasks:
         raise ValueError("No responses found for any subset task")
     selected_by_task: dict[str, list[dict[str, Any]]] = {}
@@ -276,6 +291,8 @@ def _predict_task_scores(
                     "ability_standard_error": standard_error,
                     "ability_iterations": ability_iterations,
                 }
+            if task_name in corrections:
+                correct_prediction(prediction, corrections[task_name])
             task_results[task_name] = {
                 **prediction,
                 "status": "ok" if len(responses) == len(selected) else "partial",
@@ -321,6 +338,8 @@ def _predict_task_scores(
             "Per-task scores are the mean over all params items of the observed "
             "response on subset items the model answered and the fixed-item 2PL "
             "probability on the rest; predicted_score_error covers only the rest. "
+            "Tasks in params prediction_corrections are then corrected linearly "
+            "toward the panel's full-run scores (uncorrected_score keeps the raw value). "
             "Model predicted_score is population-item-weighted."
         ),
         "input_digest": records.digest,
@@ -340,6 +359,73 @@ def _predict_task_scores(
         result=result, params=params, tasks=tasks, populations=populations,
         subset=subset, observations=observations,
     )
+
+
+def correct_prediction(prediction: dict[str, Any], correction: dict[str, Any]) -> None:
+    """Correct a task prediction to intercept + slope * score, clipped to [0, 1]."""
+    slope = float(correction["slope"])
+    score = prediction["predicted_score"]
+    prediction["uncorrected_score"] = score
+    prediction["predicted_score"] = float(np.clip(float(correction["intercept"]) + slope * score, 0.0, 1.0))
+    if prediction.get("predicted_score_error") is not None:
+        prediction["predicted_score_error"] *= abs(slope)
+
+
+def correction_slope(params: dict[str, Any], task_name: str) -> float:
+    """The slope a task's predicted scores were corrected with (1 without a correction)."""
+    return float(params.get("prediction_corrections", {}).get(task_name, {}).get("slope", 1.0))
+
+
+def fit_prediction_corrections(
+    records: Any,
+    params: dict[str, Any],
+    subset: list[dict[str, Any]],
+    tasks: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Fit each ``PREDICTION_CORRECTION_TASKS`` task's line full_run ~ intercept + slope * predicted.
+
+    ``params`` is a freshly fitted, still columnar params and ``subset`` its
+    subset; every model in ``tasks`` is predicted from its subset responses
+    without corrections, and ``full_run`` is the model's mean response over all
+    task questions it answered, the score the index calibration uses. A task
+    needs ``MIN_PREDICTION_CORRECTION_MODELS`` models.
+    """
+    names = [name for name in PREDICTION_CORRECTION_TASKS if name in tasks]
+    rows = [
+        {**row, "task": task_name}
+        for row in subset
+        if (task_name := split_item_id(str(row["item_id"]))[0]) in names
+    ]
+    if not rows:
+        return {}
+    prediction = _predict_task_scores(
+        records,
+        decode_params(dict(params)),
+        rows,
+        estimator=None,
+        tasks={name: tasks[name] for name in names},
+        apply_corrections=False,
+    )
+    corrections: dict[str, dict[str, Any]] = {}
+    for task_name in names:
+        full_run = observed_task_scores(tasks[task_name])
+        pairs = [
+            (result["predicted_score"], full_run[model])
+            for model in tasks[task_name]["models"]
+            if model in full_run
+            and (result := prediction.result["models"].get(model, {}).get("tasks", {}).get(task_name))
+            and result["status"] in {"ok", "partial"}
+        ]
+        if len(pairs) < MIN_PREDICTION_CORRECTION_MODELS:
+            continue
+        predicted, observed = np.asarray(pairs).T
+        slope, intercept = np.polyfit(predicted, observed, 1)
+        corrections[task_name] = {
+            "intercept": float(intercept),
+            "slope": float(slope),
+            "models": len(pairs),
+        }
+    return corrections
 
 
 def ran_abilities(prediction: Prediction, model: str, *, exclude_task: str | None = None) -> dict[str, float]:
@@ -492,6 +578,9 @@ def impute_missing_abilities(
                     "population_items": len(population),
                 }
             )
+            correction = prediction.params.get("prediction_corrections", {}).get(task_name)
+            if correction is not None:
+                correct_prediction(task_result, correction)
             model_result["imputed_tasks"] += 1
         # predicted_score is population-weighted over ran + imputed tasks.
         scored = [
@@ -601,7 +690,8 @@ def add_index_thetas(prediction: Prediction) -> None:
     redrawn from its estimate and standard error, the predicted score moves by
     the change in the score curve of the items the model did not answer
     (answered items are fixed at their observed response), plus the pass/fail
-    spread of those unanswered items, and the index theta is refitted. The
+    spread of those unanswered items (times the task's prediction correction
+    slope, if it has one), and the index theta is refitted. The
     bootstrap range is then widened around ``theta`` by the index's
     ``INDEX_THETA_INTERVAL_SCALE`` (stored as ``interval_scale``).
     """
@@ -638,6 +728,7 @@ def add_index_thetas(prediction: Prediction) -> None:
                     0.0, unanswered_spread(prediction, model, names[position], result["ability"]),
                     INDEX_THETA_DRAWS,
                 )
+                shift *= correction_slope(prediction.params, names[position])
                 draws[:, column] = np.clip(result["predicted_score"] + shift, 0.0, 1.0)
             low, high = np.percentile(index_thetas(draws, a[ran], c[ran]), INDEX_THETA_INTERVAL)
             scale = INDEX_THETA_INTERVAL_SCALE.get(index, 1.0)
@@ -709,6 +800,9 @@ def add_coverage(prediction: Prediction) -> None:
         }
 
 
+NOT_RUN = "not run"
+
+
 def gap_reason(subset_items: int) -> str | None:
     """Why a label pool is not scored, or None when its subset items reach ``MIN_SUBSET_ITEMS``."""
     if subset_items >= MIN_SUBSET_ITEMS:
@@ -733,23 +827,27 @@ def pool_scores(
 
     A pool with fewer than ``MIN_SUBSET_ITEMS`` subset items is a gap: the
     subset cannot measure it, so ``gap`` holds the reason (``gap_reason``) and
-    the pool keeps its coverage counts but no scores. ``gap`` is None otherwise.
+    the pool keeps its coverage counts but no scores. A pool the model answered
+    no subset items of is a gap too (``NOT_RUN``): its score would be entirely
+    imputed. So is a pool whose tasks the model ran carry less than
+    ``MIN_MEASURED_POOL_SHARE`` of its weight. ``gap`` is None otherwise.
 
-    ``predicted_score`` averages ``item_probabilities`` over the pool's full
-    population: observed responses on answered subset items, otherwise the
-    probability under each task's own or imputed ability. Without ``weights``
-    it is the plain mean over items; with ``weights`` (``label_task_weights``)
-    it is the weighted mean of each member task's mean, and ``task_weights``
-    holds the normalized weights. ``ability`` (with
+    Only tasks the model ran are scored: imputed tasks are left out and the
+    weights renormalized over the rest, so no published pool score is imputed.
+    ``measured_weight`` is the share of the pool's full weight those tasks carry.
+    ``predicted_score`` averages ``item_probabilities`` over their population
+    items: observed responses on answered subset items, otherwise the
+    probability under the task's ability. Without ``weights`` it is the plain
+    mean over items; with ``weights`` (``label_task_weights``) it is the
+    weighted mean of each member task's mean, and ``task_weights`` holds the
+    normalized weights. ``ability`` (with
     ``ability_standard_error``) is the label ability from
     ``pooled_label_abilities``: a summary of the model's standing on that label,
     and the ``index_pooled`` imputation source. It is null when the model
     answered no subset items with the label.
 
     ``score_interval`` is the ``INDEX_THETA_INTERVAL`` range of a parametric
-    bootstrap of ``predicted_score`` (``pool_score_draws``); ``imputed_items``
-    counts the pool items scored from imputed task abilities and ``imputed_weight``
-    is their share of ``predicted_score``.
+    bootstrap of ``predicted_score`` (``pool_score_draws``).
     """
     probabilities = prediction.item_probabilities.get(model, {})
     pooled = pooled_label_abilities(prediction, model, column, ridge=ridge, iterations=iterations)
@@ -758,40 +856,41 @@ def pool_scores(
         member_indices: dict[str, list[int]] = {}
         for task_name, index in members:
             member_indices.setdefault(task_name, []).append(index)
-        task_means: dict[str, float] = {}
-        task_counts: dict[str, int] = {}
-        imputed_items = 0
-        for task_name, indices in member_indices.items():
-            task_probabilities = probabilities.get(task_name)
-            if task_probabilities is not None:
-                values = task_probabilities[sorted(indices)]
-                finite = values[np.isfinite(values)]
-                if len(finite):
-                    task_means[task_name] = float(np.mean(finite))
-                    task_counts[task_name] = len(finite)
-                if (model, task_name) in prediction.imputed_thetas:
-                    imputed_items += len(finite)
-        if not task_means:
+        if all(probabilities.get(task_name) is None for task_name in member_indices):
             continue
         pool_weights = weights.get(label, {}) if weights is not None else None
+        full = {
+            task_name: (pool_weights[task_name] if pool_weights is not None else float(len(indices)))
+            for task_name, indices in member_indices.items()
+        }
+        task_means: dict[str, float] = {}
+        task_counts: dict[str, int] = {}
+        for task_name, indices in member_indices.items():
+            task_probabilities = probabilities.get(task_name)
+            if task_probabilities is None or (model, task_name) in prediction.imputed_thetas:
+                continue
+            values = task_probabilities[sorted(indices)]
+            finite = values[np.isfinite(values)]
+            if len(finite):
+                task_means[task_name] = float(np.mean(finite))
+                task_counts[task_name] = len(finite)
+        full_total = sum(full.values())
+        measured_weight = sum(full[task_name] for task_name in task_means) / full_total if full_total else 0.0
         raw = {
             task_name: (pool_weights[task_name] if pool_weights is not None else float(count))
             for task_name, count in task_counts.items()
         }
         total = sum(raw.values())
-        task_weights = {task_name: value / total for task_name, value in raw.items()}
+        task_weights = {task_name: value / total for task_name, value in raw.items()} if total else {}
         point = sum(task_weights[task_name] * task_means[task_name] for task_name in task_means)
-        imputed_weight = sum(
-            share for task_name, share in task_weights.items()
-            if (model, task_name) in prediction.imputed_thetas
-        )
         observed = pooled.get(label, {})
-        gap = gap_reason(subset_items[label])
+        measured = observed.get("observations", 0) and measured_weight >= MIN_MEASURED_POOL_SHARE
+        gap = gap_reason(subset_items[label]) or (None if measured else NOT_RUN)
         interval = None
         if not gap:
             draws = pool_score_draws(
-                prediction, model, member_indices,
-                weights=pool_weights, ridge=ridge, iterations=iterations,
+                prediction, model, {task_name: member_indices[task_name] for task_name in task_means},
+                weights=pool_weights,
             )
             low, high = np.percentile(draws, INDEX_THETA_INTERVAL)
             interval = [float(low), float(high)]
@@ -802,8 +901,7 @@ def pool_scores(
             "population_items": len(members),
             "population_tasks": len(member_indices),
             "subset_items": subset_items[label],
-            "imputed_items": imputed_items,
-            "imputed_weight": float(imputed_weight),
+            "measured_weight": float(measured_weight),
             **({"task_weights": task_weights} if weights is not None else {}),
             "observations": observed.get("observations", 0),
             "ability": None if gap else observed.get("ability"),
@@ -819,8 +917,6 @@ def pool_score_draws(
     member_indices: dict[str, list[int]],
     *,
     weights: dict[str, float] | None = None,
-    ridge: float,
-    iterations: int,
 ) -> np.ndarray:
     """Bootstrap draws of a label pool's ``predicted_score``.
 
@@ -829,10 +925,9 @@ def pool_score_draws(
     probability (weights renormalized over the tasks that have items).
 
     Mirrors the index theta bootstrap: each member task's ability is redrawn
-    from its estimate and standard error (an imputed task uses the standard
-    error of the pooled index ability it was imputed from, so imputation model
-    error is not included), answered items stay at their observed response, and
-    the pass/fail spread of the unanswered items is added.
+    from its estimate and standard error, answered items stay at their observed
+    response, and the pass/fail spread of the unanswered items is added. Only
+    tasks the model ran are passed in (``pool_scores``), never imputed ones.
     """
     model_result = prediction.result["models"][model]
     probabilities = prediction.item_probabilities.get(model, {})
@@ -854,26 +949,18 @@ def pool_score_draws(
         population = prediction.populations[task_name]
         a, c = population_item_params(prediction, task_name)
         a, c = a[indices], c[indices]
-        imputed = prediction.imputed_thetas.get((model, task_name))
-        if imputed is not None:
-            thetas = imputed[indices]
-            standard_error = imputed_ability_error(
-                prediction, model, task_name, ridge=ridge, iterations=iterations
-            )
-            answered = np.zeros(len(indices), dtype=bool)
-        else:
-            thetas = np.full(len(indices), float(task_result["ability"]))
-            standard_error = task_result.get("ability_standard_error")
-            observation = prediction.observations.get((model, task_name))
-            answered = (
-                np.isfinite(observed_responses(population, observation)[indices])
-                if observation is not None
-                else np.zeros(len(indices), dtype=bool)
-            )
+        theta = float(task_result["ability"])
+        standard_error = task_result.get("ability_standard_error")
+        observation = prediction.observations.get((model, task_name))
+        answered = (
+            np.isfinite(observed_responses(population, observation)[indices])
+            if observation is not None
+            else np.zeros(len(indices), dtype=bool)
+        )
         shifts = rng.normal(0.0, float(standard_error or 0.0), INDEX_THETA_DRAWS)
-        drawn = sigmoid(a * (thetas + shifts[:, None]) + c)
+        drawn = sigmoid(a * (theta + shifts[:, None]) + c)
         blend = task_result.get("blend_weight")
-        if blend is not None and imputed is None:
+        if blend is not None:
             drawn = blend * task_result["observed_subset_score"] + (1 - blend) * drawn
             answered = np.zeros(len(indices), dtype=bool)
         drawn[:, answered] = point[answered]
@@ -899,24 +986,6 @@ def population_item_params(
     return cache[task_name]
 
 
-def imputed_ability_error(
-    prediction: Prediction, model: str, task_name: str, *, ridge: float, iterations: int
-) -> float | None:
-    """Standard error of the pooled index ability an imputed task took, or None if it fell back to task_mean."""
-    if prediction.result.get("imputation") != "index_pooled":
-        return None
-    per_index = pooled_label_abilities(
-        prediction,
-        model,
-        "index",
-        ridge=ridge,
-        iterations=iterations,
-        exclude_task=task_name,
-    )
-    index = prediction.params["tasks"][task_name]["index"]
-    return per_index.get(index, {}).get("ability_standard_error")
-
-
 def write_prediction(result: dict[str, Any], output_path: Path) -> Path:
     """Write predicted scores atomically as JSON."""
     output_path = output_path.expanduser().resolve()
@@ -936,38 +1005,7 @@ def read_inputs(
         params = json.loads(params_path.expanduser().read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"Cannot read params JSON: {params_path}") from exc
-    if not isinstance(params, dict) or not isinstance(params.get("task_scorers"), dict):
-        raise TypeError("Params is missing its task_scorers mapping")
-    if (
-        params.get("schema_version") != PARAMS_SCHEMA
-        or params.get("method") not in {METHOD_VERSION, GP_IRT_METHOD_VERSION}
-    ):
-        raise ValueError("Params is not a supported GP-IRT 2PL params")
-    if not params["task_scorers"] or any(
-        not isinstance(task, str) or not isinstance(scorer, str)
-        for task, scorer in params["task_scorers"].items()
-    ):
-        raise ValueError("Params has an invalid task_scorers mapping")
-    items_data = params.get("items")
-    if not isinstance(items_data, dict) or "columns" not in items_data or "data" not in items_data:
-        raise ValueError("Params items must be in columnar format (dict with 'columns' and 'data')")
-    columns = list(items_data["columns"])
-    if columns != list(ITEM_COLUMNS):
-        raise ValueError(f"Params item columns must be {list(ITEM_COLUMNS)}, got {columns}")
-    vocab = params.get("labels")
-    if not isinstance(vocab, dict) or not isinstance(vocab.get("secondary"), list):
-        raise ValueError("Params is missing its secondary label vocabulary")
-    if not isinstance(vocab.get("subcategories"), dict):
-        raise ValueError("Params is missing its sub-categories; refit with the current irt")
-    task_indices = {name: str(task["index"]) for name, task in params.get("tasks", {}).items()}
-    subcategories = Subcategories.from_params(vocab["subcategories"])
-    params["items"] = [
-        decode_item(dict(zip(columns, row)), vocab, task_indices, subcategories)
-        for row in items_data["data"]
-    ]
-    required = {"params_id", "subset_id", "method"}
-    if not required.issubset(params):
-        raise ValueError("Params is missing identity or method fields")
+    params = decode_params(params)
 
     subset: list[dict[str, Any]] = []
     try:
@@ -1015,6 +1053,43 @@ def read_inputs(
     if recomputed != params["subset_id"]:
         raise ValueError("Subset JSONL is not the exact subset recorded by the params")
     return params, subset
+
+
+def decode_params(params: Any) -> dict[str, Any]:
+    """Validate a fitted params dict and expand its columnar items in place."""
+    if not isinstance(params, dict) or not isinstance(params.get("task_scorers"), dict):
+        raise TypeError("Params is missing its task_scorers mapping")
+    if (
+        params.get("schema_version") != PARAMS_SCHEMA
+        or params.get("method") not in {METHOD_VERSION, GP_IRT_METHOD_VERSION}
+    ):
+        raise ValueError("Params is not a supported GP-IRT 2PL params")
+    if not params["task_scorers"] or any(
+        not isinstance(task, str) or not isinstance(scorer, str)
+        for task, scorer in params["task_scorers"].items()
+    ):
+        raise ValueError("Params has an invalid task_scorers mapping")
+    items_data = params.get("items")
+    if not isinstance(items_data, dict) or "columns" not in items_data or "data" not in items_data:
+        raise ValueError("Params items must be in columnar format (dict with 'columns' and 'data')")
+    columns = list(items_data["columns"])
+    if columns != list(ITEM_COLUMNS):
+        raise ValueError(f"Params item columns must be {list(ITEM_COLUMNS)}, got {columns}")
+    vocab = params.get("labels")
+    if not isinstance(vocab, dict) or not isinstance(vocab.get("secondary"), list):
+        raise ValueError("Params is missing its secondary label vocabulary")
+    if not isinstance(vocab.get("subcategories"), dict):
+        raise ValueError("Params is missing its sub-categories; refit with the current irt")
+    task_indices = {name: str(task["index"]) for name, task in params.get("tasks", {}).items()}
+    subcategories = Subcategories.from_params(vocab["subcategories"])
+    params["items"] = [
+        decode_item(dict(zip(columns, row)), vocab, task_indices, subcategories)
+        for row in items_data["data"]
+    ]
+    required = {"params_id", "subset_id", "method"}
+    if not required.issubset(params):
+        raise ValueError("Params is missing identity or method fields")
+    return params
 
 
 def decode_item(

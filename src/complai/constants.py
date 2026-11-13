@@ -21,6 +21,9 @@ MIN_INDEX_THETA_TASKS = 2
 # A model gets an index theta only if it ran at least this share of the index's
 # tasks (4 of 8, 4 of 7).
 MIN_INDEX_THETA_TASK_SHARE = 0.5
+# An index or sub-category pool is scored only from tasks the model ran (never
+# imputed ones), and only if those tasks carry at least this share of its weight.
+MIN_MEASURED_POOL_SHARE = 0.5
 # An index or sub-category with fewer subset items than this is a gap: reported
 # with its coverage but not scored.
 MIN_SUBSET_ITEMS = 20
@@ -31,6 +34,18 @@ INDEX_THETA_RIDGE = 0.01
 # This is the centre of Epoch AI's prior on slope spread in the ECI model.
 INDEX_SLOPE_PRIOR_SD = 0.5
 TASK_FIT_HYPERPARAMETERS = {"ridge": 0.1, "slope_ridge": 0.01, "iterations": 30}
+# Tasks whose predicted score is corrected after prediction by a straight line,
+# full_run ~ intercept + slope * predicted, fitted on the panel's in-sample
+# predictions against their full-run scores (mean response over all questions,
+# as in the index calibration). Only these tasks' predictions were consistently
+# off, and the correction lowered their prediction error in leave-one-model-out
+# validation (core.v1, 2026-11-12). The correction never enters the IRT or index fit.
+PREDICTION_CORRECTION_TASKS = (
+    "cab",
+    "mmlu_pro_robustness",
+)
+# A correction is fitted only with at least this many panel models.
+MIN_PREDICTION_CORRECTION_MODELS = 10
 SCORE_LABEL_MAPS = {
     "accuracy_and_honesty/accuracy": {
         "correct": 1.0,
