@@ -16,7 +16,7 @@ from complai.labels import UNKNOWN_LABEL, Subcategories, load_labels
 from complai.predict import gap_reason, predict_detailed
 from complai.utils.log_parser import load_records
 from complai.utils.scores import normalize_score, select_score
-from tools.export_web.usage import COST_PATH, MODEL_TOKENS_PATH, load_json, model_usage, suite_efficiency
+from tools.export_web.costs import build_costs, load_model_cards, load_prices, refresh_prices
 
 SUBSET_DIR = default_subset_dir()
 
@@ -225,10 +225,12 @@ def sample_analysis_summary(input_paths: list[Path], prediction: Any) -> dict[st
         print(f"   Warning: sample analysis is missing answers for {line}; rerun `complai analyze`.")
     model_outcomes, task_outcomes = outcome_shares(models)
     return {
-        "rules_version": RULES_VERSION,
-        "scope": "Per model and task, the model's answers to the core questions that its predicted score is based on "
-                 "(from its core run, or the core questions within its full run). Each epoch is one answer. "
-                 "Descriptive metadata only: not used for scores or indices.",
+        "_meta": {
+            "rules_version": RULES_VERSION,
+            "scope": "Per model and task, the model's answers to the core questions that its predicted score is based on "
+                     "(from its core run, or the core questions within its full run). Each epoch is one answer. "
+                     "Descriptive metadata only: not used for scores or indices.",
+        },
         "tags": TAGS,
         "outcomes": {
             "definition": OUTCOMES,
@@ -361,9 +363,11 @@ def benchmark_health(prediction: Any) -> dict[str, Any]:
                 ),
             }
     return {
-        "params_id": params["params_id"],
-        "subset_id": params["subset_id"],
-        "scope": "Descriptive metadata only: not used for scores or indices.",
+        "_meta": {
+            "params_id": params["params_id"],
+            "subset_id": params["subset_id"],
+            "scope": "Descriptive metadata only: not used for scores or indices.",
+        },
         "definitions": {
             "score_histogram": "Number of models per band of predicted score on this task (0 to 1), counting "
                                "the models that answered at least one of its core questions.",
@@ -396,6 +400,8 @@ def export(
     labels_out: Annotated[Path, typer.Option(help="Output JSON file for frontend labels")] = Path("frontend/public/data/labels.json"),
     sample_analysis_out: Annotated[Path, typer.Option(help="Output JSON file for per model and task failure-tag counts on the core questions (needs `complai analyze` output next to each input)")] = Path("frontend/public/data/sample_analysis.json"),
     benchmark_health_out: Annotated[Path, typer.Option(help="Output JSON file for per task score spread, saturation and core-question discrimination")] = Path("frontend/public/data/benchmark_health.json"),
+    costs_out: Annotated[Path, typer.Option(help="Output JSON file for per model core and full run tokens and USD")] = Path("frontend/public/data/costs.json"),
+    refresh_openrouter_prices: Annotated[bool, typer.Option("--refresh-prices", help="First update the OpenRouter rates in tools/export_web/prices.json (hand-entered rates are kept)")] = False,
 ):
     input_paths = input_paths or [Path("tools/minify/data/samples.jsonl")]
     predictions_out.parent.mkdir(parents=True, exist_ok=True)
@@ -469,11 +475,11 @@ def export(
     print("4d. Summarising benchmark health (score spread, saturation, item discrimination)...")
     health = benchmark_health(prediction)
 
-    print("5. Attaching token usage and run type per model...")
-    eval_tokens = load_json(MODEL_TOKENS_PATH)
-    for model_id, model_data in result["models"].items():
-        model_data["usage"] = model_usage(model_id, model_data, prediction, {"files": files}, eval_tokens)
-    result["efficiency"] = suite_efficiency(result["models"], len(subset), load_json(COST_PATH))
+    print("5. Computing run type, tokens and costs per model...")
+    if refresh_openrouter_prices:
+        print("   Refreshing OpenRouter rates in prices.json...")
+        refresh_prices()
+    costs = build_costs(result["models"], prediction, files, len(subset), load_prices(), load_model_cards())
 
     print(f"6. Writing predictions to {predictions_out}...")
     with open(predictions_out, "w") as f:
@@ -504,6 +510,11 @@ def export(
     benchmark_health_out.parent.mkdir(parents=True, exist_ok=True)
     with open(benchmark_health_out, "w") as f:
         json.dump(health, f, indent=2)
+
+    print(f"10. Writing eval costs to {costs_out}...")
+    costs_out.parent.mkdir(parents=True, exist_ok=True)
+    with open(costs_out, "w") as f:
+        json.dump(costs, f, indent=2)
 
     print("Done! Artifacts successfully exported.")
 

@@ -24,9 +24,6 @@ from complai.utils.io import check_output_available, write_outputs
 
 app = typer.Typer(help="Maintainer tools for generating COMPL-AI Core subsets.")
 
-# cost.json is per executed sample; a strong_reject basis item runs all its jailbreak variants.
-VARIANTS_PER_BASIS = {"strong_reject": 35}
-
 @app.command("stats")
 def stats_command(
     data_dir: Annotated[Path, typer.Option("--data-dir", help="Path to subset directory.")] = Path("src/complai/data"),
@@ -195,95 +192,6 @@ def refit_command(
         print(
             f"Wrote {params_path} and {subset_path} ({len(result.subset)} subset items)"
         )
-
-
-@app.command("cost")
-def cost_command(
-    data_dir: Annotated[Path, typer.Option("--data-dir", help="Path to subset directory or parent directory.")] = Path("src/complai/data"),
-    cost_file: Annotated[Path, typer.Option("--cost-file", help="Path to precomputed cost.json.")] = Path("tools/minify/data/cost.json"),
-    price_in: Annotated[float, typer.Option("--price-in", help="Cost per 1M input tokens ($)")] = 3.0,
-    price_out: Annotated[float, typer.Option("--price-out", help="Cost per 1M output tokens ($)")] = 15.0,
-):
-    """Estimate API token cost ranges for subsets based on precomputed token distributions."""
-    import json
-    import collections
-
-    if not cost_file.exists():
-        print(f"Error: {cost_file} not found. Run 'python tools/minify/extract_cost.py' to generate it.")
-        return
-        
-    with open(cost_file, "r") as f:
-        cost_distributions = json.load(f)
-        
-    subset_dirs = []
-    if (data_dir / "subset.jsonl").exists():
-        subset_dirs.append(data_dir)
-    else:
-        for t_dir in sorted(data_dir.iterdir()):
-            if t_dir.is_dir() and (t_dir / "subset.jsonl").exists():
-                subset_dirs.append(t_dir)
-                
-    if not subset_dirs:
-        print(f"No subset.jsonl found in {data_dir} or its subdirectories.")
-        return
-        
-    for target_dir in subset_dirs:
-        subset_file = target_dir / "subset.jsonl"
-        subset_counts = collections.defaultdict(int)
-        with open(subset_file, "r") as f:
-            for line in f:
-                task = json.loads(line)["item_id"].split("::", 1)[0]
-                subset_counts[task] += VARIANTS_PER_BASIS.get(task, 1)
-                
-        print(f"\n--- Estimating Cost for {target_dir.name} ---")
-        print(f"Assumed API Pricing: ${price_in:.2f} / 1M Input | ${price_out:.2f} / 1M Output")
-        print(f"\n| Benchmark                  | Samples Run  | In / Out Tokens (Median) | Proj. Cost Range (Min -> Med -> Max) |")
-        print(f"| :------------------------- | :----------- | :----------------------- | :----------------------------------- |")
-        
-        total_items = 0
-        total_cost_min = 0.0
-        total_cost_median = 0.0
-        total_cost_max = 0.0
-        
-        for task in sorted(subset_counts.keys()):
-            count = subset_counts[task]
-            task_key = task
-            if task_key not in cost_distributions:
-                task_key = task.replace("-", "_")
-                if task_key not in cost_distributions:
-                    task_key = task.replace("_", "-")
-            
-            dist = cost_distributions.get(task_key, {
-                "input_avg": 0.0, "output_min": 0.0, "output_median": 0.0, "output_max": 0.0, "output_stdev": 0.0
-            })
-            
-            # If the user happens to have the old cost.json loaded
-            if "input" in dist:
-                dist = {"input_avg": dist["input"], "output_min": dist["output"], "output_median": dist["output"], "output_max": dist["output"]}
-            
-            in_avg = dist.get("input_avg", 0.0)
-            out_min = dist.get("output_min", 0.0)
-            out_med = dist.get("output_median", 0.0)
-            out_max = dist.get("output_max", 0.0)
-            
-            base_in_cost = (count * in_avg * price_in) / 1_000_000
-            
-            c_min = base_in_cost + ((count * out_min * price_out) / 1_000_000)
-            c_med = base_in_cost + ((count * out_med * price_out) / 1_000_000)
-            c_max = base_in_cost + ((count * out_max * price_out) / 1_000_000)
-            
-            total_items += count
-            total_cost_min += c_min
-            total_cost_median += c_med
-            total_cost_max += c_max
-            
-            cost_str = f"${c_min:.2f} → ${c_med:.2f} → ${c_max:.2f}"
-            print(f"| {task:<26} | {count:>12,} | {int(in_avg):>8,} / {int(out_med):<14,} | {cost_str:>36} |")
-            
-        print(f"| {'-'*26} | {'-'*12} | {'-'*24} | {'-'*36} |")
-        total_str = f"${total_cost_min:.2f} → ${total_cost_median:.2f} → ${total_cost_max:.2f}"
-        print(f"| **TOTAL**                  | **{total_items:>10,}** |                          | **{total_str:>34}** |")
-
 
 
 if __name__ == "__main__":

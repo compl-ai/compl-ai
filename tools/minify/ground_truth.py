@@ -1,6 +1,6 @@
 """Load full-run ground truth for minification evaluation.
 
-Shared by ``minify stats`` and ``tools/export_web``. Contains no prediction
+Used by ``minify stats``. Contains no prediction
 method logic; that lives in ``complai.predict``.
 """
 

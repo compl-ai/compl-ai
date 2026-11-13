@@ -1,0 +1,338 @@
+{
+  "_meta": {
+    "description": "List prices used for eval cost in costs.json. rates: USD per 1M input and output tokens per model ID (never batch prices). source \"openrouter\" entries are updated by `complai export-web --refresh-prices` from the OpenRouter model list (slug = OpenRouter model ID); any other source is entered by hand and never overwritten. Models without a rate (self-hosted) get no USD.",
+    "charges": "Reserved for actual billed amounts per run; not used yet."
+  },
+  "rates": {
+    "openai-api/vllm/MiniMaxAI/MiniMax-M2.5": {
+      "slug": "minimax/minimax-m2.5",
+      "in": 0.27,
+      "out": 1.08,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/MiniMaxAI/MiniMax-M2.7": {
+      "slug": "minimax/minimax-m2.7",
+      "in": 0.21,
+      "out": 0.84,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/Qwen/Qwen3.5-9B": {
+      "slug": "qwen/qwen3.5-9b",
+      "in": 0.131,
+      "out": 0.192,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/Qwen/Qwen3.6-27B": {
+      "slug": "qwen/qwen3.6-27b",
+      "in": 0.32,
+      "out": 3.2,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/Qwen/Qwen3.6-35B-A3B": {
+      "slug": "qwen/qwen3.6-35b-a3b",
+      "in": 0.1,
+      "out": 0.9,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/XiaomiMiMo/MiMo-V2.5": {
+      "slug": "xiaomi/mimo-v2.5",
+      "in": 0.4,
+      "out": 2.0,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/deepseek-ai/DeepSeek-V3.2": {
+      "slug": "deepseek/deepseek-v3.2",
+      "in": 0.26,
+      "out": 0.38,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/deepseek-ai/DeepSeek-V4-Flash": {
+      "slug": "deepseek/deepseek-v4-flash",
+      "in": 0.09,
+      "out": 0.18,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/deepseek-ai/DeepSeek-V4-Pro": {
+      "slug": "deepseek/deepseek-v4-pro",
+      "in": 0.892272,
+      "out": 1.784544,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/google/gemma-3-27b-it": {
+      "slug": "google/gemma-3-27b-it",
+      "in": 0.08,
+      "out": 0.35,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/google/gemma-4-26B-A4B-it": {
+      "slug": "google/gemma-4-26b-a4b-it",
+      "in": 0.09,
+      "out": 0.28,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/google/gemma-4-31B-it": {
+      "slug": "google/gemma-4-31b-it",
+      "in": 0.2,
+      "out": 0.4,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/meta-llama/Llama-3.1-8B-Instruct": {
+      "slug": "meta-llama/llama-3.1-8b-instruct",
+      "in": 0.02,
+      "out": 0.04,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/microsoft/phi-4": {
+      "slug": "microsoft/phi-4",
+      "in": 0.07,
+      "out": 0.14,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512": {
+      "slug": "mistralai/ministral-14b-2512",
+      "in": 0.2,
+      "out": 0.2,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/mistralai/Mistral-Medium-3.5-128B": {
+      "slug": "mistralai/mistral-medium-3-5",
+      "in": 1.5,
+      "out": 7.5,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/mistralai/Mistral-Small-4-119B-2603": {
+      "slug": "mistralai/mistral-small-2603",
+      "in": 0.15,
+      "out": 0.6,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/moonshotai/Kimi-K2.6": {
+      "slug": "moonshotai/kimi-k2.6",
+      "in": 0.65,
+      "out": 3.41,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16": {
+      "slug": "nvidia/nemotron-3-nano-30b-a3b",
+      "in": 0.06,
+      "out": 0.24,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16": {
+      "slug": "nvidia/nemotron-3-super-120b-a12b",
+      "in": 0.075,
+      "out": 0.4,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16": {
+      "slug": "nvidia/nemotron-3-ultra-550b-a55b",
+      "in": 0.6,
+      "out": 2.4,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/openai/gpt-oss-120b": {
+      "slug": "openai/gpt-oss-120b",
+      "in": 0.15,
+      "out": 0.6,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/openai/gpt-oss-20b": {
+      "slug": "openai/gpt-oss-20b",
+      "in": 0.03,
+      "out": 0.13,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/stepfun-ai/Step-3.5-Flash": {
+      "slug": "stepfun/step-3.5-flash",
+      "in": 0.1,
+      "out": 0.3,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai-api/vllm/tencent/Hy3-preview": {
+      "slug": "tencent/hy3-preview",
+      "in": 0.18,
+      "out": 0.6,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai/gpt-6-luna": {
+      "slug": "openai/gpt-6-luna",
+      "in": 0.1,
+      "out": 0.5,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openai/gpt-6.1-terra": {
+      "slug": "openai/gpt-6.1-terra",
+      "in": 1.0,
+      "out": 5.0,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/anthropic/claude-haiku-4.5": {
+      "slug": "anthropic/claude-haiku-4.5",
+      "in": 1.0,
+      "out": 5.0,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/anthropic/claude-haiku-5.5": {
+      "slug": "anthropic/claude-haiku-5.5",
+      "in": 0.1,
+      "out": 0.5,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/anthropic/claude-opus-5.5": {
+      "slug": "anthropic/claude-opus-5.5",
+      "in": 4.0,
+      "out": 20.0,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/anthropic/claude-sonnet-4.5": {
+      "slug": "anthropic/claude-sonnet-4.5",
+      "in": 3.0,
+      "out": 15.0,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/anthropic/claude-sonnet-5.5": {
+      "slug": "anthropic/claude-sonnet-5.5",
+      "in": 2.0,
+      "out": 10.0,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/deepseek/deepseek-v4.1-flash": {
+      "slug": "deepseek/deepseek-v4.1-flash",
+      "in": 0.3,
+      "out": 1.2,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/google/gemini-3.8-flash": {
+      "slug": "google/gemini-3.8-flash",
+      "in": 0.75,
+      "out": 3.75,
+      "source": "google",
+      "date": "2026-11-08"
+    },
+    "openrouter/google/gemini-4-argon": {
+      "slug": "google/gemini-4-argon",
+      "in": 4.0,
+      "out": 20.0,
+      "source": "google",
+      "date": "2026-11-12"
+    },
+    "openrouter/inclusionai/ling-3.1-flash": {
+      "slug": "inclusionai/ling-3.1-flash",
+      "in": 0.045,
+      "out": 0.135,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/meta/muse-spark-open": {
+      "slug": "meta/muse-spark-open",
+      "in": 1.25,
+      "out": 4.25,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/minimax/minimax-m3.1-flash": {
+      "slug": "minimax/minimax-m3.1-flash",
+      "in": 0.075,
+      "out": 0.3,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/mistralai/mistral-large-4-0": {
+      "slug": "mistralai/mistral-large-4-0",
+      "in": 0.7,
+      "out": 2.1,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/moonshotai/kimi-k3.1-pro": {
+      "slug": "moonshotai/kimi-k3.1-pro",
+      "in": 0.2375,
+      "out": 8.7856,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/nvidia/nemotron-3.5-lightning": {
+      "slug": "nvidia/nemotron-3.5-lightning",
+      "in": 0.07,
+      "out": 0.2,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/qwen/qwen3.8-flash": {
+      "slug": "qwen/qwen3.8-flash",
+      "in": 0.15,
+      "out": 0.47,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/tencent/hy3": {
+      "slug": "tencent/hy3",
+      "in": 0.0825,
+      "out": 0.33,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/xiaomi/mimo-v2.6-flash": {
+      "slug": "xiaomi/mimo-v2.6-flash",
+      "in": 0.14,
+      "out": 0.28,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/xiaomi/mimo-v2.6-pro": {
+      "slug": "xiaomi/mimo-v2.6-pro",
+      "in": 0.435,
+      "out": 0.87,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "openrouter/z-ai/glm-5.3-flash": {
+      "slug": "z-ai/glm-5.3-flash",
+      "in": 0.0399,
+      "out": 0.0784,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    },
+    "vllm/meta-llama/Llama-3.3-70B-Instruct": {
+      "slug": "meta-llama/llama-3.3-70b-instruct",
+      "in": 0.71,
+      "out": 0.71,
+      "source": "openrouter",
+      "date": "2026-11-12"
+    }
+  },
+  "charges": {}
+}
