@@ -1,0 +1,72 @@
+
+name: "DiffusionGemma"
+release_date: "2026-06-10"
+open_weights: true
+organization: "Google"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+
+description: |
+  DiffusionGemma is an open-weight text generation model from Google DeepMind based on the Gemma 4 26B A4B model. It uses a discrete diffusion approach to generate and iteratively refine text in parallel, rather than generating tokens strictly one at a time.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2025-01"
+  total_params: 25_200_000_000
+  active_params: 3_800_000_000
+  context: 256_000
+  max_output_tokens: 256_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "DiffusionGemma Model Card"
+    url: "https://ai.google.dev/gemma/docs/diffusiongemma/model_card"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/google/diffusiongemma-26B-A4B-it"
+    type: "model-weights"
+  - title: "DiffusionGemma Technical Report"          
+    url: "https://arxiv.org/abs/2608.00146"
+    type: "paper-url"
+  - title: "Apache License 2.0"
+    url: "https://ai.google.dev/gemma/apache_2"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: “web documents + code + mathematical text + images + audio”
+  base_model: "Gemma 4 26B A4B"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 1_456
+  latency_ms_per_token: 0.69
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openai-api/vllm/google/diffusiongemma-26B-A4B-it"

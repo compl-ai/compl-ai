@@ -5,7 +5,7 @@ from inspect_evals.swe_bench import swe_bench
 from inspect_evals.swe_bench import swe_bench_verified_mini
 
 
-@task(technical_requirement="Capabilities, Performance, and Limitations")
+@task
 def swe_bench_verified(full: bool = False, message_limit: int = 200) -> Task:
     """
     SWE-bench-verified task.

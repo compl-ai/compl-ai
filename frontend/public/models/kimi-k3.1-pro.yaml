@@ -1,0 +1,75 @@
+name: "Kimi K3.1 Pro"
+release_date: "2026-10-24"
+open_weights: true
+organization: "Moonshot AI"
+license: "mit-modified"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Kimi K3.1 Pro is an open-weight Mixture-of-Experts model from Moonshot AI with about 2.8 trillion parameters, of which 104 billion are used for each token. It is a further-trained version of Kimi K3 that reads text, images and video, has a thinking mode and a 1-million-token context window, and is aimed at long multi-step coding, 3D modelling and financial research tasks that use tools. It is a different model from Kimi K3 and from the faster Kimi K3.1 Pro Highspeed variant.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 2800000000000
+  active_params: 104000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/moonshotai/kimi-k3.1-pro"
+    type: "model-homepage"
+  - title: "Introducing Kimi K3.1 Pro"
+    url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+    type: "announcement"
+  - title: "Kimi K3.1 Pro API Quickstart"
+    url: "https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart"
+    type: "model-homepage"
+  - title: "Configure Kimi Vision Models"
+    url: "https://platform.kimi.ai/docs/guide/use-kimi-vision-model"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/moonshotai/Kimi-K3.1-Pro"
+    type: "model-weights"
+  - title: "Kimi K3.1 Pro License"
+    url: "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: "Kimi K3"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openrouter/moonshotai/kimi-k3.1-pro"

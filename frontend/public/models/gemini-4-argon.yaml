@@ -1,0 +1,62 @@
+name: "Gemini 4 Argon"
+release_date: "2026-10-13"
+open_weights: false
+organization: "Google"
+license: null
+
+availability:
+  - "api"
+  - "saas-chat"
+
+description: |
+  Google's flagship Gemini 4 reasoning model, built for complex software engineering, mathematical and scientific problem solving, and autonomous multi-step agents.
+
+specs:
+  architecture: null
+  knowledge_cutoff: null
+  total_params: null
+  active_params: null
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/google/gemini-4-argon"
+    type: "model-homepage"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openrouter/google/gemini-4-argon"

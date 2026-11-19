@@ -1,0 +1,69 @@
+name: "GPT-6.1 Terra"
+release_date: "2026-10-26"
+open_weights: false
+organization: "OpenAI"
+license: null
+
+availability:
+  - "api"
+
+description: |
+  A mid-priced OpenAI model from the GPT-6.1 series, released in October 2026, costing more than GPT-6 Luna and less than GPT-6.1 Sol. It is aimed at understanding images such as screenshots and technical drawings, operating computer applications on a user's behalf, and writing. It accepts text and images, and can reason step by step before answering, with an adjustable amount of reasoning effort.
+
+specs:
+  architecture: null
+  knowledge_cutoff: "2026-06"
+  total_params: null
+  active_params: null
+  context: 1050000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "multilingual"
+    - "tools"
+
+sources:
+  - title: "GPT-6.1 Terra model page (OpenAI API docs)"
+    url: "https://developers.openai.com/api/docs/models/gpt-6.1-terra"
+    type: "model-homepage"
+  - title: "OpenAI API changelog: GPT-6.1 Terra release (Oct 26, 2026)"
+    url: "https://developers.openai.com/api/docs/changelog"
+    type: "announcement"
+  - title: "Using GPT-6 (OpenAI guide)"
+    url: "https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra#gpt-61-terra"
+    type: "model-homepage"
+  - title: "OpenAI models overview"
+    url: "https://developers.openai.com/api/docs/models"
+    type: "model-homepage"
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/openai/gpt-6.1-terra"
+    type: "model-homepage"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openai/gpt-6.1-terra"

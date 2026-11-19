@@ -1,0 +1,64 @@
+name: "Kolibri-1"
+release_date: "2026-10-03"
+open_weights: true
+organization: "Aleph Alpha"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+
+description: |
+  Kolibri-1 is a German and English language model from the German company Aleph Alpha, trained from scratch on infrastructure in Germany and Finland. It is a Mixture-of-Experts model with about 78 billion parameters, of which only about 3.5 billion are used for each word it processes, and it has an optional step-by-step reasoning mode. It is meant for multi-step reasoning, answering questions over documents, calling external tools and coding; the weights are published under the Apache 2.0 license, and the version evaluated here is the 8-bit (FP8) release served locally.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2026-06"
+  total_params: 78103074560
+  active_params: 3457573120
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/Aleph-Alpha/Kolibri-1"
+    type: "model-weights"
+  - title: "Kolibri has landed: a sovereign open-weight model"
+    url: "https://aleph-alpha.com/en/blog/kolibri-has-landed-a-sovereign-open-weight-model/"
+    type: "announcement"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/Aleph-Alpha/Kolibri-1/blob/main/LICENSE"
+    type: "licence-url"
+
+training:
+  tokens: 20000000000000
+  compute_flops: 6.4e23
+  energy_kwh: 950000
+  emissions_co2: null
+  training_dataset: "filtered German and English text plus code"
+  base_model: "Kolibri Base"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "DE"
+
+evals:
+  - "openai-api/vllm/Aleph-Alpha/Kolibri-1"

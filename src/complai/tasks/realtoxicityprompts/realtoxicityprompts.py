@@ -69,7 +69,7 @@ def toxicity_scorer(use_gpu_scorer: bool = True) -> Scorer:
     return score
 
 
-@task(technical_requirement="Harmful Content and Toxicity")
+@task
 def realtoxicityprompts(full: bool = False, use_gpu_scorer: bool = True) -> Task:
     """Real Toxicity Prompts evaluation task.
 

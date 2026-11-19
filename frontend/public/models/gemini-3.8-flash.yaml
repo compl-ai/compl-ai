@@ -1,0 +1,68 @@
+name: "Gemini 3.8 Flash"
+release_date: "2026-09-02"
+open_weights: false
+organization: "Google"
+license: null
+
+availability:
+  - "api"
+
+description: |
+  Google's fast, lower-cost Gemini model, released in September 2026 as the successor to Gemini 3.7 Flash, on which it is based. It is built for software engineering, multi-step tasks that use tools, and business workflows. It accepts text, images, audio and video, and can think before answering at an adjustable effort level.
+
+specs:
+  architecture: null
+  knowledge_cutoff: "2026-03"
+  total_params: null
+  active_params: null
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "tools"
+
+sources:
+  - title: "Gemini 3.8 Flash model page (Gemini API docs)"
+    url: "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash"
+    type: "model-homepage"
+  - title: "Gemini 3.8 Flash Model Card (Google DeepMind)"
+    url: "https://deepmind.google/models/model-cards/gemini-3-8-flash/"
+    type: "model-homepage"
+  - title: "Gemini API release notes: Gemini 3.8 Flash GA (Sep 2, 2026)"
+    url: "https://ai.google.dev/gemini-api/docs/changelog"
+    type: "announcement"
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/google/gemini-3.8-flash"
+    type: "model-homepage"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: "Gemini 3.7 Flash"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openrouter/google/gemini-3.8-flash"

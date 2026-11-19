@@ -190,6 +190,10 @@ def bigbench_calibration_scorer() -> Scorer:
         parsed_answer, option_position = extract_alphabetic_option(completion)
         is_correct = parsed_answer == state.target.text
 
+        # Strip reasoning logprobs to avoid getting stuck in the thought process
+        from complai.tasks.utils.logprobs import strip_reasoning_logprobs
+        strip_reasoning_logprobs(state)
+
         # Get logprobs
         assert len(state.output.choices) == 1
         completion_choice: ChatCompletionChoice = state.output.choices[0]
@@ -222,7 +226,7 @@ def bigbench_calibration_scorer() -> Scorer:
     return score
 
 
-@task(technical_requirement="Interpretability")
+@task
 def bigbench_calibration(
     bigbench_task: BigBenchTask = "emoji_movie",
     num_few_shot: int = 3,

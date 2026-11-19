@@ -23,7 +23,7 @@ def human_deception_dataset() -> Dataset:
     return hf_dataset(path=DATASET_PATH, split="train", sample_fields=record_to_sample)
 
 
-@task(technical_requirement="Disclosure of AI")
+@task
 def human_deception() -> Task:
     """Human Deception task.
 

@@ -9,8 +9,30 @@ from inspect_ai import list_tasks
 from inspect_ai import TaskInfo
 
 
-def eval_default_expr(default_node: ast.expr) -> Any:
+def module_constants(tree: ast.Module) -> dict[str, Any]:
+    """Module-level ``NAME = <literal>`` assignments, to resolve defaults like ``LOCAL_JUDGE``."""
+    constants = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                try:
+                    constants[target.id] = ast.literal_eval(node.value)
+                except (ValueError, SyntaxError):
+                    pass
+    return constants
+
+
+def eval_default_expr(
+    default_node: ast.expr, constants: dict[str, Any] | None = None
+) -> Any:
     """Safely evaluate a default value from an AST node."""
+    if (
+        isinstance(default_node, ast.Name)
+        and constants
+        and default_node.id in constants
+    ):
+        return constants[default_node.id]
     try:
         # Use ast.literal_eval for safe evaluation of literals
         return ast.literal_eval(default_node)
@@ -19,7 +41,9 @@ def eval_default_expr(default_node: ast.expr) -> Any:
         return ast.unparse(default_node)
 
 
-def extract_params(function_node: ast.FunctionDef) -> dict[str, Any]:
+def extract_params(
+    function_node: ast.FunctionDef, constants: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Extract parameters and their defaults from a task function."""
     result = {}
     params = function_node.args.args
@@ -27,7 +51,7 @@ def extract_params(function_node: ast.FunctionDef) -> dict[str, Any]:
     # Defaults are aligned to the right (args with defaults are last)
     for param, default in zip(params[-len(defaults) :], defaults):
         param_name = param.arg
-        result[param_name] = eval_default_expr(default)
+        result[param_name] = eval_default_expr(default, constants)
 
     return result
 
@@ -94,7 +118,7 @@ def extract_task_defaults(task_info: TaskInfo) -> dict[str, Any]:
         return {}
 
     # Extract default values
-    return extract_params(task_func_node)
+    return extract_params(task_func_node, module_constants(tree))
 
 
 def generate_default_config_yaml(task_dir: Path) -> str:

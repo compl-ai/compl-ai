@@ -1,0 +1,26 @@
+{
+ "_meta": {
+  "description": "Visitor-facing descriptions of the evaluation areas, keyed by taxonomy subcategory id. Areas not listed fall back to the taxonomy description in labels.json."
+ },
+ "areas": {
+  "capability:ai-r-and-d": "Expert questions about machine-learning research and AI development: how models are trained, evaluated and improved. These are written questions, not hands-on research tasks.",
+  "capability:coding": "Writing and completing programs that are checked by running them against tests, plus expert questions about how code behaves and about computer science.",
+  "capability:knowledge": "Questions that turn mainly on recalling established facts and academic knowledge, in subjects such as law, history, biology and economics, rather than on working a problem out.",
+  "capability:math": "Problems that need calculation or a mathematical argument, from competition problems (AIME 2025) to quantitative exam questions and expert-level problems, some of them posed in images.",
+  "capability:multilingual": "Questions from local school, university and professional exams, asked in their original language. They test knowledge and reasoning in the language and its regional context, not in translated English material.",
+  "capability:multimodal": "College-level questions across disciplines where the information needed is in an image, such as a diagram, chart, table or photograph. The model has to read the image to answer.",
+  "capability:reasoning": "Questions where knowing the facts is not enough and the answer has to be worked out over several steps, including graduate-level science questions written so they can’t be looked up (GPQA Diamond).",
+  "reliability:consistency": "Whether answers change when they should, and only then. Paired prompts differ in a small detail that flips the correct answer, and a model’s own statements about a topic are checked against each other for contradictions.",
+  "reliability:factuality": "Short factual questions with a single verifiable answer (SimpleQA Verified), and questions built around popular misconceptions, where the common answer is wrong (TruthfulQA).",
+  "reliability:hallucination-resistance": "Whether the model makes things up: claims in its own free-form descriptions of a topic that contradict each other, or confident answers where an honest response would admit uncertainty.",
+  "reliability:instruction-following": "Following precise output constraints the model is unlikely to have seen in training, such as exact word counts, required keywords or formats (IFBench). Every constraint is checked automatically.",
+  "reliability:perturbation-robustness": "Whether answers hold up under changes that shouldn’t matter: typos, synonyms, filler words, dialect, paraphrasing or swapped gender terms in otherwise identical exam questions, and near-identical contrast pairs.",
+  "safety:deception-honesty": "Whether the model says what it believes when pressured to say otherwise (MASK), and whether it honestly says it is not human when asked.",
+  "safety:fairness-bias": "Whether answers rely on stereotypes about social groups (BBQ), change when only a person’s gender, race or religion changes (CAB), or recommend differently depending on the user’s group (FairLLM).",
+  "safety:goal-hijacking": "Whether the model keeps to its assigned task and rules when a user tries to talk it into something else, for example getting a password-protected assistant to grant access without the password.",
+  "safety:harmful-instruction-refusal": "Requests for harmful, dangerous or illegal help, where the right response is to refuse or redirect safely.",
+  "safety:jailbreak-resistance": "Adversarial prompts written to make the model break its rules or safety behaviour, for example through role-play or by claiming the rules have changed.",
+  "safety:prompt-injection": "Attacker text placed inside a system’s own instructions that tries to override them. In these tasks the attack sits between the operator’s instructions, and the model must keep following the operator.",
+  "safety:security-privacy": "Keeping secrets and protected information safe when users try to extract them, such as a password or private data the model was told to guard, and declining cyber-misuse requests."
+ }
+}

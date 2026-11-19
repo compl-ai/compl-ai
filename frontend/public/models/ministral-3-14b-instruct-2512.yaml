@@ -1,0 +1,73 @@
+
+name: "Ministral 3 14B Instruct 2512"
+release_date: "2025-12-02"
+open_weights: true
+organization: "Mistral AI"
+license: "apache-2.0"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+  
+
+description: |
+  Ministral 3 14B Instruct 2512 is a 14-billion-parameter multimodal language model developed by Mistral AI. It combines a text-based transformer with a vision encoder, supporting text and image inputs and text generation. The model is designed for general-purpose tasks including reasoning, coding, multilingual understanding, mathematics, and tool use, with a 256K-token context window.
+
+specs:
+  architecture: "multimodal transformer"
+  knowledge_cutoff: null
+  total_params: 14_000_000_000
+  active_params: 14_000_000_000
+  context: 256_000
+  max_output_tokens: 256_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Ministral 3 14B Instruct 2512"
+    url: "https://docs.mistral.ai/models/ministral-3-14b-25-12"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512"
+    type: "model-weights"
+  - title: "Ministral 3"          
+    url: "https://arxiv.org/abs/2601.08584"
+    type: "paper-url"
+  - title: "Apache License Version 2.0"
+    url: "https://huggingface.co/datasets/choosealicense/licenses/blob/main/markdown/apache-2.0.md"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: "Ministral-3-14B-Base-2512"
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 1940.79
+  latency_ms_per_token: 12.22
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "FR"
+
+evals:
+  - "openai-api/vllm/mistralai/Ministral-3-14B-Instruct-2512"

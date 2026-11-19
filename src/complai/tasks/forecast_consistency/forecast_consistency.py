@@ -132,7 +132,7 @@ def rank_correlation() -> MetricProtocol:
     return metric
 
 
-@task(technical_requirement="Robustness and Predictability")
+@task
 def forecast_consistency() -> Task:
     return Task(
         dataset=forecast_consistency_dataset(),

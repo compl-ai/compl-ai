@@ -1,0 +1,71 @@
+
+name: "Kimi-K2.6"
+release_date: "2026-04-20"
+open_weights: true
+organization: "Moonshot AI"
+license: "mit-modified"
+
+availability:
+  - "open-weights"
+  - "saas-chat"
+  - "api"
+
+description: |
+  Kimi K2.6 is a 1-trillion-parameter Mixture-of-Experts multimodal language model developed by Moonshot AI. It supports text, image, and video inputs and is designed for reasoning, coding, mathematical tasks, multilingual applications, and tool use, with a 256K-token context window.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: "2025-04"
+  total_params: 1_000_000_000_000
+  active_params: 32_000_000_000
+  context: 256_000
+  max_output_tokens: 256_000
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "Kimi K2.6: From Code to Creation, From One to Many"
+    url: "https://www.kimi.ai/ai-models/kimi-k2-6"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/moonshotai/Kimi-K2.6"
+    type: "model-weights"
+  - title: "Modified MIT License"
+    url: "https://huggingface.co/moonshotai/Kimi-K2.6/blob/main/LICENSE"
+    type: "licence-url"
+
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: 1_408
+  latency_ms_per_token: 21.14
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "CN"
+
+evals:
+  - "openai-api/vllm/moonshotai/Kimi-K2.6"

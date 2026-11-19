@@ -1,0 +1,68 @@
+name: "Muse Spark Open"
+release_date: "2026-10-15"
+open_weights: true
+organization: "Meta"
+license: "muse-model-license"
+
+availability:
+  - "open-weights"
+  - "api"
+
+description: |
+  Meta's coding-optimized open-weight Mixture-of-Experts model (816B total, 42B active), trained for agentic coding workflows with reliable tool calling. Released under the Muse Model License, which requires a separate agreement for large Model-as-a-Service providers.
+
+specs:
+  architecture: "Mixture-of-Experts (MoE)"
+  knowledge_cutoff: null
+  total_params: 816000000000
+  active_params: 42000000000
+  context: 1048576
+
+  modalities:
+    input:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    output:
+      - "text"
+
+  capabilities:
+    - "reasoning"
+    - "coding"
+    - "multilingual"
+    - "math"
+    - "tools"
+
+sources:
+  - title: "OpenRouter Model Page"
+    url: "https://openrouter.ai/meta/muse-spark-open"
+    type: "model-homepage"
+  - title: "Hugging Face Model Card"
+    url: "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B"
+    type: "model-weights"
+  - title: "Muse Model License"
+    url: "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B/blob/main/LICENSE.md"
+    type: "licence-url"
+
+training:
+  tokens: null
+  compute_flops: null
+  energy_kwh: null
+  emissions_co2: null
+  training_dataset: null
+  base_model: null
+
+stats:
+  inference_efficiency_tokens_per_kwh: null
+  throughput_tokens_per_second: null
+  latency_ms_per_token: null
+
+region:
+  region_deployable:
+    - null
+  region_developed:
+    - "US"
+
+evals:
+  - "openrouter/meta/muse-spark-open"
